@@ -15,12 +15,11 @@ services:
     networks:
       - vcv-network
     volumes:
-      - vault-data:/vault
       - ./vault-dev-init.sh:/vault-dev-init.sh:ro
 
   backend:
     build:
-      context: ./backend
+      context: ./app
       dockerfile: Dockerfile
     ports:
       - "52000:52000/tcp"
@@ -40,28 +39,6 @@ services:
           cpus: '0.50'
           memory: 64M
 
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "4321:4321/tcp"
-    networks:
-      - vcv-network
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    environment:
-      - NODE_OPTIONS=--max-old-space-size=512
-    deploy:
-      resources:
-        limits:
-          cpus: '1.00'
-          memory: 768M
-
 networks:
   vcv-network:
     driver: bridge
-
-volumes:
-  vault-data:
