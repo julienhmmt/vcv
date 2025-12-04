@@ -1,0 +1,184 @@
+.vcv-layout {
+  max-width: 1120px;
+  margin: 2rem auto;
+  padding: 1.75rem 1.5rem 2rem;
+  border-radius: 0.9rem;
+  background-color: #ffffff;
+  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.vcv-title {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: #0f172a;
+  letter-spacing: -0.01em;
+}
+
+.vcv-subtitle {
+  margin-top: 0.15rem;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.vcv-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.vcv-filters {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.vcv-input,
+.vcv-select {
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.25rem;
+  border: 1px solid #cbd5e1;
+  font-size: 0.9rem;
+}
+
+.vcv-status {
+  min-height: 1.25rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  color: #b91c1c;
+}
+
+.vcv-table-wrapper {
+  overflow-x: auto;
+}
+
+.vcv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.vcv-table th,
+.vcv-table td {
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.vcv-table th {
+  background-color: #f8fafc;
+}
+
+.vcv-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.vcv-sort {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  color: #0f172a;
+}
+
+.vcv-button {
+  padding: 0.35rem 0.7rem;
+  border-radius: 0.25rem;
+  border: 1px solid #0f172a;
+  background-color: #0f172a;
+  color: white;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.vcv-button:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.vcv-button-danger {
+  border-color: #b91c1c;
+  background-color: #b91c1c;
+}
+
+.vcv-error {
+  color: #b91c1c;
+}
+
+.vcv-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.vcv-badge-valid {
+  background-color: #ecfdf3;
+  color: #166534;
+}
+
+.vcv-badge-expired {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.vcv-badge-revoked {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.vcv-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(15, 23, 42, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.vcv-modal {
+  background-color: white;
+  padding: 1.25rem;
+  border-radius: 0.5rem;
+  max-width: 480px;
+  width: 100%;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.25);
+}
+
+.vcv-modal-title {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+}
+
+.vcv-modal-text {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.9rem;
+}
+
+.vcv-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+}
+
+.vcv-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.vcv-hidden {
+  display: none;
+}

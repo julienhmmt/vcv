@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VaultCertsViewer</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <div class="vcv-layout">
+      <header class="vcv-header">
+        <div>
+          <h1 class="vcv-title">VaultCertsViewer</h1>
+          <p class="vcv-subtitle">Certificates from the configured Vault PKI mount</p>
+        </div>
+        <div class="vcv-filters">
+          <input
+            id="vcv-search"
+            class="vcv-input"
+            type="search"
+            placeholder="Search by CN or SAN"
+          />
+          <select id="vcv-status-filter" class="vcv-select">
+            <option value="all">All</option>
+            <option value="valid">Valid</option>
+            <option value="expired">Expired</option>
+            <option value="revoked">Revoked</option>
+          </select>
+        </div>
+      </header>
+
+      <div id="vcv-status" class="vcv-status"></div>
+
+      <div class="vcv-table-wrapper">
+        <table class="vcv-table">
+          <thead>
+            <tr>
+              <th>
+                <button type="button" class="vcv-sort" data-sort-key="commonName">Common name</button>
+              </th>
+              <th>SAN</th>
+              <th>
+                <button type="button" class="vcv-sort" data-sort-key="createdAt">Created at</button>
+              </th>
+              <th>
+                <button type="button" class="vcv-sort" data-sort-key="expiresAt">Expires at</button>
+              </th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="vcv-certs-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div id="vcv-revoke-modal" class="vcv-modal-backdrop vcv-hidden">
+      <div class="vcv-modal">
+        <h2 class="vcv-modal-title">Confirm revocation</h2>
+        <p id="vcv-revoke-summary" class="vcv-modal-text"></p>
+        <label class="vcv-label">
+          Vault write token
+          <input
+            id="vcv-revoke-token"
+            class="vcv-input"
+            type="password"
+            autocomplete="off"
+          />
+        </label>
+        <p id="vcv-revoke-error" class="vcv-error"></p>
+        <div class="vcv-modal-actions">
+          <button type="button" id="vcv-revoke-cancel" class="vcv-button">Cancel</button>
+          <button type="button" id="vcv-revoke-confirm" class="vcv-button vcv-button-danger">
+            Confirm revocation
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/assets/app.js"></script>
+  </body>
+</html>
