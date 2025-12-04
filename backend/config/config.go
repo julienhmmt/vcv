@@ -18,18 +18,25 @@ const (
 
 // Config holds application configuration.
 type Config struct {
-	Env         Environment
-	Port        string
-	LogLevel    string
-	LogFormat   string
-	LogOutput   string
-	CORS        CORSConfig
+	Env       Environment
+	Port      string
+	LogLevel  string
+	LogFormat string
+	LogOutput string
+	CORS      CORSConfig
+	Vault     VaultConfig
 }
 
 // CORSConfig holds CORS-specific configuration.
 type CORSConfig struct {
 	AllowedOrigins   []string
 	AllowCredentials bool
+}
+
+type VaultConfig struct {
+	Addr         string
+	PKIMount     string
+	EnableRevoke bool
 }
 
 // Load reads configuration from environment variables.
@@ -39,12 +46,13 @@ func Load() Config {
 	env := parseEnv(getEnv("APP_ENV", "dev"))
 
 	cfg := Config{
-		Env:         env,
-		Port:        getEnv("PORT", "52000"),
-		LogLevel:    getEnv("LOG_LEVEL", defaultLogLevel(env)),
-		LogFormat:   getEnv("LOG_FORMAT", defaultLogFormat(env)),
-		LogOutput:   getEnv("LOG_OUTPUT", "stdout"),
-		CORS:        loadCORSConfig(env),
+		Env:       env,
+		Port:      getEnv("PORT", "52000"),
+		LogLevel:  getEnv("LOG_LEVEL", defaultLogLevel(env)),
+		LogFormat: getEnv("LOG_FORMAT", defaultLogFormat(env)),
+		LogOutput: getEnv("LOG_OUTPUT", "stdout"),
+		CORS:      loadCORSConfig(env),
+		Vault:     loadVaultConfig(),
 	}
 
 	return cfg
@@ -114,6 +122,15 @@ func loadCORSConfig(env Environment) CORSConfig {
 			AllowedOrigins:   []string{"http://localhost:4321", "http://localhost:3000"},
 			AllowCredentials: true,
 		}
+	}
+}
+
+func loadVaultConfig() VaultConfig {
+	enableRevoke := strings.ToLower(strings.TrimSpace(getEnv("ENABLE_REVOKE", "false"))) == "true"
+	return VaultConfig{
+		Addr:         getEnv("VAULT_ADDR", ""),
+		PKIMount:     getEnv("VAULT_PKI_MOUNT", "pki"),
+		EnableRevoke: enableRevoke,
 	}
 }
 

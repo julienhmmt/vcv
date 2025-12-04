@@ -8,7 +8,11 @@ import (
 	"syscall"
 	"time"
 
+	"vcv/config"
+	h "vcv/internal/handlers"
 	"vcv/internal/logger"
+	"vcv/internal/vault"
+	"vcv/middleware"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -27,6 +31,11 @@ func main() {
 		Msg("Configuration loaded")
 
 	r := chi.NewRouter()
+	vaultClient := vault.NewMockClient()
+
+	log.Info().
+		Str("vault_mode", "mock").
+		Msg("Using mock Vault client")
 
 	// Middleware
 	r.Use(middleware.RequestID)
@@ -43,6 +52,7 @@ func main() {
 	// Health and readiness probes
 	r.Get("/api/health", h.HealthCheck)
 	r.Get("/api/ready", h.ReadinessCheck)
+	h.RegisterCertRoutes(r, vaultClient, cfg.Vault.EnableRevoke)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

@@ -1,0 +1,40 @@
+---
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "52000:52000/tcp"
+    networks:
+      - vcv-network
+    environment:
+      - PORT=52000
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 64M
+
+  # frontend:
+  #   build:
+  #     context: ./frontend
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "4321:4321/tcp"
+  #   networks:
+  #     - gestinterv-network
+  #   volumes:
+  #     - ./frontend:/app
+  #     - /app/node_modules
+  #   environment:
+  #     - NODE_OPTIONS=--max-old-space-size=512
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         cpus: '1.00'
+  #         memory: 768M
+
+networks:
+  vcv-network:
+    driver: bridge
