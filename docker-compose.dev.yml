@@ -10,11 +10,13 @@ services:
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     cap_add:
       - IPC_LOCK
-    command: "server -dev -dev-root-token-id=root -dev-listen-address=0.0.0.0:8200"
+    # command: "server -dev -dev-root-token-id=root -dev-listen-address=0.0.0.0:8200"
+    command: "/vault-dev-init.sh"
     networks:
       - vcv-network
     volumes:
       - vault-data:/vault
+      - ./vault-dev-init.sh:/vault-dev-init.sh:ro
 
   backend:
     build:
