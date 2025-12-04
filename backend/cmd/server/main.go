@@ -31,11 +31,19 @@ func main() {
 		Msg("Configuration loaded")
 
 	r := chi.NewRouter()
-	vaultClient := vault.NewMockClient()
+	vaultClient, vaultMode, vaultError := vault.NewClientFromConfig(cfg.Vault)
+	if vaultError != nil {
+		log.Error().Err(vaultError).
+			Msg("Failed to initialize Vault client, falling back to mock")
+		vaultClient = vault.NewMockClient()
+		vaultMode = "mock"
+	}
 
 	log.Info().
-		Str("vault_mode", "mock").
-		Msg("Using mock Vault client")
+		Str("vault_mode", vaultMode).
+		Str("vault_addr", cfg.Vault.Addr).
+		Str("vault_mount", cfg.Vault.PKIMount).
+		Msg("Vault client initialized")
 
 	// Middleware
 	r.Use(middleware.RequestID)

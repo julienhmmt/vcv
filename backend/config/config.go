@@ -37,6 +37,7 @@ type VaultConfig struct {
 	Addr         string
 	PKIMount     string
 	EnableRevoke bool
+	ReadToken    string
 }
 
 // Load reads configuration from environment variables.
@@ -131,6 +132,7 @@ func loadVaultConfig() VaultConfig {
 		Addr:         getEnv("VAULT_ADDR", ""),
 		PKIMount:     getEnv("VAULT_PKI_MOUNT", "pki"),
 		EnableRevoke: enableRevoke,
+		ReadToken:    getEnv("VAULT_READ_TOKEN", ""),
 	}
 }
 

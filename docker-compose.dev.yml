@@ -2,6 +2,7 @@
 services:
   vault:
     image: hashicorp/vault:1.21.1
+    container_name: vault
     ports:
       - "8200:8200/tcp"
     environment:
@@ -27,6 +28,7 @@ services:
       - PORT=52000
       - VAULT_ADDR=http://vault:8200
       - VAULT_PKI_MOUNT=pki
+      - VAULT_READ_TOKEN=root
       - ENABLE_REVOKE=true
     depends_on:
       - vault
