@@ -1,0 +1,32 @@
+---
+services:
+  vcv:
+    image: jhmmt/vcv:1.0
+    container_name: vcv
+    restart: unless-stopped
+    ports:
+      - "52000:52000/tcp"
+    environment:
+      - APP_ENV=prod
+      - LOG_LEVEL=info
+      - LOG_FORMAT=json
+      # Log file path (required if LOG_OUTPUT is 'file' or 'both')
+      # - LOG_FILE_PATH=/var/log/app/vcv.log
+      - LOG_OUTPUT=stdout # 'file', 'stdout' or 'both'
+      - PORT=52000
+      - VAULT_ADDR=${VAULT_ADDR:?VAULT_ADDR is required}
+      - VAULT_PKI_MOUNT=${VAULT_PKI_MOUNT:-pki}
+      - VAULT_READ_TOKEN=${VAULT_READ_TOKEN:?VAULT_READ_TOKEN is required}
+      - VAULT_TLS_INSECURE=${VAULT_TLS_INSECURE:-false}
+    cap_drop:
+      - ALL
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    # volumes: # only if you have the env var LOG_OUTPUT=file 
+      # - ./vcv.log:/var/log/app/vcv.log
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 64M

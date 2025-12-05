@@ -1,0 +1,57 @@
+---
+services:
+  vault:
+    image: hashicorp/vault:1.21.1
+    container_name: vault
+    ports:
+      - "8200:8200/tcp"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    # command: "server -dev -dev-root-token-id=root -dev-listen-address=0.0.0.0:8200"
+    command: "/vault-dev-init.sh"
+    networks:
+      - vcv-network
+    volumes:
+      - ./vault-dev-init.sh:/vault-dev-init.sh:ro
+
+  app:
+    # build:
+      # context: ./app
+      # dockerfile: Dockerfile
+    image: jhmmt/vcv:dev
+    container_name: vcv
+    ports:
+      - "52000:52000/tcp"
+    networks:
+      - vcv-network
+    environment:
+      - APP_ENV=dev
+      - LOG_LEVEL=debug
+      - LOG_FORMAT=json
+      # Log file path (required if LOG_OUTPUT is 'file' or 'both')
+      - LOG_FILE_PATH=/var/log/app/vcv.log
+      - LOG_OUTPUT=both # 'file', 'stdout' or 'both'
+      - PORT=52000
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_PKI_MOUNT=pki
+      - VAULT_READ_TOKEN=root
+      - VAULT_TLS_INSECURE=true
+    depends_on:
+      - vault
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./vcv.log:/var/log/app/vcv.log
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 64M
+
+networks:
+  vcv-network:
+    driver: bridge

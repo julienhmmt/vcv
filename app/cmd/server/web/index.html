@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VaultCertsViewer</title>
+    <link rel="stylesheet" href="/assets/styles.css" />
+  </head>
+  <body>
+    <!-- Expiration notifications banner -->
+    <div id="vcv-notifications" class="vcv-notifications vcv-hidden">
+      <div class="vcv-notifications-content">
+        <span class="vcv-notifications-icon">⚠️</span>
+        <span id="vcv-notifications-text"></span>
+        <button type="button" class="vcv-notifications-close" onclick="dismissNotifications()">×</button>
+      </div>
+    </div>
+
+    <div class="vcv-layout">
+      <header class="vcv-header">
+        <div>
+          <h1 class="vcv-title">VaultCertsViewer</h1>
+          <p class="vcv-subtitle">Certificates from the configured Vault PKI mount</p>
+        </div>
+        <div class="vcv-header-right">
+          <button id="theme-toggle" class="vcv-button vcv-button--icon" type="button" title="Toggle dark mode">
+            <span id="theme-icon">🌙</span>
+          </button>
+          <select id="vcv-lang-select" class="vcv-select vcv-lang-select" aria-label="Language">
+            <option value="en">EN</option>
+            <option value="fr">FR</option>
+            <option value="es">ES</option>
+            <option value="de">DE</option>
+            <option value="it">IT</option>
+          </select>
+          <div class="vcv-filters">
+            <input
+              id="vcv-search"
+              class="vcv-input"
+              type="search"
+              placeholder="CN or SAN"
+            />
+            <select id="vcv-status-filter" class="vcv-select">
+              <option value="all">All</option>
+              <option value="valid">Valid</option>
+              <option value="expired">Expired</option>
+              <option value="revoked">Revoked</option>
+            </select>
+            <select id="vcv-expiry-filter" class="vcv-select">
+              <option value="all">All dates</option>
+              <option value="7">≤ 7 days</option>
+              <option value="30">≤ 30 days</option>
+              <option value="90">≤ 90 days</option>
+            </select>
+            <button id="refresh-btn" class="vcv-button vcv-button--icon" type="button" title="Refresh certificates">
+              <span class="vcv-refresh-icon">↻</span>
+            </button>
+            <button id="rotate-crl-btn" class="vcv-button" type="button">Rotate CRL</button>
+            <button id="download-crl-btn" class="vcv-button" type="button">Download CRL</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- Dashboard -->
+      <div id="vcv-dashboard" class="vcv-dashboard">
+        <div class="vcv-dashboard-cards">
+          <div class="vcv-card vcv-card--total">
+            <div class="vcv-card-icon">📜</div>
+            <div class="vcv-card-content">
+              <div class="vcv-card-value" id="dashboard-total">0</div>
+              <div class="vcv-card-label" id="dashboard-total-label">Total Certificates</div>
+            </div>
+          </div>
+          <div class="vcv-card vcv-card--valid">
+            <div class="vcv-card-icon">✓</div>
+            <div class="vcv-card-content">
+              <div class="vcv-card-value" id="dashboard-valid">0</div>
+              <div class="vcv-card-label" id="dashboard-valid-label">Valid</div>
+            </div>
+          </div>
+          <div class="vcv-card vcv-card--expiring">
+            <div class="vcv-card-icon">⏰</div>
+            <div class="vcv-card-content">
+              <div class="vcv-card-value" id="dashboard-expiring">0</div>
+              <div class="vcv-card-label" id="dashboard-expiring-label">Expiring Soon</div>
+            </div>
+          </div>
+          <div class="vcv-card vcv-card--expired">
+            <div class="vcv-card-icon">✗</div>
+            <div class="vcv-card-content">
+              <div class="vcv-card-value" id="dashboard-expired">0</div>
+              <div class="vcv-card-label" id="dashboard-expired-label">Expired</div>
+            </div>
+          </div>
+        </div>
+        <div class="vcv-dashboard-charts">
+          <div class="vcv-chart-container">
+            <h3 class="vcv-chart-title" id="chart-status-title">Status distribution</h3>
+            <div class="vcv-chart" id="status-chart">
+              <canvas id="status-canvas"></canvas>
+            </div>
+          </div>
+          <div class="vcv-chart-container">
+            <h3 class="vcv-chart-title" id="chart-expiry-title">Expiration timeline</h3>
+            <div class="vcv-timeline" id="expiry-timeline"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="vcv-status" class="vcv-status"></div>
+      <div id="vcv-summary" class="vcv-summary"></div>
+
+      <div class="vcv-table-wrapper">
+        <table class="vcv-table">
+          <thead>
+            <tr>
+              <th>
+                <button type="button" class="vcv-sort" data-sort-key="commonName" data-direction="asc">
+                  <span class="vcv-sort-label">Common name</span>
+                  <span class="vcv-sort-indicator" aria-hidden="true"></span>
+                </button>
+              </th>
+              <th>SAN</th>
+              <th>
+                <button type="button" class="vcv-sort" data-sort-key="createdAt" data-direction="asc">
+                  <span class="vcv-sort-label">Created</span>
+                  <span class="vcv-sort-indicator" aria-hidden="true"></span>
+                </button>
+              </th>
+              <th>
+                <button type="button" class="vcv-sort" data-sort-key="expiresAt" data-direction="asc">
+                  <span class="vcv-sort-label">Expires</span>
+                  <span class="vcv-sort-indicator" aria-hidden="true"></span>
+                </button>
+              </th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="vcv-certs-body"></tbody>
+        </table>
+      </div>
+      <div class="vcv-legend">
+        <div class="vcv-legend-item">
+          <span class="vcv-badge vcv-badge-valid">Valid</span>
+          <span class="vcv-legend-text">Not expired and not revoked.</span>
+        </div>
+        <div class="vcv-legend-item">
+          <span class="vcv-badge vcv-badge-expired">Expired</span>
+          <span class="vcv-legend-text">Past the expiration date.</span>
+        </div>
+        <div class="vcv-legend-item">
+          <span class="vcv-badge vcv-badge-revoked">Revoked</span>
+          <span class="vcv-legend-text">Explicitly revoked in Vault.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container" class="vcv-toast-container"></div>
+
+    <!-- Certificate details modal -->
+    <div id="certificate-modal" class="vcv-modal-backdrop vcv-hidden">
+      <div class="vcv-modal">
+        <div class="vcv-modal-header">
+          <h2 class="vcv-modal-title">Certificate Details</h2>
+          <button type="button" class="vcv-modal-close" onclick="closeModal()">×</button>
+        </div>
+        <div class="vcv-modal-content">
+          <div id="details-loading" class="vcv-loading vcv-hidden">
+            <div class="vcv-spinner"></div>
+            <p>Loading certificate details...</p>
+          </div>
+          <div id="details-content" class="vcv-details-content">
+            <!-- Content will be populated dynamically -->
+          </div>
+        </div>
+        <div class="vcv-modal-actions">
+          <button type="button" class="vcv-button" onclick="closeModal()">Close</button>
+          <button type="button" id="download-pem-btn" class="vcv-button vcv-button-primary">Download PEM</button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="vcv-footer">
+      <div class="vcv-footer-left">
+        <span id="vcv-footer-version" class="vcv-footer-version">—</span>
+      </div>
+      <div class="vcv-footer-right">
+        <span id="vcv-footer-vault" class="vcv-footer-pill">Vault: …</span>
+      </div>
+    </footer>
+
+    <script src="/assets/app.js"></script>
+  </body>
+</html>
