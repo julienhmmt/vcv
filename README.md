@@ -69,6 +69,26 @@ docker run -d \
 
 The UI is localized in English, French, Spanish, German, and Italian. Language is selectable in the header or via `?lang=xx`.
 
+## Export metrics to Prometheus
+
+Metrics are exposed at `/metrics` endpoint.
+
+- vcv_certificates_total{status}
+- vcv_certificate_expiry_timestamp_seconds{serial_number, common_name, status}
+- vcv_certificate_expires_in_seconds{serial_number, common_name, status}
+- vcv_certificate_expires_soon{serial_number, common_name}
+- vcv_certificate_exporter_last_scrape_success
+
+To scrape metrics, add this to your Prometheus config:
+
+```yaml
+scrape_configs:
+  - job_name: vcv
+    static_configs:
+      - targets: ['localhost:52000']
+    metrics_path: /metrics
+```
+
 ## More details
 
 - Technical documentation: [app/README.md](app/README.md)
