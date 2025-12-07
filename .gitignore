@@ -1,1 +1,5 @@
 .windsurf/
+# Golang binary
+vcv
+# App logs
+vcv.log
