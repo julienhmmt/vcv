@@ -3,3 +3,7 @@
 vcv
 # App logs
 vcv.log
+# test coverage
+coverage.out
+# test logs
+test-offline.log
