@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"vcv/internal/metrics"
 
 	"vcv/config"
 	"vcv/internal/handlers"
@@ -18,6 +19,8 @@ import (
 	"vcv/middleware"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func main() {
@@ -48,6 +51,10 @@ func main() {
 		Str("vault_addr", cfg.Vault.Addr).
 		Str("vault_mount", cfg.Vault.PKIMount).
 		Msg("Vault client initialized")
+
+	registry := prometheus.NewRegistry()
+	registry.MustRegister(prometheus.NewGoCollector())
+	registry.MustRegister(metrics.NewCertificateCollector(vaultClient))
 
 	webFS, fsError := fs.Sub(embeddedWeb, "web")
 	if fsError != nil {
@@ -103,6 +110,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(version.Info())
 	})
+	r.Get("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP)
 	handlers.RegisterI18nRoutes(r)
 	handlers.RegisterCertRoutes(r, vaultClient)
 
