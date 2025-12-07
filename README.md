@@ -73,11 +73,16 @@ The UI is localized in English, French, Spanish, German, and Italian. Language i
 
 Metrics are exposed at `/metrics` endpoint.
 
-- vcv_certificates_total{status}
-- vcv_certificate_expiry_timestamp_seconds{serial_number, common_name, status}
+- vcv_cache_size
 - vcv_certificate_expires_in_seconds{serial_number, common_name, status}
 - vcv_certificate_expires_soon{serial_number, common_name}
+- vcv_certificate_expiry_timestamp_seconds{serial_number, common_name, status}
 - vcv_certificate_exporter_last_scrape_success
+- vcv_certificates_expired_count
+- vcv_certificates_expires_soon_count
+- vcv_certificates_last_fetch_timestamp_seconds
+- vcv_certificates_total{status}
+- vcv_vault_connected
 
 To scrape metrics, add this to your Prometheus config:
 
@@ -87,6 +92,75 @@ scrape_configs:
     static_configs:
       - targets: ['localhost:52000']
     metrics_path: /metrics
+```
+
+Example:
+
+```bash
+$ curl -v http://localhost:52000/metrics
+...
+# HELP vcv_cache_size Number of items currently cached
+# TYPE vcv_cache_size gauge
+vcv_cache_size 0
+# HELP vcv_certificate_expires_in_seconds Seconds until certificate expiration (zero when expired)
+# TYPE vcv_certificate_expires_in_seconds gauge
+vcv_certificate_expires_in_seconds{common_name="api.internal",serial_number="52:e3:c0:23:ba:f4:51:ae:1b:59:24:4a:d1:03:e1:a7:8a:96:a7:80",status="active"} 2.591970625948906e+06
+vcv_certificate_expires_in_seconds{common_name="example.internal",serial_number="35:1b:ff:d3:e2:f3:53:14:b1:7f:9e:d3:77:a6:25:72:a2:63:15:99",status="active"} 2.591970625948906e+06
+vcv_certificate_expires_in_seconds{common_name="expired.internal",serial_number="74:5a:ed:76:98:b1:c8:e3:d7:a5:bb:a2:67:7f:f6:4f:2a:31:48:18",status="active"} 0
+vcv_certificate_expires_in_seconds{common_name="expiring-soon.internal",serial_number="36:c6:0b:ef:2c:a5:2f:08:89:6a:13:fe:2a:9e:43:84:38:a4:a9:af",status="active"} 86370.625948906
+vcv_certificate_expires_in_seconds{common_name="expiring-week.internal",serial_number="47:c9:8f:71:2a:d7:14:49:96:64:af:d6:15:ec:e9:86:a6:59:cf:26",status="active"} 604770.625948906
+vcv_certificate_expires_in_seconds{common_name="revoked.internal",serial_number="2d:08:41:de:10:5a:21:0e:63:0d:5d:8e:f9:4e:ce:4b:7b:31:2e:2d",status="revoked"} 2.591973625948906e+06
+vcv_certificate_expires_in_seconds{common_name="vcv.local",serial_number="48:88:7a:6a:65:85:85:8b:0a:2a:12:7f:a7:6f:dc:62:3a:f2:7a:ba",status="active"} 3.1535969625948906e+07
+# HELP vcv_certificate_expires_soon Certificate expires soon within threshold window (1=true,0=false)
+# TYPE vcv_certificate_expires_soon gauge
+vcv_certificate_expires_soon{common_name="api.internal",serial_number="52:e3:c0:23:ba:f4:51:ae:1b:59:24:4a:d1:03:e1:a7:8a:96:a7:80"} 1
+vcv_certificate_expires_soon{common_name="example.internal",serial_number="35:1b:ff:d3:e2:f3:53:14:b1:7f:9e:d3:77:a6:25:72:a2:63:15:99"} 1
+vcv_certificate_expires_soon{common_name="expired.internal",serial_number="74:5a:ed:76:98:b1:c8:e3:d7:a5:bb:a2:67:7f:f6:4f:2a:31:48:18"} 0
+vcv_certificate_expires_soon{common_name="expiring-soon.internal",serial_number="36:c6:0b:ef:2c:a5:2f:08:89:6a:13:fe:2a:9e:43:84:38:a4:a9:af"} 1
+vcv_certificate_expires_soon{common_name="expiring-week.internal",serial_number="47:c9:8f:71:2a:d7:14:49:96:64:af:d6:15:ec:e9:86:a6:59:cf:26"} 1
+vcv_certificate_expires_soon{common_name="revoked.internal",serial_number="2d:08:41:de:10:5a:21:0e:63:0d:5d:8e:f9:4e:ce:4b:7b:31:2e:2d"} 0
+vcv_certificate_expires_soon{common_name="vcv.local",serial_number="48:88:7a:6a:65:85:85:8b:0a:2a:12:7f:a7:6f:dc:62:3a:f2:7a:ba"} 0
+# HELP vcv_certificate_expiry_timestamp_seconds Certificate expiration timestamp in seconds since epoch
+# TYPE vcv_certificate_expiry_timestamp_seconds gauge
+vcv_certificate_expiry_timestamp_seconds{common_name="api.internal",serial_number="52:e3:c0:23:ba:f4:51:ae:1b:59:24:4a:d1:03:e1:a7:8a:96:a7:80",status="active"} 1.767710142e+09
+vcv_certificate_expiry_timestamp_seconds{common_name="example.internal",serial_number="35:1b:ff:d3:e2:f3:53:14:b1:7f:9e:d3:77:a6:25:72:a2:63:15:99",status="active"} 1.767710142e+09
+vcv_certificate_expiry_timestamp_seconds{common_name="expired.internal",serial_number="74:5a:ed:76:98:b1:c8:e3:d7:a5:bb:a2:67:7f:f6:4f:2a:31:48:18",status="active"} 1.765118144e+09
+vcv_certificate_expiry_timestamp_seconds{common_name="expiring-soon.internal",serial_number="36:c6:0b:ef:2c:a5:2f:08:89:6a:13:fe:2a:9e:43:84:38:a4:a9:af",status="active"} 1.765204542e+09
+vcv_certificate_expiry_timestamp_seconds{common_name="expiring-week.internal",serial_number="47:c9:8f:71:2a:d7:14:49:96:64:af:d6:15:ec:e9:86:a6:59:cf:26",status="active"} 1.765722942e+09
+vcv_certificate_expiry_timestamp_seconds{common_name="revoked.internal",serial_number="2d:08:41:de:10:5a:21:0e:63:0d:5d:8e:f9:4e:ce:4b:7b:31:2e:2d",status="revoked"} 1.767710145e+09
+vcv_certificate_expiry_timestamp_seconds{common_name="vcv.local",serial_number="48:88:7a:6a:65:85:85:8b:0a:2a:12:7f:a7:6f:dc:62:3a:f2:7a:ba",status="active"} 1.796654141e+09
+# HELP vcv_certificate_exporter_last_scrape_success Whether the last scrape succeeded (1) or failed (0)
+# TYPE vcv_certificate_exporter_last_scrape_success gauge
+vcv_certificate_exporter_last_scrape_success 1
+# HELP vcv_certificates_expired_count Number of expired certificates
+# TYPE vcv_certificates_expired_count gauge
+vcv_certificates_expired_count 1
+# HELP vcv_certificates_expires_soon_count Number of certificates expiring soon within threshold window
+# TYPE vcv_certificates_expires_soon_count gauge
+vcv_certificates_expires_soon_count 4
+# HELP vcv_certificates_last_fetch_timestamp_seconds Timestamp of last successful certificates fetch
+# TYPE vcv_certificates_last_fetch_timestamp_seconds gauge
+vcv_certificates_last_fetch_timestamp_seconds 1.765118171e+09
+# HELP vcv_certificates_total Total certificates grouped by status
+# TYPE vcv_certificates_total gauge
+vcv_certificates_total{status="active"} 6
+vcv_certificates_total{status="revoked"} 1
+# HELP vcv_vault_connected Vault connection status (1=connected,0=disconnected)
+# TYPE vcv_vault_connected gauge
+vcv_vault_connected 1
+```
+
+If you are using AlertManager, you can create alerts based on these metrics:
+
+```yaml
+- alert: VCVExpiredCerts
+  expr: vcv_certificates_expired_count > 0
+- alert: VCVExpiringSoonCerts
+  expr: vcv_certificates_expires_soon_count > 0
+- alert: VCVStaleData
+  expr: time() - vcv_certificates_last_fetch_timestamp_seconds > 3600
+- alert: VCVVaultDown
+  expr: vcv_vault_connected == 0
 ```
 
 ## More details

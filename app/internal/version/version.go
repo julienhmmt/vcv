@@ -9,6 +9,6 @@ var (
 // Info returns version information as a structured map.
 func Info() map[string]string {
 	return map[string]string{
-		"version":   Version,
+		"version": Version,
 	}
 }
