@@ -62,7 +62,7 @@ docker run -d \
   -e "LOG_FORMAT=json" \
   -e "LOG_OUTPUT=stdout" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
-  -p 52000:52000 jhmmt/vcv:1.0
+  -p 52000:52000 jhmmt/vcv:1.1
 ```
 
 ## Multilingue

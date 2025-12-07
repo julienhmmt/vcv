@@ -62,7 +62,7 @@ docker run -d \
   -e "VAULT_TLS_INSECURE=true" \
   -e "LOG_LEVEL=info" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
-  -p 52000:52000 jhmmt/vcv:1.0
+  -p 52000:52000 jhmmt/vcv:1.1
 ```
 
 ## Translations
