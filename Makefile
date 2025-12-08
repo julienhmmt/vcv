@@ -34,7 +34,12 @@ docker-build: ## Construit les images docker (arm64 et amd64) et push sur Docker
 	@echo "Building Docker images for multiple architectures..."
 	@echo "Usage: make docker-build VCV_TAG=your-tag"
 	@echo "Default tag: latest"
-	@docker buildx build --platform linux/amd64,linux/arm64 --build-arg VERSION=$(VCV_TAG) -t jhmmt/vcv:$(or $(VCV_TAG),latest)
+	@docker buildx build \
+		--platform linux/amd64,linux/arm64 \
+		--build-arg VERSION=$(VCV_TAG) \
+		-t jhmmt/vcv:$(or $(VCV_TAG),latest) \
+		--push \
+		./app
 
 test-offline: ## Run unit tests offline (no Vault) with coverage
 	cd app && go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic
