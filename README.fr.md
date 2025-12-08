@@ -29,9 +29,9 @@ Dans HashiCorp Vault, créez un rôle et un jeton en lecture seule pour l'API af
 
 ```bash
 vault policy write vcv - <<'EOF'
-path "pki/certs"   { capabilities = ["list"] }
-path "pki/cert/*"  { capabilities = ["read"] }
-path "sys/health"  { capabilities = ["read"] }
+path "pki/certs"    { capabilities = ["list"] }
+path "pki/certs/*"  { capabilities = ["read","list"] }
+path "sys/health"   { capabilities = ["read"] }
 EOF
 vault write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
 vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
@@ -41,7 +41,15 @@ Ce jeton dédié limite les droits à la consultation des certificats, peut êtr
 
 ### docker-compose
 
-Récupérez le fichier `docker-compose.yml` et placez-le dans un répertoire de votre machine. Lancez ensuite la commande suivante :
+Récupérez le fichier `docker-compose.yml`, placez-le dans un répertoire de votre machine, et créez un fichier `.env` avec les variables suivantes.
+
+```text
+VAULT_ADDR=<you vault address>
+VAULT_READ_TOKEN=<previously generated token>
+VAULT_PKI_MOUNT=<pki engine name>
+```
+
+Lancez ensuite la commande suivante :
 
 ```bash
 docker compose up -d

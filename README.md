@@ -27,9 +27,9 @@ In HashiCorp Vault, create a read-only role and token for the API to reach the t
 
 ```bash
 vault policy write vcv - <<'EOF'
-path "pki/certs"   { capabilities = ["list"] }
-path "pki/cert/*"  { capabilities = ["read"] }
-path "sys/health"  { capabilities = ["read"] }
+path "pki/certs"    { capabilities = ["list"] }
+path "pki/certs/*"  { capabilities = ["read","list"] }
+path "sys/health"   { capabilities = ["read"] }
 EOF
 vault write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
 vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
@@ -39,7 +39,15 @@ This dedicated token limits permissions to certificate listing/reading, can be r
 
 ### docker-compose
 
-Grab `docker-compose.yml`, put it in a directory, then run:
+Grab `docker-compose.yml`, put it in a directory and create `.env` file with these variables:
+
+```text
+VAULT_ADDR=<you vault address>
+VAULT_READ_TOKEN=<previously generated token>
+VAULT_PKI_MOUNT=<pki engine name>
+```
+
+then launch instance:
 
 ```bash
 docker compose up -d
