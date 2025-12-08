@@ -28,7 +28,7 @@ In HashiCorp Vault, create a read-only role and token for the API to reach the t
 ```bash
 vault policy write vcv - <<'EOF'
 path "pki/certs"   { capabilities = ["list"] }
-path "pki/cert/*"  { capabilities = ["read"] }
+path "pki/certs/*"  { capabilities = ["read","list"] }
 path "sys/health"  { capabilities = ["read"] }
 EOF
 vault write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
