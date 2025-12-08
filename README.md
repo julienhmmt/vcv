@@ -39,7 +39,15 @@ This dedicated token limits permissions to certificate listing/reading, can be r
 
 ### docker-compose
 
-Grab `docker-compose.yml`, put it in a directory, then run:
+Grab `docker-compose.yml`, put it in a directory and create `.env` file with these variables:
+
+```text
+VAULT_ADDR=<you vault address>
+VAULT_READ_TOKEN=<previously generated token>
+VAULT_PKI_MOUNT=<pki engine name>
+```
+
+then launch instance:
 
 ```bash
 docker compose up -d

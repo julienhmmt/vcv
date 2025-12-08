@@ -41,7 +41,15 @@ Ce jeton dédié limite les droits à la consultation des certificats, peut êtr
 
 ### docker-compose
 
-Récupérez le fichier `docker-compose.yml` et placez-le dans un répertoire de votre machine. Lancez ensuite la commande suivante :
+Récupérez le fichier `docker-compose.yml`, placez-le dans un répertoire de votre machine, et créez un fichier `.env` avec les variables suivantes.
+
+```text
+VAULT_ADDR=<you vault address>
+VAULT_READ_TOKEN=<previously generated token>
+VAULT_PKI_MOUNT=<pki engine name>
+```
+
+Lancez ensuite la commande suivante :
 
 ```bash
 docker compose up -d
