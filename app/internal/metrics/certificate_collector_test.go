@@ -60,15 +60,15 @@ func TestCollector_SuccessMetrics(t *testing.T) {
 	assertGauge(t, registry, "vcv_certificate_exporter_last_scrape_success", nil, 1.0)
 	assertGauge(t, registry, "vcv_vault_connected", nil, 1.0)
 	assertGauge(t, registry, "vcv_certificates_expired_count", nil, 1.0)
-	assertGauge(t, registry, "vcv_certificates_expires_soon_count", nil, 1.0)
 	assertGauge(t, registry, "vcv_certificates_total", map[string]string{"status": "active"}, 3.0)
 	assertGauge(t, registry, "vcv_certificates_total", map[string]string{"status": "revoked"}, 1.0)
 
-	// Per-certificate expiry flag for the "soon" cert
-	assertGauge(t, registry, "vcv_certificate_expires_soon", map[string]string{
+	// Per-certificate expiry timestamp for the "soon" cert
+	assertGauge(t, registry, "vcv_certificate_expiry_timestamp_seconds", map[string]string{
 		"serial_number": "active-soon",
 		"common_name":   "soon",
-	}, 1.0)
+		"status":        "active",
+	}, float64(now.Add(10*24*time.Hour).Unix()))
 
 	mockVault.AssertExpectations(t)
 }
