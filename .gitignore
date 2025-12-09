@@ -1,4 +1,5 @@
 .windsurf/
+.DS_Store
 # Golang binary
 vcv
 # App logs

@@ -162,4 +162,8 @@ You can adjust the "soon" window (here 14 days) directly in PromQL without chang
 
 ## Picture of the app
 
-<img width="3024" height="2807" alt="VaultCertsViewer" src="https://github.com/user-attachments/assets/8b097046-d921-4b1d-a270-f86e8be5fc36" />
+![VaultCertsViewer v1.1](img/VaultCertsViewer-v1.1.png)
+
+![VaultCertsViewer v1.1 - Light Mode](img/VaultCertsViewer-v1.1-lightMode.png)
+
+![VaultCertsViewer v1.1 - Dark Mode](img/VaultCertsViewer-v1.1-darkMode.png)
