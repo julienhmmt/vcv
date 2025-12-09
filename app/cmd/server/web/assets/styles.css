@@ -12,7 +12,7 @@ body {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   min-height: 100vh;
   color: #1e293b;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-family: system-ui, -apple-system, sans-serif;
   line-height: 1.5;
 }
 
@@ -602,7 +602,6 @@ body {
 .vcv-detail-value {
   font-size: 0.875rem;
   color: #1e293b;
-  word-break: break-word;
 }
 
 .vcv-detail-value code {
@@ -674,13 +673,14 @@ body {
   position: sticky;
   top: 0;
   z-index: 50;
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  border-bottom: 1px solid #f59e0b;
+  background: linear-gradient(135deg, #fed7aa 0%, #fdba74 40%, #fb923c 100%);
+  border-bottom: 1px solid #f97316;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.2);
   animation: slideDown 0.3s ease-out;
 }
 
 .vcv-notifications--critical {
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 40%, #fca5a5 100%);
   border-bottom-color: #ef4444;
 }
 
@@ -1275,13 +1275,15 @@ body {
 }
 
 [data-theme="dark"] .vcv-notifications {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.3) 100%);
-  border-bottom-color: #f59e0b;
+  background: linear-gradient(135deg, #451a03 0%, #7c2d12 40%, #ea580c 100%);
+  border-bottom-color: #f97316;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55);
 }
 
 [data-theme="dark"] .vcv-notifications--critical {
-  background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.3) 100%);
-  border-bottom-color: #ef4444;
+  background: linear-gradient(135deg, #450a0a 0%, #7f1d1d 40%, #dc2626 100%);
+  border-bottom-color: #f97373;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.6);
 }
 
 [data-theme="dark"] .vcv-highlight {
