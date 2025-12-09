@@ -12,7 +12,10 @@ body {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
   min-height: 100vh;
   color: #1e293b;
-  font-family: system-ui, -apple-system, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    sans-serif;
   line-height: 1.5;
 }
 
@@ -70,7 +73,9 @@ body {
   background: white;
   font-size: 0.875rem;
   color: #1e293b;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
 .vcv-input:focus,
@@ -131,10 +136,6 @@ body {
   color: #0f172a;
 }
 
-.vcv-button-ghost:hover:not(:disabled) {
-  background: #e2e8f0;
-}
-
 .vcv-button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
@@ -152,12 +153,6 @@ body {
 
 [data-theme="dark"] .vcv-page-info {
   color: #cbd5e1;
-}
-
-[data-theme="dark"] .vcv-button-ghost {
-  background: #1f2937;
-  border-color: #334155;
-  color: #e2e8f0;
 }
 
 [data-theme="dark"] .vcv-button-ghost:hover:not(:disabled) {
@@ -185,6 +180,9 @@ body {
   cursor: pointer;
 }
 
+.vcv-button-ghost:hover:not(:disabled) {
+  background: #e2e8f0;
+}
 
 .vcv-button-small {
   height: 1.75rem;
@@ -198,7 +196,6 @@ body {
   padding: 0;
 }
 
-.vcv-button-primary,
 .vcv-button-primary {
   background: #22c55e;
   border: none;
@@ -232,7 +229,9 @@ body {
 .vcv-table-wrapper {
   background: white;
   border-radius: 1rem;
-  box-shadow: 0 4px 6px -1px rgb(0, 0, 0, 5%), 0 2px 4px -1px rgb(0, 0, 0, 3%);
+  box-shadow:
+    0 4px 6px -1px rgb(0, 0, 0, 5%),
+    0 2px 4px -1px rgb(0, 0, 0, 3%);
   overflow: hidden;
   border: 1px solid rgb(226, 232, 240, 80%);
 }
@@ -266,7 +265,6 @@ body {
   border-bottom: none;
 }
 
-
 .vcv-table td:last-child {
   white-space: nowrap;
 }
@@ -298,7 +296,6 @@ body {
   gap: 0.25rem;
 }
 
-
 .vcv-sort-indicator::before {
   content: "";
   opacity: 0.5;
@@ -308,12 +305,14 @@ body {
   color: #10b981;
 }
 
-.vcv-sort[data-active="true"][data-direction="asc"] .vcv-sort-indicator::before {
+.vcv-sort[data-active="true"][data-direction="asc"]
+  .vcv-sort-indicator::before {
   content: "↑";
   opacity: 1;
 }
 
-.vcv-sort[data-active="true"][data-direction="desc"] .vcv-sort-indicator::before {
+.vcv-sort[data-active="true"][data-direction="desc"]
+  .vcv-sort-indicator::before {
   content: "↓";
   opacity: 1;
 }
@@ -433,7 +432,9 @@ body {
   border-radius: 0.5rem;
   font-size: 0.8125rem;
   font-weight: 500;
-  box-shadow: 0 10px 15px -3px rgb(0, 0, 0, 10%), 0 4px 6px -2px rgb(0, 0, 0, 5%);
+  box-shadow:
+    0 10px 15px -3px rgb(0, 0, 0, 10%),
+    0 4px 6px -2px rgb(0, 0, 0, 5%);
   animation: toast-in 0.2s ease-out;
 }
 
@@ -530,7 +531,9 @@ body {
   color: #94a3b8;
   font-size: 1.25rem;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .vcv-modal-close:hover {
@@ -605,7 +608,7 @@ body {
 }
 
 .vcv-detail-value code {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
   font-size: 0.8125rem;
   background: #f1f5f9;
   padding: 0.125rem 0.375rem;
@@ -619,7 +622,7 @@ body {
   background: #0f172a;
   color: #e2e8f0;
   border-radius: 0.5rem;
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-family: "JetBrains Mono", "Fira Code", monospace;
   font-size: 0.75rem;
   line-height: 1.6;
   overflow-x: auto;
@@ -648,7 +651,9 @@ body {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Utilities */
@@ -1082,7 +1087,6 @@ body {
   border-bottom-color: #334155;
 }
 
-
 [data-theme="dark"] .vcv-sort {
   color: #94a3b8;
 }
@@ -1167,7 +1171,9 @@ body {
 [data-theme="dark"] .vcv-footer {
   background: rgb(30, 41, 59, 90%);
   border-color: rgb(148, 163, 184, 28%);
-  box-shadow: 0 20px 45px -22px rgba(0, 0, 0, 0.6), 0 10px 25px -18px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 20px 45px -22px rgba(0, 0, 0, 0.6),
+    0 10px 25px -18px rgba(0, 0, 0, 0.45);
 }
 
 [data-theme="dark"] .vcv-footer-label {
@@ -1287,7 +1293,11 @@ body {
 }
 
 [data-theme="dark"] .vcv-highlight {
-  background: linear-gradient(135deg, rgb(250, 204, 21, 30%) 0%, rgb(234, 179, 8, 40%) 100%);
+  background: linear-gradient(
+    135deg,
+    rgb(250, 204, 21, 30%) 0%,
+    rgb(234, 179, 8, 40%) 100%
+  );
 }
 
 [data-theme="dark"] .vcv-summary {
