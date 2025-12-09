@@ -73,9 +73,25 @@ docker run -d \
   -p 52000:52000 jhmmt/vcv:1.1
 ```
 
+## Seuils d'expiration des certificats
+
+Par défaut, VaultCertsViewer alerte sur les certificats expirant dans **7 jours** (critique) et **30 jours** (avertissement). Vous pouvez personnaliser ces seuils avec les variables d'environnement :
+
+```text
+VCV_EXPIRE_CRITICAL=14    # Seuil d'alerte critique (jours)
+VCV_EXPIRE_WARNING=60     # Seuil d'alerte avertissement (jours)
+```
+
+Ces valeurs contrôlent :
+
+- La banneau de notification en haut de la page
+- Le code couleur dans le tableau des certificats (rouge pour critique, jaune pour avertissement)
+- La visualisation de la chronologie sur le tableau de bord
+- Le nombre de certificats « expirant bientôt » dans le tableau de bord
+
 ## Multilingue
 
-L’UI est localisée en anglais, français, espagnol, allemand et italien. La langue se choisit dans l’en-tête ou via `?lang=xx`.
+L'UI est localisée en anglais, français, espagnol, allemand et italien. La langue se choisit dans l'en-tête ou via `?lang=xx`.
 
 ## Exporter des métriques vers Prometheus
 

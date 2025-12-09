@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -18,13 +19,14 @@ const (
 
 // Config holds application configuration.
 type Config struct {
-	Env       Environment
-	Port      string
-	LogLevel  string
-	LogFormat string
-	LogOutput string
-	CORS      CORSConfig
-	Vault     VaultConfig
+	Env                  Environment
+	Port                 string
+	LogLevel             string
+	LogFormat            string
+	LogOutput            string
+	CORS                 CORSConfig
+	Vault                VaultConfig
+	ExpirationThresholds ExpirationThresholds
 }
 
 // CORSConfig holds CORS-specific configuration.
@@ -40,6 +42,12 @@ type VaultConfig struct {
 	TLSInsecure bool
 }
 
+// ExpirationThresholds holds certificate expiration alert thresholds (in days).
+type ExpirationThresholds struct {
+	Critical int
+	Warning  int
+}
+
 // Load reads configuration from environment variables.
 func Load() Config {
 	_ = godotenv.Load()
@@ -47,13 +55,14 @@ func Load() Config {
 	env := parseEnv(getEnv("APP_ENV", "dev"))
 
 	cfg := Config{
-		Env:       env,
-		Port:      getEnv("PORT", "52000"),
-		LogLevel:  getEnv("LOG_LEVEL", defaultLogLevel(env)),
-		LogFormat: getEnv("LOG_FORMAT", defaultLogFormat(env)),
-		LogOutput: getEnv("LOG_OUTPUT", "stdout"),
-		CORS:      loadCORSConfig(env),
-		Vault:     loadVaultConfig(),
+		Env:                  env,
+		Port:                 getEnv("PORT", "52000"),
+		LogLevel:             getEnv("LOG_LEVEL", defaultLogLevel(env)),
+		LogFormat:            getEnv("LOG_FORMAT", defaultLogFormat(env)),
+		LogOutput:            getEnv("LOG_OUTPUT", "stdout"),
+		CORS:                 loadCORSConfig(env),
+		Vault:                loadVaultConfig(),
+		ExpirationThresholds: loadExpirationThresholds(),
 	}
 
 	return cfg
@@ -136,9 +145,27 @@ func loadVaultConfig() VaultConfig {
 	}
 }
 
+func loadExpirationThresholds() ExpirationThresholds {
+	critical := getEnvInt("VCV_EXPIRE_CRITICAL", 7)
+	warning := getEnvInt("VCV_EXPIRE_WARNING", 30)
+	return ExpirationThresholds{
+		Critical: critical,
+		Warning:  warning,
+	}
+}
+
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
+	}
+	return defaultValue
+}
+
+func getEnvInt(key string, defaultValue int) int {
+	if value := os.Getenv(key); value != "" {
+		if intVal, err := strconv.Atoi(value); err == nil {
+			return intVal
+		}
 	}
 	return defaultValue
 }

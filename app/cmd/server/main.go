@@ -111,6 +111,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(version.Info())
 	})
+	r.Get("/api/config", handlers.GetConfig(cfg))
 	r.Get("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP)
 	handlers.RegisterI18nRoutes(r)
 	handlers.RegisterCertRoutes(r, vaultClient)

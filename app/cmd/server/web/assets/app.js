@@ -52,6 +52,10 @@ const state = {
   theme: localStorage.getItem('vcv-theme') || 'light',
   visible: [],
   pageVisible: [],
+  expirationThresholds: {
+    critical: 7,
+    warning: 30,
+  },
 };
 
 const toastState = {
@@ -68,6 +72,22 @@ function showToast(message, type = 'info', duration = 5000) {
   
   if (duration > 0) {
     setTimeout(() => hideToast(id), duration);
+  }
+}
+
+async function loadConfig() {
+  try {
+    const response = await fetchWithRetry(`${API_BASE_URL}/api/config`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    const data = await response.json();
+    if (data.expirationThresholds) {
+      state.expirationThresholds.critical = data.expirationThresholds.critical || 7;
+      state.expirationThresholds.warning = data.expirationThresholds.warning || 30;
+    }
+  } catch (error) {
+    // Keep default values if config loading fails
   }
 }
 
@@ -184,13 +204,15 @@ function checkExpirationNotifications() {
   const now = new Date();
   const criticalCerts = [];
   const warningCerts = [];
+  const criticalThreshold = state.expirationThresholds.critical;
+  const warningThreshold = state.expirationThresholds.warning;
   
   state.certificates.forEach(cert => {
     const days = calculateDaysUntilExpiry(cert.expiresAt);
     if (days !== null && days > 0) {
-      if (days <= 7) {
+      if (days <= criticalThreshold) {
         criticalCerts.push({ name: cert.commonName, days });
-      } else if (days <= 30) {
+      } else if (days <= warningThreshold) {
         warningCerts.push({ name: cert.commonName, days });
       }
     }
@@ -204,16 +226,16 @@ function checkExpirationNotifications() {
     banner.classList.add('vcv-notifications--critical');
     text.textContent = formatMessage(
       'notificationCritical',
-      `${criticalCerts.length} certificate(s) expiring within 7 days!`,
-      { count: criticalCerts.length }
+      `${criticalCerts.length} certificate(s) expiring within ${criticalThreshold} days!`,
+      { count: criticalCerts.length, threshold: criticalThreshold }
     );
   } else if (warningCerts.length > 0) {
     banner.classList.remove('vcv-hidden');
     banner.classList.remove('vcv-notifications--critical');
     text.textContent = formatMessage(
       'notificationWarning',
-      `${warningCerts.length} certificate(s) expiring within 30 days`,
-      { count: warningCerts.length }
+      `${warningCerts.length} certificate(s) expiring within ${warningThreshold} days`,
+      { count: warningCerts.length, threshold: warningThreshold }
     );
   } else {
     banner.classList.add('vcv-hidden');
@@ -239,6 +261,7 @@ function updateDashboard() {
   };
   
   const expiringCerts = [];
+  const warningThreshold = state.expirationThresholds.warning;
   
   state.certificates.forEach(cert => {
     const statuses = getStatus(cert);
@@ -249,7 +272,7 @@ function updateDashboard() {
     if (statuses.includes('revoked')) stats.revoked++;
     
     const days = calculateDaysUntilExpiry(cert.expiresAt);
-    if (days !== null && days > 0 && days <= 30) {
+    if (days !== null && days > 0 && days <= warningThreshold) {
       stats.expiringSoon++;
       expiringCerts.push({ name: cert.commonName, days, id: cert.id });
     }
@@ -377,10 +400,13 @@ function renderExpiryTimeline(certs) {
   // Sort by days remaining
   certs.sort((a, b) => a.days - b.days);
   
+  const criticalThreshold = state.expirationThresholds.critical;
+  const warningThreshold = state.expirationThresholds.warning;
+  
   container.innerHTML = certs.slice(0, 10).map(cert => {
     let dotClass = 'vcv-timeline-dot--normal';
-    if (cert.days <= 7) dotClass = 'vcv-timeline-dot--critical';
-    else if (cert.days <= 30) dotClass = 'vcv-timeline-dot--warning';
+    if (cert.days <= criticalThreshold) dotClass = 'vcv-timeline-dot--critical';
+    else if (cert.days <= warningThreshold) dotClass = 'vcv-timeline-dot--warning';
     
     return `
       <div class="vcv-timeline-item" onclick="showCertificateDetails('${cert.id}')">
@@ -1105,9 +1131,11 @@ function renderTableRows(items) {
     expiresSpan.textContent = expiresText;
     expiresCell.appendChild(expiresSpan);
     
-    if (daysRemaining !== null && daysRemaining <= 30) {
+    const warningThreshold = state.expirationThresholds.warning;
+    const criticalThreshold = state.expirationThresholds.critical;
+    if (daysRemaining !== null && daysRemaining <= warningThreshold) {
       const daysSpan = document.createElement("div");
-      if (daysRemaining <= 7) {
+      if (daysRemaining <= criticalThreshold) {
         daysSpan.className = "vcv-days-remaining vcv-days-critical";
       } else {
         daysSpan.className = "vcv-days-remaining vcv-days-warning";
@@ -1393,6 +1421,7 @@ async function main() {
   initKeyboardShortcuts();
   initEventHandlers();
   await loadTranslations();
+  await loadConfig();
   // Load certificates in the background so the UI renders immediately
   await loadStatus();
   loadCertificates();

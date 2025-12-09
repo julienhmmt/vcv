@@ -73,6 +73,22 @@ docker run -d \
   -p 52000:52000 jhmmt/vcv:1.1
 ```
 
+## Certificate Expiration Thresholds
+
+By default, VaultCertsViewer alerts on certificates expiring within **7 days** (critical) and **30 days** (warning). You can customize these thresholds using environment variables:
+
+```text
+VCV_EXPIRE_CRITICAL=14    # Critical alert threshold (days)
+VCV_EXPIRE_WARNING=60     # Warning alert threshold (days)
+```
+
+These values control:
+
+- The notification banner at the top of the page
+- The color coding in the certificate table (red for critical, yellow for warning)
+- The timeline visualization on the dashboard
+- The "expiring soon" count in the dashboard
+
 ## Translations
 
 The UI is localized in English, French, Spanish, German, and Italian. Language is selectable in the header or via `?lang=xx`.

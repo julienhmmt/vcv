@@ -39,6 +39,9 @@ services:
       - VAULT_PKI_MOUNT=pki
       - VAULT_READ_TOKEN=root
       - VAULT_TLS_INSECURE=true
+      # Certificate expiration thresholds (in days)
+      - VCV_EXPIRE_CRITICAL=2
+      - VCV_EXPIRE_WARNING=10
     depends_on:
       - vault
     read_only: true

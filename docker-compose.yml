@@ -18,6 +18,9 @@ services:
       - VAULT_PKI_MOUNT=${VAULT_PKI_MOUNT:-pki}
       - VAULT_READ_TOKEN=${VAULT_READ_TOKEN:?VAULT_READ_TOKEN is required}
       - VAULT_TLS_INSECURE=${VAULT_TLS_INSECURE:-false}
+      # Certificate expiration thresholds (in days)
+      - VCV_EXPIRE_CRITICAL=${VCV_EXPIRE_CRITICAL:-7}
+      - VCV_EXPIRE_WARNING=${VCV_EXPIRE_WARNING:-30}
     cap_drop:
       - ALL
     read_only: true
