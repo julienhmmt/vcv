@@ -76,7 +76,7 @@ docker run -d \
   -e "VCV_EXPIRE_WARNING=30" \
   -e "LOG_LEVEL=info" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
-  -p 52000:52000 jhmmt/vcv:1.1
+  -p 52000:52000 jhmmt/vcv:1.2
 ```
 
 ## Certificate Expiration Thresholds
