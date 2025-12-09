@@ -41,6 +41,8 @@ const state = {
   selectedCertificate: null,
   sortDirection: "asc",
   sortKey: "expiresAt",
+  pageIndex: 0,
+  pageSize: "25",
   status: {
     version: "—",
     vaultConnected: null,
@@ -49,6 +51,7 @@ const state = {
   statusFilter: "all",
   theme: localStorage.getItem('vcv-theme') || 'light',
   visible: [],
+  pageVisible: [],
 };
 
 const toastState = {
@@ -498,6 +501,31 @@ function applyTranslations() {
   const chartExpiryTitle = document.getElementById("chart-expiry-title");
   if (chartExpiryTitle) {
     chartExpiryTitle.textContent = t("chartExpiryTimeline") || chartExpiryTitle.textContent;
+  }
+
+  const pageSizeLabel = document.getElementById("vcv-page-size-label");
+  if (pageSizeLabel) {
+    pageSizeLabel.textContent = t("paginationPageSizeLabel") || pageSizeLabel.textContent;
+  }
+
+  const pagePrev = document.getElementById("vcv-page-prev");
+  if (pagePrev) {
+    pagePrev.textContent = t("paginationPrev") || pagePrev.textContent;
+  }
+
+  const pageNext = document.getElementById("vcv-page-next");
+  if (pageNext) {
+    pageNext.textContent = t("paginationNext") || pageNext.textContent;
+  }
+
+  const pageSizeAll = document.querySelector('#vcv-page-size option[value="all"]');
+  if (pageSizeAll) {
+    pageSizeAll.textContent = t("paginationAll") || pageSizeAll.textContent;
+  }
+
+  const detailsTitle = document.getElementById("details-title");
+  if (detailsTitle) {
+    detailsTitle.textContent = t("modalDetailsTitle") || detailsTitle.textContent;
   }
 
   const expiryFilterSelect = document.getElementById("vcv-expiry-filter");
@@ -993,21 +1021,66 @@ function applyFilters(items) {
 
 function applyFiltersAndRender() {
   state.visible = applyFilters(state.certificates);
-  renderTable();
+  state.pageIndex = 0;
+  paginateAndRender();
   updateSummary();
   updateSortIndicators();
   updateDashboard();
   checkExpirationNotifications();
 }
 
-function renderTable() {
+function paginateAndRender() {
+  const pageSizeValue = state.pageSize;
+  const info = document.getElementById("vcv-page-info");
+  const prevBtn = document.getElementById("vcv-page-prev");
+  const nextBtn = document.getElementById("vcv-page-next");
+
+  if (pageSizeValue === "all") {
+    state.pageVisible = state.visible;
+    state.pageIndex = 0;
+    renderTableRows(state.pageVisible);
+    updateSummary();
+    if (info) {
+      info.textContent = formatMessage("paginationAll", "All results");
+    }
+    if (prevBtn) prevBtn.disabled = true;
+    if (nextBtn) nextBtn.disabled = true;
+    return;
+  }
+
+  const size = parseInt(pageSizeValue, 10) || 25;
+  const totalPages = Math.max(1, Math.ceil(state.visible.length / size));
+  state.pageIndex = Math.min(state.pageIndex, totalPages - 1);
+  const start = state.pageIndex * size;
+  const end = start + size;
+  state.pageVisible = state.visible.slice(start, end);
+
+  renderTableRows(state.pageVisible);
+  updateSummary();
+
+  if (info) {
+    info.textContent = formatMessage(
+      "paginationInfo",
+      `Page ${state.pageIndex + 1} of ${totalPages}`,
+      { current: state.pageIndex + 1, total: totalPages },
+    );
+  }
+  if (prevBtn) {
+    prevBtn.disabled = state.pageIndex === 0;
+  }
+  if (nextBtn) {
+    nextBtn.disabled = state.pageIndex >= totalPages - 1;
+  }
+}
+
+function renderTableRows(items) {
   const tbody = document.getElementById("vcv-certs-body");
   if (!tbody) {
     return;
   }
   tbody.textContent = "";
   const searchTerm = state.searchTerm.trim();
-  state.visible.forEach((certificate) => {
+  items.forEach((certificate) => {
     const row = document.createElement("tr");
 
     const cnCell = document.createElement("td");
@@ -1049,12 +1122,10 @@ function renderTable() {
     const statusCell = document.createElement("td");
     const statuses = getStatus(certificate);
     
-    // Add row classes for all statuses
     statuses.forEach(status => {
       row.classList.add(`vcv-row-${status}`);
     });
     
-    // Create badges for all statuses
     statuses.forEach(status => {
       const badge = document.createElement("span");
       badge.className = `vcv-badge vcv-badge-${status}`;
@@ -1066,14 +1137,12 @@ function renderTable() {
 
     const actionsCell = document.createElement("td");
     
-    // Details button
     const detailsButton = document.createElement("button");
     detailsButton.className = "vcv-button vcv-button--small";
     detailsButton.textContent = formatMessage("buttonDetails", "Details");
     detailsButton.onclick = () => showCertificateDetails(certificate.id);
     actionsCell.appendChild(detailsButton);
     
-    // Download PEM button
     const downloadButton = document.createElement("button");
     downloadButton.className = "vcv-button vcv-button--small vcv-button--primary";
     downloadButton.textContent = formatMessage("buttonDownloadPEM", "Download PEM");
@@ -1081,8 +1150,13 @@ function renderTable() {
     actionsCell.appendChild(downloadButton);
     
     row.appendChild(actionsCell);
+
     tbody.appendChild(row);
   });
+}
+
+function renderTable() {
+  paginateAndRender();
 }
 
 function calculateDaysUntilExpiry(expiresAt) {
@@ -1199,6 +1273,30 @@ function handleStatusFilterChange(value) {
 function handleExpiryFilterChange(value) {
   state.expiryFilter = value;
   applyFiltersAndRender();
+}
+
+function handlePageSizeChange(value) {
+  state.pageSize = value;
+  state.pageIndex = 0;
+  paginateAndRender();
+}
+
+function handlePreviousPage() {
+  if (state.pageIndex <= 0) {
+    return;
+  }
+  state.pageIndex -= 1;
+  paginateAndRender();
+}
+
+function handleNextPage() {
+  const size = state.pageSize === "all" ? state.visible.length : parseInt(state.pageSize, 10) || 25;
+  const totalPages = state.pageSize === "all" ? 1 : Math.max(1, Math.ceil(state.visible.length / size));
+  if (state.pageIndex >= totalPages - 1) {
+    return;
+  }
+  state.pageIndex += 1;
+  paginateAndRender();
 }
 
 function handleSortClick(key) {

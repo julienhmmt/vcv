@@ -84,6 +84,11 @@ type Messages struct {
 	NoData                  string `json:"noData"`
 	NotificationCritical    string `json:"notificationCritical"`
 	NotificationWarning     string `json:"notificationWarning"`
+	PaginationAll           string `json:"paginationAll"`
+	PaginationInfo          string `json:"paginationInfo"`
+	PaginationNext          string `json:"paginationNext"`
+	PaginationPageSizeLabel string `json:"paginationPageSizeLabel"`
+	PaginationPrev          string `json:"paginationPrev"`
 	RotateCRLFailed         string `json:"rotateCRLFailed"`
 	RotateCRLNetworkError   string `json:"rotateCRLNetworkError"`
 	RotateCRLSuccess        string `json:"rotateCRLSuccess"`
@@ -176,6 +181,11 @@ var englishMessages = Messages{
 	NoData:                  "No data",
 	NotificationCritical:    "{{count}} certificate(s) expiring within 7 days or less!",
 	NotificationWarning:     "{{count}} certificate(s) expiring within 30 days or less",
+	PaginationAll:           "All results",
+	PaginationInfo:          "Page {{current}} of {{total}}",
+	PaginationNext:          "Next",
+	PaginationPageSizeLabel: "Results per page",
+	PaginationPrev:          "Previous",
 	RotateCRLFailed:         "Failed to rotate CRL ({{status}})",
 	RotateCRLNetworkError:   "Network error rotating CRL. Please try again.",
 	RotateCRLSuccess:        "CRL rotated successfully",
@@ -262,6 +272,11 @@ var frenchMessages = Messages{
 	NoData:                  "Aucune donnée",
 	NotificationCritical:    "{{count}} certificat(s) expirant dans 7 jours ou moins !",
 	NotificationWarning:     "{{count}} certificat(s) expirant dans 30 jours ou moins",
+	PaginationAll:           "Tous les résultats",
+	PaginationInfo:          "Page {{current}} sur {{total}}",
+	PaginationNext:          "Suivant",
+	PaginationPageSizeLabel: "Résultats par page",
+	PaginationPrev:          "Précédent",
 	RotateCRLFailed:         "Échec de la génération de la CRL ({{status}})",
 	RotateCRLNetworkError:   "Erreur réseau lors de la génération de la CRL. Veuillez réessayer.",
 	RotateCRLSuccess:        "CRL générée avec succès",
@@ -346,8 +361,13 @@ var spanishMessages = Messages{
 	ModalDetailsTitle:       "Detalles del certificado",
 	NoCertsExpiringSoon:     "Ningún certificado caducando pronto",
 	NoData:                  "Sin datos",
-	NotificationCritical:    "¡{{count}} certificado(s) caducando en 7 días o menos!",
+	NotificationCritical:    "{{count}} certificado(s) caducando en 7 días o menos!",
 	NotificationWarning:     "{{count}} certificado(s) caducando en 30 días o menos",
+	PaginationAll:           "Todos los resultados",
+	PaginationInfo:          "Página {{current}} de {{total}}",
+	PaginationNext:          "Siguiente",
+	PaginationPageSizeLabel: "Resultados por página",
+	PaginationPrev:          "Anterior",
 	RotateCRLFailed:         "Error al rotar la CRL ({{status}})",
 	RotateCRLNetworkError:   "Error de red al rotar la CRL. Por favor intente nuevamente.",
 	RotateCRLSuccess:        "CRL rotada exitosamente",
@@ -434,6 +454,11 @@ var germanMessages = Messages{
 	NoData:                  "Keine Daten",
 	NotificationCritical:    "{{count}} Zertifikat(e) laufen in 7 Tagen oder weniger ab!",
 	NotificationWarning:     "{{count}} Zertifikat(e) laufen in 30 Tagen oder weniger ab",
+	PaginationAll:           "Alle Ergebnisse",
+	PaginationInfo:          "Seite {{current}} von {{total}}",
+	PaginationNext:          "Weiter",
+	PaginationPageSizeLabel: "Ergebnisse pro Seite",
+	PaginationPrev:          "Zurück",
 	RotateCRLFailed:         "CRL konnte nicht rotiert werden ({{status}})",
 	RotateCRLNetworkError:   "Netzwerkfehler beim Rotieren der CRL. Bitte versuchen Sie es erneut.",
 	RotateCRLSuccess:        "CRL erfolgreich rotiert",
