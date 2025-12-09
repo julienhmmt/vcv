@@ -23,7 +23,7 @@
           <p class="vcv-subtitle">Certificates from the configured Vault PKI mount</p>
         </div>
         <div class="vcv-header-right">
-          <button id="theme-toggle" class="vcv-button vcv-button--icon" type="button" title="Toggle dark mode">
+          <button id="theme-toggle" class="vcv-button vcv-button-icon" type="button" title="Toggle dark mode">
             <span id="theme-icon">🌙</span>
           </button>
           <select id="vcv-lang-select" class="vcv-select vcv-lang-select" aria-label="Language">
@@ -52,7 +52,7 @@
               <option value="30">≤ 30 days</option>
               <option value="90">≤ 90 days</option>
             </select>
-            <button id="refresh-btn" class="vcv-button vcv-button--icon" type="button" title="Refresh certificates">
+            <button id="refresh-btn" class="vcv-button vcv-button-icon" type="button" title="Refresh certificates">
               <span class="vcv-refresh-icon">↻</span>
             </button>
             <button id="rotate-crl-btn" class="vcv-button" type="button">Rotate CRL</button>
@@ -64,28 +64,28 @@
       <!-- Dashboard -->
       <div id="vcv-dashboard" class="vcv-dashboard">
         <div class="vcv-dashboard-cards">
-          <div class="vcv-card vcv-card--total">
+          <div class="vcv-card vcv-card-total">
             <div class="vcv-card-icon">📜</div>
             <div class="vcv-card-content">
               <div class="vcv-card-value" id="dashboard-total">0</div>
               <div class="vcv-card-label" id="dashboard-total-label">Total Certificates</div>
             </div>
           </div>
-          <div class="vcv-card vcv-card--valid">
+          <div class="vcv-card vcv-card-valid">
             <div class="vcv-card-icon">✓</div>
             <div class="vcv-card-content">
               <div class="vcv-card-value" id="dashboard-valid">0</div>
               <div class="vcv-card-label" id="dashboard-valid-label">Valid</div>
             </div>
           </div>
-          <div class="vcv-card vcv-card--expiring">
+          <div class="vcv-card vcv-card-expiring">
             <div class="vcv-card-icon">⏰</div>
             <div class="vcv-card-content">
               <div class="vcv-card-value" id="dashboard-expiring">0</div>
               <div class="vcv-card-label" id="dashboard-expiring-label">Expiring Soon</div>
             </div>
           </div>
-          <div class="vcv-card vcv-card--expired">
+          <div class="vcv-card vcv-card-expired">
             <div class="vcv-card-icon">✗</div>
             <div class="vcv-card-content">
               <div class="vcv-card-value" id="dashboard-expired">0</div>
@@ -120,9 +120,9 @@
           <option value="all">All</option>
         </select>
         <div class="vcv-page-buttons">
-          <button type="button" id="vcv-page-prev" class="vcv-button vcv-button--small vcv-button--ghost vcv-button--pill">Previous</button>
+          <button type="button" id="vcv-page-prev" class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill">Previous</button>
           <span id="vcv-page-info" class="vcv-page-info"></span>
-          <button type="button" id="vcv-page-next" class="vcv-button vcv-button--small vcv-button--ghost vcv-button--pill">Next</button>
+          <button type="button" id="vcv-page-next" class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill">Next</button>
         </div>
       </div>
 

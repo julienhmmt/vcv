@@ -127,10 +127,10 @@ function renderStatusFooter() {
 
   if (state.status.vaultConnected) {
     vaultEl.textContent = formatMessage("footerVaultConnected", "Vault: connected");
-    vaultEl.className = "vcv-footer-pill vcv-footer-pill--ok";
+    vaultEl.className = "vcv-footer-pill vcv-footer-pill-ok";
   } else {
     vaultEl.textContent = formatMessage("footerVaultDisconnected", "Vault: disconnected");
-    vaultEl.className = "vcv-footer-pill vcv-footer-pill--error";
+    vaultEl.className = "vcv-footer-pill vcv-footer-pill-error";
     if (state.status.vaultError) {
       vaultEl.title = state.status.vaultError;
     }
@@ -150,7 +150,7 @@ function renderToasts() {
   if (!container) return;
   
   container.innerHTML = toastState.toasts.map(toast => `
-    <div class="vcv-toast vcv-toast--${toast.type}" data-toast-id="${toast.id}">
+    <div class="vcv-toast vcv-toast-${toast.type}" data-toast-id="${toast.id}">
       <span>${toast.message}</span>
       <button class="vcv-toast-close" onclick="hideToast(${toast.id})">×</button>
     </div>
@@ -223,7 +223,7 @@ function checkExpirationNotifications() {
   
   if (criticalCerts.length > 0) {
     banner.classList.remove('vcv-hidden');
-    banner.classList.add('vcv-notifications--critical');
+    banner.classList.add('vcv-notifications-critical');
     text.textContent = formatMessage(
       'notificationCritical',
       `${criticalCerts.length} certificate(s) expiring within ${criticalThreshold} days!`,
@@ -231,7 +231,7 @@ function checkExpirationNotifications() {
     );
   } else if (warningCerts.length > 0) {
     banner.classList.remove('vcv-hidden');
-    banner.classList.remove('vcv-notifications--critical');
+    banner.classList.remove('vcv-notifications-critical');
     text.textContent = formatMessage(
       'notificationWarning',
       `${warningCerts.length} certificate(s) expiring within ${warningThreshold} days`,
@@ -404,9 +404,9 @@ function renderExpiryTimeline(certs) {
   const warningThreshold = state.expirationThresholds.warning;
   
   container.innerHTML = certs.slice(0, 10).map(cert => {
-    let dotClass = 'vcv-timeline-dot--normal';
-    if (cert.days <= criticalThreshold) dotClass = 'vcv-timeline-dot--critical';
-    else if (cert.days <= warningThreshold) dotClass = 'vcv-timeline-dot--warning';
+    let dotClass = 'vcv-timeline-dot-normal';
+    if (cert.days <= criticalThreshold) dotClass = 'vcv-timeline-dot-critical';
+    else if (cert.days <= warningThreshold) dotClass = 'vcv-timeline-dot-warning';
     
     return `
       <div class="vcv-timeline-item" onclick="showCertificateDetails('${cert.id}')">
@@ -1166,13 +1166,13 @@ function renderTableRows(items) {
     const actionsCell = document.createElement("td");
     
     const detailsButton = document.createElement("button");
-    detailsButton.className = "vcv-button vcv-button--small";
+    detailsButton.className = "vcv-button vcv-button-small";
     detailsButton.textContent = formatMessage("buttonDetails", "Details");
     detailsButton.onclick = () => showCertificateDetails(certificate.id);
     actionsCell.appendChild(detailsButton);
     
     const downloadButton = document.createElement("button");
-    downloadButton.className = "vcv-button vcv-button--small vcv-button--primary";
+    downloadButton.className = "vcv-button vcv-button-small vcv-button-primary";
     downloadButton.textContent = formatMessage("buttonDownloadPEM", "Download PEM");
     downloadButton.onclick = () => downloadCertificatePEM(certificate.id);
     actionsCell.appendChild(downloadButton);
