@@ -45,7 +45,11 @@ Grab `docker-compose.yml`, put it in a directory and create `.env` file with the
 VAULT_ADDR=<you vault address>
 VAULT_READ_TOKEN=<previously generated token>
 VAULT_PKI_MOUNT=<pki engine name>
+VCV_EXPIRE_CRITICAL=7
+VCV_EXPIRE_WARNING=30
 ```
+
+Do not forget to change the values with yours.
 
 then launch instance:
 
@@ -68,6 +72,8 @@ docker run -d \
   -e "VAULT_READ_TOKEN=changeme" \
   -e "VAULT_PKI_MOUNT=changeme" \
   -e "VAULT_TLS_INSECURE=true" \
+  -e "VCV_EXPIRE_CRITICAL=7" \
+  -e "VCV_EXPIRE_WARNING=30" \
   -e "LOG_LEVEL=info" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
   -p 52000:52000 jhmmt/vcv:1.1

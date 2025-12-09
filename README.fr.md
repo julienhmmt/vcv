@@ -47,7 +47,11 @@ Récupérez le fichier `docker-compose.yml`, placez-le dans un répertoire de vo
 VAULT_ADDR=<you vault address>
 VAULT_READ_TOKEN=<previously generated token>
 VAULT_PKI_MOUNT=<pki engine name>
+VCV_EXPIRE_CRITICAL=7
+VCV_EXPIRE_WARNING=30
 ```
+
+N'oubliez pas de changer les valeurs par vos propres valeurs.
 
 Lancez ensuite la commande suivante :
 
@@ -63,12 +67,16 @@ Lancez rapidement le container avec cette commande:
 
 ```bash
 docker run -d \
+  -e "APP_ENV=prod" \
+  -e "LOG_FORMAT=json" \
+  -e "LOG_OUTPUT=stdout" \
   -e "VAULT_ADDR=http://changeme:8200" \
   -e "VAULT_READ_TOKEN=changeme" \
   -e "VAULT_PKI_MOUNT=changeme" \
+  -e "VAULT_TLS_INSECURE=true" \
+  -e "VCV_EXPIRE_CRITICAL=7" \
+  -e "VCV_EXPIRE_WARNING=30" \
   -e "LOG_LEVEL=info" \
-  -e "LOG_FORMAT=json" \
-  -e "LOG_OUTPUT=stdout" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
   -p 52000:52000 jhmmt/vcv:1.1
 ```
