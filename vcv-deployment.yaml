@@ -41,9 +41,9 @@ spec:
               protocol: TCP
           env:
             - name: APP_ENV
-              value: "dev"
+              value: "prod"
             - name: LOG_LEVEL
-              value: "debug"
+              value: "info"
             - name: LOG_FORMAT
               value: "json"
             - name: LOG_OUTPUT
@@ -52,15 +52,19 @@ spec:
               value: "52000"
             - name: VAULT_ADDR
               value: "http://vault:8200"
-            - name: VAULT_PKI_MOUNT
-              value: "pki"
+            - name: VAULT_PKI_MOUNTS
+              value: "pki,pki2"
             - name: VAULT_READ_TOKEN
               valueFrom:
                 secretKeyRef:
                   name: vcv-vault-token
                   key: VAULT_READ_TOKEN
             - name: VAULT_TLS_INSECURE
-              value: "true"
+              value: "false"
+            - name: VCV_EXPIRE_CRITICAL
+              value: "7"
+            - name: VCV_EXPIRE_WARNING
+              value: "30"
           resources:
             requests:
               cpu: "100m"
