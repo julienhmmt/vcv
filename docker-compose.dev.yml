@@ -1,4 +1,8 @@
 ---
+# Multi-Vault development environment for VCV testing
+# Currently VCV connects only to vault:8200 (single Vault instance)
+# Additional Vaults (vault-dev-2, vault-dev-3) are infrastructure prep
+# for future multi-Vault support when VCV supports VAULT_ADDRS or similar
 services:
   vault:
     image: hashicorp/vault:1.21.1
@@ -16,6 +20,38 @@ services:
       - vcv-network
     volumes:
       - ./vault-dev-init.sh:/vault-dev-init.sh:ro
+
+  vault-dev-2:
+    image: hashicorp/vault:1.21.1
+    container_name: vault-dev-2
+    ports:
+      - "8201:8200/tcp"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: "/vault-dev-init-2.sh"
+    networks:
+      - vcv-network
+    volumes:
+      - ./vault-dev-init-2.sh:/vault-dev-init-2.sh:ro
+
+  vault-dev-3:
+    image: hashicorp/vault:1.21.1
+    container_name: vault-dev-3
+    ports:
+      - "8202:8200/tcp"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: "/vault-dev-init-3.sh"
+    networks:
+      - vcv-network
+    volumes:
+      - ./vault-dev-init-3.sh:/vault-dev-init-3.sh:ro
 
   app:
     # build:
