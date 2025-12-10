@@ -556,6 +556,18 @@ function applyTranslations() {
     statusFilterLabel.textContent = t("statusFilterTitle") || statusFilterLabel.textContent;
   }
 
+  const statusFilterSelect = document.getElementById("vcv-status-filter");
+  if (statusFilterSelect) {
+    const allOption = statusFilterSelect.querySelector('option[value="all"]');
+    const validOption = statusFilterSelect.querySelector('option[value="valid"]');
+    const expiredOption = statusFilterSelect.querySelector('option[value="expired"]');
+    const revokedOption = statusFilterSelect.querySelector('option[value="revoked"]');
+    if (allOption) allOption.textContent = t("statusFilterAll") || allOption.textContent;
+    if (validOption) validOption.textContent = t("statusFilterValid") || validOption.textContent;
+    if (expiredOption) expiredOption.textContent = t("statusFilterExpired") || expiredOption.textContent;
+    if (revokedOption) revokedOption.textContent = t("statusFilterRevoked") || revokedOption.textContent;
+  }
+
   const pageSizeAll = document.querySelector('#vcv-page-size option[value="all"]');
   if (pageSizeAll) {
     pageSizeAll.textContent = t("paginationAll") || pageSizeAll.textContent;
@@ -1186,6 +1198,7 @@ function paginateAndRender() {
   const info = document.getElementById("vcv-page-info");
   const prevBtn = document.getElementById("vcv-page-prev");
   const nextBtn = document.getElementById("vcv-page-next");
+  const countBadge = document.getElementById("vcv-page-count");
 
   if (pageSizeValue === "all") {
     state.pageVisible = state.visible;
@@ -1194,6 +1207,10 @@ function paginateAndRender() {
     updateSummary();
     if (info) {
       info.textContent = formatMessage("paginationAll", "All results");
+    }
+    if (countBadge) {
+      countBadge.textContent = `${state.visible.length}`;
+      countBadge.classList.toggle("vcv-hidden", state.visible.length === 0);
     }
     if (prevBtn) prevBtn.disabled = true;
     if (nextBtn) nextBtn.disabled = true;
@@ -1222,6 +1239,10 @@ function paginateAndRender() {
   }
   if (nextBtn) {
     nextBtn.disabled = state.pageIndex >= totalPages - 1;
+  }
+  if (countBadge) {
+    countBadge.textContent = `${state.visible.length}`;
+    countBadge.classList.toggle("vcv-hidden", state.visible.length === 0);
   }
 }
 
@@ -1505,6 +1526,16 @@ function initEventHandlers() {
   const nextBtn = document.getElementById("vcv-page-next");
   if (nextBtn) {
     nextBtn.addEventListener("click", handleNextPage);
+  }
+
+  // Mount modal backdrop close
+  const mountModal = document.getElementById("mount-modal");
+  if (mountModal) {
+    mountModal.addEventListener("click", (e) => {
+      if (e.target === mountModal) {
+        closeMountModal();
+      }
+    });
   }
 
   // Sort buttons

@@ -273,21 +273,17 @@ body {
   padding: 0 0.5rem;
 }
 
-.vcv-pagination-controls {
+.vcv-table-footer {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin: 1rem 0;
+  justify-content: space-between;
+  gap: 1rem;
   padding: 0.75rem 1rem;
+  margin: 1rem 0;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 0.75rem;
   box-shadow: 0 8px 24px rgb(15, 23, 42, 4%);
-}
-
-.vcv-pagination-controls label {
-  font-weight: 600;
-  color: #0f172a;
 }
 
 .vcv-page-buttons {
@@ -302,6 +298,11 @@ body {
   color: #64748b;
   min-width: 8rem;
   text-align: center;
+}
+
+.vcv-page-count {
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .vcv-button-pill {
@@ -320,14 +321,10 @@ body {
   opacity: 0.6;
 }
 
-[data-theme="dark"] .vcv-pagination-controls {
+[data-theme="dark"] .vcv-table-footer {
   background: #0f172a;
   border-color: #334155;
   box-shadow: 0 10px 28px rgb(0, 0, 0, 55%);
-}
-
-[data-theme="dark"] .vcv-pagination-controls label {
-  color: #e2e8f0;
 }
 
 [data-theme="dark"] .vcv-page-info {
