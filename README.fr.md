@@ -186,8 +186,8 @@ Vous pouvez adapter librement la fenêtre « bientôt » (ici 14 jours) direct
 
 ## Picture of the app
 
-![VaultCertsViewer v1.1](img/VaultCertsViewer-v1.1.png)
+![VaultCertsViewer v1.2](img/VaultCertsViewer-v1.2.png)
 
-![VaultCertsViewer v1.1 - Light Mode](img/VaultCertsViewer-v1.1-lightMode.png)
+![VaultCertsViewer v1.2 - Light Mode](img/VaultCertsViewer-v1.2-light.png)
 
-![VaultCertsViewer v1.1 - Dark Mode](img/VaultCertsViewer-v1.1-darkMode.png)
+![VaultCertsViewer v1.2 - Dark Mode](img/VaultCertsViewer-v1.2-dark.png)
