@@ -42,7 +42,7 @@ docker-build: ## Construit les images docker (arm64 et amd64) et push sur Docker
 		./app
 
 test-offline: ## Run unit tests offline (no Vault) with coverage
-	cd app && go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic
+	cd app && go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out
 
 test-dev: ## Run tests against dev stack (docker-compose)
-	cd app && VAULT_ADDR=http://localhost:8200 VAULT_TOKEN=root go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic
+	cd app && VAULT_ADDR=http://localhost:8200 VAULT_TOKEN=root go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out
