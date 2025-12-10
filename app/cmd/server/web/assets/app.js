@@ -43,6 +43,8 @@ const state = {
   sortKey: "expiresAt",
   pageIndex: 0,
   pageSize: "25",
+  selectedMounts: [], // Array of selected mount names
+  availableMounts: [], // Array of available mount names from config
   status: {
     version: "—",
     vaultConnected: null,
@@ -85,6 +87,11 @@ async function loadConfig() {
     if (data.expirationThresholds) {
       state.expirationThresholds.critical = data.expirationThresholds.critical || 7;
       state.expirationThresholds.warning = data.expirationThresholds.warning || 30;
+    }
+    if (data.pkiMounts) {
+      state.availableMounts = data.pkiMounts;
+      // Initialize selectedMounts with all available mounts
+      state.selectedMounts = [...data.pkiMounts];
     }
   } catch (error) {
     // Keep default values if config loading fails
@@ -544,6 +551,11 @@ function applyTranslations() {
     pageNext.textContent = t("paginationNext") || pageNext.textContent;
   }
 
+  const statusFilterLabel = document.getElementById("vcv-status-filter-label");
+  if (statusFilterLabel) {
+    statusFilterLabel.textContent = t("statusFilterTitle") || statusFilterLabel.textContent;
+  }
+
   const pageSizeAll = document.querySelector('#vcv-page-size option[value="all"]');
   if (pageSizeAll) {
     pageSizeAll.textContent = t("paginationAll") || pageSizeAll.textContent;
@@ -801,9 +813,123 @@ function updateSortIndicators() {
   });
 }
 
+// Mount selection functions
+function toggleMount(mount) {
+  const index = state.selectedMounts.indexOf(mount);
+  if (index > -1) {
+    state.selectedMounts.splice(index, 1);
+  } else {
+    state.selectedMounts.push(mount);
+  }
+  renderMountSelector();
+  renderMountModalList();
+  loadCertificates(); // Reload certificates with new mount filter
+}
+
+function selectAllMounts() {
+  state.selectedMounts = [...state.availableMounts];
+  renderMountSelector();
+  renderMountModalList();
+  loadCertificates();
+}
+
+function deselectAllMounts() {
+  state.selectedMounts = [];
+  renderMountSelector();
+  renderMountModalList();
+  loadCertificates();
+}
+
+function renderMountSelector() {
+  const container = document.getElementById('mount-selector');
+  if (!container) return;
+
+  const totalMounts = state.availableMounts.length;
+  const selectedCount = state.selectedMounts.length;
+  const label = formatMessage("mountSelectorTitle", "PKI Engines");
+  const summary = totalMounts === 0
+    ? formatMessage("noData", "No data")
+    : selectedCount === 0
+      ? formatMessage("deselectAll", "Deselect All")
+      : selectedCount === totalMounts
+        ? formatMessage("selectAll", "Select All")
+        : `${selectedCount}/${totalMounts}`;
+
+  container.innerHTML = `
+    <button type="button" class="vcv-button vcv-button-ghost vcv-mount-trigger" onclick="openMountModal()">
+      <span class="vcv-mount-trigger-label">${label}</span>
+      <span class="vcv-badge vcv-badge-neutral">${summary}</span>
+    </button>
+  `;
+}
+
+function renderMountModalList() {
+  const listContainer = document.getElementById('mount-modal-list');
+  if (!listContainer) return;
+
+  const isAllSelected = state.selectedMounts.length === state.availableMounts.length;
+  const isNoneSelected = state.selectedMounts.length === 0;
+
+  const title = document.getElementById('mount-modal-title');
+  if (title) {
+    title.textContent = formatMessage("mountSelectorTitle", "PKI Engines");
+  }
+
+  const closeBtn = document.getElementById("mount-close");
+  if (closeBtn) {
+    closeBtn.textContent = formatMessage("buttonClose", "Close");
+  }
+
+  const actions = document.querySelectorAll('.vcv-modal-actions .vcv-button');
+  actions.forEach((btn) => {
+    if (btn.id === "mount-select-all") {
+      btn.disabled = isAllSelected;
+      btn.textContent = formatMessage("selectAll", "Select All");
+    }
+    if (btn.id === "mount-deselect-all") {
+      btn.disabled = isNoneSelected;
+      btn.textContent = formatMessage("deselectAll", "Deselect All");
+    }
+  });
+
+  const items = state.availableMounts.map((mount) => {
+    const isSelected = state.selectedMounts.includes(mount);
+    const checkedAttr = isSelected ? "checked" : "";
+    const selectedClass = isSelected ? "selected" : "";
+    return `
+      <label class="vcv-mount-modal-option ${selectedClass}">
+        <input type="checkbox" ${checkedAttr} onchange="toggleMount('${mount}')">
+        <span class="vcv-mount-modal-name">${mount}</span>
+      </label>
+    `;
+  });
+
+  listContainer.innerHTML = items.join("") || `<p class="vcv-empty">${formatMessage("noData", "No data")}</p>`;
+}
+
+function openMountModal() {
+  const modal = document.getElementById("mount-modal");
+  if (!modal) return;
+  renderMountModalList();
+  modal.classList.remove("vcv-hidden");
+}
+
+function closeMountModal() {
+  const modal = document.getElementById("mount-modal");
+  if (!modal) return;
+  modal.classList.add("vcv-hidden");
+}
+
 async function loadCertificates() {
   try {
-    const response = await fetchWithRetry(`${API_BASE_URL}/api/certs`);
+    // Build URL with mount filter if any mounts are selected
+    let url = `${API_BASE_URL}/api/certs`;
+    if (state.selectedMounts.length > 0 && state.selectedMounts.length < state.availableMounts.length) {
+      const mountParams = state.selectedMounts.join(',');
+      url += `?mounts=${encodeURIComponent(mountParams)}`;
+    }
+    
+    const response = await fetchWithRetry(url);
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -1365,6 +1491,22 @@ function initEventHandlers() {
     expiryFilter.addEventListener("change", (e) => handleExpiryFilterChange(e.target.value));
   }
 
+  // Page size
+  const pageSizeSelect = document.getElementById("vcv-page-size");
+  if (pageSizeSelect) {
+    pageSizeSelect.addEventListener("change", (e) => handlePageSizeChange(e.target.value));
+  }
+
+  // Pagination buttons
+  const prevBtn = document.getElementById("vcv-page-prev");
+  if (prevBtn) {
+    prevBtn.addEventListener("click", handlePreviousPage);
+  }
+  const nextBtn = document.getElementById("vcv-page-next");
+  if (nextBtn) {
+    nextBtn.addEventListener("click", handleNextPage);
+  }
+
   // Sort buttons
   document.querySelectorAll(".vcv-sort").forEach((button) => {
     button.addEventListener("click", () => {
@@ -1422,6 +1564,7 @@ async function main() {
   initEventHandlers();
   await loadTranslations();
   await loadConfig();
+  renderMountSelector(); // Initialize mount selector after config is loaded
   // Load certificates in the background so the UI renders immediately
   await loadStatus();
   loadCertificates();
@@ -1434,6 +1577,9 @@ main();
 window.closeModal = closeModal;
 window.showCertificateDetails = showCertificateDetails;
 window.downloadCertificatePEM = downloadCertificatePEM;
+window.toggleMount = toggleMount;
+window.selectAllMounts = selectAllMounts;
+window.deselectAllMounts = deselectAllMounts;
 window.hideToast = hideToast;
 window.dismissNotifications = dismissNotifications;
 window.toggleTheme = toggleTheme;

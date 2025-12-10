@@ -15,6 +15,7 @@ type ConfigResponse struct {
 		Critical int `json:"critical"`
 		Warning  int `json:"warning"`
 	} `json:"expirationThresholds"`
+	PKIMounts []string `json:"pkiMounts"`
 }
 
 // GetConfig returns the application configuration.
@@ -25,6 +26,7 @@ func GetConfig(cfg config.Config) http.HandlerFunc {
 		resp := ConfigResponse{}
 		resp.ExpirationThresholds.Critical = cfg.ExpirationThresholds.Critical
 		resp.ExpirationThresholds.Warning = cfg.ExpirationThresholds.Warning
+		resp.PKIMounts = cfg.Vault.PKIMounts
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)

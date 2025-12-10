@@ -44,6 +44,7 @@ type Messages struct {
 	DaysRemaining           string `json:"daysRemaining"`
 	DaysRemainingShort      string `json:"daysRemainingShort"`
 	DaysRemainingSingular   string `json:"daysRemainingSingular"`
+	DeselectAll             string `json:"deselectAll"`
 	DownloadCRLFailed       string `json:"downloadCRLFailed"`
 	DownloadCRLNetworkError string `json:"downloadCRLNetworkError"`
 	DownloadPEMFailed       string `json:"downloadPEMFailed"`
@@ -80,6 +81,7 @@ type Messages struct {
 	LoadUnexpectedFormat    string `json:"loadUnexpectedFormat"`
 	LoadingDetails          string `json:"loadingDetails"`
 	ModalDetailsTitle       string `json:"modalDetailsTitle"`
+	MountSelectorTitle      string `json:"mountSelectorTitle"`
 	NoCertsExpiringSoon     string `json:"noCertsExpiringSoon"`
 	NoData                  string `json:"noData"`
 	NotificationCritical    string `json:"notificationCritical"`
@@ -93,7 +95,9 @@ type Messages struct {
 	RotateCRLNetworkError   string `json:"rotateCRLNetworkError"`
 	RotateCRLSuccess        string `json:"rotateCRLSuccess"`
 	SearchPlaceholder       string `json:"searchPlaceholder"`
+	SelectAll               string `json:"selectAll"`
 	StatusFilterAll         string `json:"statusFilterAll"`
+	StatusFilterTitle       string `json:"statusFilterTitle"`
 	StatusFilterExpired     string `json:"statusFilterExpired"`
 	StatusFilterRevoked     string `json:"statusFilterRevoked"`
 	StatusFilterValid       string `json:"statusFilterValid"`
@@ -141,6 +145,7 @@ var englishMessages = Messages{
 	DaysRemaining:           "{{days}} days remaining",
 	DaysRemainingShort:      "{{days}}d",
 	DaysRemainingSingular:   "{{days}} day remaining",
+	DeselectAll:             "Deselect all",
 	DownloadCRLFailed:       "Failed to download CRL ({{status}})",
 	DownloadCRLNetworkError: "Network error downloading CRL. Please try again.",
 	DownloadPEMFailed:       "Failed to download certificate PEM ({{status}})",
@@ -177,6 +182,7 @@ var englishMessages = Messages{
 	LoadUnexpectedFormat:    "Unexpected response format from server",
 	LoadingDetails:          "Loading certificate details...",
 	ModalDetailsTitle:       "Certificate Details",
+	MountSelectorTitle:      "PKI Engines",
 	NoCertsExpiringSoon:     "No certificates expiring soon",
 	NoData:                  "No data",
 	NotificationCritical:    "{{count}} certificate(s) expiring within {{threshold}} days or less!",
@@ -190,6 +196,8 @@ var englishMessages = Messages{
 	RotateCRLNetworkError:   "Network error rotating CRL. Please try again.",
 	RotateCRLSuccess:        "CRL rotated successfully",
 	SearchPlaceholder:       "CN or SAN",
+	SelectAll:               "Select All",
+	StatusFilterTitle:       "Status filter",
 	StatusFilterAll:         "All",
 	StatusFilterExpired:     "Expired",
 	StatusFilterRevoked:     "Revoked",
@@ -232,6 +240,7 @@ var frenchMessages = Messages{
 	DaysRemaining:           "{{days}} jours restants",
 	DaysRemainingShort:      "{{days}}j",
 	DaysRemainingSingular:   "{{days}} jour restant",
+	DeselectAll:             "Tout désélectionner",
 	DownloadCRLFailed:       "Échec du téléchargement de la CRL ({{status}})",
 	DownloadCRLNetworkError: "Erreur réseau lors du téléchargement de la CRL. Veuillez réessayer.",
 	DownloadPEMFailed:       "Échec du téléchargement du certificat PEM ({{status}})",
@@ -268,6 +277,7 @@ var frenchMessages = Messages{
 	LoadUnexpectedFormat:    "Format de réponse inattendu du serveur",
 	LoadingDetails:          "Chargement des détails du certificat...",
 	ModalDetailsTitle:       "Détails du certificat",
+	MountSelectorTitle:      "Moteurs PKI",
 	NoCertsExpiringSoon:     "Aucun certificat expirant bientôt",
 	NoData:                  "Aucune donnée",
 	NotificationCritical:    "{{count}} certificat(s) expirant dans {{threshold}} jours ou moins !",
@@ -281,6 +291,8 @@ var frenchMessages = Messages{
 	RotateCRLNetworkError:   "Erreur réseau lors de la génération de la CRL. Veuillez réessayer.",
 	RotateCRLSuccess:        "CRL générée avec succès",
 	SearchPlaceholder:       "CN ou SAN",
+	SelectAll:               "Tout sélectionner",
+	StatusFilterTitle:       "Filtre des statuts",
 	StatusFilterAll:         "Tous",
 	StatusFilterExpired:     "Expiré",
 	StatusFilterRevoked:     "Révoqué",
@@ -323,6 +335,7 @@ var spanishMessages = Messages{
 	DaysRemaining:           "{{days}} días restantes",
 	DaysRemainingShort:      "{{days}}d",
 	DaysRemainingSingular:   "{{days}} día restante",
+	DeselectAll:             "Deseleccionar todo",
 	DownloadCRLFailed:       "Error al descargar la CRL ({{status}})",
 	DownloadCRLNetworkError: "Error de red al descargar la CRL. Por favor intente nuevamente.",
 	DownloadPEMFailed:       "Error al descargar el certificado PEM ({{status}})",
@@ -359,6 +372,7 @@ var spanishMessages = Messages{
 	LoadUnexpectedFormat:    "Formato de respuesta inesperado del servidor",
 	LoadingDetails:          "Cargando detalles del certificado...",
 	ModalDetailsTitle:       "Detalles del certificado",
+	MountSelectorTitle:      "Motores PKI",
 	NoCertsExpiringSoon:     "Ningún certificado caducando pronto",
 	NoData:                  "Sin datos",
 	NotificationCritical:    "{{count}} certificado(s) caducando en {{threshold}} días o menos!",
@@ -372,6 +386,8 @@ var spanishMessages = Messages{
 	RotateCRLNetworkError:   "Error de red al rotar la CRL. Por favor intente nuevamente.",
 	RotateCRLSuccess:        "CRL rotada exitosamente",
 	SearchPlaceholder:       "CN o SAN",
+	SelectAll:               "Seleccionar todo",
+	StatusFilterTitle:       "Filtro de estado",
 	StatusFilterAll:         "Todos",
 	StatusFilterExpired:     "Caducado",
 	StatusFilterRevoked:     "Revocado",
@@ -414,6 +430,7 @@ var germanMessages = Messages{
 	DaysRemaining:           "{{days}} verbleibende Tage",
 	DaysRemainingShort:      "{{days}}T",
 	DaysRemainingSingular:   "{{days}} verbleibender Tag",
+	DeselectAll:             "Alle abwählen",
 	DownloadCRLFailed:       "CRL konnte nicht heruntergeladen werden ({{status}})",
 	DownloadCRLNetworkError: "Netzwerkfehler beim Herunterladen der CRL. Bitte versuchen Sie es erneut.",
 	DownloadPEMFailed:       "Zertifikat-PEM konnte nicht heruntergeladen werden ({{status}})",
@@ -450,6 +467,7 @@ var germanMessages = Messages{
 	LoadUnexpectedFormat:    "Unerwartetes Antwortformat vom Server",
 	LoadingDetails:          "Zertifikatsdetails werden geladen...",
 	ModalDetailsTitle:       "Zertifikatsdetails",
+	MountSelectorTitle:      "PKI-Motoren",
 	NoCertsExpiringSoon:     "Keine Zertifikate, die bald ablaufen",
 	NoData:                  "Keine Daten",
 	NotificationCritical:    "{{count}} Zertifikat(e) laufen in {{threshold}} Tagen oder weniger ab!",
@@ -463,6 +481,8 @@ var germanMessages = Messages{
 	RotateCRLNetworkError:   "Netzwerkfehler beim Rotieren der CRL. Bitte versuchen Sie es erneut.",
 	RotateCRLSuccess:        "CRL erfolgreich rotiert",
 	SearchPlaceholder:       "CN oder SAN",
+	SelectAll:               "Alle auswählen",
+	StatusFilterTitle:       "Statusfilter",
 	StatusFilterAll:         "Alle",
 	StatusFilterExpired:     "Abgelaufen",
 	StatusFilterRevoked:     "Widerrufen",
@@ -505,6 +525,7 @@ var italianMessages = Messages{
 	DaysRemaining:           "{{days}} giorni rimanenti",
 	DaysRemainingShort:      "{{days}}g",
 	DaysRemainingSingular:   "{{days}} giorno rimanente",
+	DeselectAll:             "Deseleziona tutto",
 	DownloadCRLFailed:       "Impossibile scaricare la CRL ({{status}})",
 	DownloadCRLNetworkError: "Errore di rete durante il download della CRL. Riprova.",
 	DownloadPEMFailed:       "Impossibile scaricare il certificato PEM ({{status}})",
@@ -541,14 +562,22 @@ var italianMessages = Messages{
 	LoadUnexpectedFormat:    "Formato di risposta inatteso dal server",
 	LoadingDetails:          "Caricamento dei dettagli del certificato...",
 	ModalDetailsTitle:       "Dettagli del certificato",
+	MountSelectorTitle:      "Motori PKI",
 	NoCertsExpiringSoon:     "Nessun certificato in scadenza a breve",
 	NoData:                  "Nessun dato",
 	NotificationCritical:    "{{count}} certificato/i in scadenza entro {{threshold}} giorni o meno!",
 	NotificationWarning:     "{{count}} certificato/i in scadenza entro {{threshold}} giorni o meno",
+	PaginationAll:           "Tutti i risultati",
+	PaginationInfo:          "Pagina {{current}} di {{total}}",
+	PaginationNext:          "Successivo",
+	PaginationPageSizeLabel: "Risultati per pagina",
+	PaginationPrev:          "Precedente",
 	RotateCRLFailed:         "Impossibile ruotare la CRL ({{status}})",
 	RotateCRLNetworkError:   "Errore di rete durante la rotazione della CRL. Riprova.",
 	RotateCRLSuccess:        "CRL ruotata correttamente",
 	SearchPlaceholder:       "CN o SAN",
+	SelectAll:               "Seleziona tutto",
+	StatusFilterTitle:       "Filtro di stato",
 	StatusFilterAll:         "Tutti",
 	StatusFilterExpired:     "Scaduto",
 	StatusFilterRevoked:     "Revocato",

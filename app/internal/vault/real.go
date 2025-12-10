@@ -9,6 +9,7 @@ import (
 	"encoding/pem"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"vcv/config"
@@ -20,7 +21,7 @@ import (
 
 type realClient struct {
 	client   *api.Client
-	mount    string
+	mounts   []string
 	addr     string
 	cache    *cache.Cache
 	stopChan chan struct{}
@@ -55,7 +56,7 @@ func NewClientFromConfig(cfg config.VaultConfig) (Client, error) {
 
 	c := &realClient{
 		client:   apiClient,
-		mount:    cfg.PKIMount,
+		mounts:   cfg.PKIMounts,
 		addr:     cfg.Addr,
 		cache:    cache.New(5 * time.Minute),
 		stopChan: make(chan struct{}),
@@ -109,34 +110,59 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 		}
 	}
 
-	listPath := fmt.Sprintf("%s/certs", c.mount)
+	var allCertificates []certs.Certificate
+	revokedSet := make(map[string]bool)
+
+	// Collect certificates from all mounts
+	for _, mount := range c.mounts {
+		mountCerts, mountRevoked, err := c.listCertificatesFromMount(ctx, mount)
+		if err != nil {
+			// Log error but continue with other mounts
+			continue
+		}
+		allCertificates = append(allCertificates, mountCerts...)
+		for serial := range mountRevoked {
+			revokedSet[serial] = true
+		}
+	}
+
+	sort.Slice(allCertificates, func(leftIndex, rightIndex int) bool {
+		return allCertificates[leftIndex].CommonName < allCertificates[rightIndex].CommonName
+	})
+
+	// Cache the result
+	c.cache.Set("certificates", allCertificates)
+
+	return allCertificates, nil
+}
+
+func (c *realClient) listCertificatesFromMount(_ context.Context, mount string) ([]certs.Certificate, map[string]bool, error) {
+	listPath := fmt.Sprintf("%s/certs", mount)
 	secret, err := c.client.Logical().List(listPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list certificates from Vault: %w", err)
+		return nil, nil, fmt.Errorf("failed to list certificates from mount %s: %w", mount, err)
 	}
 	if secret == nil || secret.Data == nil {
-		return []certs.Certificate{}, nil
+		return []certs.Certificate{}, make(map[string]bool), nil
 	}
 
 	rawKeys, ok := secret.Data["keys"].([]interface{})
 	if !ok {
-		return nil, fmt.Errorf("unexpected list response from Vault: missing keys array")
+		return nil, nil, fmt.Errorf("unexpected list response from Vault for mount %s: missing keys array", mount)
 	}
 
-	revokedSet, err := c.fetchRevokedSerials()
+	revokedSet, err := c.fetchRevokedSerialsFromMount(mount)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
-	result := make([]certs.Certificate, 0, len(rawKeys)+len(revokedSet))
-	seenSerials := make(map[string]bool, len(rawKeys))
+	result := make([]certs.Certificate, 0, len(rawKeys))
 	for _, value := range rawKeys {
 		serial, ok := value.(string)
 		if !ok {
 			continue
 		}
-		seenSerials[serial] = true
-		certificate, err := c.readCertificate(serial)
+		certificate, err := c.readCertificateFromMount(mount, serial)
 		if err != nil {
 			continue
 		}
@@ -146,33 +172,14 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 		result = append(result, certificate)
 	}
 
-	for serial := range revokedSet {
-		if seenSerials[serial] {
-			continue
-		}
-		certificate, err := c.readCertificate(serial)
-		if err != nil {
-			continue
-		}
-		certificate.Revoked = true
-		result = append(result, certificate)
-	}
-
-	sort.Slice(result, func(leftIndex, rightIndex int) bool {
-		return result[leftIndex].CommonName < result[rightIndex].CommonName
-	})
-
-	// Cache the result
-	c.cache.Set("certificates", result)
-
-	return result, nil
+	return result, revokedSet, nil
 }
 
-func (c *realClient) fetchRevokedSerials() (map[string]bool, error) {
-	path := fmt.Sprintf("%s/certs/revoked", c.mount)
+func (c *realClient) fetchRevokedSerialsFromMount(mount string) (map[string]bool, error) {
+	path := fmt.Sprintf("%s/certs/revoked", mount)
 	secret, err := c.client.Logical().List(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to list revoked certificates from Vault: %w", err)
+		return nil, fmt.Errorf("failed to list revoked certificates from mount %s: %w", mount, err)
 	}
 
 	serials := make(map[string]bool)
@@ -195,29 +202,29 @@ func (c *realClient) fetchRevokedSerials() (map[string]bool, error) {
 	return serials, nil
 }
 
-func (c *realClient) readCertificate(serial string) (certs.Certificate, error) {
-	path := fmt.Sprintf("%s/cert/%s", c.mount, serial)
+func (c *realClient) readCertificateFromMount(mount, serial string) (certs.Certificate, error) {
+	path := fmt.Sprintf("%s/cert/%s", mount, serial)
 	secret, err := c.client.Logical().Read(path)
 	if err != nil {
-		return certs.Certificate{}, fmt.Errorf("failed to read certificate %s from Vault: %w", serial, err)
+		return certs.Certificate{}, fmt.Errorf("failed to read certificate %s from mount %s: %w", serial, mount, err)
 	}
 	if secret == nil || secret.Data == nil {
-		return certs.Certificate{}, fmt.Errorf("certificate %s not found in Vault", serial)
+		return certs.Certificate{}, fmt.Errorf("certificate %s not found in mount %s", serial, mount)
 	}
 
 	certificatePEM, ok := secret.Data["certificate"].(string)
 	if !ok || certificatePEM == "" {
-		return certs.Certificate{}, fmt.Errorf("certificate field missing for %s", serial)
+		return certs.Certificate{}, fmt.Errorf("certificate field missing for %s in mount %s", serial, mount)
 	}
 
 	block, _ := pem.Decode([]byte(certificatePEM))
 	if block == nil {
-		return certs.Certificate{}, fmt.Errorf("failed to decode PEM for certificate %s", serial)
+		return certs.Certificate{}, fmt.Errorf("failed to decode PEM for certificate %s in mount %s", serial, mount)
 	}
 
 	x509Certificate, parseError := x509.ParseCertificate(block.Bytes)
 	if parseError != nil {
-		return certs.Certificate{}, fmt.Errorf("failed to parse certificate %s: %w", serial, parseError)
+		return certs.Certificate{}, fmt.Errorf("failed to parse certificate %s in mount %s: %w", serial, mount, parseError)
 	}
 
 	subjectAlternativeNames := make([]string, 0, len(x509Certificate.DNSNames)+len(x509Certificate.IPAddresses)+len(x509Certificate.EmailAddresses))
@@ -227,8 +234,9 @@ func (c *realClient) readCertificate(serial string) (certs.Certificate, error) {
 	}
 	subjectAlternativeNames = append(subjectAlternativeNames, x509Certificate.EmailAddresses...)
 
+	// Prefix ID with mount to avoid collisions across mounts
 	return certs.Certificate{
-		ID:         serial,
+		ID:         fmt.Sprintf("%s:%s", mount, serial),
 		CommonName: x509Certificate.Subject.CommonName,
 		Sans:       subjectAlternativeNames,
 		CreatedAt:  x509Certificate.NotBefore.UTC(),
@@ -238,6 +246,12 @@ func (c *realClient) readCertificate(serial string) (certs.Certificate, error) {
 }
 
 func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber string) (certs.DetailedCertificate, error) {
+	// Parse mount and serial from the prefixed ID
+	mount, serial, err := c.parseMountAndSerial(serialNumber)
+	if err != nil {
+		return certs.DetailedCertificate{}, err
+	}
+
 	// Try cache first
 	cacheKey := fmt.Sprintf("details_%s", serialNumber)
 	if cached, found := c.cache.Get(cacheKey); found {
@@ -246,28 +260,28 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 		}
 	}
 
-	path := fmt.Sprintf("%s/cert/%s", c.mount, serialNumber)
+	path := fmt.Sprintf("%s/cert/%s", mount, serial)
 	secret, err := c.client.Logical().Read(path)
 	if err != nil {
-		return certs.DetailedCertificate{}, fmt.Errorf("failed to read certificate %s from Vault: %w", serialNumber, err)
+		return certs.DetailedCertificate{}, fmt.Errorf("failed to read certificate %s from mount %s: %w", serial, mount, err)
 	}
 	if secret == nil || secret.Data == nil {
-		return certs.DetailedCertificate{}, fmt.Errorf("certificate %s not found in Vault", serialNumber)
+		return certs.DetailedCertificate{}, fmt.Errorf("certificate %s not found in mount %s", serial, mount)
 	}
 
 	certificatePEM, ok := secret.Data["certificate"].(string)
 	if !ok || certificatePEM == "" {
-		return certs.DetailedCertificate{}, fmt.Errorf("certificate field missing for %s", serialNumber)
+		return certs.DetailedCertificate{}, fmt.Errorf("certificate field missing for %s in mount %s", serial, mount)
 	}
 
 	block, _ := pem.Decode([]byte(certificatePEM))
 	if block == nil {
-		return certs.DetailedCertificate{}, fmt.Errorf("failed to decode PEM for certificate %s", serialNumber)
+		return certs.DetailedCertificate{}, fmt.Errorf("failed to decode PEM for certificate %s in mount %s", serial, mount)
 	}
 
 	x509Certificate, parseError := x509.ParseCertificate(block.Bytes)
 	if parseError != nil {
-		return certs.DetailedCertificate{}, fmt.Errorf("failed to parse certificate %s: %w", serialNumber, parseError)
+		return certs.DetailedCertificate{}, fmt.Errorf("failed to parse certificate %s in mount %s: %w", serial, mount, parseError)
 	}
 
 	// Calculate fingerprints
@@ -299,21 +313,21 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 	}
 
 	// Get revoked status
-	revokedSet, err := c.fetchRevokedSerials()
+	revokedSet, err := c.fetchRevokedSerialsFromMount(mount)
 	if err != nil {
 		return certs.DetailedCertificate{}, err
 	}
 
 	details := certs.DetailedCertificate{
 		Certificate: certs.Certificate{
-			ID:         serialNumber,
+			ID:         serialNumber, // Keep the prefixed ID
 			CommonName: x509Certificate.Subject.CommonName,
 			Sans:       subjectAlternativeNames,
 			CreatedAt:  x509Certificate.NotBefore.UTC(),
 			ExpiresAt:  x509Certificate.NotAfter.UTC(),
-			Revoked:    revokedSet[serialNumber],
+			Revoked:    revokedSet[serial],
 		},
-		SerialNumber:      serialNumber,
+		SerialNumber:      serial, // Store only the serial part
 		Issuer:            x509Certificate.Issuer.String(),
 		Subject:           x509Certificate.Subject.String(),
 		KeyAlgorithm:      x509Certificate.SignatureAlgorithm.String(),
@@ -330,6 +344,31 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 	return details, nil
 }
 
+func (c *realClient) parseMountAndSerial(serialNumber string) (string, string, error) {
+	// Parse mount and serial from the prefixed ID
+	// Format: "mount:serial" (e.g., "pki:1234-5678", "pki_dev:abcd-efgh")
+	// This prevents ID collisions across multiple PKI mounts
+	parts := strings.SplitN(serialNumber, ":", 2)
+	if len(parts) == 2 {
+		mount := parts[0]
+		serial := parts[1]
+
+		// Validate that the mount is configured
+		for _, configuredMount := range c.mounts {
+			if configuredMount == mount {
+				return mount, serial, nil
+			}
+		}
+		return "", "", fmt.Errorf("mount %s is not configured", mount)
+	}
+
+	// Legacy behavior: if no prefix, use the first configured mount
+	if len(c.mounts) == 0 {
+		return "", "", fmt.Errorf("no mounts configured")
+	}
+	return c.mounts[0], serialNumber, nil
+}
+
 func (c *realClient) GetCertificatePEM(ctx context.Context, serialNumber string) (certs.PEMResponse, error) {
 	details, err := c.GetCertificateDetails(ctx, serialNumber)
 	if err != nil {
@@ -337,7 +376,7 @@ func (c *realClient) GetCertificatePEM(ctx context.Context, serialNumber string)
 	}
 
 	return certs.PEMResponse{
-		SerialNumber: serialNumber,
+		SerialNumber: details.SerialNumber, // Return only the serial part
 		PEM:          details.PEM,
 	}, nil
 }
@@ -347,28 +386,44 @@ func (c *realClient) InvalidateCache() {
 }
 
 func (c *realClient) RotateCRL(ctx context.Context) error {
-	path := fmt.Sprintf("%s/crl/rotate", c.mount)
-	_, err := c.client.Logical().Read(path)
-	if err != nil {
-		return fmt.Errorf("failed to rotate CRL: %w", err)
+	var errors []string
+
+	// Rotate CRL for all configured mounts
+	for _, mount := range c.mounts {
+		path := fmt.Sprintf("%s/crl/rotate", mount)
+		_, err := c.client.Logical().Read(path)
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("mount %s: %v", mount, err))
+		}
 	}
+
+	if len(errors) > 0 {
+		return fmt.Errorf("failed to rotate CRL for some mounts: %s", strings.Join(errors, "; "))
+	}
+
 	// Clear cached data to reflect new CRL
 	c.cache.Clear()
 	return nil
 }
 
 func (c *realClient) GetCRL(ctx context.Context) ([]byte, error) {
-	path := fmt.Sprintf("%s/crl/pem", c.mount)
+	// For now, return CRL from the first configured mount
+	// In a future enhancement, we could aggregate CRLs from all mounts
+	if len(c.mounts) == 0 {
+		return nil, fmt.Errorf("no mounts configured")
+	}
+
+	path := fmt.Sprintf("%s/crl/pem", c.mounts[0])
 	secret, err := c.client.Logical().Read(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get CRL from Vault: %w", err)
+		return nil, fmt.Errorf("failed to get CRL from mount %s: %w", c.mounts[0], err)
 	}
 	if secret == nil || secret.Data == nil {
-		return nil, fmt.Errorf("CRL not found in Vault")
+		return nil, fmt.Errorf("CRL not found in mount %s", c.mounts[0])
 	}
 	crlData, ok := secret.Data["certificate"].(string)
 	if !ok || crlData == "" {
-		return nil, fmt.Errorf("CRL data missing from Vault response")
+		return nil, fmt.Errorf("CRL data missing from Vault response for mount %s", c.mounts[0])
 	}
 	c.InvalidateCache()
 	return []byte(crlData), nil

@@ -36,7 +36,7 @@ services:
       - LOG_OUTPUT=both # 'file', 'stdout' or 'both'
       - PORT=52000
       - VAULT_ADDR=http://vault:8200
-      - VAULT_PKI_MOUNT=pki
+      - VAULT_PKI_MOUNTS=pki,pki_dev,pki_stage,pki_production
       - VAULT_READ_TOKEN=root
       - VAULT_TLS_INSECURE=true
       # Certificate expiration thresholds (in days)

@@ -3,9 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
+	"vcv/internal/certs"
 	"vcv/internal/logger"
 	"vcv/internal/vault"
 	"vcv/middleware"
@@ -13,6 +15,9 @@ import (
 
 func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 	r.Get("/api/certs", func(w http.ResponseWriter, req *http.Request) {
+		// Parse mount filter from query parameters
+		selectedMounts := parseMountsQueryParam(req.URL.Query().Get("mounts"))
+
 		certificates, err := vaultClient.ListCertificates(req.Context())
 		if err != nil {
 			requestID := middleware.GetRequestID(req.Context())
@@ -22,8 +27,12 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
+
+		// Filter certificates by selected mounts
+		filteredCertificates := filterCertificatesByMounts(certificates, selectedMounts)
+
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(certificates); err != nil {
+		if err := json.NewEncoder(w).Encode(filteredCertificates); err != nil {
 			requestID := middleware.GetRequestID(req.Context())
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
@@ -34,7 +43,8 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 		requestID := middleware.GetRequestID(req.Context())
 		logger.HTTPEvent(req.Method, req.URL.Path, http.StatusOK, 0).
 			Str("request_id", requestID).
-			Int("count", len(certificates)).
+			Int("count", len(filteredCertificates)).
+			Strs("mounts", selectedMounts).
 			Msg("listed certificates")
 	})
 
@@ -166,4 +176,41 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			Str("request_id", requestID).
 			Msg("invalidated cache")
 	})
+}
+
+// parseMountsQueryParam parses the mounts query parameter and returns a list of selected mounts
+func parseMountsQueryParam(mountsParam string) []string {
+	if mountsParam == "" {
+		return nil // Return all mounts if no filter specified
+	}
+
+	mounts := strings.Split(mountsParam, ",")
+	for i := range mounts {
+		mounts[i] = strings.TrimSpace(mounts[i])
+	}
+	return mounts
+}
+
+// filterCertificatesByMounts filters certificates by the specified mounts
+func filterCertificatesByMounts(certificates []certs.Certificate, selectedMounts []string) []certs.Certificate {
+	if len(selectedMounts) == 0 {
+		return certificates // Return all certificates if no filter specified
+	}
+
+	var filtered []certs.Certificate
+	for _, cert := range certificates {
+		// Extract mount from certificate ID (format: "mount:serial")
+		parts := strings.SplitN(cert.ID, ":", 2)
+		if len(parts) >= 1 {
+			mount := parts[0]
+			for _, selectedMount := range selectedMounts {
+				if mount == selectedMount {
+					filtered = append(filtered, cert)
+					break
+				}
+			}
+		}
+	}
+
+	return filtered
 }

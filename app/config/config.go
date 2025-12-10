@@ -37,7 +37,7 @@ type CORSConfig struct {
 
 type VaultConfig struct {
 	Addr        string
-	PKIMount    string
+	PKIMounts   []string
 	ReadToken   string
 	TLSInsecure bool
 }
@@ -137,9 +137,26 @@ func loadCORSConfig(env Environment) CORSConfig {
 
 func loadVaultConfig() VaultConfig {
 	tlsInsecure := strings.ToLower(getEnv("VAULT_TLS_INSECURE", "false")) == "true"
+
+	// Support both new VAULT_PKI_MOUNTS (comma-separated) and legacy VAULT_PKI_MOUNT
+	pkiMountsStr := getEnv("VAULT_PKI_MOUNTS", "")
+	if pkiMountsStr == "" {
+		// Fallback to legacy single mount for backward compatibility
+		legacyMount := getEnv("VAULT_PKI_MOUNT", "pki")
+		pkiMountsStr = legacyMount
+	}
+
+	var pkiMounts []string
+	if pkiMountsStr != "" {
+		pkiMounts = strings.Split(pkiMountsStr, ",")
+		for i := range pkiMounts {
+			pkiMounts[i] = strings.TrimSpace(pkiMounts[i])
+		}
+	}
+
 	return VaultConfig{
 		Addr:        getEnv("VAULT_ADDR", ""),
-		PKIMount:    getEnv("VAULT_PKI_MOUNT", "pki"),
+		PKIMounts:   pkiMounts,
 		ReadToken:   getEnv("VAULT_READ_TOKEN", ""),
 		TLSInsecure: tlsInsecure,
 	}

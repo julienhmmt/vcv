@@ -50,7 +50,7 @@ func main() {
 
 	log.Info().
 		Str("vault_addr", cfg.Vault.Addr).
-		Str("vault_mount", cfg.Vault.PKIMount).
+		Strs("vault_mounts", cfg.Vault.PKIMounts).
 		Msg("Vault client initialized")
 
 	registry := prometheus.NewRegistry()

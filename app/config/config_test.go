@@ -44,7 +44,7 @@ func TestLoadFromEnv(t *testing.T) {
 	if cfg.LogLevel != "warn" || cfg.LogFormat != "json" || cfg.LogOutput != "stdout" {
 		t.Fatalf("expected log env values to be applied")
 	}
-	if cfg.Vault.Addr != "http://vault" || cfg.Vault.PKIMount != "pki" || cfg.Vault.ReadToken != "token" || !cfg.Vault.TLSInsecure {
+	if cfg.Vault.Addr != "http://vault" || len(cfg.Vault.PKIMounts) != 1 || cfg.Vault.PKIMounts[0] != "pki" || cfg.Vault.ReadToken != "token" || !cfg.Vault.TLSInsecure {
 		t.Fatalf("expected vault env values to be applied")
 	}
 	if len(cfg.CORS.AllowedOrigins) != 1 || cfg.CORS.AllowedOrigins[0] != "http://example.com" || !cfg.CORS.AllowCredentials {

@@ -15,7 +15,7 @@ services:
       - LOG_OUTPUT=stdout # 'file', 'stdout' or 'both'
       - PORT=52000
       - VAULT_ADDR=${VAULT_ADDR:?VAULT_ADDR is required}
-      - VAULT_PKI_MOUNT=${VAULT_PKI_MOUNT:-pki}
+      - VAULT_PKI_MOUNTS=${VAULT_PKI_MOUNTS:-pki}
       - VAULT_READ_TOKEN=${VAULT_READ_TOKEN:?VAULT_READ_TOKEN is required}
       - VAULT_TLS_INSECURE=${VAULT_TLS_INSECURE:-false}
       # Certificate expiration thresholds (in days)
