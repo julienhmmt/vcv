@@ -6,6 +6,11 @@ services:
     restart: unless-stopped
     ports:
       - "52000:52000/tcp"
+    # Choose one of the following:
+    # - Use .env file
+    # env_file:
+      # - .env
+    # - Use environment variables
     environment:
       - APP_ENV=prod
       - LOG_LEVEL=info
@@ -15,7 +20,7 @@ services:
       - LOG_OUTPUT=stdout # 'file', 'stdout' or 'both'
       - PORT=52000
       - VAULT_ADDR=${VAULT_ADDR:?VAULT_ADDR is required}
-      - VAULT_PKI_MOUNTS=${VAULT_PKI_MOUNTS:-pki}
+      - VAULT_PKI_MOUNTS=${VAULT_PKI_MOUNTS:-pki,pki2}
       - VAULT_READ_TOKEN=${VAULT_READ_TOKEN:?VAULT_READ_TOKEN is required}
       - VAULT_TLS_INSECURE=${VAULT_TLS_INSECURE:-false}
       # Certificate expiration thresholds (in days)

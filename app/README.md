@@ -1,6 +1,6 @@
 # VaultCertsViewer — Technical overview
 
-This document describes the technical structure of VaultCertsViewer (vcv), a single Go binary that embeds a static HTML/CSS/JS UI to browse and manage certificates from a HashiCorp Vault PKI mount.
+This document describes the technical structure of VaultCertsViewer (vcv), a single Go binary that embeds a static HTML/CSS/JS UI to browse and manage certificates from one or more HashiCorp Vault PKI mounts.
 
 ## Architecture
 
@@ -47,9 +47,11 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 | `LOG_OUTPUT` | `stdout` | Output: `stdout`, `file`, `both` |
 | `PORT` | `52000` | HTTP server port |
 | `VAULT_ADDR` | — | Vault server address (required) |
-| `VAULT_PKI_MOUNT` | `pki` | PKI mount path |
+| `VAULT_PKI_MOUNTS` | `pki,pki2` | Comma-separated PKI mount paths |
 | `VAULT_READ_TOKEN` | — | Vault read token (required) |
 | `VAULT_TLS_INSECURE` | `false` | Skip TLS verification (dev only) |
+| `VCV_EXPIRE_CRITICAL` | `7` | Critical expiration threshold (days) |
+| `VCV_EXPIRE_WARNING` | `30` | Warning expiration threshold (days) |
 
 ## Security
 

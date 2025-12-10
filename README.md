@@ -1,12 +1,13 @@
 # VaultCertsViewer
 
-VaultCertsViewer (vcv) is a lightweight web UI that lists and inspects certificates stored in a HashiCorp Vault PKI mount, especially their expiration dates and SANs.
+VaultCertsViewer (vcv) is a lightweight web UI that lists and inspects certificates stored in one or more HashiCorp Vault PKI mounts, especially their expiration dates and SANs.
 
-Currently, VaultCertsViewer (vcv) can only view one mount at a time. If you have (for example) 4 mounts, you'll need 4 instances of vcv.
+VaultCertsViewer can simultaneously monitor multiple PKI engines through a single interface, with a modal selector to choose which mounts to display. At the moment, VCV can be connected to only one Vault instance. If you have (example) five Vault instances, you have to create five VCV instances.
 
 ## What it does
 
-- Discovers all certificates in a Vault PKI and shows them in a searchable, filterable table.
+- Discovers all certificates in one or more Vault PKI mounts and shows them in a searchable, filterable table.
+- Multi-PKI engine support: Select which mounts to display via an intuitive modal interface with real-time certificate count badges.
 - Shows common names (CN) and SANs.
 - Displays status distribution (valid / expired / revoked) and upcoming expirations.
 - Highlights certificates expiring soon (7/30 days) and shows details (CN, SAN, fingerprints, issuer, validity).
@@ -23,28 +24,59 @@ The native Vault UI is heavy and not convenient for quickly checking certificate
 
 ## How to deploy and use
 
-In HashiCorp Vault, create a read-only role and token for the API to reach the target PKI engine (adjust `pki` if you use another mount):
+In HashiCorp Vault, create a read-only role and token for the API to reach the target PKI engines. For multiple mounts, you can either specify each mount explicitly or use wildcard patterns:
 
 ```bash
+# Option 1: Explicit mounts (recommended for production). Replace 'pki' and 'pki2' with your actual mount names.
 vault policy write vcv - <<'EOF'
 path "pki/certs"    { capabilities = ["list"] }
 path "pki/certs/*"  { capabilities = ["read","list"] }
+path "pki2/certs"   { capabilities = ["list"] }
+path "pki2/certs/*" { capabilities = ["read","list"] }
 path "sys/health"   { capabilities = ["read"] }
 EOF
+
+# Option 2: Wildcard pattern (for dynamic environments)
+vault policy write vcv - <<'EOF'
+path "pki*/certs"    { capabilities = ["list"] }
+path "pki*/certs/*"  { capabilities = ["read","list"] }
+path "sys/health"     { capabilities = ["read"] }
+EOF
+
 vault write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
 vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 ```
 
 This dedicated token limits permissions to certificate listing/reading, can be renewed, and is used as `VAULT_READ_TOKEN` by the app.
 
+## Multi-PKI engine support
+
+VaultCertsViewer can monitor multiple PKI engines simultaneously through a single web interface:
+
+- **Mount selection**: Click the mount selector button in the header to open a modal showing all available PKI engines
+- **Real-time counts**: Each mount displays a badge showing the number of certificates it contains
+- **Flexible configuration**: Specify mounts using comma-separated values in `VAULT_PKI_MOUNTS` (e.g., `pki,pki2,pki-prod`)
+- **Independent views**: Select or deselect any combination of mounts to customize your certificate view
+- **Dashboard**: All selected mounts are aggregated in the same table, dashboard, and metrics
+
+This approach eliminates the need to deploy multiple vcv instances when you have several PKI engines to monitor.
+
 ### docker-compose
 
 Grab `docker-compose.yml`, put it in a directory and create `.env` file with these variables:
 
 ```text
-VAULT_ADDR=<you vault address>
-VAULT_READ_TOKEN=<previously generated token>
-VAULT_PKI_MOUNT=<pki engine name>
+# Change with your actual Vault configuration
+APP_ENV=prod
+LOG_FILE_PATH=/var/log/app/vcv.log
+LOG_FORMAT=json
+LOG_LEVEL=info
+LOG_OUTPUT=stdout # 'file', 'stdout' or 'both'
+PORT=52000
+VAULT_ADDR=https://your-vault-address:8200
+VAULT_PKI_MOUNTS=pki,pki2
+VAULT_READ_TOKEN=s.YourGeneratedTokenHere
+VAULT_TLS_INSECURE=false
 VCV_EXPIRE_CRITICAL=7
 VCV_EXPIRE_WARNING=30
 ```
@@ -70,7 +102,7 @@ docker run -d \
   -e "LOG_OUTPUT=stdout" \
   -e "VAULT_ADDR=http://changeme:8200" \
   -e "VAULT_READ_TOKEN=changeme" \
-  -e "VAULT_PKI_MOUNT=changeme" \
+  -e "VAULT_PKI_MOUNTS=changeme,changeme2" \
   -e "VAULT_TLS_INSECURE=true" \
   -e "VCV_EXPIRE_CRITICAL=7" \
   -e "VCV_EXPIRE_WARNING=30" \
@@ -79,7 +111,7 @@ docker run -d \
   -p 52000:52000 jhmmt/vcv:1.2
 ```
 
-## Certificate Expiration Thresholds
+## Certificate expiration thresholds
 
 By default, VaultCertsViewer alerts on certificates expiring within **7 days** (critical) and **30 days** (warning). You can customize these thresholds using environment variables:
 

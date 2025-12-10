@@ -1,12 +1,13 @@
 # VaultCertsViewer
 
-VaultCertsViewer (vcv) est une interface web légère qui permet de lister et de consulter les certificats stockés dans un coffre ‘pki’ d'HashiCorp Vault. Elle affiche notamment les noms communs, les SAN et surtout les dates d'expiration des certificats.
+VaultCertsViewer (vcv) est une interface web légère qui permet de lister et de consulter les certificats stockés dans un ou plusieurs coffres 'pki' d'HashiCorp Vault. Elle affiche notamment les noms communs, les SAN et surtout les dates d'expiration des certificats.
 
-Actuellement, VaultCertsViewer (vcv) ne peut voir et afficher les certificats que d'un seul montage à la fois. Si vous avez (par exemple) 4 montages, il vous faudra déployer 4 instances de vcv.
+VaultCertsViewer (vcv) peut surveiller simultanément plusieurs moteurs PKI via une seule interface, avec un sélecteur modal pour choisir les montages à afficher. Pour l'instant, VCV ne peut être connecté qu'à un seul Vault. Si vous avez (par exemple) cinq instances Vault, vous devrez créez cinq instances VCV.
 
 ## Quelles sont les fonctionnalités ?
 
-- Découvre tous les certificats d’une PKI dans Vault et les affiche dans un tableau filtrable et recherchable.
+- Découvre tous les certificats d'une ou plusieurs moteurs PKI dans Vault et les affiche dans un tableau filtrable et recherchable.
+- Support multi-moteurs PKI : Sélectionnez les montages à afficher via une interface modale intuitive avec des badges de comptage de certificats en temps réel.
 - Affichage des noms communs (CN) et des SANs des certificats.
 - Affiche la répartition des statuts (valide / expiré / révoqué) et les dates d'expirations à venir.
 - Met en avant les certificats qui expirent bientôt (7/30 jours) et affiche les détails (CN, SAN, empreintes, émetteur, validité).
@@ -25,28 +26,59 @@ VaultCertsViewer permet aux équipes plateforme / sécurité / ops une vue rapid
 
 ## Comment le déployer et l'utiliser ?
 
-Dans HashiCorp Vault, créez un rôle et un jeton en lecture seule pour l'API afin d'accéder aux certificats du moteur PKI ciblé (adaptez `pki` si vous utilisez un autre point de montage) :
+Dans HashiCorp Vault, créez un rôle et un jeton en lecture seule pour l'API afin d'accéder aux certificats des moteurs PKI ciblés. Pour plusieurs montages, vous pouvez spécifier chaque montage explicitement ou utiliser des motifs génériques :
 
 ```bash
+# Option 1 : Montages explicites (recommandé pour la production). Remplacez 'pki' et 'pki2' par vos montages réels.
 vault policy write vcv - <<'EOF'
 path "pki/certs"    { capabilities = ["list"] }
 path "pki/certs/*"  { capabilities = ["read","list"] }
+path "pki2/certs"   { capabilities = ["list"] }
+path "pki2/certs/*" { capabilities = ["read","list"] }
 path "sys/health"   { capabilities = ["read"] }
 EOF
+
+# Option 2 : Motif générique (pour environnements dynamiques)
+vault policy write vcv - <<'EOF'
+path "pki*/certs"    { capabilities = ["list"] }
+path "pki*/certs/*"  { capabilities = ["read","list"] }
+path "sys/health"     { capabilities = ["read"] }
+EOF
+
 vault write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
 vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 ```
 
 Ce jeton dédié limite les droits à la consultation des certificats, peut être renouvelé et sert de valeur `VAULT_READ_TOKEN` pour l'application.
 
+## Support multi-moteurs PKI
+
+VaultCertsViewer peut surveiller simultanément plusieurs moteurs PKI via une seule interface web :
+
+- **Sélection des montages** : Cliquez sur le bouton de sélecteur de montage dans l'en-tête pour ouvrir une fenêtre modale montrant tous les moteurs PKI disponibles
+- **Comptages en temps réel** : Chaque montage affiche un badge indiquant le nombre de certificats qu'il contient
+- **Configuration flexible** : Spécifiez les montages en utilisant des valeurs séparées par des virgules dans `VAULT_PKI_MOUNTS` (par exemple, `pki,pki2,pki-prod`)
+- **Vues indépendantes** : Sélectionnez ou désélectionnez n'importe quelle combinaison de montages pour personnaliser votre vue des certificats
+- **Tableau de bord** : Tous les montages sélectionnés sont agrégés dans le même tableau, tableau de bord et métriques
+
+Cette approche élimine le besoin de déployer plusieurs instances vcv lorsque vous avez plusieurs moteurs PKI à surveiller.
+
 ### docker-compose
 
-Récupérez le fichier `docker-compose.yml`, placez-le dans un répertoire de votre machine, et créez un fichier `.env` avec les variables suivantes.
+Récupérez le fichier `docker-compose.yml`, placez-le dans un répertoire de votre machine, et utilisez soit les variables d'environnement dans le fichier docker-compose, soit créez un fichier `.env` avec les variables suivantes :
 
 ```text
-VAULT_ADDR=<you vault address>
-VAULT_READ_TOKEN=<previously generated token>
-VAULT_PKI_MOUNT=<pki engine name>
+# Change with your actual Vault configuration
+APP_ENV=prod
+LOG_FILE_PATH=/var/log/app/vcv.log
+LOG_FORMAT=json
+LOG_LEVEL=info
+LOG_OUTPUT=stdout # 'file', 'stdout' or 'both'
+PORT=52000
+VAULT_ADDR=https://your-vault-address:8200
+VAULT_PKI_MOUNTS=pki,pki2
+VAULT_READ_TOKEN=s.YourGeneratedTokenHere
+VAULT_TLS_INSECURE=false
 VCV_EXPIRE_CRITICAL=7
 VCV_EXPIRE_WARNING=30
 ```
@@ -72,7 +104,7 @@ docker run -d \
   -e "LOG_OUTPUT=stdout" \
   -e "VAULT_ADDR=http://changeme:8200" \
   -e "VAULT_READ_TOKEN=changeme" \
-  -e "VAULT_PKI_MOUNT=changeme" \
+  -e "VAULT_PKI_MOUNTS=changeme,changeme2" \
   -e "VAULT_TLS_INSECURE=true" \
   -e "VCV_EXPIRE_CRITICAL=7" \
   -e "VCV_EXPIRE_WARNING=30" \
@@ -99,7 +131,7 @@ Ces valeurs contrôlent :
 
 ## Multilingue
 
-L'UI est localisée en anglais, français, espagnol, allemand et italien. La langue se choisit dans l'en-tête ou via `?lang=xx`.
+L'UI est localisée en *anglais*, *français*, *espagnol*, *allemand* et *italien*. La langue se choisit dans l'en-tête via un bouton ou saisissant dans l'URL le composant `?lang=xx`.
 
 ## Exporter des métriques vers Prometheus
 
