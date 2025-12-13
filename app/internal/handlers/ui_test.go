@@ -171,6 +171,24 @@ func TestGetCertificatesFragment(t *testing.T) {
 				assert.Contains(t, body, "id=\"vcv-sort-dir\" value=\"desc\"")
 			},
 		},
+		{
+			name: "mounts empty returns no rows",
+			path: "/ui/certs?mounts=",
+			assertBody: func(t *testing.T, body string) {
+				assert.NotContains(t, body, "alpha.example")
+				assert.NotContains(t, body, "beta.example")
+				assert.NotContains(t, body, "gamma.example")
+			},
+		},
+		{
+			name: "mounts sentinel returns all rows",
+			path: "/ui/certs?mounts=__all__",
+			assertBody: func(t *testing.T, body string) {
+				assert.Contains(t, body, "alpha.example")
+				assert.Contains(t, body, "beta.example")
+				assert.Contains(t, body, "gamma.example")
+			},
+		},
 	}
 	for _, testCase := range tests {
 		t.Run(testCase.name, func(t *testing.T) {

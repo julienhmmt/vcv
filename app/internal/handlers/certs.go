@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -13,10 +14,12 @@ import (
 	"vcv/middleware"
 )
 
+const mountsAllSentinel = "__all__"
+
 func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 	r.Get("/api/certs", func(w http.ResponseWriter, req *http.Request) {
 		// Parse mount filter from query parameters
-		selectedMounts := parseMountsQueryParam(req.URL.Query().Get("mounts"))
+		selectedMounts := parseMountsQueryParam(req.URL.Query())
 
 		certificates, err := vaultClient.ListCertificates(req.Context())
 		if err != nil {
@@ -178,23 +181,37 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 	})
 }
 
-// parseMountsQueryParam parses the mounts query parameter and returns a list of selected mounts
-func parseMountsQueryParam(mountsParam string) []string {
-	if mountsParam == "" {
-		return nil // Return all mounts if no filter specified
+func parseMountsQueryParam(query url.Values) []string {
+	_, present := query["mounts"]
+	if !present {
+		return nil
 	}
-
-	mounts := strings.Split(mountsParam, ",")
-	for i := range mounts {
-		mounts[i] = strings.TrimSpace(mounts[i])
+	raw := strings.TrimSpace(query.Get("mounts"))
+	if raw == mountsAllSentinel {
+		return nil
+	}
+	if raw == "" {
+		return []string{}
+	}
+	parts := strings.Split(raw, ",")
+	mounts := make([]string, 0, len(parts))
+	for _, part := range parts {
+		trimmed := strings.TrimSpace(part)
+		if trimmed == "" {
+			continue
+		}
+		mounts = append(mounts, trimmed)
 	}
 	return mounts
 }
 
 // filterCertificatesByMounts filters certificates by the specified mounts
 func filterCertificatesByMounts(certificates []certs.Certificate, selectedMounts []string) []certs.Certificate {
+	if selectedMounts == nil {
+		return certificates
+	}
 	if len(selectedMounts) == 0 {
-		return certificates // Return all certificates if no filter specified
+		return []certs.Certificate{}
 	}
 
 	var filtered []certs.Certificate

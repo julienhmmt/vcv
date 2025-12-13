@@ -66,9 +66,23 @@ function detectHtmxCertsTable() {
   state.usesHtmxCertsTable = Boolean(window.htmx && certsBody && certsBody.getAttribute("hx-get") === "/ui/certs");
 }
 
+const mountsAllSentinel = "__all__";
+
 function setMountsHiddenField() {
   const mountsInput = document.getElementById("vcv-mounts");
   if (!mountsInput) {
+    return;
+  }
+  if (state.availableMounts.length === 0) {
+    mountsInput.value = mountsAllSentinel;
+    return;
+  }
+  if (state.selectedMounts.length === 0) {
+    mountsInput.value = "";
+    return;
+  }
+  if (state.selectedMounts.length === state.availableMounts.length) {
+    mountsInput.value = mountsAllSentinel;
     return;
   }
   mountsInput.value = state.selectedMounts.join(",");
@@ -1017,7 +1031,9 @@ async function loadCertificates() {
     }
     // Build URL with mount filter if any mounts are selected
     let url = `${API_BASE_URL}/api/certs`;
-    if (state.selectedMounts.length > 0 && state.selectedMounts.length < state.availableMounts.length) {
+    if (state.selectedMounts.length === 0) {
+      url += `?mounts=`;
+    } else if (state.selectedMounts.length > 0 && state.selectedMounts.length < state.availableMounts.length) {
       const mountParams = state.selectedMounts.join(',');
       url += `?mounts=${encodeURIComponent(mountParams)}`;
     }
@@ -1724,6 +1740,9 @@ async function main() {
   await loadConfig();
   renderMountSelector(); // Initialize mount selector after config is loaded
   setMountsHiddenField();
+  if (state.usesHtmxCertsTable && window.htmx) {
+    refreshHtmxCertsTable();
+  }
   // Load certificates in the background so the UI renders immediately
   const footer = document.querySelector(".vcv-footer");
   const usesHtmxStatus = Boolean(window.htmx && footer && footer.getAttribute("hx-get") === "/ui/status");

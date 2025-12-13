@@ -392,7 +392,7 @@ func parseCertsQueryState(r *http.Request) certsQueryState {
 		PageIndex:      pageIndex,
 		SortKey:        strings.TrimSpace(query.Get("sortKey")),
 		SortDirection:  strings.TrimSpace(query.Get("sortDir")),
-		SelectedMounts: parseMountsQueryParam(query.Get("mounts")),
+		SelectedMounts: parseMountsQueryParam(query),
 		PageAction:     strings.TrimSpace(query.Get("pageAction")),
 		SortRequest:    strings.TrimSpace(query.Get("sort")),
 		TriggerID:      strings.TrimSpace(r.Header.Get("HX-Trigger")),
