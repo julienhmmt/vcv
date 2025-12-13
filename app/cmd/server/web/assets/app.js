@@ -1121,6 +1121,10 @@ function updateDetailsLoadingUI() {
 async function invalidateCacheAndRefresh() {
   try {
     await fetchWithRetry(`${API_BASE_URL}/api/cache/invalidate`, { method: 'POST' });
+    if (state.usesHtmxCertsTable) {
+      refreshHtmxCertsTable();
+      return;
+    }
     await loadCertificates();
     showToast(
       formatMessage("cacheInvalidated", "Cache cleared and data refreshed"),

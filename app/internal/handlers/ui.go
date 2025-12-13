@@ -58,6 +58,10 @@ type certsFragmentTemplateData struct {
 	SortExpiresDir     string
 	PaginationPrevText string
 	PaginationNextText string
+	DashboardTotal     int
+	DashboardValid     int
+	DashboardExpiring  int
+	DashboardExpired   int
 }
 
 type certRowTemplateData struct {
@@ -114,6 +118,7 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 			return
 		}
 		filteredByMount := filterCertificatesByMounts(certificates, queryState.SelectedMounts)
+		dashboardStats := computeDashboardStats(filteredByMount, expirationThresholds)
 		sortKey, sortDirection := resolveSortState(queryState)
 		visible := applyCertificateFilters(filteredByMount, queryState, sortKey, sortDirection)
 		pageIndex := resolvePageIndex(queryState, len(visible), queryState.PageSize)
@@ -143,6 +148,10 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 			SortExpiresDir:     resolveSortDirAttribute(sortKey, sortDirection, "expiresAt"),
 			PaginationPrevText: messages.PaginationPrev,
 			PaginationNextText: messages.PaginationNext,
+			DashboardTotal:     dashboardStats.Total,
+			DashboardValid:     dashboardStats.Valid,
+			DashboardExpiring:  dashboardStats.ExpiringSoon,
+			DashboardExpired:   dashboardStats.Expired,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -588,4 +597,32 @@ func maxInt(left int, right int) int {
 		return left
 	}
 	return right
+}
+
+type dashboardStats struct {
+	Total        int
+	Valid        int
+	Expired      int
+	ExpiringSoon int
+}
+
+func computeDashboardStats(certificates []certs.Certificate, thresholds config.ExpirationThresholds) dashboardStats {
+	now := time.Now().UTC()
+	stats := dashboardStats{Total: len(certificates)}
+	for _, certificate := range certificates {
+		statuses := certificateStatuses(certificate, now)
+		if containsString(statuses, "valid") {
+			stats.Valid += 1
+		}
+		if containsString(statuses, "expired") {
+			stats.Expired += 1
+		}
+		if thresholds.Warning > 0 {
+			days := daysUntil(certificate.ExpiresAt.UTC(), now)
+			if days > 0 && days <= thresholds.Warning {
+				stats.ExpiringSoon += 1
+			}
+		}
+	}
+	return stats
 }
