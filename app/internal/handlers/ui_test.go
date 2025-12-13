@@ -29,9 +29,13 @@ func setupUIRouter(mockVault *vault.MockClient, webFS fs.FS) *chi.Mux {
 
 func TestGetCertificateDetailsUI(t *testing.T) {
 	webFS := fstest.MapFS{
-		"templates/cert-details.html":   &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div>")},
-		"templates/footer-status.html":  &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
-		"templates/certs-fragment.html": &fstest.MapFile{Data: []byte("{{range .Rows}}<div class=\"row\">{{.CommonName}}</div>{{end}}<input id=\"vcv-page\" value=\"{{.PageIndex}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-key\" value=\"{{.SortKey}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-dir\" value=\"{{.SortDirection}}\" hx-swap-oob=\"true\" />")},
+		"templates/cert-details.html":     &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div>")},
+		"templates/footer-status.html":    &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
+		"templates/certs-fragment.html":   &fstest.MapFile{Data: []byte("{{template \"certs-rows\" .}}{{template \"certs-state\" .}}{{template \"certs-pagination\" .}}{{template \"certs-sort\" .}}")},
+		"templates/certs-rows.html":       &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{range .Rows}}<div class=\"row\">{{.CommonName}}</div>{{end}}{{end}}")},
+		"templates/certs-state.html":      &fstest.MapFile{Data: []byte("{{define \"certs-state\"}}<input id=\"vcv-page\" value=\"{{.PageIndex}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-key\" value=\"{{.SortKey}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-dir\" value=\"{{.SortDirection}}\" hx-swap-oob=\"true\" />{{end}}")},
+		"templates/certs-pagination.html": &fstest.MapFile{Data: []byte("{{define \"certs-pagination\"}}{{end}}")},
+		"templates/certs-sort.html":       &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
 	}
 	tests := []struct {
 		name                 string
@@ -86,9 +90,13 @@ func TestGetCertificateDetailsUI(t *testing.T) {
 
 func TestGetCertificatesFragment(t *testing.T) {
 	webFS := fstest.MapFS{
-		"templates/cert-details.html":   &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div>")},
-		"templates/footer-status.html":  &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
-		"templates/certs-fragment.html": &fstest.MapFile{Data: []byte("{{range .Rows}}<div class=\"row\">{{.CommonName}}</div>{{end}}<input id=\"vcv-page\" value=\"{{.PageIndex}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-key\" value=\"{{.SortKey}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-dir\" value=\"{{.SortDirection}}\" hx-swap-oob=\"true\" />")},
+		"templates/cert-details.html":     &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div>")},
+		"templates/footer-status.html":    &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
+		"templates/certs-fragment.html":   &fstest.MapFile{Data: []byte("{{template \"certs-rows\" .}}{{template \"certs-state\" .}}{{template \"certs-pagination\" .}}{{template \"certs-sort\" .}}")},
+		"templates/certs-rows.html":       &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{range .Rows}}<div class=\"row\">{{.CommonName}}</div>{{end}}{{end}}")},
+		"templates/certs-state.html":      &fstest.MapFile{Data: []byte("{{define \"certs-state\"}}<input id=\"vcv-page\" value=\"{{.PageIndex}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-key\" value=\"{{.SortKey}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-dir\" value=\"{{.SortDirection}}\" hx-swap-oob=\"true\" />{{end}}")},
+		"templates/certs-pagination.html": &fstest.MapFile{Data: []byte("{{define \"certs-pagination\"}}{{end}}")},
+		"templates/certs-sort.html":       &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
 	}
 	certificates := []certs.Certificate{
 		{ID: "pki:a", CommonName: "alpha.example", Sans: []string{"alpha"}, CreatedAt: time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2026, 1, 1, 10, 0, 0, 0, time.UTC)},
