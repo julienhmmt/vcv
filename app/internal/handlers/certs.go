@@ -52,8 +52,8 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 	})
 
 	r.Get("/api/certs/{id}/details", func(w http.ResponseWriter, req *http.Request) {
-		serialNumber := chi.URLParam(req, "id")
-		if serialNumber == "" {
+		certificateIDParam := chi.URLParam(req, "id")
+		if certificateIDParam == "" {
 			requestID := middleware.GetRequestID(req.Context())
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusBadRequest, nil).
 				Str("request_id", requestID).
@@ -61,13 +61,22 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
+		certificateID, err := url.PathUnescape(certificateIDParam)
+		if err != nil {
+			requestID := middleware.GetRequestID(req.Context())
+			logger.HTTPError(req.Method, req.URL.Path, http.StatusBadRequest, err).
+				Str("request_id", requestID).
+				Msg("failed to decode certificate id")
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
 
-		details, err := vaultClient.GetCertificateDetails(req.Context(), serialNumber)
+		details, err := vaultClient.GetCertificateDetails(req.Context(), certificateID)
 		if err != nil {
 			requestID := middleware.GetRequestID(req.Context())
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
-				Str("serial_number", serialNumber).
+				Str("serial_number", certificateID).
 				Msg("failed to get certificate details")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
@@ -85,13 +94,13 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 		requestID := middleware.GetRequestID(req.Context())
 		logger.HTTPEvent(req.Method, req.URL.Path, http.StatusOK, 0).
 			Str("request_id", requestID).
-			Str("serial_number", serialNumber).
+			Str("serial_number", certificateID).
 			Msg("fetched certificate details")
 	})
 
 	r.Get("/api/certs/{id}/pem", func(w http.ResponseWriter, req *http.Request) {
-		serialNumber := chi.URLParam(req, "id")
-		if serialNumber == "" {
+		certificateIDParam := chi.URLParam(req, "id")
+		if certificateIDParam == "" {
 			requestID := middleware.GetRequestID(req.Context())
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusBadRequest, nil).
 				Str("request_id", requestID).
@@ -99,13 +108,22 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 			return
 		}
+		certificateID, err := url.PathUnescape(certificateIDParam)
+		if err != nil {
+			requestID := middleware.GetRequestID(req.Context())
+			logger.HTTPError(req.Method, req.URL.Path, http.StatusBadRequest, err).
+				Str("request_id", requestID).
+				Msg("failed to decode certificate id")
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
 
-		pemResponse, err := vaultClient.GetCertificatePEM(req.Context(), serialNumber)
+		pemResponse, err := vaultClient.GetCertificatePEM(req.Context(), certificateID)
 		if err != nil {
 			requestID := middleware.GetRequestID(req.Context())
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
-				Str("serial_number", serialNumber).
+				Str("serial_number", certificateID).
 				Msg("failed to get certificate PEM")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
@@ -123,8 +141,55 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 		requestID := middleware.GetRequestID(req.Context())
 		logger.HTTPEvent(req.Method, req.URL.Path, http.StatusOK, 0).
 			Str("request_id", requestID).
-			Str("serial_number", serialNumber).
+			Str("serial_number", certificateID).
 			Msg("served certificate PEM")
+	})
+
+	r.Get("/api/certs/{id}/pem/download", func(w http.ResponseWriter, req *http.Request) {
+		certificateIDParam := chi.URLParam(req, "id")
+		if certificateIDParam == "" {
+			requestID := middleware.GetRequestID(req.Context())
+			logger.HTTPError(req.Method, req.URL.Path, http.StatusBadRequest, nil).
+				Str("request_id", requestID).
+				Msg("missing certificate id in path")
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		certificateID, err := url.PathUnescape(certificateIDParam)
+		if err != nil {
+			requestID := middleware.GetRequestID(req.Context())
+			logger.HTTPError(req.Method, req.URL.Path, http.StatusBadRequest, err).
+				Str("request_id", requestID).
+				Msg("failed to decode certificate id")
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		pemResponse, err := vaultClient.GetCertificatePEM(req.Context(), certificateID)
+		if err != nil {
+			requestID := middleware.GetRequestID(req.Context())
+			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
+				Str("request_id", requestID).
+				Str("serial_number", certificateID).
+				Msg("failed to get certificate PEM")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		filename := buildPEMDownloadFilename(pemResponse.SerialNumber)
+		w.Header().Set("Content-Type", "application/x-pem-file")
+		w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+		w.WriteHeader(http.StatusOK)
+		if _, writeErr := w.Write([]byte(pemResponse.PEM)); writeErr != nil {
+			requestID := middleware.GetRequestID(req.Context())
+			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, writeErr).
+				Str("request_id", requestID).
+				Msg("failed to write certificate PEM download")
+			return
+		}
+		requestID := middleware.GetRequestID(req.Context())
+		logger.HTTPEvent(req.Method, req.URL.Path, http.StatusOK, 0).
+			Str("request_id", requestID).
+			Str("serial_number", certificateID).
+			Msg("downloaded certificate PEM")
 	})
 
 	r.Post("/api/cache/invalidate", func(w http.ResponseWriter, req *http.Request) {
@@ -186,4 +251,13 @@ func filterCertificatesByMounts(certificates []certs.Certificate, selectedMounts
 	}
 
 	return filtered
+}
+
+func buildPEMDownloadFilename(serialNumber string) string {
+	replacer := strings.NewReplacer(":", "-", "/", "-", "\\", "-", "..", "-")
+	safe := replacer.Replace(serialNumber)
+	if safe == "" {
+		return "certificate.pem"
+	}
+	return "certificate-" + safe + ".pem"
 }

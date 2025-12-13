@@ -51,7 +51,7 @@
   <div class="vcv-timeline-empty">{{.Messages.NoCertsExpiringSoon}}</div>
   {{else}}
   {{range .TimelineItems}}
-  <div class="vcv-timeline-item" onclick="showCertificateDetails('{{.ID}}')">
+  <div class="vcv-timeline-item" onclick="openCertificateModal()" hx-get="/ui/certs/{{urlquery .ID}}/details" hx-target="#details-content" hx-swap="innerHTML">
     <div class="vcv-timeline-dot {{.DotClass}}"></div>
     <div class="vcv-timeline-name">{{.Name}}</div>
     <div class="vcv-timeline-days">{{.DaysLabel}}</div>

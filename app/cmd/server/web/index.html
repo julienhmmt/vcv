@@ -290,20 +290,15 @@
       <div class="vcv-modal">
         <div class="vcv-modal-header">
           <h2 class="vcv-modal-title">Certificate Details</h2>
-          <button type="button" class="vcv-modal-close" onclick="closeModal()">×</button>
+          <button type="button" class="vcv-modal-close" onclick="closeCertificateModal()">×</button>
         </div>
         <div class="vcv-modal-content">
-          <div id="details-loading" class="vcv-loading vcv-hidden">
-            <div class="vcv-spinner"></div>
-            <p>Loading certificate details...</p>
-          </div>
           <div id="details-content" class="vcv-details-content">
-            <!-- Content will be populated dynamically -->
+            <!-- Content will be populated by HTMX -->
           </div>
         </div>
         <div class="vcv-modal-actions">
-          <button type="button" class="vcv-button" onclick="closeModal()">Close</button>
-          <button type="button" id="download-pem-btn" class="vcv-button vcv-button-primary">Download PEM</button>
+          <button type="button" class="vcv-button" onclick="closeCertificateModal()">Close</button>
         </div>
       </div>
     </div>
@@ -319,6 +314,6 @@
     <div id="vcv-footer-sink" class="vcv-hidden"></div>
 
     <script src="/assets/htmx.min.js"></script>
-    <script src="/assets/app.js"></script>
+    <script src="/assets/app-htmx.js"></script>
   </body>
 </html>
