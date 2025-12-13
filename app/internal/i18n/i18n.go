@@ -19,10 +19,8 @@ type Messages struct {
 	AppTitle                string `json:"appTitle"`
 	ButtonClose             string `json:"buttonClose"`
 	ButtonDetails           string `json:"buttonDetails"`
-	ButtonDownloadCRL       string `json:"buttonDownloadCRL"`
 	ButtonDownloadPEM       string `json:"buttonDownloadPEM"`
 	ButtonRefresh           string `json:"buttonRefresh"`
-	ButtonRotateCRL         string `json:"buttonRotateCRL"`
 	CacheInvalidateFailed   string `json:"cacheInvalidateFailed"`
 	CacheInvalidated        string `json:"cacheInvalidated"`
 	ChartExpiryTimeline     string `json:"chartExpiryTimeline"`
@@ -45,8 +43,6 @@ type Messages struct {
 	DaysRemainingShort      string `json:"daysRemainingShort"`
 	DaysRemainingSingular   string `json:"daysRemainingSingular"`
 	DeselectAll             string `json:"deselectAll"`
-	DownloadCRLFailed       string `json:"downloadCRLFailed"`
-	DownloadCRLNetworkError string `json:"downloadCRLNetworkError"`
 	DownloadPEMFailed       string `json:"downloadPEMFailed"`
 	DownloadPEMNetworkError string `json:"downloadPEMNetworkError"`
 	DownloadPEMSuccess      string `json:"downloadPEMSuccess"`
@@ -91,9 +87,6 @@ type Messages struct {
 	PaginationNext          string `json:"paginationNext"`
 	PaginationPageSizeLabel string `json:"paginationPageSizeLabel"`
 	PaginationPrev          string `json:"paginationPrev"`
-	RotateCRLFailed         string `json:"rotateCRLFailed"`
-	RotateCRLNetworkError   string `json:"rotateCRLNetworkError"`
-	RotateCRLSuccess        string `json:"rotateCRLSuccess"`
 	SearchPlaceholder       string `json:"searchPlaceholder"`
 	SelectAll               string `json:"selectAll"`
 	StatusFilterAll         string `json:"statusFilterAll"`
@@ -120,10 +113,8 @@ var englishMessages = Messages{
 	AppTitle:                "VaultCertsViewer",
 	ButtonClose:             "Close",
 	ButtonDetails:           "Details",
-	ButtonDownloadCRL:       "Download CRL",
 	ButtonDownloadPEM:       "Download PEM",
 	ButtonRefresh:           "Refresh",
-	ButtonRotateCRL:         "Rotate CRL",
 	CacheInvalidateFailed:   "Failed to clear cache",
 	CacheInvalidated:        "Cache cleared and data refreshed",
 	ChartExpiryTimeline:     "Expiration Timeline",
@@ -146,8 +137,6 @@ var englishMessages = Messages{
 	DaysRemainingShort:      "{{days}}d",
 	DaysRemainingSingular:   "{{days}} day remaining",
 	DeselectAll:             "Deselect all",
-	DownloadCRLFailed:       "Failed to download CRL ({{status}})",
-	DownloadCRLNetworkError: "Network error downloading CRL. Please try again.",
 	DownloadPEMFailed:       "Failed to download certificate PEM ({{status}})",
 	DownloadPEMNetworkError: "Network error downloading certificate PEM. Please try again.",
 	DownloadPEMSuccess:      "Certificate PEM downloaded successfully",
@@ -192,9 +181,6 @@ var englishMessages = Messages{
 	PaginationNext:          "Next",
 	PaginationPageSizeLabel: "Results per page",
 	PaginationPrev:          "Previous",
-	RotateCRLFailed:         "Failed to rotate CRL ({{status}})",
-	RotateCRLNetworkError:   "Network error rotating CRL. Please try again.",
-	RotateCRLSuccess:        "CRL rotated successfully",
 	SearchPlaceholder:       "CN or SAN",
 	SelectAll:               "Select All",
 	StatusFilterTitle:       "Status filter",
@@ -215,10 +201,8 @@ var frenchMessages = Messages{
 	AppTitle:                "VaultCertsViewer",
 	ButtonClose:             "Fermer",
 	ButtonDetails:           "Détails",
-	ButtonDownloadCRL:       "Télécharger la CRL",
 	ButtonDownloadPEM:       "Télécharger PEM",
 	ButtonRefresh:           "Actualiser",
-	ButtonRotateCRL:         "Générer la CRL",
 	CacheInvalidateFailed:   "Échec du vidage du cache",
 	CacheInvalidated:        "Cache vidé et données actualisées",
 	ChartExpiryTimeline:     "Chronologie des expirations",
@@ -241,8 +225,6 @@ var frenchMessages = Messages{
 	DaysRemainingShort:      "{{days}}j",
 	DaysRemainingSingular:   "{{days}} jour restant",
 	DeselectAll:             "Tout désélectionner",
-	DownloadCRLFailed:       "Échec du téléchargement de la CRL ({{status}})",
-	DownloadCRLNetworkError: "Erreur réseau lors du téléchargement de la CRL. Veuillez réessayer.",
 	DownloadPEMFailed:       "Échec du téléchargement du certificat PEM ({{status}})",
 	DownloadPEMNetworkError: "Erreur réseau lors du téléchargement du certificat PEM. Veuillez réessayer.",
 	DownloadPEMSuccess:      "Certificat PEM téléchargé avec succès",
@@ -287,9 +269,6 @@ var frenchMessages = Messages{
 	PaginationNext:          "Suivant",
 	PaginationPageSizeLabel: "Résultats par page",
 	PaginationPrev:          "Précédent",
-	RotateCRLFailed:         "Échec de la génération de la CRL ({{status}})",
-	RotateCRLNetworkError:   "Erreur réseau lors de la génération de la CRL. Veuillez réessayer.",
-	RotateCRLSuccess:        "CRL générée avec succès",
 	SearchPlaceholder:       "CN ou SAN",
 	SelectAll:               "Tout sélectionner",
 	StatusFilterTitle:       "Filtre des statuts",
@@ -310,10 +289,8 @@ var spanishMessages = Messages{
 	AppTitle:                "VaultCertsViewer",
 	ButtonClose:             "Cerrar",
 	ButtonDetails:           "Detalles",
-	ButtonDownloadCRL:       "Descargar CRL",
 	ButtonDownloadPEM:       "Descargar PEM",
 	ButtonRefresh:           "Actualizar",
-	ButtonRotateCRL:         "Rotar CRL",
 	CacheInvalidateFailed:   "Error al borrar el caché",
 	CacheInvalidated:        "Caché borrado y datos actualizados",
 	ChartExpiryTimeline:     "Línea de tiempo de caducidad",
@@ -336,8 +313,6 @@ var spanishMessages = Messages{
 	DaysRemainingShort:      "{{days}}d",
 	DaysRemainingSingular:   "{{days}} día restante",
 	DeselectAll:             "Deseleccionar todo",
-	DownloadCRLFailed:       "Error al descargar la CRL ({{status}})",
-	DownloadCRLNetworkError: "Error de red al descargar la CRL. Por favor intente nuevamente.",
 	DownloadPEMFailed:       "Error al descargar el certificado PEM ({{status}})",
 	DownloadPEMNetworkError: "Error de red al descargar el certificado PEM. Por favor intente nuevamente.",
 	DownloadPEMSuccess:      "Certificado PEM descargado exitosamente",
@@ -382,9 +357,6 @@ var spanishMessages = Messages{
 	PaginationNext:          "Siguiente",
 	PaginationPageSizeLabel: "Resultados por página",
 	PaginationPrev:          "Anterior",
-	RotateCRLFailed:         "Error al rotar la CRL ({{status}})",
-	RotateCRLNetworkError:   "Error de red al rotar la CRL. Por favor intente nuevamente.",
-	RotateCRLSuccess:        "CRL rotada exitosamente",
 	SearchPlaceholder:       "CN o SAN",
 	SelectAll:               "Seleccionar todo",
 	StatusFilterTitle:       "Filtro de estado",
@@ -405,10 +377,8 @@ var germanMessages = Messages{
 	AppTitle:                "VaultCertsViewer",
 	ButtonClose:             "Schließen",
 	ButtonDetails:           "Details",
-	ButtonDownloadCRL:       "CRL herunterladen",
 	ButtonDownloadPEM:       "PEM herunterladen",
 	ButtonRefresh:           "Aktualisieren",
-	ButtonRotateCRL:         "CRL rotieren",
 	CacheInvalidateFailed:   "Cache konnte nicht geleert werden",
 	CacheInvalidated:        "Cache geleert und Daten aktualisiert",
 	ChartExpiryTimeline:     "Ablaufzeitachse",
@@ -431,8 +401,6 @@ var germanMessages = Messages{
 	DaysRemainingShort:      "{{days}}T",
 	DaysRemainingSingular:   "{{days}} verbleibender Tag",
 	DeselectAll:             "Alle abwählen",
-	DownloadCRLFailed:       "CRL konnte nicht heruntergeladen werden ({{status}})",
-	DownloadCRLNetworkError: "Netzwerkfehler beim Herunterladen der CRL. Bitte versuchen Sie es erneut.",
 	DownloadPEMFailed:       "Zertifikat-PEM konnte nicht heruntergeladen werden ({{status}})",
 	DownloadPEMNetworkError: "Netzwerkfehler beim Herunterladen des Zertifikat-PEM. Bitte versuchen Sie es erneut.",
 	DownloadPEMSuccess:      "Zertifikat-PEM erfolgreich heruntergeladen",
@@ -477,9 +445,6 @@ var germanMessages = Messages{
 	PaginationNext:          "Weiter",
 	PaginationPageSizeLabel: "Ergebnisse pro Seite",
 	PaginationPrev:          "Zurück",
-	RotateCRLFailed:         "CRL konnte nicht rotiert werden ({{status}})",
-	RotateCRLNetworkError:   "Netzwerkfehler beim Rotieren der CRL. Bitte versuchen Sie es erneut.",
-	RotateCRLSuccess:        "CRL erfolgreich rotiert",
 	SearchPlaceholder:       "CN oder SAN",
 	SelectAll:               "Alle auswählen",
 	StatusFilterTitle:       "Statusfilter",
@@ -500,10 +465,8 @@ var italianMessages = Messages{
 	AppTitle:                "VaultCertsViewer",
 	ButtonClose:             "Chiudi",
 	ButtonDetails:           "Dettagli",
-	ButtonDownloadCRL:       "Scarica CRL",
 	ButtonDownloadPEM:       "Scarica PEM",
 	ButtonRefresh:           "Aggiorna",
-	ButtonRotateCRL:         "Ruota CRL",
 	CacheInvalidateFailed:   "Impossibile svuotare la cache",
 	CacheInvalidated:        "Cache svuotata e dati aggiornati",
 	ChartExpiryTimeline:     "Cronologia delle scadenze",
@@ -526,8 +489,6 @@ var italianMessages = Messages{
 	DaysRemainingShort:      "{{days}}g",
 	DaysRemainingSingular:   "{{days}} giorno rimanente",
 	DeselectAll:             "Deseleziona tutto",
-	DownloadCRLFailed:       "Impossibile scaricare la CRL ({{status}})",
-	DownloadCRLNetworkError: "Errore di rete durante il download della CRL. Riprova.",
 	DownloadPEMFailed:       "Impossibile scaricare il certificato PEM ({{status}})",
 	DownloadPEMNetworkError: "Errore di rete durante il download del certificato PEM. Riprova.",
 	DownloadPEMSuccess:      "Certificato PEM scaricato correttamente",
@@ -572,9 +533,6 @@ var italianMessages = Messages{
 	PaginationNext:          "Successivo",
 	PaginationPageSizeLabel: "Risultati per pagina",
 	PaginationPrev:          "Precedente",
-	RotateCRLFailed:         "Impossibile ruotare la CRL ({{status}})",
-	RotateCRLNetworkError:   "Errore di rete durante la rotazione della CRL. Riprova.",
-	RotateCRLSuccess:        "CRL ruotata correttamente",
 	SearchPlaceholder:       "CN o SAN",
 	SelectAll:               "Seleziona tutto",
 	StatusFilterTitle:       "Filtro di stato",

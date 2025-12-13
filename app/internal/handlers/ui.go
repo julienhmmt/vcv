@@ -138,14 +138,6 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 	if err != nil {
 		panic(err)
 	}
-	router.Post("/ui/crl/download", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("HX-Redirect", "/api/crl/download")
-		w.WriteHeader(http.StatusNoContent)
-		requestID := middleware.GetRequestID(r.Context())
-		logger.HTTPEvent(r.Method, r.URL.Path, http.StatusNoContent, 0).
-			Str("request_id", requestID).
-			Msg("triggered CRL download")
-	})
 	router.Post("/ui/theme/toggle", func(w http.ResponseWriter, r *http.Request) {
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)

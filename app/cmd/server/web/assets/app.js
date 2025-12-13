@@ -573,16 +573,6 @@ function applyTranslations() {
     }
   }
 
-  const rotateCrlButton = document.getElementById("rotate-crl-btn");
-  if (rotateCrlButton) {
-    rotateCrlButton.textContent = t("buttonRotateCRL") || rotateCrlButton.textContent;
-  }
-
-  const downloadCrlButton = document.getElementById("download-crl-btn");
-  if (downloadCrlButton) {
-    downloadCrlButton.textContent = t("buttonDownloadCRL") || downloadCrlButton.textContent;
-  }
-
   const dashboardTotalLabel = document.getElementById("dashboard-total-label");
   if (dashboardTotalLabel) {
     dashboardTotalLabel.textContent = t("dashboardTotal") || dashboardTotalLabel.textContent;
@@ -1167,70 +1157,6 @@ async function invalidateCacheAndRefresh() {
   }
 }
 
-async function rotateCRL() {
-  try {
-    const response = await fetchWithRetry(`${API_BASE_URL}/api/crl/rotate`, { method: 'POST' });
-    if (!response.ok) {
-      showToast(
-        formatMessage(
-          "rotateCRLFailed",
-          `Failed to rotate CRL (${response.status})`,
-          { status: response.status },
-        ),
-        'error'
-      );
-      return;
-    }
-    showToast(
-      formatMessage("rotateCRLSuccess", "CRL rotated successfully"),
-      'success',
-      3000
-    );
-  } catch {
-    showToast(
-      formatMessage(
-        "rotateCRLNetworkError",
-        "Network error rotating CRL. Please try again.",
-      ),
-      'error'
-    );
-  }
-}
-
-async function downloadCRL() {
-  try {
-    const response = await fetchWithRetry(`${API_BASE_URL}/api/crl/download`);
-    if (!response.ok) {
-      showToast(
-        formatMessage(
-          "downloadCRLFailed",
-          `Failed to download CRL (${response.status})`,
-          { status: response.status },
-        ),
-        'error'
-      );
-      return;
-    }
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'crl.pem';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  } catch {
-    showToast(
-      formatMessage(
-        "downloadCRLNetworkError",
-        "Network error downloading CRL. Please try again.",
-      ),
-      'error'
-    );
-  }
-}
-
 function sortCertificates(items) {
   const sorted = [...items];
   sorted.sort((left, right) => {
@@ -1696,19 +1622,6 @@ function initEventHandlers() {
     const isHtmx = Boolean(refreshBtn.getAttribute("hx-post"));
     if (!isHtmx) {
       refreshBtn.addEventListener("click", invalidateCacheAndRefresh);
-    }
-  }
-
-  const rotateCrlBtn = document.getElementById("rotate-crl-btn");
-  if (rotateCrlBtn) {
-    rotateCrlBtn.addEventListener("click", rotateCRL);
-  }
-
-  const downloadCrlBtn = document.getElementById("download-crl-btn");
-  if (downloadCrlBtn) {
-    const isHtmx = Boolean(downloadCrlBtn.getAttribute("hx-post"));
-    if (!isHtmx) {
-      downloadCrlBtn.addEventListener("click", downloadCRL);
     }
   }
 
