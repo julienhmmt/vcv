@@ -1693,7 +1693,10 @@ function initEventHandlers() {
   // Refresh button
   const refreshBtn = document.getElementById("refresh-btn");
   if (refreshBtn) {
-    refreshBtn.addEventListener("click", invalidateCacheAndRefresh);
+    const isHtmx = Boolean(refreshBtn.getAttribute("hx-post"));
+    if (!isHtmx) {
+      refreshBtn.addEventListener("click", invalidateCacheAndRefresh);
+    }
   }
 
   const rotateCrlBtn = document.getElementById("rotate-crl-btn");
@@ -1703,7 +1706,10 @@ function initEventHandlers() {
 
   const downloadCrlBtn = document.getElementById("download-crl-btn");
   if (downloadCrlBtn) {
-    downloadCrlBtn.addEventListener("click", downloadCRL);
+    const isHtmx = Boolean(downloadCrlBtn.getAttribute("hx-post"));
+    if (!isHtmx) {
+      downloadCrlBtn.addEventListener("click", downloadCRL);
+    }
   }
 
   // Language selector

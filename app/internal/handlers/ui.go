@@ -138,6 +138,14 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 	if err != nil {
 		panic(err)
 	}
+	router.Post("/ui/crl/download", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("HX-Redirect", "/api/crl/download")
+		w.WriteHeader(http.StatusNoContent)
+		requestID := middleware.GetRequestID(r.Context())
+		logger.HTTPEvent(r.Method, r.URL.Path, http.StatusNoContent, 0).
+			Str("request_id", requestID).
+			Msg("triggered CRL download")
+	})
 	router.Post("/ui/theme/toggle", func(w http.ResponseWriter, r *http.Request) {
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -184,70 +192,9 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		filteredByMount := filterCertificatesByMounts(certificates, queryState.SelectedMounts)
-		dashboardStats := computeDashboardStats(filteredByMount, expirationThresholds)
-		chartData := computeStatusChartData(filteredByMount, messages)
-		timelineItems := computeExpiryTimelineItems(filteredByMount, expirationThresholds, messages)
-		sortKey, sortDirection := resolveSortState(queryState)
-		visible := applyCertificateFilters(filteredByMount, queryState, sortKey, sortDirection)
-		pageIndex := resolvePageIndex(queryState, len(visible), queryState.PageSize)
-		pageVisible, totalPages := paginateCertificates(visible, pageIndex, queryState.PageSize)
-		if shouldResetPageIndex(queryState.TriggerID, queryState.PageAction) {
-			pageIndex = 0
-			pageVisible, totalPages = paginateCertificates(visible, pageIndex, queryState.PageSize)
-		}
-		pageIndex = applyPageAction(queryState.PageAction, pageIndex, totalPages)
-		pageVisible, totalPages = paginateCertificates(visible, pageIndex, queryState.PageSize)
-		data := certsFragmentTemplateData{
-			ChartExpired:          chartData.Expired,
-			ChartHasData:          chartData.Total > 0,
-			ChartRevoked:          chartData.Revoked,
-			ChartTotal:            chartData.Total,
-			ChartValid:            chartData.Valid,
-			DashboardExpired:      dashboardStats.Expired,
-			DashboardExpiring:     dashboardStats.ExpiringSoon,
-			DashboardTotal:        dashboardStats.Total,
-			DashboardValid:        dashboardStats.Valid,
-			DonutCircumference:    chartData.Circumference,
-			DonutExpiredDash:      chartData.ExpiredDash,
-			DonutExpiredDashArray: chartData.ExpiredDashArray,
-			DonutExpiredOffset:    chartData.ExpiredOffset,
-			DonutHasExpired:       chartData.Expired > 0,
-			DonutHasRevoked:       chartData.Revoked > 0,
-			DonutHasValid:         chartData.Valid > 0,
-			DonutRevokedDash:      chartData.RevokedDash,
-			DonutRevokedDashArray: chartData.RevokedDashArray,
-			DonutRevokedOffset:    chartData.RevokedOffset,
-			DonutValidDash:        chartData.ValidDash,
-			DonutValidDashArray:   chartData.ValidDashArray,
-			DonutValidOffset:      chartData.ValidOffset,
-			DualStatusCount:       chartData.DualStatusCount,
-			DualStatusNoteText:    chartData.DualStatusNoteText,
-			Messages:              messages,
-			PageCountHidden:       len(visible) == 0,
-			PageCountText:         fmt.Sprintf("%d", len(visible)),
-			PageIndex:             pageIndex,
-			PageInfoText:          buildPaginationInfo(messages, queryState.PageSize, pageIndex, totalPages),
-			PageNextDisabled:      queryState.PageSize == "all" || pageIndex >= totalPages-1,
-			PagePrevDisabled:      queryState.PageSize == "all" || pageIndex <= 0,
-			PaginationNextText:    messages.PaginationNext,
-			PaginationPrevText:    messages.PaginationPrev,
-			Rows:                  buildCertRows(pageVisible, messages, expirationThresholds),
-			SortCommonActive:      sortKey == "commonName",
-			SortCommonDir:         resolveSortDirAttribute(sortKey, sortDirection, "commonName"),
-			SortCreatedActive:     sortKey == "createdAt",
-			SortCreatedDir:        resolveSortDirAttribute(sortKey, sortDirection, "createdAt"),
-			SortDirection:         sortDirection,
-			SortExpiresActive:     sortKey == "expiresAt",
-			SortExpiresDir:        resolveSortDirAttribute(sortKey, sortDirection, "expiresAt"),
-			SortKey:               sortKey,
-			TimelineItems:         timelineItems,
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		if execErr := templates.ExecuteTemplate(w, "certs-fragment.html", data); execErr != nil {
+		if err := renderCertsFragment(w, templates, certificates, expirationThresholds, messages, queryState); err != nil {
 			requestID := middleware.GetRequestID(r.Context())
-			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, execErr).
+			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
 				Msg("failed to render certs fragment template")
 			return
@@ -255,8 +202,33 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 		requestID := middleware.GetRequestID(r.Context())
 		logger.HTTPEvent(r.Method, r.URL.Path, http.StatusOK, 0).
 			Str("request_id", requestID).
-			Int("count", len(visible)).
 			Msg("rendered certs fragment")
+	})
+	router.Post("/ui/certs/refresh", func(w http.ResponseWriter, r *http.Request) {
+		vaultClient.InvalidateCache()
+		language := resolveLanguage(r)
+		messages := i18n.MessagesForLanguage(language)
+		queryState := parseCertsQueryState(r)
+		certificates, listErr := vaultClient.ListCertificates(r.Context())
+		if listErr != nil {
+			requestID := middleware.GetRequestID(r.Context())
+			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, listErr).
+				Str("request_id", requestID).
+				Msg("failed to list certificates")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		if err := renderCertsFragment(w, templates, certificates, expirationThresholds, messages, queryState); err != nil {
+			requestID := middleware.GetRequestID(r.Context())
+			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
+				Str("request_id", requestID).
+				Msg("failed to render certs fragment template")
+			return
+		}
+		requestID := middleware.GetRequestID(r.Context())
+		logger.HTTPEvent(r.Method, r.URL.Path, http.StatusOK, 0).
+			Str("request_id", requestID).
+			Msg("refreshed certs fragment")
 	})
 	router.Get("/ui/status", func(w http.ResponseWriter, r *http.Request) {
 		language := resolveLanguage(r)
@@ -383,6 +355,9 @@ func interpolatePlaceholder(templateValue, key, value string) string {
 
 func parseCertsQueryState(r *http.Request) certsQueryState {
 	query := r.URL.Query()
+	if parseErr := r.ParseForm(); parseErr == nil {
+		query = r.Form
+	}
 	pageIndex := parseInt(query.Get("page"), 0)
 	state := certsQueryState{
 		SearchTerm:     strings.TrimSpace(query.Get("search")),
@@ -670,6 +645,71 @@ func containsString(values []string, needle string) bool {
 		}
 	}
 	return false
+}
+
+func renderCertsFragment(w http.ResponseWriter, templates *template.Template, certificates []certs.Certificate, expirationThresholds config.ExpirationThresholds, messages i18n.Messages, queryState certsQueryState) error {
+	filteredByMount := filterCertificatesByMounts(certificates, queryState.SelectedMounts)
+	dashboardStats := computeDashboardStats(filteredByMount, expirationThresholds)
+	chartData := computeStatusChartData(filteredByMount, messages)
+	timelineItems := computeExpiryTimelineItems(filteredByMount, expirationThresholds, messages)
+	sortKey, sortDirection := resolveSortState(queryState)
+	visible := applyCertificateFilters(filteredByMount, queryState, sortKey, sortDirection)
+	pageIndex := resolvePageIndex(queryState, len(visible), queryState.PageSize)
+	pageVisible, totalPages := paginateCertificates(visible, pageIndex, queryState.PageSize)
+	if shouldResetPageIndex(queryState.TriggerID, queryState.PageAction) {
+		pageIndex = 0
+		pageVisible, totalPages = paginateCertificates(visible, pageIndex, queryState.PageSize)
+	}
+	pageIndex = applyPageAction(queryState.PageAction, pageIndex, totalPages)
+	pageVisible, totalPages = paginateCertificates(visible, pageIndex, queryState.PageSize)
+	data := certsFragmentTemplateData{
+		ChartExpired:          chartData.Expired,
+		ChartHasData:          chartData.Total > 0,
+		ChartRevoked:          chartData.Revoked,
+		ChartTotal:            chartData.Total,
+		ChartValid:            chartData.Valid,
+		DashboardExpired:      dashboardStats.Expired,
+		DashboardExpiring:     dashboardStats.ExpiringSoon,
+		DashboardTotal:        dashboardStats.Total,
+		DashboardValid:        dashboardStats.Valid,
+		DonutCircumference:    chartData.Circumference,
+		DonutExpiredDash:      chartData.ExpiredDash,
+		DonutExpiredDashArray: chartData.ExpiredDashArray,
+		DonutExpiredOffset:    chartData.ExpiredOffset,
+		DonutHasExpired:       chartData.Expired > 0,
+		DonutHasRevoked:       chartData.Revoked > 0,
+		DonutHasValid:         chartData.Valid > 0,
+		DonutRevokedDash:      chartData.RevokedDash,
+		DonutRevokedDashArray: chartData.RevokedDashArray,
+		DonutRevokedOffset:    chartData.RevokedOffset,
+		DonutValidDash:        chartData.ValidDash,
+		DonutValidDashArray:   chartData.ValidDashArray,
+		DonutValidOffset:      chartData.ValidOffset,
+		DualStatusCount:       chartData.DualStatusCount,
+		DualStatusNoteText:    chartData.DualStatusNoteText,
+		Messages:              messages,
+		PageCountHidden:       len(visible) == 0,
+		PageCountText:         fmt.Sprintf("%d", len(visible)),
+		PageIndex:             pageIndex,
+		PageInfoText:          buildPaginationInfo(messages, queryState.PageSize, pageIndex, totalPages),
+		PageNextDisabled:      queryState.PageSize == "all" || pageIndex >= totalPages-1,
+		PagePrevDisabled:      queryState.PageSize == "all" || pageIndex <= 0,
+		PaginationNextText:    messages.PaginationNext,
+		PaginationPrevText:    messages.PaginationPrev,
+		Rows:                  buildCertRows(pageVisible, messages, expirationThresholds),
+		SortCommonActive:      sortKey == "commonName",
+		SortCommonDir:         resolveSortDirAttribute(sortKey, sortDirection, "commonName"),
+		SortCreatedActive:     sortKey == "createdAt",
+		SortCreatedDir:        resolveSortDirAttribute(sortKey, sortDirection, "createdAt"),
+		SortDirection:         sortDirection,
+		SortExpiresActive:     sortKey == "expiresAt",
+		SortExpiresDir:        resolveSortDirAttribute(sortKey, sortDirection, "expiresAt"),
+		SortKey:               sortKey,
+		TimelineItems:         timelineItems,
+	}
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	return templates.ExecuteTemplate(w, "certs-fragment.html", data)
 }
 
 func clampInt(value int, min int, max int) int {

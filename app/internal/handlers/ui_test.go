@@ -28,6 +28,28 @@ func setupUIRouter(mockVault *vault.MockClient, webFS fs.FS) *chi.Mux {
 	return router
 }
 
+func TestDownloadCRLFragment(t *testing.T) {
+	webFS := fstest.MapFS{
+		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div></div>")},
+		"templates/footer-status.html":         &fstest.MapFile{Data: []byte("<div></div>")},
+		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{define \"certs-fragment\"}}{{end}}")},
+		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{end}}")},
+		"templates/certs-state.html":           &fstest.MapFile{Data: []byte("{{define \"certs-state\"}}{{end}}")},
+		"templates/certs-pagination.html":      &fstest.MapFile{Data: []byte("{{define \"certs-pagination\"}}{{end}}")},
+		"templates/certs-sort.html":            &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
+		"templates/dashboard-fragment.html":    &fstest.MapFile{Data: []byte("{{define \"dashboard-fragment\"}}{{end}}")},
+		"templates/theme-toggle-fragment.html": &fstest.MapFile{Data: []byte("{{define \"theme-toggle-fragment\"}}{{end}}")},
+		"templates/download-crl-fragment.html": &fstest.MapFile{Data: []byte("<script>window.location.href='/api/crl/download'</script>")},
+	}
+	mockVault := &vault.MockClient{}
+	router := setupUIRouter(mockVault, webFS)
+	req := httptest.NewRequest(http.MethodPost, "/ui/crl/download", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	assert.Equal(t, "/api/crl/download", rec.Header().Get("HX-Redirect"))
+}
+
 func TestToggleThemeFragment(t *testing.T) {
 	webFS := fstest.MapFS{
 		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div></div>")},
@@ -39,6 +61,7 @@ func TestToggleThemeFragment(t *testing.T) {
 		"templates/certs-sort.html":            &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
 		"templates/dashboard-fragment.html":    &fstest.MapFile{Data: []byte("{{define \"dashboard-fragment\"}}{{end}}")},
 		"templates/theme-toggle-fragment.html": &fstest.MapFile{Data: []byte("<span id=\"theme-icon\" hx-swap-oob=\"true\">{{.Icon}}</span><input id=\"vcv-theme-value\" hx-swap-oob=\"true\" value=\"{{.Theme}}\" />")},
+		"templates/download-crl-fragment.html": &fstest.MapFile{Data: []byte("<script>window.location.href='/api/crl/download'</script>")},
 	}
 	mockVault := &vault.MockClient{}
 	router := setupUIRouter(mockVault, webFS)

@@ -407,24 +407,28 @@ func (c *realClient) RotateCRL(ctx context.Context) error {
 }
 
 func (c *realClient) GetCRL(ctx context.Context) ([]byte, error) {
-	// For now, return CRL from the first configured mount
-	// In a future enhancement, we could aggregate CRLs from all mounts
 	if len(c.mounts) == 0 {
 		return nil, fmt.Errorf("no mounts configured")
 	}
-
-	path := fmt.Sprintf("%s/crl/pem", c.mounts[0])
-	secret, err := c.client.Logical().Read(path)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get CRL from mount %s: %w", c.mounts[0], err)
+	errors := make([]string, 0, len(c.mounts))
+	for _, mount := range c.mounts {
+		path := fmt.Sprintf("%s/crl/pem", mount)
+		secret, err := c.client.Logical().Read(path)
+		if err != nil {
+			errors = append(errors, fmt.Sprintf("mount %s: %v", mount, err))
+			continue
+		}
+		if secret == nil || secret.Data == nil {
+			errors = append(errors, fmt.Sprintf("mount %s: CRL not found", mount))
+			continue
+		}
+		crlData, ok := secret.Data["certificate"].(string)
+		if !ok || crlData == "" {
+			errors = append(errors, fmt.Sprintf("mount %s: CRL data missing", mount))
+			continue
+		}
+		c.InvalidateCache()
+		return []byte(crlData), nil
 	}
-	if secret == nil || secret.Data == nil {
-		return nil, fmt.Errorf("CRL not found in mount %s", c.mounts[0])
-	}
-	crlData, ok := secret.Data["certificate"].(string)
-	if !ok || crlData == "" {
-		return nil, fmt.Errorf("CRL data missing from Vault response for mount %s", c.mounts[0])
-	}
-	c.InvalidateCache()
-	return []byte(crlData), nil
+	return nil, fmt.Errorf("failed to get CRL from any mount: %s", strings.Join(errors, "; "))
 }
