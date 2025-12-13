@@ -169,6 +169,11 @@ async function loadStatus() {
 }
 
 function renderStatusFooter() {
+  const footer = document.querySelector(".vcv-footer");
+  const usesHtmxStatus = Boolean(window.htmx && footer && footer.getAttribute("hx-get") === "/ui/status");
+  if (usesHtmxStatus) {
+    return;
+  }
   const versionEl = document.getElementById("vcv-footer-version");
   const vaultEl = document.getElementById("vcv-footer-vault");
   if (!versionEl || !vaultEl) return;

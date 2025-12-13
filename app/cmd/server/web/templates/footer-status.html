@@ -1,6 +1,2 @@
-<div class="vcv-footer-left">
-  <span id="vcv-footer-version" class="vcv-footer-version">{{.VersionText}}</span>
-</div>
-<div class="vcv-footer-right">
-  <span id="vcv-footer-vault" class="{{.VaultClass}}" title="{{.VaultTitle}}">{{.VaultText}}</span>
-</div>
+<span id="vcv-footer-version" class="vcv-footer-version" hx-swap-oob="true">{{.VersionText}}</span>
+<span id="vcv-footer-vault" class="{{.VaultClass}}" title="{{.VaultTitle}}" hx-swap-oob="true">{{.VaultText}}</span>

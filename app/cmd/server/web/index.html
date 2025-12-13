@@ -300,7 +300,7 @@
       </div>
     </div>
 
-    <footer class="vcv-footer" hx-get="/ui/status" hx-trigger="load, every 10s" hx-swap="innerHTML">
+    <footer class="vcv-footer" hx-get="/ui/status" hx-trigger="load, every 10s" hx-target="#vcv-footer-sink" hx-swap="innerHTML">
       <div class="vcv-footer-left">
         <span id="vcv-footer-version" class="vcv-footer-version">—</span>
       </div>
@@ -308,6 +308,7 @@
         <span id="vcv-footer-vault" class="vcv-footer-pill">Vault: …</span>
       </div>
     </footer>
+    <div id="vcv-footer-sink" class="vcv-hidden"></div>
 
     <script src="/assets/htmx.min.js"></script>
     <script src="/assets/app.js"></script>
