@@ -3,4 +3,60 @@
 <div class="vcv-card-value" id="dashboard-valid" hx-swap-oob="true">{{.DashboardValid}}</div>
 <div class="vcv-card-value" id="dashboard-expiring" hx-swap-oob="true">{{.DashboardExpiring}}</div>
 <div class="vcv-card-value" id="dashboard-expired" hx-swap-oob="true">{{.DashboardExpired}}</div>
+
+<div class="vcv-chart" id="status-chart" hx-swap-oob="true">
+  {{if not .ChartHasData}}
+  <div class="vcv-timeline-empty">{{.Messages.NoData}}</div>
+  {{else}}
+  <div class="vcv-donut">
+    <svg viewBox="0 0 120 120" width="140" height="140">
+      <circle cx="60" cy="60" r="50" fill="none" stroke="#e2e8f0" stroke-width="16" />
+      {{if .DonutHasValid}}
+      <circle cx="60" cy="60" r="50" fill="none" stroke="#22c55e" stroke-width="16" stroke-dasharray="{{.DonutValidDashArray}}" stroke-dashoffset="{{.DonutValidOffset}}" />
+      {{end}}
+      {{if .DonutHasExpired}}
+      <circle cx="60" cy="60" r="50" fill="none" stroke="#f59e0b" stroke-width="16" stroke-dasharray="{{.DonutExpiredDashArray}}" stroke-dashoffset="{{.DonutExpiredOffset}}" />
+      {{end}}
+      {{if .DonutHasRevoked}}
+      <circle cx="60" cy="60" r="50" fill="none" stroke="#ef4444" stroke-width="16" stroke-dasharray="{{.DonutRevokedDashArray}}" stroke-dashoffset="{{.DonutRevokedOffset}}" />
+      {{end}}
+    </svg>
+    <div class="vcv-donut-center">
+      <div class="vcv-donut-value">{{.ChartTotal}}</div>
+      <div class="vcv-donut-label">TOTAL</div>
+    </div>
+  </div>
+  <div class="vcv-chart-legend">
+    <div class="vcv-chart-legend-item">
+      <span class="vcv-chart-legend-dot" style="background: #22c55e"></span>
+      <span>{{.Messages.ChartLegendValid}} ({{.ChartValid}})</span>
+    </div>
+    <div class="vcv-chart-legend-item">
+      <span class="vcv-chart-legend-dot" style="background: #f59e0b"></span>
+      <span>{{.Messages.ChartLegendExpired}} ({{.ChartExpired}})</span>
+    </div>
+    <div class="vcv-chart-legend-item">
+      <span class="vcv-chart-legend-dot" style="background: #ef4444"></span>
+      <span>{{.Messages.ChartLegendRevoked}} ({{.ChartRevoked}})</span>
+    </div>
+    {{if gt .DualStatusCount 0}}
+    <div class="vcv-chart-note" style="font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem;">{{.DualStatusNoteText}}</div>
+    {{end}}
+  </div>
+  {{end}}
+</div>
+
+<div class="vcv-timeline" id="expiry-timeline" hx-swap-oob="true">
+  {{if eq (len .TimelineItems) 0}}
+  <div class="vcv-timeline-empty">{{.Messages.NoCertsExpiringSoon}}</div>
+  {{else}}
+  {{range .TimelineItems}}
+  <div class="vcv-timeline-item" onclick="showCertificateDetails('{{.ID}}')">
+    <div class="vcv-timeline-dot {{.DotClass}}"></div>
+    <div class="vcv-timeline-name">{{.Name}}</div>
+    <div class="vcv-timeline-days">{{.DaysLabel}}</div>
+  </div>
+  {{end}}
+  {{end}}
+</div>
 {{end}}

@@ -40,28 +40,57 @@ type footerStatusTemplateData struct {
 }
 
 type certsFragmentTemplateData struct {
-	Rows               []certRowTemplateData
-	Messages           i18n.Messages
-	PageInfoText       string
-	PageCountText      string
-	PageCountHidden    bool
-	PagePrevDisabled   bool
-	PageNextDisabled   bool
-	PageIndex          int
-	SortKey            string
-	SortDirection      string
-	SortCommonActive   bool
-	SortCreatedActive  bool
-	SortExpiresActive  bool
-	SortCommonDir      string
-	SortCreatedDir     string
-	SortExpiresDir     string
-	PaginationPrevText string
-	PaginationNextText string
-	DashboardTotal     int
-	DashboardValid     int
-	DashboardExpiring  int
-	DashboardExpired   int
+	Rows                  []certRowTemplateData
+	Messages              i18n.Messages
+	PageInfoText          string
+	PageCountText         string
+	PageCountHidden       bool
+	PagePrevDisabled      bool
+	PageNextDisabled      bool
+	PageIndex             int
+	SortKey               string
+	SortDirection         string
+	SortCommonActive      bool
+	SortCreatedActive     bool
+	SortExpiresActive     bool
+	SortCommonDir         string
+	SortCreatedDir        string
+	SortExpiresDir        string
+	PaginationPrevText    string
+	PaginationNextText    string
+	DashboardTotal        int
+	DashboardValid        int
+	DashboardExpiring     int
+	DashboardExpired      int
+	ChartTotal            int
+	ChartValid            int
+	ChartExpired          int
+	ChartRevoked          int
+	ChartHasData          bool
+	DonutCircumference    string
+	DonutHasValid         bool
+	DonutHasExpired       bool
+	DonutHasRevoked       bool
+	DonutValidDash        string
+	DonutExpiredDash      string
+	DonutRevokedDash      string
+	DonutValidDashArray   string
+	DonutExpiredDashArray string
+	DonutRevokedDashArray string
+	DonutValidOffset      string
+	DonutExpiredOffset    string
+	DonutRevokedOffset    string
+	DualStatusCount       int
+	DualStatusNoteText    string
+	TimelineItems         []expiryTimelineItemTemplateData
+}
+
+type expiryTimelineItemTemplateData struct {
+	ID        string
+	Name      string
+	DotClass  string
+	Days      int
+	DaysLabel string
 }
 
 type certRowTemplateData struct {
@@ -119,6 +148,8 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 		}
 		filteredByMount := filterCertificatesByMounts(certificates, queryState.SelectedMounts)
 		dashboardStats := computeDashboardStats(filteredByMount, expirationThresholds)
+		chartData := computeStatusChartData(filteredByMount, messages)
+		timelineItems := computeExpiryTimelineItems(filteredByMount, expirationThresholds, messages)
 		sortKey, sortDirection := resolveSortState(queryState)
 		visible := applyCertificateFilters(filteredByMount, queryState, sortKey, sortDirection)
 		pageIndex := resolvePageIndex(queryState, len(visible), queryState.PageSize)
@@ -130,28 +161,49 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 		pageIndex = applyPageAction(queryState.PageAction, pageIndex, totalPages)
 		pageVisible, totalPages = paginateCertificates(visible, pageIndex, queryState.PageSize)
 		data := certsFragmentTemplateData{
-			Rows:               buildCertRows(pageVisible, messages, expirationThresholds),
-			Messages:           messages,
-			PageInfoText:       buildPaginationInfo(messages, queryState.PageSize, pageIndex, totalPages),
-			PageCountText:      fmt.Sprintf("%d", len(visible)),
-			PageCountHidden:    len(visible) == 0,
-			PagePrevDisabled:   queryState.PageSize == "all" || pageIndex <= 0,
-			PageNextDisabled:   queryState.PageSize == "all" || pageIndex >= totalPages-1,
-			PageIndex:          pageIndex,
-			SortKey:            sortKey,
-			SortDirection:      sortDirection,
-			SortCommonActive:   sortKey == "commonName",
-			SortCreatedActive:  sortKey == "createdAt",
-			SortExpiresActive:  sortKey == "expiresAt",
-			SortCommonDir:      resolveSortDirAttribute(sortKey, sortDirection, "commonName"),
-			SortCreatedDir:     resolveSortDirAttribute(sortKey, sortDirection, "createdAt"),
-			SortExpiresDir:     resolveSortDirAttribute(sortKey, sortDirection, "expiresAt"),
-			PaginationPrevText: messages.PaginationPrev,
-			PaginationNextText: messages.PaginationNext,
-			DashboardTotal:     dashboardStats.Total,
-			DashboardValid:     dashboardStats.Valid,
-			DashboardExpiring:  dashboardStats.ExpiringSoon,
-			DashboardExpired:   dashboardStats.Expired,
+			ChartExpired:          chartData.Expired,
+			ChartHasData:          chartData.Total > 0,
+			ChartRevoked:          chartData.Revoked,
+			ChartTotal:            chartData.Total,
+			ChartValid:            chartData.Valid,
+			DashboardExpired:      dashboardStats.Expired,
+			DashboardExpiring:     dashboardStats.ExpiringSoon,
+			DashboardTotal:        dashboardStats.Total,
+			DashboardValid:        dashboardStats.Valid,
+			DonutCircumference:    chartData.Circumference,
+			DonutExpiredDash:      chartData.ExpiredDash,
+			DonutExpiredDashArray: chartData.ExpiredDashArray,
+			DonutExpiredOffset:    chartData.ExpiredOffset,
+			DonutHasExpired:       chartData.Expired > 0,
+			DonutHasRevoked:       chartData.Revoked > 0,
+			DonutHasValid:         chartData.Valid > 0,
+			DonutRevokedDash:      chartData.RevokedDash,
+			DonutRevokedDashArray: chartData.RevokedDashArray,
+			DonutRevokedOffset:    chartData.RevokedOffset,
+			DonutValidDash:        chartData.ValidDash,
+			DonutValidDashArray:   chartData.ValidDashArray,
+			DonutValidOffset:      chartData.ValidOffset,
+			DualStatusCount:       chartData.DualStatusCount,
+			DualStatusNoteText:    chartData.DualStatusNoteText,
+			Messages:              messages,
+			PageCountHidden:       len(visible) == 0,
+			PageCountText:         fmt.Sprintf("%d", len(visible)),
+			PageIndex:             pageIndex,
+			PageInfoText:          buildPaginationInfo(messages, queryState.PageSize, pageIndex, totalPages),
+			PageNextDisabled:      queryState.PageSize == "all" || pageIndex >= totalPages-1,
+			PagePrevDisabled:      queryState.PageSize == "all" || pageIndex <= 0,
+			PaginationNextText:    messages.PaginationNext,
+			PaginationPrevText:    messages.PaginationPrev,
+			Rows:                  buildCertRows(pageVisible, messages, expirationThresholds),
+			SortCommonActive:      sortKey == "commonName",
+			SortCommonDir:         resolveSortDirAttribute(sortKey, sortDirection, "commonName"),
+			SortCreatedActive:     sortKey == "createdAt",
+			SortCreatedDir:        resolveSortDirAttribute(sortKey, sortDirection, "createdAt"),
+			SortDirection:         sortDirection,
+			SortExpiresActive:     sortKey == "expiresAt",
+			SortExpiresDir:        resolveSortDirAttribute(sortKey, sortDirection, "expiresAt"),
+			SortKey:               sortKey,
+			TimelineItems:         timelineItems,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -606,6 +658,25 @@ type dashboardStats struct {
 	ExpiringSoon int
 }
 
+type statusChartData struct {
+	Total              int
+	Valid              int
+	Expired            int
+	Revoked            int
+	DualStatusCount    int
+	DualStatusNoteText string
+	Circumference      string
+	ValidDash          string
+	ExpiredDash        string
+	RevokedDash        string
+	ValidDashArray     string
+	ExpiredDashArray   string
+	RevokedDashArray   string
+	ValidOffset        string
+	ExpiredOffset      string
+	RevokedOffset      string
+}
+
 func computeDashboardStats(certificates []certs.Certificate, thresholds config.ExpirationThresholds) dashboardStats {
 	now := time.Now().UTC()
 	stats := dashboardStats{Total: len(certificates)}
@@ -625,4 +696,79 @@ func computeDashboardStats(certificates []certs.Certificate, thresholds config.E
 		}
 	}
 	return stats
+}
+
+func computeStatusChartData(certificates []certs.Certificate, messages i18n.Messages) statusChartData {
+	now := time.Now().UTC()
+	chart := statusChartData{}
+	for _, certificate := range certificates {
+		statuses := certificateStatuses(certificate, now)
+		hasRevoked := containsString(statuses, "revoked")
+		hasExpired := containsString(statuses, "expired")
+		if hasRevoked && hasExpired {
+			chart.DualStatusCount += 1
+		}
+		if hasRevoked {
+			chart.Revoked += 1
+			continue
+		}
+		if hasExpired {
+			chart.Expired += 1
+			continue
+		}
+		chart.Valid += 1
+	}
+	chart.Total = chart.Valid + chart.Expired + chart.Revoked
+	if chart.Total == 0 {
+		return chart
+	}
+	circumference := 2 * math.Pi * 50
+	validDash := (float64(chart.Valid) / float64(chart.Total)) * circumference
+	expiredDash := (float64(chart.Expired) / float64(chart.Total)) * circumference
+	revokedDash := (float64(chart.Revoked) / float64(chart.Total)) * circumference
+	startOffset := circumference / 4
+	chart.Circumference = fmt.Sprintf("%.3f", circumference)
+	chart.ValidDash = fmt.Sprintf("%.3f", validDash)
+	chart.ExpiredDash = fmt.Sprintf("%.3f", expiredDash)
+	chart.RevokedDash = fmt.Sprintf("%.3f", revokedDash)
+	chart.ValidDashArray = fmt.Sprintf("%.3f %.3f", validDash, circumference-validDash)
+	chart.ExpiredDashArray = fmt.Sprintf("%.3f %.3f", expiredDash, circumference-expiredDash)
+	chart.RevokedDashArray = fmt.Sprintf("%.3f %.3f", revokedDash, circumference-revokedDash)
+	chart.ValidOffset = fmt.Sprintf("%.3f", startOffset)
+	chart.ExpiredOffset = fmt.Sprintf("%.3f", startOffset-validDash)
+	chart.RevokedOffset = fmt.Sprintf("%.3f", startOffset-validDash-expiredDash)
+	if chart.DualStatusCount > 0 {
+		note := interpolatePlaceholder(messages.DualStatusNote, "count", fmt.Sprintf("%d", chart.DualStatusCount))
+		chart.DualStatusNoteText = note
+	}
+	return chart
+}
+
+func computeExpiryTimelineItems(certificates []certs.Certificate, thresholds config.ExpirationThresholds, messages i18n.Messages) []expiryTimelineItemTemplateData {
+	if thresholds.Warning <= 0 {
+		return []expiryTimelineItemTemplateData{}
+	}
+	now := time.Now().UTC()
+	items := make([]expiryTimelineItemTemplateData, 0, len(certificates))
+	for _, certificate := range certificates {
+		days := daysUntil(certificate.ExpiresAt.UTC(), now)
+		if days <= 0 || days > thresholds.Warning {
+			continue
+		}
+		dotClass := "vcv-timeline-dot-normal"
+		if thresholds.Critical > 0 && days <= thresholds.Critical {
+			dotClass = "vcv-timeline-dot-critical"
+		} else {
+			dotClass = "vcv-timeline-dot-warning"
+		}
+		label := interpolatePlaceholder(messages.DaysRemainingShort, "days", fmt.Sprintf("%d", days))
+		items = append(items, expiryTimelineItemTemplateData{ID: certificate.ID, Name: certificate.CommonName, DotClass: dotClass, Days: days, DaysLabel: label})
+	}
+	sort.SliceStable(items, func(left int, right int) bool {
+		return items[left].Days < items[right].Days
+	})
+	if len(items) > 10 {
+		return items[:10]
+	}
+	return items
 }
