@@ -37,13 +37,15 @@
           </button>
           <input id="vcv-theme-value" name="theme" type="hidden" value="light" />
           <div id="vcv-theme-sink" class="vcv-hidden"></div>
-          <select id="vcv-lang-select" class="vcv-select vcv-lang-select" aria-label="Language">
-            <option value="en">EN</option>
-            <option value="fr">FR</option>
-            <option value="es">ES</option>
-            <option value="de">DE</option>
-            <option value="it">IT</option>
-          </select>
+          <form action="/" method="GET">
+            <select id="vcv-lang-select" name="lang" class="vcv-select vcv-lang-select" aria-label="Language" onchange="this.form.submit()">
+              <option value="en">EN</option>
+              <option value="fr">FR</option>
+              <option value="es">ES</option>
+              <option value="de">DE</option>
+              <option value="it">IT</option>
+            </select>
+          </form>
           <div class="vcv-filters">
             <!-- Mount selector -->
             <div id="mount-selector" class="vcv-mount-filter"></div>
@@ -58,7 +60,7 @@
               hx-trigger="input changed delay:300ms"
               hx-target="#vcv-certs-body"
               hx-swap="innerHTML"
-              hx-include="#vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+              hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             />
             <label id="vcv-status-filter-label" class="vcv-filter-label" for="vcv-status-filter">Status</label>
             <select
@@ -69,7 +71,7 @@
               hx-trigger="change"
               hx-target="#vcv-certs-body"
               hx-swap="innerHTML"
-              hx-include="#vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+              hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             >
               <option value="all">All</option>
               <option value="valid">Valid</option>
@@ -99,7 +101,7 @@
               hx-post="/ui/certs/refresh"
               hx-target="#vcv-certs-body"
               hx-swap="innerHTML"
-              hx-include="#vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+              hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             >
               <span class="vcv-refresh-icon">↻</span>
             </button>
@@ -192,7 +194,7 @@
             hx-trigger="change"
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
-            hx-include="#vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
           >
             <option value="25">25</option>
             <option value="50">50</option>
@@ -208,7 +210,7 @@
             hx-get="/ui/certs"
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
-            hx-include="#vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             hx-vals='{"pageAction":"prev"}'
           >
             Previous
@@ -222,7 +224,7 @@
             hx-get="/ui/certs"
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
-            hx-include="#vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             hx-vals='{"pageAction":"next"}'
           >
             Next
@@ -262,7 +264,7 @@
             hx-get="/ui/certs"
             hx-trigger="load"
             hx-swap="innerHTML"
-            hx-include="#vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
           ></tbody>
         </table>
       </div>
@@ -303,7 +305,7 @@
       </div>
     </div>
 
-    <footer class="vcv-footer" hx-get="/ui/status" hx-trigger="load, every 10s" hx-target="#vcv-footer-sink" hx-swap="innerHTML">
+    <footer class="vcv-footer" hx-get="/ui/status" hx-trigger="load, every 10s" hx-target="#vcv-footer-sink" hx-swap="innerHTML" hx-include="#vcv-lang-select">
       <div class="vcv-footer-left">
         <span id="vcv-footer-version" class="vcv-footer-version">—</span>
       </div>

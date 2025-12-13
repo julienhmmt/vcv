@@ -163,6 +163,19 @@ function applyThemeFromStorage() {
   }
 }
 
+function initLanguageFromURL() {
+  const langSelect = document.getElementById("vcv-lang-select");
+  if (!langSelect) {
+    return;
+  }
+  const params = new URLSearchParams(window.location.search || "");
+  const lang = params.get("lang");
+  if (!lang) {
+    return;
+  }
+  langSelect.value = lang;
+}
+
 async function loadConfig() {
   try {
     const response = await fetch("/api/config");
@@ -196,19 +209,6 @@ function initEventHandlers() {
       }
     });
   }
-  const langSelect = document.getElementById("vcv-lang-select");
-  if (langSelect) {
-    langSelect.addEventListener("change", (event) => {
-      const value = event.target.value;
-      const url = new URL(window.location.href);
-      if (value) {
-        url.searchParams.set("lang", value);
-      } else {
-        url.searchParams.delete("lang");
-      }
-      window.location.href = url.toString();
-    });
-  }
 }
 
 function dismissNotifications() {
@@ -220,6 +220,7 @@ function dismissNotifications() {
 
 async function main() {
   applyThemeFromStorage();
+  initLanguageFromURL();
   initEventHandlers();
   await loadConfig();
   renderMountSelector();
