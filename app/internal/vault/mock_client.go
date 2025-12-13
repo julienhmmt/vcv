@@ -18,14 +18,6 @@ func (m *MockClient) CheckConnection(ctx context.Context) error {
 	return args.Error(0)
 }
 
-func (m *MockClient) GetCRL(ctx context.Context) ([]byte, error) {
-	args := m.Called(ctx)
-	if data, ok := args.Get(0).([]byte); ok {
-		return data, args.Error(1)
-	}
-	return nil, args.Error(1)
-}
-
 func (m *MockClient) GetCertificateDetails(ctx context.Context, serialNumber string) (certs.DetailedCertificate, error) {
 	args := m.Called(ctx, serialNumber)
 	return args.Get(0).(certs.DetailedCertificate), args.Error(1)
@@ -46,11 +38,6 @@ func (m *MockClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 		return list, args.Error(1)
 	}
 	return nil, args.Error(1)
-}
-
-func (m *MockClient) RotateCRL(ctx context.Context) error {
-	args := m.Called(ctx)
-	return args.Error(0)
 }
 
 func (m *MockClient) Shutdown() {

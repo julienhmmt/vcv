@@ -1,0 +1,7 @@
+{{define "certs-state"}}
+<input id="vcv-page" name="page" type="hidden" value="{{.PageIndex}}" hx-swap-oob="true" />
+<input id="vcv-sort-key" name="sortKey" type="hidden" value="{{.SortKey}}" hx-swap-oob="true" />
+<input id="vcv-sort-dir" name="sortDir" type="hidden" value="{{.SortDirection}}" hx-swap-oob="true" />
+<span id="vcv-page-info" class="vcv-page-info" hx-swap-oob="true">{{.PageInfoText}}</span>
+<span id="vcv-page-count" class="vcv-badge vcv-badge-neutral{{if .PageCountHidden}} vcv-hidden{{end}}" hx-swap-oob="true">{{.PageCountText}}</span>
+{{end}}

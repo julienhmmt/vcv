@@ -1,0 +1,14 @@
+{{define "certs-sort"}}
+<button type="button" id="vcv-sort-commonName" class="vcv-sort" data-sort-key="commonName" data-active="{{if .SortCommonActive}}true{{else}}false{{end}}" {{if .SortCommonDir}}data-direction="{{.SortCommonDir}}"{{end}} hx-swap-oob="true" hx-get="/ui/certs" hx-target="#vcv-certs-body" hx-swap="innerHTML" hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts" hx-vals='{"sort":"commonName"}'>
+  <span class="vcv-sort-label">{{.Messages.ColumnCommonName}}</span>
+  <span class="vcv-sort-indicator" aria-hidden="true"></span>
+</button>
+<button type="button" id="vcv-sort-createdAt" class="vcv-sort" data-sort-key="createdAt" data-active="{{if .SortCreatedActive}}true{{else}}false{{end}}" {{if .SortCreatedDir}}data-direction="{{.SortCreatedDir}}"{{end}} hx-swap-oob="true" hx-get="/ui/certs" hx-target="#vcv-certs-body" hx-swap="innerHTML" hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts" hx-vals='{"sort":"createdAt"}'>
+  <span class="vcv-sort-label">{{.Messages.ColumnCreatedAt}}</span>
+  <span class="vcv-sort-indicator" aria-hidden="true"></span>
+</button>
+<button type="button" id="vcv-sort-expiresAt" class="vcv-sort" data-sort-key="expiresAt" data-active="{{if .SortExpiresActive}}true{{else}}false{{end}}" {{if .SortExpiresDir}}data-direction="{{.SortExpiresDir}}"{{end}} hx-swap-oob="true" hx-get="/ui/certs" hx-target="#vcv-certs-body" hx-swap="innerHTML" hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts" hx-vals='{"sort":"expiresAt"}'>
+  <span class="vcv-sort-label">{{.Messages.ColumnExpiresAt}}</span>
+  <span class="vcv-sort-indicator" aria-hidden="true"></span>
+</button>
+{{end}}

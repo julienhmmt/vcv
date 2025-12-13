@@ -115,6 +115,7 @@ func main() {
 	r.Get("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP)
 	handlers.RegisterI18nRoutes(r)
 	handlers.RegisterCertRoutes(r, vaultClient)
+	handlers.RegisterUIRoutes(r, vaultClient, webFS, cfg.ExpirationThresholds)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,

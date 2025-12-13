@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"net/url"
 
 	"vcv/internal/i18n"
 	"vcv/internal/logger"
@@ -37,6 +38,19 @@ func resolveLanguage(request *http.Request) i18n.Language {
 		language, ok := i18n.FromQueryLanguage(queryLanguage)
 		if ok {
 			return language
+		}
+	}
+	currentURL := request.Header.Get("HX-Current-URL")
+	if currentURL != "" {
+		parsed, err := url.Parse(currentURL)
+		if err == nil {
+			headerLanguage := parsed.Query().Get("lang")
+			if headerLanguage != "" {
+				language, ok := i18n.FromQueryLanguage(headerLanguage)
+				if ok {
+					return language
+				}
+			}
 		}
 	}
 	return i18n.FromAcceptLanguage(request.Header.Get("Accept-Language"))

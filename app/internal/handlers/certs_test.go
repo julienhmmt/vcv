@@ -144,64 +144,6 @@ func TestGetCertificatePEM_Error(t *testing.T) {
 	mockVault.AssertExpectations(t)
 }
 
-func TestRotateCRL_Success(t *testing.T) {
-	mockVault := new(vault.MockClient)
-	mockVault.On("RotateCRL", mock.Anything).Return(nil)
-	router := setupRouter(mockVault)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/crl/rotate", nil)
-	rec := httptest.NewRecorder()
-
-	router.ServeHTTP(rec, req)
-
-	assert.Equal(t, http.StatusNoContent, rec.Code)
-	mockVault.AssertExpectations(t)
-}
-
-func TestRotateCRL_Error(t *testing.T) {
-	mockVault := new(vault.MockClient)
-	mockVault.On("RotateCRL", mock.Anything).Return(errors.New("fail"))
-	router := setupRouter(mockVault)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/crl/rotate", nil)
-	rec := httptest.NewRecorder()
-
-	router.ServeHTTP(rec, req)
-
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-	mockVault.AssertExpectations(t)
-}
-
-func TestDownloadCRL_Success(t *testing.T) {
-	mockVault := new(vault.MockClient)
-	data := []byte("crl")
-	mockVault.On("GetCRL", mock.Anything).Return(data, nil)
-	router := setupRouter(mockVault)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/crl/download", nil)
-	rec := httptest.NewRecorder()
-
-	router.ServeHTTP(rec, req)
-
-	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "crl", rec.Body.String())
-	mockVault.AssertExpectations(t)
-}
-
-func TestDownloadCRL_Error(t *testing.T) {
-	mockVault := new(vault.MockClient)
-	mockVault.On("GetCRL", mock.Anything).Return([]byte{}, errors.New("fail"))
-	router := setupRouter(mockVault)
-
-	req := httptest.NewRequest(http.MethodGet, "/api/crl/download", nil)
-	rec := httptest.NewRecorder()
-
-	router.ServeHTTP(rec, req)
-
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
-	mockVault.AssertExpectations(t)
-}
-
 func TestInvalidateCache(t *testing.T) {
 	mockVault := new(vault.MockClient)
 	mockVault.On("InvalidateCache").Return()

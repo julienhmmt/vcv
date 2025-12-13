@@ -58,7 +58,72 @@ const state = {
     critical: 7,
     warning: 30,
   },
+  usesHtmxCertsTable: false,
 };
+
+function detectHtmxCertsTable() {
+  const certsBody = document.getElementById("vcv-certs-body");
+  state.usesHtmxCertsTable = Boolean(window.htmx && certsBody && certsBody.getAttribute("hx-get") === "/ui/certs");
+}
+
+const mountsAllSentinel = "__all__";
+
+function setMountsHiddenField() {
+  const mountsInput = document.getElementById("vcv-mounts");
+  if (!mountsInput) {
+    return;
+  }
+  if (state.availableMounts.length === 0) {
+    mountsInput.value = mountsAllSentinel;
+    return;
+  }
+  if (state.selectedMounts.length === 0) {
+    mountsInput.value = "";
+    return;
+  }
+  if (state.selectedMounts.length === state.availableMounts.length) {
+    mountsInput.value = mountsAllSentinel;
+    return;
+  }
+  mountsInput.value = state.selectedMounts.join(",");
+}
+
+function getCertsHtmxValues() {
+  const searchInput = document.getElementById("vcv-search");
+  const statusFilter = document.getElementById("vcv-status-filter");
+  const expiryFilter = document.getElementById("vcv-expiry-filter");
+  const pageSizeSelect = document.getElementById("vcv-page-size");
+  const pageInput = document.getElementById("vcv-page");
+  const sortKeyInput = document.getElementById("vcv-sort-key");
+  const sortDirInput = document.getElementById("vcv-sort-dir");
+  const mountsInput = document.getElementById("vcv-mounts");
+  return {
+    search: searchInput ? searchInput.value : "",
+    status: statusFilter ? statusFilter.value : "all",
+    expiry: expiryFilter ? expiryFilter.value : "all",
+    pageSize: pageSizeSelect ? pageSizeSelect.value : "25",
+    page: pageInput ? pageInput.value : "0",
+    sortKey: sortKeyInput ? sortKeyInput.value : "commonName",
+    sortDir: sortDirInput ? sortDirInput.value : "asc",
+    mounts: mountsInput ? mountsInput.value : "",
+  };
+}
+
+function refreshHtmxCertsTable() {
+  if (!state.usesHtmxCertsTable) {
+    return;
+  }
+  const certsBody = document.getElementById("vcv-certs-body");
+  if (!certsBody) {
+    return;
+  }
+  setMountsHiddenField();
+  window.htmx.ajax("GET", "/ui/certs", {
+    target: "#vcv-certs-body",
+    swap: "innerHTML",
+    values: getCertsHtmxValues(),
+  });
+}
 
 const toastState = {
   toasts: [],
@@ -118,6 +183,11 @@ async function loadStatus() {
 }
 
 function renderStatusFooter() {
+  const footer = document.querySelector(".vcv-footer");
+  const usesHtmxStatus = Boolean(window.htmx && footer && footer.getAttribute("hx-get") === "/ui/status");
+  if (usesHtmxStatus) {
+    return;
+  }
   const versionEl = document.getElementById("vcv-footer-version");
   const vaultEl = document.getElementById("vcv-footer-vault");
   if (!versionEl || !vaultEl) return;
@@ -184,9 +254,16 @@ function closeModal() {
 // Theme management
 function initTheme() {
   applyTheme(state.theme);
+  const themeValue = document.getElementById('vcv-theme-value');
+  if (themeValue) {
+    themeValue.value = state.theme;
+  }
   const toggle = document.getElementById('theme-toggle');
   if (toggle) {
-    toggle.addEventListener('click', toggleTheme);
+    const isHtmx = Boolean(toggle.getAttribute('hx-post'));
+    if (!isHtmx) {
+      toggle.addEventListener('click', toggleTheme);
+    }
   }
 }
 
@@ -494,16 +571,6 @@ function applyTranslations() {
     if (subtitleElement) {
       subtitleElement.textContent = subtitle;
     }
-  }
-
-  const rotateCrlButton = document.getElementById("rotate-crl-btn");
-  if (rotateCrlButton) {
-    rotateCrlButton.textContent = t("buttonRotateCRL") || rotateCrlButton.textContent;
-  }
-
-  const downloadCrlButton = document.getElementById("download-crl-btn");
-  if (downloadCrlButton) {
-    downloadCrlButton.textContent = t("buttonDownloadCRL") || downloadCrlButton.textContent;
   }
 
   const dashboardTotalLabel = document.getElementById("dashboard-total-label");
@@ -835,6 +902,11 @@ function toggleMount(mount) {
   }
   renderMountSelector();
   renderMountModalList();
+  setMountsHiddenField();
+  if (state.usesHtmxCertsTable) {
+    refreshHtmxCertsTable();
+    return;
+  }
   loadCertificates(); // Reload certificates with new mount filter
 }
 
@@ -842,6 +914,11 @@ function selectAllMounts() {
   state.selectedMounts = [...state.availableMounts];
   renderMountSelector();
   renderMountModalList();
+  setMountsHiddenField();
+  if (state.usesHtmxCertsTable) {
+    refreshHtmxCertsTable();
+    return;
+  }
   loadCertificates();
 }
 
@@ -849,6 +926,11 @@ function deselectAllMounts() {
   state.selectedMounts = [];
   renderMountSelector();
   renderMountModalList();
+  setMountsHiddenField();
+  if (state.usesHtmxCertsTable) {
+    refreshHtmxCertsTable();
+    return;
+  }
   loadCertificates();
 }
 
@@ -934,9 +1016,14 @@ function closeMountModal() {
 
 async function loadCertificates() {
   try {
+    if (state.usesHtmxCertsTable) {
+      return;
+    }
     // Build URL with mount filter if any mounts are selected
     let url = `${API_BASE_URL}/api/certs`;
-    if (state.selectedMounts.length > 0 && state.selectedMounts.length < state.availableMounts.length) {
+    if (state.selectedMounts.length === 0) {
+      url += `?mounts=`;
+    } else if (state.selectedMounts.length > 0 && state.selectedMounts.length < state.availableMounts.length) {
       const mountParams = state.selectedMounts.join(',');
       url += `?mounts=${encodeURIComponent(mountParams)}`;
     }
@@ -1052,6 +1139,10 @@ function updateDetailsLoadingUI() {
 async function invalidateCacheAndRefresh() {
   try {
     await fetchWithRetry(`${API_BASE_URL}/api/cache/invalidate`, { method: 'POST' });
+    if (state.usesHtmxCertsTable) {
+      refreshHtmxCertsTable();
+      return;
+    }
     await loadCertificates();
     showToast(
       formatMessage("cacheInvalidated", "Cache cleared and data refreshed"),
@@ -1061,70 +1152,6 @@ async function invalidateCacheAndRefresh() {
   } catch (error) {
     showToast(
       formatMessage("cacheInvalidateFailed", "Failed to clear cache"),
-      'error'
-    );
-  }
-}
-
-async function rotateCRL() {
-  try {
-    const response = await fetchWithRetry(`${API_BASE_URL}/api/crl/rotate`, { method: 'POST' });
-    if (!response.ok) {
-      showToast(
-        formatMessage(
-          "rotateCRLFailed",
-          `Failed to rotate CRL (${response.status})`,
-          { status: response.status },
-        ),
-        'error'
-      );
-      return;
-    }
-    showToast(
-      formatMessage("rotateCRLSuccess", "CRL rotated successfully"),
-      'success',
-      3000
-    );
-  } catch {
-    showToast(
-      formatMessage(
-        "rotateCRLNetworkError",
-        "Network error rotating CRL. Please try again.",
-      ),
-      'error'
-    );
-  }
-}
-
-async function downloadCRL() {
-  try {
-    const response = await fetchWithRetry(`${API_BASE_URL}/api/crl/download`);
-    if (!response.ok) {
-      showToast(
-        formatMessage(
-          "downloadCRLFailed",
-          `Failed to download CRL (${response.status})`,
-          { status: response.status },
-        ),
-        'error'
-      );
-      return;
-    }
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'crl.pem';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-  } catch {
-    showToast(
-      formatMessage(
-        "downloadCRLNetworkError",
-        "Network error downloading CRL. Please try again.",
-      ),
       'error'
     );
   }
@@ -1184,6 +1211,9 @@ function applyFilters(items) {
 }
 
 function applyFiltersAndRender() {
+  if (state.usesHtmxCertsTable) {
+    return;
+  }
   state.visible = applyFilters(state.certificates);
   state.pageIndex = 0;
   paginateAndRender();
@@ -1194,6 +1224,9 @@ function applyFiltersAndRender() {
 }
 
 function paginateAndRender() {
+  if (state.usesHtmxCertsTable) {
+    return;
+  }
   const pageSizeValue = state.pageSize;
   const info = document.getElementById("vcv-page-info");
   const prevBtn = document.getElementById("vcv-page-prev");
@@ -1345,6 +1378,16 @@ function calculateDaysUntilExpiry(expiresAt) {
   return diffDays;
 }
 
+function buildCertificateDetailsUiUrl(certificateId) {
+  const params = new URLSearchParams(window.location.search || "");
+  const lang = params.get("lang");
+  let url = `${API_BASE_URL}/ui/certs/${encodeURIComponent(certificateId)}/details`;
+  if (lang) {
+    url += `?lang=${encodeURIComponent(lang)}`;
+  }
+  return url;
+}
+
 async function showCertificateDetails(certificateId) {
   const modal = document.getElementById('certificate-modal');
   const loadingDiv = document.getElementById('details-loading');
@@ -1363,17 +1406,33 @@ async function showCertificateDetails(certificateId) {
   modal.classList.remove('vcv-hidden');
   state.selectedCertificate = { id: certificateId };
   
-  // Load details
+  downloadBtn.onclick = () => downloadCertificatePEM(certificateId);
+
+  const htmxClient = window.htmx;
+  if (htmxClient && typeof htmxClient.ajax === "function") {
+    try {
+      const url = buildCertificateDetailsUiUrl(certificateId);
+      await htmxClient.ajax("GET", url, "#details-content");
+      if (!contentDiv.innerHTML.trim()) {
+        throw new Error("empty response");
+      }
+      loadingDiv.classList.add('vcv-hidden');
+      return;
+    } catch (error) {
+      loadingDiv.classList.add('vcv-hidden');
+      modal.classList.add('vcv-hidden');
+      showToast(formatMessage("loadDetailsNetworkError", "Network error loading certificate details. Please try again."), 'error');
+      return;
+    }
+  }
+
   const details = await loadCertificateDetails(certificateId);
   if (details) {
     renderCertificateDetails(details);
     loadingDiv.classList.add('vcv-hidden');
-    
-    // Update download button
-    downloadBtn.onclick = () => downloadCertificatePEM(certificateId);
-  } else {
-    modal.classList.add('vcv-hidden');
+    return;
   }
+  modal.classList.add('vcv-hidden');
 }
 
 function renderCertificateDetails(details) {
@@ -1457,6 +1516,9 @@ function handlePageSizeChange(value) {
 }
 
 function handlePreviousPage() {
+  if (state.usesHtmxCertsTable) {
+    return;
+  }
   if (state.pageIndex <= 0) {
     return;
   }
@@ -1465,6 +1527,9 @@ function handlePreviousPage() {
 }
 
 function handleNextPage() {
+  if (state.usesHtmxCertsTable) {
+    return;
+  }
   const size = state.pageSize === "all" ? state.visible.length : parseInt(state.pageSize, 10) || 25;
   const totalPages = state.pageSize === "all" ? 1 : Math.max(1, Math.ceil(state.visible.length / size));
   if (state.pageIndex >= totalPages - 1) {
@@ -1475,6 +1540,9 @@ function handleNextPage() {
 }
 
 function handleSortClick(key) {
+  if (state.usesHtmxCertsTable) {
+    return;
+  }
   if (state.sortKey === key) {
     state.sortDirection = state.sortDirection === "asc" ? "desc" : "asc";
   } else {
@@ -1494,38 +1562,48 @@ function closeModal() {
 
 // Initialize event handlers
 function initEventHandlers() {
-  // Search input
-  const searchInput = document.getElementById("vcv-search");
-  if (searchInput) {
-    searchInput.addEventListener("input", (e) => handleSearchChange(e.target.value));
-  }
+  if (!state.usesHtmxCertsTable) {
+    // Search input
+    const searchInput = document.getElementById("vcv-search");
+    if (searchInput) {
+      searchInput.addEventListener("input", (e) => handleSearchChange(e.target.value));
+    }
 
-  // Status filter
-  const statusFilter = document.getElementById("vcv-status-filter");
-  if (statusFilter) {
-    statusFilter.addEventListener("change", (e) => handleStatusFilterChange(e.target.value));
-  }
+    // Status filter
+    const statusFilter = document.getElementById("vcv-status-filter");
+    if (statusFilter) {
+      statusFilter.addEventListener("change", (e) => handleStatusFilterChange(e.target.value));
+    }
 
-  // Expiry filter
-  const expiryFilter = document.getElementById("vcv-expiry-filter");
-  if (expiryFilter) {
-    expiryFilter.addEventListener("change", (e) => handleExpiryFilterChange(e.target.value));
-  }
+    // Expiry filter
+    const expiryFilter = document.getElementById("vcv-expiry-filter");
+    if (expiryFilter) {
+      expiryFilter.addEventListener("change", (e) => handleExpiryFilterChange(e.target.value));
+    }
 
-  // Page size
-  const pageSizeSelect = document.getElementById("vcv-page-size");
-  if (pageSizeSelect) {
-    pageSizeSelect.addEventListener("change", (e) => handlePageSizeChange(e.target.value));
-  }
+    // Page size
+    const pageSizeSelect = document.getElementById("vcv-page-size");
+    if (pageSizeSelect) {
+      pageSizeSelect.addEventListener("change", (e) => handlePageSizeChange(e.target.value));
+    }
 
-  // Pagination buttons
-  const prevBtn = document.getElementById("vcv-page-prev");
-  if (prevBtn) {
-    prevBtn.addEventListener("click", handlePreviousPage);
-  }
-  const nextBtn = document.getElementById("vcv-page-next");
-  if (nextBtn) {
-    nextBtn.addEventListener("click", handleNextPage);
+    // Pagination buttons
+    const prevBtn = document.getElementById("vcv-page-prev");
+    if (prevBtn) {
+      prevBtn.addEventListener("click", handlePreviousPage);
+    }
+    const nextBtn = document.getElementById("vcv-page-next");
+    if (nextBtn) {
+      nextBtn.addEventListener("click", handleNextPage);
+    }
+
+    // Sort buttons
+    document.querySelectorAll(".vcv-sort").forEach((button) => {
+      button.addEventListener("click", () => {
+        const key = button.getAttribute("data-sort-key");
+        handleSortClick(key);
+      });
+    });
   }
 
   // Mount modal backdrop close
@@ -1538,28 +1616,13 @@ function initEventHandlers() {
     });
   }
 
-  // Sort buttons
-  document.querySelectorAll(".vcv-sort").forEach((button) => {
-    button.addEventListener("click", () => {
-      const key = button.getAttribute("data-sort-key");
-      handleSortClick(key);
-    });
-  });
-
   // Refresh button
   const refreshBtn = document.getElementById("refresh-btn");
   if (refreshBtn) {
-    refreshBtn.addEventListener("click", invalidateCacheAndRefresh);
-  }
-
-  const rotateCrlBtn = document.getElementById("rotate-crl-btn");
-  if (rotateCrlBtn) {
-    rotateCrlBtn.addEventListener("click", rotateCRL);
-  }
-
-  const downloadCrlBtn = document.getElementById("download-crl-btn");
-  if (downloadCrlBtn) {
-    downloadCrlBtn.addEventListener("click", downloadCRL);
+    const isHtmx = Boolean(refreshBtn.getAttribute("hx-post"));
+    if (!isHtmx) {
+      refreshBtn.addEventListener("click", invalidateCacheAndRefresh);
+    }
   }
 
   // Language selector
@@ -1590,15 +1653,22 @@ function initEventHandlers() {
 
 // Main initialization
 async function main() {
-  initTheme();
-  initKeyboardShortcuts();
+  detectHtmxCertsTable();
   initEventHandlers();
   await loadTranslations();
   await loadConfig();
   renderMountSelector(); // Initialize mount selector after config is loaded
+  setMountsHiddenField();
+  if (state.usesHtmxCertsTable && window.htmx) {
+    refreshHtmxCertsTable();
+  }
   // Load certificates in the background so the UI renders immediately
-  await loadStatus();
-  loadCertificates();
+  const footer = document.querySelector(".vcv-footer");
+  const usesHtmxStatus = Boolean(window.htmx && footer && footer.getAttribute("hx-get") === "/ui/status");
+  if (!usesHtmxStatus) {
+    await loadStatus();
+  }
+  await loadCertificates();
 }
 
 // Start the application

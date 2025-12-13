@@ -29,8 +29,6 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 | `/api/certs/{id}/details` | GET | Detailed certificate view |
 | `/api/certs/{id}/pem` | GET | PEM content |
 | `/api/certs` | GET | List certificates |
-| `/api/crl/download` | GET | Download CRL |
-| `/api/crl/rotate` | POST | Rotate CRL |
 | `/api/health` | GET | Liveness probe |
 | `/api/i18n` | GET | UI translations (lang via query param) |
 | `/api/ready` | GET | Readiness probe |

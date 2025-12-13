@@ -1,0 +1,20 @@
+{{define "certs-rows"}}
+{{range .Rows}}
+<tr class="{{.RowClass}}">
+  <td>{{.CommonName}}</td>
+  <td>{{.Sans}}</td>
+  <td>{{.CreatedAt}}</td>
+  <td class="{{.ExpiresCellClass}}">
+    <div class="{{.ExpiresDateClass}}">{{.ExpiresAt}}</div>
+    {{if .DaysRemainingText}}<div class="{{.DaysRemainingClass}}">{{.DaysRemainingText}}</div>{{end}}
+  </td>
+  <td>
+    {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
+  </td>
+  <td>
+    <button type="button" class="vcv-button vcv-button-small" onclick="openCertificateModal()" hx-get="/ui/certs/{{urlquery .ID}}/details" hx-target="#details-content" hx-swap="innerHTML" hx-include="#vcv-lang-select">{{.ButtonDetailsText}}</button>
+    <a class="vcv-button vcv-button-small vcv-button-primary" href="/api/certs/{{urlquery .ID}}/pem/download">{{.ButtonDownloadPEM}}</a>
+  </td>
+</tr>
+{{end}}
+{{end}}

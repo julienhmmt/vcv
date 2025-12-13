@@ -1,0 +1,11 @@
+<span id="theme-icon" hx-swap-oob="true">{{.Icon}}</span>
+<input id="vcv-theme-value" name="theme" type="hidden" value="{{.Theme}}" hx-swap-oob="true" />
+<script>
+  (function () {
+    try {
+      localStorage.setItem('vcv-theme', '{{.Theme}}');
+    } catch (e) {
+    }
+    document.documentElement.setAttribute('data-theme', '{{.Theme}}');
+  })();
+</script>
