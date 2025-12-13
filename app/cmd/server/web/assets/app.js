@@ -235,9 +235,16 @@ function closeModal() {
 // Theme management
 function initTheme() {
   applyTheme(state.theme);
+  const themeValue = document.getElementById('vcv-theme-value');
+  if (themeValue) {
+    themeValue.value = state.theme;
+  }
   const toggle = document.getElementById('theme-toggle');
   if (toggle) {
-    toggle.addEventListener('click', toggleTheme);
+    const isHtmx = Boolean(toggle.getAttribute('hx-post'));
+    if (!isHtmx) {
+      toggle.addEventListener('click', toggleTheme);
+    }
   }
 }
 

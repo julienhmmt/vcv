@@ -39,6 +39,11 @@ type footerStatusTemplateData struct {
 	VaultTitle  string
 }
 
+type themeToggleTemplateData struct {
+	Theme string
+	Icon  string
+}
+
 type certsFragmentTemplateData struct {
 	Rows                  []certRowTemplateData
 	Messages              i18n.Messages
@@ -133,6 +138,39 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 	if err != nil {
 		panic(err)
 	}
+	router.Post("/ui/theme/toggle", func(w http.ResponseWriter, r *http.Request) {
+		if parseErr := r.ParseForm(); parseErr != nil {
+			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			return
+		}
+		currentTheme := strings.TrimSpace(r.Form.Get("theme"))
+		if currentTheme != "dark" {
+			currentTheme = "light"
+		}
+		nextTheme := "dark"
+		if currentTheme == "dark" {
+			nextTheme = "light"
+		}
+		icon := "🌙"
+		if nextTheme == "dark" {
+			icon = "☀️"
+		}
+		data := themeToggleTemplateData{Theme: nextTheme, Icon: icon}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		if execErr := templates.ExecuteTemplate(w, "theme-toggle-fragment.html", data); execErr != nil {
+			requestID := middleware.GetRequestID(r.Context())
+			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, execErr).
+				Str("request_id", requestID).
+				Msg("failed to render theme toggle fragment template")
+			return
+		}
+		requestID := middleware.GetRequestID(r.Context())
+		logger.HTTPEvent(r.Method, r.URL.Path, http.StatusOK, 0).
+			Str("request_id", requestID).
+			Str("theme", nextTheme).
+			Msg("toggled theme")
+	})
 	router.Get("/ui/certs", func(w http.ResponseWriter, r *http.Request) {
 		language := resolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)

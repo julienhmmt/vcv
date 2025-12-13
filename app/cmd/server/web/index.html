@@ -23,9 +23,20 @@
           <p class="vcv-subtitle">Certificates from the configured Vault PKI mount</p>
         </div>
         <div class="vcv-header-right">
-          <button id="theme-toggle" class="vcv-button vcv-button-icon" type="button" title="Toggle dark mode">
+          <button
+            id="theme-toggle"
+            class="vcv-button vcv-button-icon"
+            type="button"
+            title="Toggle dark mode"
+            hx-post="/ui/theme/toggle"
+            hx-target="#vcv-theme-sink"
+            hx-swap="innerHTML"
+            hx-include="#vcv-theme-value"
+          >
             <span id="theme-icon">🌙</span>
           </button>
+          <input id="vcv-theme-value" name="theme" type="hidden" value="light" />
+          <div id="vcv-theme-sink" class="vcv-hidden"></div>
           <select id="vcv-lang-select" class="vcv-select vcv-lang-select" aria-label="Language">
             <option value="en">EN</option>
             <option value="fr">FR</option>
