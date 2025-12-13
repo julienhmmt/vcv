@@ -3,7 +3,101 @@ const mountsAllSentinel = "__all__";
 const state = {
   availableMounts: [],
   selectedMounts: [],
+  messages: {},
 };
+
+function getCurrentLanguage() {
+  const params = new URLSearchParams(window.location.search || "");
+  const lang = params.get("lang");
+  return lang || "";
+}
+
+async function loadMessages() {
+  try {
+    const lang = getCurrentLanguage();
+    const url = lang ? `/api/i18n?lang=${encodeURIComponent(lang)}` : "/api/i18n";
+    const response = await fetch(url);
+    if (!response.ok) {
+      return;
+    }
+    const payload = await response.json();
+    if (!payload || !payload.messages) {
+      return;
+    }
+    state.messages = payload.messages;
+  } catch {
+  }
+}
+
+function setText(element, value) {
+  if (!element || typeof value !== "string" || value === "") {
+    return;
+  }
+  element.textContent = value;
+}
+
+function applyTranslations() {
+  const messages = state.messages;
+  if (!messages) {
+    return;
+  }
+  setText(document.querySelector(".vcv-subtitle"), messages.appSubtitle);
+  setText(document.getElementById("mount-modal-title"), messages.mountSelectorTitle);
+  setText(document.getElementById("mount-deselect-all"), messages.deselectAll);
+  setText(document.getElementById("mount-select-all"), messages.selectAll);
+  setText(document.getElementById("mount-close"), messages.buttonClose);
+  setText(document.getElementById("dashboard-total-label"), messages.dashboardTotal);
+  setText(document.getElementById("dashboard-valid-label"), messages.dashboardValid);
+  setText(document.getElementById("dashboard-expiring-label"), messages.dashboardExpiring);
+  setText(document.getElementById("dashboard-expired-label"), messages.dashboardExpired);
+  setText(document.getElementById("chart-status-title"), messages.chartStatusDistribution);
+  setText(document.getElementById("chart-expiry-title"), messages.chartExpiryTimeline);
+  setText(document.getElementById("vcv-status-filter-label"), messages.statusFilterTitle);
+  setText(document.getElementById("vcv-page-size-label"), messages.paginationPageSizeLabel);
+  setText(document.querySelector("#certificate-modal .vcv-modal-title"), messages.modalDetailsTitle);
+  const searchInput = document.getElementById("vcv-search");
+  if (searchInput && typeof messages.searchPlaceholder === "string" && messages.searchPlaceholder !== "") {
+    searchInput.setAttribute("placeholder", messages.searchPlaceholder);
+  }
+  const statusSelect = document.getElementById("vcv-status-filter");
+  if (statusSelect) {
+    setText(statusSelect.querySelector("option[value='all']"), messages.statusFilterAll);
+    setText(statusSelect.querySelector("option[value='valid']"), messages.statusFilterValid);
+    setText(statusSelect.querySelector("option[value='expired']"), messages.statusFilterExpired);
+    setText(statusSelect.querySelector("option[value='revoked']"), messages.statusFilterRevoked);
+  }
+  const expirySelect = document.getElementById("vcv-expiry-filter");
+  if (expirySelect) {
+    setText(expirySelect.querySelector("option[value='all']"), messages.expiryFilterAll);
+    setText(expirySelect.querySelector("option[value='7']"), messages.expiryFilter7Days);
+    setText(expirySelect.querySelector("option[value='30']"), messages.expiryFilter30Days);
+    setText(expirySelect.querySelector("option[value='90']"), messages.expiryFilter90Days);
+  }
+  const pageSizeSelect = document.getElementById("vcv-page-size");
+  if (pageSizeSelect) {
+    setText(pageSizeSelect.querySelector("option[value='all']"), messages.paginationAll);
+  }
+  setText(document.getElementById("vcv-page-prev"), messages.paginationPrev);
+  setText(document.getElementById("vcv-page-next"), messages.paginationNext);
+  const legend = document.querySelector(".vcv-legend");
+  if (legend) {
+    const validItem = legend.querySelector(".vcv-badge-valid")?.closest(".vcv-legend-item");
+    if (validItem) {
+      setText(validItem.querySelector(".vcv-badge-valid"), messages.legendValidTitle);
+      setText(validItem.querySelector(".vcv-legend-text"), messages.legendValidText);
+    }
+    const expiredItem = legend.querySelector(".vcv-badge-expired")?.closest(".vcv-legend-item");
+    if (expiredItem) {
+      setText(expiredItem.querySelector(".vcv-badge-expired"), messages.legendExpiredTitle);
+      setText(expiredItem.querySelector(".vcv-legend-text"), messages.legendExpiredText);
+    }
+    const revokedItem = legend.querySelector(".vcv-badge-revoked")?.closest(".vcv-legend-item");
+    if (revokedItem) {
+      setText(revokedItem.querySelector(".vcv-badge-revoked"), messages.legendRevokedTitle);
+      setText(revokedItem.querySelector(".vcv-legend-text"), messages.legendRevokedText);
+    }
+  }
+}
 
 function setMountsHiddenField() {
   const mountsInput = document.getElementById("vcv-mounts");
@@ -66,8 +160,8 @@ function renderMountSelector() {
   }
   const totalMounts = state.availableMounts.length;
   const selectedCount = state.selectedMounts.length;
-  const label = "PKI Engines";
-  const summary = totalMounts === 0 ? "—" : selectedCount === totalMounts ? "All" : selectedCount === 0 ? "None" : `${selectedCount}/${totalMounts}`;
+  const label = typeof state.messages.mountSelectorTitle === "string" && state.messages.mountSelectorTitle !== "" ? state.messages.mountSelectorTitle : "PKI Engines";
+  const summary = totalMounts === 0 ? "—" : `${selectedCount}/${totalMounts}`;
   container.innerHTML = `
     <button type="button" class="vcv-button vcv-button-ghost vcv-mount-trigger" onclick="openMountModal()">
       <span class="vcv-mount-trigger-label">${label}</span>
@@ -92,7 +186,8 @@ function renderMountModalList() {
       </label>
     `;
   });
-  listContainer.innerHTML = items.join("") || `<p class="vcv-empty">No data</p>`;
+  const emptyText = typeof state.messages.noData === "string" && state.messages.noData !== "" ? state.messages.noData : "No data";
+  listContainer.innerHTML = items.join("") || `<p class="vcv-empty">${emptyText}</p>`;
 }
 
 function openMountModal() {
@@ -221,6 +316,8 @@ function dismissNotifications() {
 async function main() {
   applyThemeFromStorage();
   initLanguageFromURL();
+  await loadMessages();
+  applyTranslations();
   initEventHandlers();
   await loadConfig();
   renderMountSelector();
