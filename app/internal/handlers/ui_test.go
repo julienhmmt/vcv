@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
+	"vcv/config"
 	"vcv/internal/certs"
 	"vcv/internal/handlers"
 	"vcv/internal/vault"
@@ -22,14 +23,15 @@ import (
 func setupUIRouter(mockVault *vault.MockClient, webFS fs.FS) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
-	handlers.RegisterUIRoutes(router, mockVault, webFS)
+	handlers.RegisterUIRoutes(router, mockVault, webFS, config.ExpirationThresholds{Critical: 7, Warning: 30})
 	return router
 }
 
 func TestGetCertificateDetailsUI(t *testing.T) {
 	webFS := fstest.MapFS{
-		"templates/cert-details.html":  &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div>")},
-		"templates/footer-status.html": &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
+		"templates/cert-details.html":   &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div>")},
+		"templates/footer-status.html":  &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
+		"templates/certs-fragment.html": &fstest.MapFile{Data: []byte("{{range .Rows}}<div class=\"row\">{{.CommonName}}</div>{{end}}<input id=\"vcv-page\" value=\"{{.PageIndex}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-key\" value=\"{{.SortKey}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-dir\" value=\"{{.SortDirection}}\" hx-swap-oob=\"true\" />")},
 	}
 	tests := []struct {
 		name                 string
@@ -77,6 +79,76 @@ func TestGetCertificateDetailsUI(t *testing.T) {
 			if tt.expectedBodyContains != "" {
 				assert.Contains(t, rec.Body.String(), tt.expectedBodyContains)
 			}
+			mockVault.AssertExpectations(t)
+		})
+	}
+}
+
+func TestGetCertificatesFragment(t *testing.T) {
+	webFS := fstest.MapFS{
+		"templates/cert-details.html":   &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div>")},
+		"templates/footer-status.html":  &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
+		"templates/certs-fragment.html": &fstest.MapFile{Data: []byte("{{range .Rows}}<div class=\"row\">{{.CommonName}}</div>{{end}}<input id=\"vcv-page\" value=\"{{.PageIndex}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-key\" value=\"{{.SortKey}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-dir\" value=\"{{.SortDirection}}\" hx-swap-oob=\"true\" />")},
+	}
+	certificates := []certs.Certificate{
+		{ID: "pki:a", CommonName: "alpha.example", Sans: []string{"alpha"}, CreatedAt: time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2026, 1, 1, 10, 0, 0, 0, time.UTC)},
+		{ID: "pki:b", CommonName: "beta.example", Sans: []string{"beta"}, CreatedAt: time.Date(2025, 2, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2027, 1, 1, 10, 0, 0, 0, time.UTC)},
+		{ID: "pki:c", CommonName: "gamma.example", Sans: []string{"gamma"}, CreatedAt: time.Date(2025, 3, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2028, 1, 1, 10, 0, 0, 0, time.UTC)},
+	}
+	tests := []struct {
+		name          string
+		path          string
+		headerTrigger string
+		assertBody    func(t *testing.T, body string)
+	}{
+		{
+			name: "success renders rows",
+			path: "/ui/certs",
+			assertBody: func(t *testing.T, body string) {
+				assert.Contains(t, body, "alpha.example")
+				assert.Contains(t, body, "beta.example")
+				assert.Contains(t, body, "gamma.example")
+			},
+		},
+		{
+			name: "search filters",
+			path: "/ui/certs?search=beta",
+			assertBody: func(t *testing.T, body string) {
+				assert.NotContains(t, body, "alpha.example")
+				assert.Contains(t, body, "beta.example")
+				assert.NotContains(t, body, "gamma.example")
+			},
+		},
+		{
+			name: "pagination next advances page",
+			path: "/ui/certs?pageSize=1&page=0&pageAction=next",
+			assertBody: func(t *testing.T, body string) {
+				assert.Contains(t, body, "beta.example")
+				assert.Contains(t, body, "id=\"vcv-page\" value=\"1\"")
+			},
+		},
+		{
+			name: "sort toggle changes direction",
+			path: "/ui/certs?sortKey=commonName&sortDir=asc&sort=commonName",
+			assertBody: func(t *testing.T, body string) {
+				assert.Contains(t, body, "id=\"vcv-sort-dir\" value=\"desc\"")
+			},
+		},
+	}
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			mockVault := &vault.MockClient{}
+			mockVault.On("ListCertificates", mock.Anything).Return(certificates, nil)
+			router := setupUIRouter(mockVault, webFS)
+			req := httptest.NewRequest(http.MethodGet, testCase.path, nil)
+			if testCase.headerTrigger != "" {
+				req.Header.Set("HX-Trigger", testCase.headerTrigger)
+			}
+			recorder := httptest.NewRecorder()
+			router.ServeHTTP(recorder, req)
+			assert.Equal(t, http.StatusOK, recorder.Code)
+			body := recorder.Body.String()
+			testCase.assertBody(t, body)
 			mockVault.AssertExpectations(t)
 		})
 	}

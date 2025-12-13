@@ -58,7 +58,58 @@ const state = {
     critical: 7,
     warning: 30,
   },
+  usesHtmxCertsTable: false,
 };
+
+function detectHtmxCertsTable() {
+  const certsBody = document.getElementById("vcv-certs-body");
+  state.usesHtmxCertsTable = Boolean(window.htmx && certsBody && certsBody.getAttribute("hx-get") === "/ui/certs");
+}
+
+function setMountsHiddenField() {
+  const mountsInput = document.getElementById("vcv-mounts");
+  if (!mountsInput) {
+    return;
+  }
+  mountsInput.value = state.selectedMounts.join(",");
+}
+
+function getCertsHtmxValues() {
+  const searchInput = document.getElementById("vcv-search");
+  const statusFilter = document.getElementById("vcv-status-filter");
+  const expiryFilter = document.getElementById("vcv-expiry-filter");
+  const pageSizeSelect = document.getElementById("vcv-page-size");
+  const pageInput = document.getElementById("vcv-page");
+  const sortKeyInput = document.getElementById("vcv-sort-key");
+  const sortDirInput = document.getElementById("vcv-sort-dir");
+  const mountsInput = document.getElementById("vcv-mounts");
+  return {
+    search: searchInput ? searchInput.value : "",
+    status: statusFilter ? statusFilter.value : "all",
+    expiry: expiryFilter ? expiryFilter.value : "all",
+    pageSize: pageSizeSelect ? pageSizeSelect.value : "25",
+    page: pageInput ? pageInput.value : "0",
+    sortKey: sortKeyInput ? sortKeyInput.value : "commonName",
+    sortDir: sortDirInput ? sortDirInput.value : "asc",
+    mounts: mountsInput ? mountsInput.value : "",
+  };
+}
+
+function refreshHtmxCertsTable() {
+  if (!state.usesHtmxCertsTable) {
+    return;
+  }
+  const certsBody = document.getElementById("vcv-certs-body");
+  if (!certsBody) {
+    return;
+  }
+  setMountsHiddenField();
+  window.htmx.ajax("GET", "/ui/certs", {
+    target: "#vcv-certs-body",
+    swap: "innerHTML",
+    values: getCertsHtmxValues(),
+  });
+}
 
 const toastState = {
   toasts: [],
@@ -835,6 +886,11 @@ function toggleMount(mount) {
   }
   renderMountSelector();
   renderMountModalList();
+  setMountsHiddenField();
+  if (state.usesHtmxCertsTable) {
+    refreshHtmxCertsTable();
+    return;
+  }
   loadCertificates(); // Reload certificates with new mount filter
 }
 
@@ -842,6 +898,11 @@ function selectAllMounts() {
   state.selectedMounts = [...state.availableMounts];
   renderMountSelector();
   renderMountModalList();
+  setMountsHiddenField();
+  if (state.usesHtmxCertsTable) {
+    refreshHtmxCertsTable();
+    return;
+  }
   loadCertificates();
 }
 
@@ -849,6 +910,11 @@ function deselectAllMounts() {
   state.selectedMounts = [];
   renderMountSelector();
   renderMountModalList();
+  setMountsHiddenField();
+  if (state.usesHtmxCertsTable) {
+    refreshHtmxCertsTable();
+    return;
+  }
   loadCertificates();
 }
 
@@ -934,6 +1000,9 @@ function closeMountModal() {
 
 async function loadCertificates() {
   try {
+    if (state.usesHtmxCertsTable) {
+      return;
+    }
     // Build URL with mount filter if any mounts are selected
     let url = `${API_BASE_URL}/api/certs`;
     if (state.selectedMounts.length > 0 && state.selectedMounts.length < state.availableMounts.length) {
@@ -1184,6 +1253,9 @@ function applyFilters(items) {
 }
 
 function applyFiltersAndRender() {
+  if (state.usesHtmxCertsTable) {
+    return;
+  }
   state.visible = applyFilters(state.certificates);
   state.pageIndex = 0;
   paginateAndRender();
@@ -1194,6 +1266,9 @@ function applyFiltersAndRender() {
 }
 
 function paginateAndRender() {
+  if (state.usesHtmxCertsTable) {
+    return;
+  }
   const pageSizeValue = state.pageSize;
   const info = document.getElementById("vcv-page-info");
   const prevBtn = document.getElementById("vcv-page-prev");
@@ -1483,6 +1558,9 @@ function handlePageSizeChange(value) {
 }
 
 function handlePreviousPage() {
+  if (state.usesHtmxCertsTable) {
+    return;
+  }
   if (state.pageIndex <= 0) {
     return;
   }
@@ -1491,6 +1569,9 @@ function handlePreviousPage() {
 }
 
 function handleNextPage() {
+  if (state.usesHtmxCertsTable) {
+    return;
+  }
   const size = state.pageSize === "all" ? state.visible.length : parseInt(state.pageSize, 10) || 25;
   const totalPages = state.pageSize === "all" ? 1 : Math.max(1, Math.ceil(state.visible.length / size));
   if (state.pageIndex >= totalPages - 1) {
@@ -1501,6 +1582,9 @@ function handleNextPage() {
 }
 
 function handleSortClick(key) {
+  if (state.usesHtmxCertsTable) {
+    return;
+  }
   if (state.sortKey === key) {
     state.sortDirection = state.sortDirection === "asc" ? "desc" : "asc";
   } else {
@@ -1520,6 +1604,9 @@ function closeModal() {
 
 // Initialize event handlers
 function initEventHandlers() {
+  if (state.usesHtmxCertsTable) {
+    return;
+  }
   // Search input
   const searchInput = document.getElementById("vcv-search");
   if (searchInput) {
@@ -1616,19 +1703,19 @@ function initEventHandlers() {
 
 // Main initialization
 async function main() {
-  initTheme();
-  initKeyboardShortcuts();
+  detectHtmxCertsTable();
   initEventHandlers();
   await loadTranslations();
   await loadConfig();
   renderMountSelector(); // Initialize mount selector after config is loaded
+  setMountsHiddenField();
   // Load certificates in the background so the UI renders immediately
   const footer = document.querySelector(".vcv-footer");
   const usesHtmxStatus = Boolean(window.htmx && footer && footer.getAttribute("hx-get") === "/ui/status");
   if (!usesHtmxStatus) {
     await loadStatus();
   }
-  loadCertificates();
+  await loadCertificates();
 }
 
 // Start the application
