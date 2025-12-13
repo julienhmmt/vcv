@@ -55,6 +55,7 @@ function applyTranslations() {
   setText(document.getElementById("vcv-status-filter-label"), messages.statusFilterTitle);
   setText(document.getElementById("vcv-page-size-label"), messages.paginationPageSizeLabel);
   setText(document.querySelector("#certificate-modal .vcv-modal-title"), messages.modalDetailsTitle);
+  setText(document.getElementById("certificate-modal-close"), messages.buttonClose);
   const searchInput = document.getElementById("vcv-search");
   if (searchInput && typeof messages.searchPlaceholder === "string" && messages.searchPlaceholder !== "") {
     searchInput.setAttribute("placeholder", messages.searchPlaceholder);
@@ -81,17 +82,20 @@ function applyTranslations() {
   setText(document.getElementById("vcv-page-next"), messages.paginationNext);
   const legend = document.querySelector(".vcv-legend");
   if (legend) {
-    const validItem = legend.querySelector(".vcv-badge-valid")?.closest(".vcv-legend-item");
+    const validBadge = legend.querySelector(".vcv-badge-valid");
+    const validItem = validBadge ? validBadge.closest(".vcv-legend-item") : null;
     if (validItem) {
       setText(validItem.querySelector(".vcv-badge-valid"), messages.legendValidTitle);
       setText(validItem.querySelector(".vcv-legend-text"), messages.legendValidText);
     }
-    const expiredItem = legend.querySelector(".vcv-badge-expired")?.closest(".vcv-legend-item");
+    const expiredBadge = legend.querySelector(".vcv-badge-expired");
+    const expiredItem = expiredBadge ? expiredBadge.closest(".vcv-legend-item") : null;
     if (expiredItem) {
       setText(expiredItem.querySelector(".vcv-badge-expired"), messages.legendExpiredTitle);
       setText(expiredItem.querySelector(".vcv-legend-text"), messages.legendExpiredText);
     }
-    const revokedItem = legend.querySelector(".vcv-badge-revoked")?.closest(".vcv-legend-item");
+    const revokedBadge = legend.querySelector(".vcv-badge-revoked");
+    const revokedItem = revokedBadge ? revokedBadge.closest(".vcv-legend-item") : null;
     if (revokedItem) {
       setText(revokedItem.querySelector(".vcv-badge-revoked"), messages.legendRevokedTitle);
       setText(revokedItem.querySelector(".vcv-legend-text"), messages.legendRevokedText);
