@@ -1623,7 +1623,11 @@ async function main() {
   await loadConfig();
   renderMountSelector(); // Initialize mount selector after config is loaded
   // Load certificates in the background so the UI renders immediately
-  await loadStatus();
+  const footer = document.querySelector(".vcv-footer");
+  const usesHtmxStatus = Boolean(window.htmx && footer && footer.getAttribute("hx-get") === "/ui/status");
+  if (!usesHtmxStatus) {
+    await loadStatus();
+  }
   loadCertificates();
 }
 
