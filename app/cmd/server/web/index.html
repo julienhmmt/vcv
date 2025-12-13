@@ -182,10 +182,32 @@
           </select>
         </div>
         <div class="vcv-page-buttons">
-          <button type="button" id="vcv-page-prev" class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill">Previous</button>
+          <button
+            type="button"
+            id="vcv-page-prev"
+            class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill"
+            hx-get="/ui/certs"
+            hx-target="#vcv-certs-body"
+            hx-swap="innerHTML"
+            hx-include="#vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-vals='{"pageAction":"prev"}'
+          >
+            Previous
+          </button>
           <span id="vcv-page-info" class="vcv-page-info"></span>
           <span id="vcv-page-count" class="vcv-badge vcv-badge-neutral"></span>
-          <button type="button" id="vcv-page-next" class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill">Next</button>
+          <button
+            type="button"
+            id="vcv-page-next"
+            class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill"
+            hx-get="/ui/certs"
+            hx-target="#vcv-certs-body"
+            hx-swap="innerHTML"
+            hx-include="#vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-vals='{"pageAction":"next"}'
+          >
+            Next
+          </button>
         </div>
       </div>
 

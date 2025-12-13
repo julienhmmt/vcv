@@ -1604,41 +1604,48 @@ function closeModal() {
 
 // Initialize event handlers
 function initEventHandlers() {
-  if (state.usesHtmxCertsTable) {
-    return;
-  }
-  // Search input
-  const searchInput = document.getElementById("vcv-search");
-  if (searchInput) {
-    searchInput.addEventListener("input", (e) => handleSearchChange(e.target.value));
-  }
+  if (!state.usesHtmxCertsTable) {
+    // Search input
+    const searchInput = document.getElementById("vcv-search");
+    if (searchInput) {
+      searchInput.addEventListener("input", (e) => handleSearchChange(e.target.value));
+    }
 
-  // Status filter
-  const statusFilter = document.getElementById("vcv-status-filter");
-  if (statusFilter) {
-    statusFilter.addEventListener("change", (e) => handleStatusFilterChange(e.target.value));
-  }
+    // Status filter
+    const statusFilter = document.getElementById("vcv-status-filter");
+    if (statusFilter) {
+      statusFilter.addEventListener("change", (e) => handleStatusFilterChange(e.target.value));
+    }
 
-  // Expiry filter
-  const expiryFilter = document.getElementById("vcv-expiry-filter");
-  if (expiryFilter) {
-    expiryFilter.addEventListener("change", (e) => handleExpiryFilterChange(e.target.value));
-  }
+    // Expiry filter
+    const expiryFilter = document.getElementById("vcv-expiry-filter");
+    if (expiryFilter) {
+      expiryFilter.addEventListener("change", (e) => handleExpiryFilterChange(e.target.value));
+    }
 
-  // Page size
-  const pageSizeSelect = document.getElementById("vcv-page-size");
-  if (pageSizeSelect) {
-    pageSizeSelect.addEventListener("change", (e) => handlePageSizeChange(e.target.value));
-  }
+    // Page size
+    const pageSizeSelect = document.getElementById("vcv-page-size");
+    if (pageSizeSelect) {
+      pageSizeSelect.addEventListener("change", (e) => handlePageSizeChange(e.target.value));
+    }
 
-  // Pagination buttons
-  const prevBtn = document.getElementById("vcv-page-prev");
-  if (prevBtn) {
-    prevBtn.addEventListener("click", handlePreviousPage);
-  }
-  const nextBtn = document.getElementById("vcv-page-next");
-  if (nextBtn) {
-    nextBtn.addEventListener("click", handleNextPage);
+    // Pagination buttons
+    const prevBtn = document.getElementById("vcv-page-prev");
+    if (prevBtn) {
+      prevBtn.addEventListener("click", handlePreviousPage);
+    }
+    const nextBtn = document.getElementById("vcv-page-next");
+    if (nextBtn) {
+      nextBtn.addEventListener("click", handleNextPage);
+    }
+
+    // Sort buttons
+    document.querySelectorAll(".vcv-sort").forEach((button) => {
+      button.addEventListener("click", () => {
+        const key = button.getAttribute("data-sort-key");
+        handleSortClick(key);
+      });
+    });
   }
 
   // Mount modal backdrop close
@@ -1650,14 +1657,6 @@ function initEventHandlers() {
       }
     });
   }
-
-  // Sort buttons
-  document.querySelectorAll(".vcv-sort").forEach((button) => {
-    button.addEventListener("click", () => {
-      const key = button.getAttribute("data-sort-key");
-      handleSortClick(key);
-    });
-  });
 
   // Refresh button
   const refreshBtn = document.getElementById("refresh-btn");
