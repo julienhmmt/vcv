@@ -73,7 +73,7 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS) 
 			Str("request_id", requestID).
 			Msg("rendered footer status")
 	})
-	router.Get("/ui/certs/{id}/details", func(w http.ResponseWriter, r *http.Request) {
+	router.Get("/ui/certs/{id:[^/]*}/details", func(w http.ResponseWriter, r *http.Request) {
 		certificateIDParam := chi.URLParam(r, "id")
 		if certificateIDParam == "" {
 			requestID := middleware.GetRequestID(r.Context())
