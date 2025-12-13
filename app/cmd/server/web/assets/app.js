@@ -1345,6 +1345,16 @@ function calculateDaysUntilExpiry(expiresAt) {
   return diffDays;
 }
 
+function buildCertificateDetailsUiUrl(certificateId) {
+  const params = new URLSearchParams(window.location.search || "");
+  const lang = params.get("lang");
+  let url = `${API_BASE_URL}/ui/certs/${encodeURIComponent(certificateId)}/details`;
+  if (lang) {
+    url += `?lang=${encodeURIComponent(lang)}`;
+  }
+  return url;
+}
+
 async function showCertificateDetails(certificateId) {
   const modal = document.getElementById('certificate-modal');
   const loadingDiv = document.getElementById('details-loading');
@@ -1363,17 +1373,33 @@ async function showCertificateDetails(certificateId) {
   modal.classList.remove('vcv-hidden');
   state.selectedCertificate = { id: certificateId };
   
-  // Load details
+  downloadBtn.onclick = () => downloadCertificatePEM(certificateId);
+
+  const htmxClient = window.htmx;
+  if (htmxClient && typeof htmxClient.ajax === "function") {
+    try {
+      const url = buildCertificateDetailsUiUrl(certificateId);
+      await htmxClient.ajax("GET", url, "#details-content");
+      if (!contentDiv.innerHTML.trim()) {
+        throw new Error("empty response");
+      }
+      loadingDiv.classList.add('vcv-hidden');
+      return;
+    } catch (error) {
+      loadingDiv.classList.add('vcv-hidden');
+      modal.classList.add('vcv-hidden');
+      showToast(formatMessage("loadDetailsNetworkError", "Network error loading certificate details. Please try again."), 'error');
+      return;
+    }
+  }
+
   const details = await loadCertificateDetails(certificateId);
   if (details) {
     renderCertificateDetails(details);
     loadingDiv.classList.add('vcv-hidden');
-    
-    // Update download button
-    downloadBtn.onclick = () => downloadCertificatePEM(certificateId);
-  } else {
-    modal.classList.add('vcv-hidden');
+    return;
   }
+  modal.classList.add('vcv-hidden');
 }
 
 function renderCertificateDetails(details) {

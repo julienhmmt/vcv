@@ -224,7 +224,7 @@
       </div>
     </div>
 
-    <footer class="vcv-footer">
+    <footer class="vcv-footer" hx-get="/ui/status" hx-trigger="load, every 10s" hx-swap="innerHTML">
       <div class="vcv-footer-left">
         <span id="vcv-footer-version" class="vcv-footer-version">—</span>
       </div>
@@ -233,6 +233,7 @@
       </div>
     </footer>
 
+    <script src="/assets/htmx.min.js"></script>
     <script src="/assets/app.js"></script>
   </body>
 </html>

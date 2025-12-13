@@ -1,0 +1,46 @@
+<div class="vcv-detail-section">
+  <div class="vcv-detail-section-header">Certificate Information</div>
+  <div class="vcv-detail-section-content">
+    <div class="vcv-detail-row">
+      <div class="vcv-detail-label">{{.Messages.LabelSerialNumber}}</div>
+      <div class="vcv-detail-value"><code>{{.Certificate.SerialNumber}}</code></div>
+    </div>
+    <div class="vcv-detail-row">
+      <div class="vcv-detail-label">{{.Messages.LabelSubject}}</div>
+      <div class="vcv-detail-value">{{.Certificate.Subject}}</div>
+    </div>
+    <div class="vcv-detail-row">
+      <div class="vcv-detail-label">{{.Messages.LabelIssuer}}</div>
+      <div class="vcv-detail-value">{{.Certificate.Issuer}}</div>
+    </div>
+  </div>
+</div>
+<div class="vcv-detail-section">
+  <div class="vcv-detail-section-header">Technical Details</div>
+  <div class="vcv-detail-section-content">
+    <div class="vcv-detail-row">
+      <div class="vcv-detail-label">{{.Messages.LabelKeyAlgorithm}}</div>
+      <div class="vcv-detail-value">{{.KeySummary}}</div>
+    </div>
+    <div class="vcv-detail-row">
+      <div class="vcv-detail-label">{{.Messages.LabelFingerprintSHA1}}</div>
+      <div class="vcv-detail-value"><code>{{.Certificate.FingerprintSHA1}}</code></div>
+    </div>
+    <div class="vcv-detail-row">
+      <div class="vcv-detail-label">{{.Messages.LabelFingerprintSHA256}}</div>
+      <div class="vcv-detail-value"><code>{{.Certificate.FingerprintSHA256}}</code></div>
+    </div>
+    <div class="vcv-detail-row">
+      <div class="vcv-detail-label">{{.Messages.LabelUsage}}</div>
+      <div class="vcv-detail-value">{{.UsageSummary}}</div>
+    </div>
+  </div>
+</div>
+<div class="vcv-detail-section">
+  <div class="vcv-detail-section-header">{{.Messages.LabelPEM}}</div>
+  <div class="vcv-detail-section-content">
+    <div class="vcv-detail-row">
+      <div class="vcv-detail-value"><pre>{{.Certificate.PEM}}</pre></div>
+    </div>
+  </div>
+</div>
