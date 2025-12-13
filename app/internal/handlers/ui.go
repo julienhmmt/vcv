@@ -225,9 +225,9 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 	router.Get("/ui/status", func(w http.ResponseWriter, r *http.Request) {
 		language := resolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
-		vaultClass := "vcv-footer-pill"
 		vaultTitle := ""
-		vaultText := messages.FooterVaultLoading
+		var vaultClass string
+		var vaultText string
 		if vaultErr := vaultClient.CheckConnection(r.Context()); vaultErr != nil {
 			vaultClass = "vcv-footer-pill vcv-footer-pill-error"
 			vaultText = messages.FooterVaultDisconnected
@@ -647,13 +647,13 @@ func renderCertsFragment(w http.ResponseWriter, templates *template.Template, ce
 	sortKey, sortDirection := resolveSortState(queryState)
 	visible := applyCertificateFilters(filteredByMount, queryState, sortKey, sortDirection)
 	pageIndex := resolvePageIndex(queryState, len(visible), queryState.PageSize)
-	pageVisible, totalPages := paginateCertificates(visible, pageIndex, queryState.PageSize)
+	_, totalPages := paginateCertificates(visible, pageIndex, queryState.PageSize)
 	if shouldResetPageIndex(queryState.TriggerID, queryState.PageAction) {
 		pageIndex = 0
-		pageVisible, totalPages = paginateCertificates(visible, pageIndex, queryState.PageSize)
+		_, totalPages = paginateCertificates(visible, pageIndex, queryState.PageSize)
 	}
 	pageIndex = applyPageAction(queryState.PageAction, pageIndex, totalPages)
-	pageVisible, totalPages = paginateCertificates(visible, pageIndex, queryState.PageSize)
+	pageVisible, _ := paginateCertificates(visible, pageIndex, queryState.PageSize)
 	data := certsFragmentTemplateData{
 		ChartExpired:          chartData.Expired,
 		ChartHasData:          chartData.Total > 0,
@@ -825,11 +825,9 @@ func computeExpiryTimelineItems(certificates []certs.Certificate, thresholds con
 		if days <= 0 || days > thresholds.Warning {
 			continue
 		}
-		dotClass := "vcv-timeline-dot-normal"
+		dotClass := "vcv-timeline-dot-warning"
 		if thresholds.Critical > 0 && days <= thresholds.Critical {
 			dotClass = "vcv-timeline-dot-critical"
-		} else {
-			dotClass = "vcv-timeline-dot-warning"
 		}
 		label := interpolatePlaceholder(messages.DaysRemainingShort, "days", fmt.Sprintf("%d", days))
 		items = append(items, expiryTimelineItemTemplateData{ID: certificate.ID, Name: certificate.CommonName, DotClass: dotClass, Days: days, DaysLabel: label})
