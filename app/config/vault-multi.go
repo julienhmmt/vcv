@@ -47,6 +47,9 @@ func LoadVaultInstances() ([]VaultInstance, error) {
 	if normalizeErr != nil {
 		return nil, normalizeErr
 	}
+	if len(normalized) == 0 {
+		return nil, fmt.Errorf("no enabled vault configuration found")
+	}
 	return normalized, nil
 }
 
@@ -194,6 +197,9 @@ func normalizeVaultInstances(instances []VaultInstance) ([]VaultInstance, error)
 	normalized := make([]VaultInstance, 0, len(instances))
 	seen := make(map[string]bool)
 	for index, instance := range instances {
+		if !IsVaultEnabled(instance) {
+			continue
+		}
 		normalizedInstance, normalizeErr := normalizeVaultInstance(instance)
 		if normalizeErr != nil {
 			return nil, fmt.Errorf("vault %d: %w", index, normalizeErr)

@@ -39,22 +39,51 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 | `/ui/theme/toggle` | POST | Toggle dark/light theme |
 | `/ui/status` | GET | Real-time Vault connection status |
 
-## Configuration (env vars)
+## Configuration (settings.json)
 
-| Variable | Default | Description |
-| -------- | ------- | ----------- |
-| `APP_ENV` | `dev` | Environment: `dev`, `stage`, `prod` |
-| `LOG_FILE_PATH` | — | Log file path (if output includes file) |
-| `LOG_FORMAT` | `console`/`json` | Log format (env-dependent default) |
-| `LOG_LEVEL` | `debug`/`info` | Log level (env-dependent default) |
-| `LOG_OUTPUT` | `stdout` | Output: `stdout`, `file`, `both` |
-| `PORT` | `52000` | HTTP server port |
-| `VAULT_ADDR` | — | Vault server address (required) |
-| `VAULT_PKI_MOUNTS` | `pki,pki2` | Comma-separated PKI mount paths |
-| `VAULT_READ_TOKEN` | — | Vault read token (required) |
-| `VAULT_TLS_INSECURE` | `false` | Skip TLS verification (dev only) |
-| `VCV_EXPIRE_CRITICAL` | `7` | Critical expiration threshold (days) |
-| `VCV_EXPIRE_WARNING` | `30` | Warning expiration threshold (days) |
+The primary configuration source is a JSON file.
+
+Recommended deployment pattern:
+
+- Mount a `settings.json` file into the container under `/app/settings.json` (the image `WORKDIR` is `/app`).
+- The application will automatically discover the settings file without requiring `SETTINGS_PATH`.
+
+### Resolution order
+
+Configuration is loaded in this order:
+
+- `SETTINGS_PATH` if set
+- `settings.<APP_ENV>.json` (default `APP_ENV=dev`)
+- `settings.json`
+- `./settings.json`
+- `/etc/vcv/settings.json`
+
+### Schema overview
+
+- `app.env`, `app.port`
+- `app.logging.level`, `app.logging.format`, `app.logging.output`, `app.logging.file_path`
+- `cors.allowed_origins`, `cors.allow_credentials`
+- `certificates.expiration_thresholds.critical`, `certificates.expiration_thresholds.warning`
+- `vaults[]`: list of Vault instances
+  - `address`, `token`, `tls_insecure`
+  - `pki_mounts` (recommended)
+  - `pki_mount` (backward-compatible alias)
+
+### Multi-Vault model
+
+The configuration supports defining multiple Vault instances (`vaults[]`).
+
+- The first enabled Vault instance becomes the primary Vault.
+
+### Legacy env fallback
+
+For backward compatibility, configuration can still be provided via environment variables if no settings file is found.
+
+Key legacy variables include `VAULT_ADDR`, `VAULT_READ_TOKEN`, `VAULT_PKI_MOUNTS`, `VCV_EXPIRE_CRITICAL`, `VCV_EXPIRE_WARNING`.
+
+### Logging initialization note
+
+`internal/logger.Init` reads output settings from environment variables (`LOG_OUTPUT`, `LOG_FORMAT`, `LOG_FILE_PATH`). When loading from `settings.json`, `config.Load` sets those env vars to ensure logging matches file configuration.
 
 ## Security
 

@@ -100,6 +100,7 @@ func TestLoadFromSettingsFile(t *testing.T) {
   "vaults": [
     {
       "id": "dev",
+      "enabled": true,
       "address": "http://vault:8200",
       "token": "root",
       "pki_mount": "pki",
@@ -140,6 +141,34 @@ func TestLoadFromSettingsFile(t *testing.T) {
 	}
 	if len(cfg.Vault.PKIMounts) != 2 {
 		t.Fatalf("expected PKI mounts from file, got %d", len(cfg.Vault.PKIMounts))
+	}
+}
+
+func TestLoadFromSettingsFile_PrimarySkipsDisabledVaults(t *testing.T) {
+	clearEnv(t)
+	tempDir := t.TempDir()
+	changeWorkingDirectory(t, tempDir)
+	_ = os.Setenv("APP_ENV", "dev")
+
+	settings := `{
+  "app": {"env": "dev", "port": 52000, "logging": {"level": "debug", "format": "json", "output": "stdout", "file_path": ""}},
+  "cors": {"allowed_origins": [], "allow_credentials": true},
+  "certificates": {"expiration_thresholds": {"critical": 2, "warning": 10}},
+  "vaults": [
+    {"id": "disabled", "enabled": false, "address": "://bad", "token": "tok"},
+    {"id": "enabled", "enabled": true, "address": "http://vault:8200", "token": "root", "pki_mount": "pki", "tls_insecure": true}
+  ]
+}`
+	if err := os.WriteFile(filepath.Join(tempDir, "settings.dev.json"), []byte(settings), 0o644); err != nil {
+		t.Fatalf("failed to write settings.dev.json: %v", err)
+	}
+
+	cfg := Load()
+	if len(cfg.Vaults) != 1 {
+		t.Fatalf("expected 1 enabled vault after filtering, got %d", len(cfg.Vaults))
+	}
+	if cfg.Vault.Addr != "http://vault:8200" {
+		t.Fatalf("expected primary vault to be first enabled, got %s", cfg.Vault.Addr)
 	}
 }
 

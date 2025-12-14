@@ -25,6 +25,7 @@
   "vaults": [
     {
       "id": "vault-main",
+      "enabled": true,
       "display_name": "Vault",
       "address": "http://vault:8200",
       "token": "root",
@@ -39,6 +40,7 @@
     },
     {
       "id": "vault-dev-2",
+      "enabled": true,
       "display_name": "Vault dev-2",
       "address": "http://vault-dev-2:8200",
       "token": "root",
@@ -53,6 +55,7 @@
     },
     {
       "id": "vault-dev-3",
+      "enabled": false,
       "display_name": "Vault dev-3",
       "address": "http://vault-dev-3:8200",
       "token": "root",

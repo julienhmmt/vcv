@@ -22,6 +22,7 @@
   "vaults": [
     {
       "id": "prod",
+      "enabled": true,
       "display_name": "Production",
       "address": "https://vault-prod.example.com:8200",
       "token": "your-vault-token-here",

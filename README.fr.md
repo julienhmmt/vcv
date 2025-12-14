@@ -2,7 +2,7 @@
 
 VaultCertsViewer (vcv) est une interface web légère qui permet de lister et de consulter les certificats stockés dans un ou plusieurs coffres 'pki' d'HashiCorp Vault. Elle affiche notamment les noms communs, les SAN et surtout les dates d'expiration des certificats.
 
-VaultCertsViewer (vcv) peut surveiller simultanément plusieurs moteurs PKI via une seule interface, avec un sélecteur modal pour choisir les montages à afficher. Pour l'instant, VCV ne peut être connecté qu'à un seul Vault. Si vous avez (par exemple) cinq instances Vault, vous devrez créez cinq instances VCV.
+VaultCertsViewer (vcv) peut surveiller simultanément plusieurs moteurs PKI via une seule interface, avec un sélecteur modal pour choisir les montages à afficher. Grâce au fichier de configuration `settings.json`, VCV peut se connecter à plusieurs instances Vault et montages PKI.
 
 ## ✨ Quelles sont les fonctionnalités ?
 
@@ -71,33 +71,25 @@ Cette approche élimine le besoin de déployer plusieurs instances vcv lorsque v
 
 ### 🐳 docker-compose
 
-Récupérez le fichier `docker-compose.yml`, placez-le dans un répertoire de votre machine, et utilisez soit les variables d'environnement dans le fichier docker-compose, soit créez un fichier `.env` avec les variables suivantes :
+La manière recommandée de configurer vcv est via un fichier `settings.json`.
 
-```text
-# Change with your actual Vault configuration
-APP_ENV=prod
-LOG_FILE_PATH=/var/log/app/vcv.log
-LOG_FORMAT=json
-LOG_LEVEL=info
-LOG_OUTPUT=stdout # 'file', 'stdout' or 'both'
-PORT=52000
-VAULT_ADDR=https://your-vault-address:8200
-VAULT_PKI_MOUNTS=pki,pki2
-VAULT_READ_TOKEN=s.YourGeneratedTokenHere
-VAULT_TLS_INSECURE=false
-VCV_EXPIRE_CRITICAL=7
-VCV_EXPIRE_WARNING=30
+1. Copiez le fichier d'exemple et modifiez-le :
+
+```bash
+cp settings.example.json settings.json
 ```
 
-N'oubliez pas de changer les valeurs par vos propres valeurs.
-
-Lancez ensuite la commande suivante :
+1. Montez-le dans le conteneur sous `/app/settings.json` puis lancez :
 
 ```bash
 docker compose up -d
 ```
 
-Il n'y a pas besoin de stockage, sauf si vous souhaitez envoyer les journaux d'événements dans un fichier.
+Si vous avez configuré `app.logging.output` pour écrire les logs dans un fichier, vous devrez monter un répertoire en lecture/écriture, par exemple :
+
+```bash
+-v "$(pwd)/logs:/var/log/app:rw"
+```
 
 ### 🐳 docker run
 
@@ -105,28 +97,26 @@ Lancez rapidement le container avec cette commande:
 
 ```bash
 docker run -d \
-  -e "APP_ENV=prod" \
-  -e "LOG_FORMAT=json" \
-  -e "LOG_OUTPUT=stdout" \
-  -e "VAULT_ADDR=http://changeme:8200" \
-  -e "VAULT_READ_TOKEN=changeme" \
-  -e "VAULT_PKI_MOUNTS=changeme,changeme2" \
-  -e "VAULT_TLS_INSECURE=true" \
-  -e "VCV_EXPIRE_CRITICAL=7" \
-  -e "VCV_EXPIRE_WARNING=30" \
-  -e "LOG_LEVEL=info" \
+  -v "$(pwd)/settings.json:/app/settings.json:rw" \
+  -v "$(pwd)/logs:/var/log/app:rw" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
   -p 52000:52000 jhmmt/vcv:1.3
 ```
 
 ## ⏱️ Seuils d'expiration des certificats
 
-Par défaut, VaultCertsViewer alerte sur les certificats expirant dans **7 jours** (critique) et **30 jours** (avertissement). Vous pouvez personnaliser ces seuils avec les variables d'environnement :
+Par défaut, VaultCertsViewer alerte sur les certificats expirant dans **7 jours** (critique) et **30 jours** (avertissement). Vous pouvez personnaliser ces seuils dans `settings.json` sous `certificates.expiration_thresholds`.
 
 ```text
-VCV_EXPIRE_CRITICAL=14    # Seuil d'alerte critique (jours)
-VCV_EXPIRE_WARNING=60     # Seuil d'alerte avertissement (jours)
+"certificates": {
+  "expiration_thresholds": {
+    "critical": 14,
+    "warning": 60
+  }
+}
 ```
+
+Les variables d'environnement historiques (`VCV_EXPIRE_CRITICAL`, `VCV_EXPIRE_WARNING`) restent supportées en fallback.
 
 Ces valeurs contrôlent :
 
