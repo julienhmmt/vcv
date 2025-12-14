@@ -3,6 +3,7 @@ package logger_test
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -132,5 +133,72 @@ func TestJSONFormat(t *testing.T) {
 	}
 	if result["key"] != "value" {
 		t.Errorf("Expected key 'value', got: %v", result["key"])
+	}
+}
+
+// TestHTTPEvent verifies that HTTPEvent logs HTTP request events correctly.
+func TestHTTPEvent(t *testing.T) {
+	logger.Init("debug")
+
+	var buf bytes.Buffer
+	logger.SetOutput(&buf)
+
+	logger.HTTPEvent("GET", "/api/test", 200, 150).Msg("")
+
+	output := buf.String()
+	if !strings.Contains(output, `"method":"GET"`) {
+		t.Errorf("Expected log to contain HTTP method 'GET', got: %s", output)
+	}
+	if !strings.Contains(output, `"path":"/api/test"`) {
+		t.Errorf("Expected log to contain path '/api/test', got: %s", output)
+	}
+	if !strings.Contains(output, `"status":200`) {
+		t.Errorf("Expected log to contain status code '200', got: %s", output)
+	}
+	if !strings.Contains(output, `"duration_ms":150`) {
+		t.Errorf("Expected log to contain duration '150', got: %s", output)
+	}
+}
+
+// TestHTTPError verifies that HTTPError logs HTTP errors correctly.
+func TestHTTPError(t *testing.T) {
+	logger.Init("debug")
+
+	var buf bytes.Buffer
+	logger.SetOutput(&buf)
+
+	err := fmt.Errorf("test error")
+	logger.HTTPError("POST", "/api/error", 500, err).Msg("")
+
+	output := buf.String()
+	if !strings.Contains(output, `"method":"POST"`) {
+		t.Errorf("Expected log to contain HTTP method 'POST', got: %s", output)
+	}
+	if !strings.Contains(output, `"path":"/api/error"`) {
+		t.Errorf("Expected log to contain path '/api/error', got: %s", output)
+	}
+	if !strings.Contains(output, `"status":500`) {
+		t.Errorf("Expected log to contain status code '500', got: %s", output)
+	}
+	if !strings.Contains(output, `"error":"test error"`) {
+		t.Errorf("Expected log to contain error message, got: %s", output)
+	}
+}
+
+// TestPanicEvent verifies that PanicEvent logs panic events correctly.
+func TestPanicEvent(t *testing.T) {
+	logger.Init("debug")
+
+	var buf bytes.Buffer
+	logger.SetOutput(&buf)
+
+	logger.PanicEvent("panic message", "stack trace").Msg("")
+
+	output := buf.String()
+	if !strings.Contains(output, `"error":"panic message"`) {
+		t.Errorf("Expected log to contain panic message, got: %s", output)
+	}
+	if !strings.Contains(output, `"stack":"stack trace"`) {
+		t.Errorf("Expected log to contain stack trace, got: %s", output)
 	}
 }

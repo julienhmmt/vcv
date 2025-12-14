@@ -2,12 +2,32 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"vcv/config"
 )
+
+// failingResponseWriter is a ResponseWriter that always fails on Write
+type failingResponseWriter struct {
+	header http.Header
+}
+
+func (w *failingResponseWriter) Header() http.Header {
+	if w.header == nil {
+		w.header = make(http.Header)
+	}
+	return w.header
+}
+
+func (w *failingResponseWriter) Write([]byte) (int, error) {
+	return 0, errors.New("write failed")
+}
+
+func (w *failingResponseWriter) WriteHeader(statusCode int) {
+}
 
 func TestGetConfig_Success(t *testing.T) {
 	cfg := config.Config{
@@ -73,4 +93,20 @@ func TestGetConfig_CustomValues(t *testing.T) {
 	if resp.ExpirationThresholds.Warning != 60 {
 		t.Errorf("expected warning threshold 60, got %d", resp.ExpirationThresholds.Warning)
 	}
+}
+
+func TestGetConfig_EncodingError(t *testing.T) {
+	cfg := config.Config{
+		ExpirationThresholds: config.ExpirationThresholds{Critical: 7, Warning: 30},
+		Vault:                config.VaultConfig{PKIMounts: []string{"pki"}},
+	}
+
+	handler := GetConfig(cfg)
+
+	// Create a response writer that will fail on write
+	w := &failingResponseWriter{}
+	req := httptest.NewRequest(http.MethodGet, "/api/config", nil)
+
+	// This should not panic
+	handler(w, req)
 }
