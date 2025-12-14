@@ -235,22 +235,59 @@ func filterCertificatesByMounts(certificates []certs.Certificate, selectedMounts
 		return []certs.Certificate{}
 	}
 
-	var filtered []certs.Certificate
-	for _, cert := range certificates {
-		// Extract mount from certificate ID (format: "mount:serial")
-		parts := strings.SplitN(cert.ID, ":", 2)
-		if len(parts) >= 1 {
-			mount := parts[0]
-			for _, selectedMount := range selectedMounts {
-				if mount == selectedMount {
-					filtered = append(filtered, cert)
-					break
-				}
-			}
+	selectedSet := make(map[string]struct{}, len(selectedMounts))
+	selectedLegacyMounts := make(map[string]struct{}, len(selectedMounts))
+	for _, selectedMount := range selectedMounts {
+		trimmed := strings.TrimSpace(selectedMount)
+		if trimmed == "" {
+			continue
+		}
+		selectedSet[trimmed] = struct{}{}
+		if !strings.Contains(trimmed, "|") {
+			selectedLegacyMounts[trimmed] = struct{}{}
 		}
 	}
 
+	filtered := make([]certs.Certificate, 0, len(certificates))
+	for _, certificate := range certificates {
+		vaultMountKey, mountName := extractVaultMountFromCertificateID(certificate.ID)
+		if vaultMountKey == "" && mountName == "" {
+			continue
+		}
+		if _, ok := selectedSet[vaultMountKey]; ok {
+			filtered = append(filtered, certificate)
+			continue
+		}
+		if _, ok := selectedLegacyMounts[mountName]; ok {
+			filtered = append(filtered, certificate)
+		}
+	}
 	return filtered
+}
+
+func extractVaultMountFromCertificateID(value string) (string, string) {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return "", ""
+	}
+	vaultID := ""
+	mountSerial := trimmed
+	if parts := strings.SplitN(trimmed, "|", 2); len(parts) == 2 {
+		vaultID = strings.TrimSpace(parts[0])
+		mountSerial = strings.TrimSpace(parts[1])
+	}
+	parts := strings.SplitN(mountSerial, ":", 2)
+	if len(parts) < 2 {
+		return "", ""
+	}
+	mountName := strings.TrimSpace(parts[0])
+	if mountName == "" {
+		return "", ""
+	}
+	if vaultID == "" {
+		return mountName, mountName
+	}
+	return vaultID + "|" + mountName, mountName
 }
 
 func buildPEMDownloadFilename(serialNumber string) string {

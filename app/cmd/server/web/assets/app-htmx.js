@@ -11,7 +11,22 @@ const state = {
   selectedMounts: [],
   suppressUrlUpdateUntilNextSuccess: false,
   vaultConnected: null,
+  vaultMountGroups: [],
 };
+
+function buildVaultMountKey(vaultId, mount) {
+  return `${vaultId}|${mount}`;
+}
+
+function formatMountGroupTitle(group) {
+  if (group && typeof group.displayName === "string" && group.displayName !== "") {
+    return group.displayName;
+  }
+  if (group && typeof group.id === "string" && group.id !== "") {
+    return group.id;
+  }
+  return "Vault";
+}
 
 function getRequestTargetId(detail) {
   const target = detail && detail.target;
@@ -709,18 +724,38 @@ function renderMountModalList() {
   if (!listContainer) {
     return;
   }
+  const messages = state.messages || {};
+  const selectAllLabel = typeof messages.selectAll === "string" && messages.selectAll !== "" ? messages.selectAll : "All";
+  const deselectAllLabel = typeof messages.deselectAll === "string" && messages.deselectAll !== "" ? messages.deselectAll : "None";
+  const groups = Array.isArray(state.vaultMountGroups) ? state.vaultMountGroups : [];
+  const selectedSet = new Set(state.selectedMounts);
+  if (groups.length > 0) {
+    const content = groups
+      .map((group) => {
+        const title = formatMountGroupTitle(group);
+        const mounts = Array.isArray(group.mounts) ? group.mounts : [];
+        const options = mounts
+          .map((mountName) => {
+            const key = buildVaultMountKey(group.id, mountName);
+            const checkedAttr = selectedSet.has(key) ? "checked" : "";
+            const selectedClass = selectedSet.has(key) ? " vcv-mount-option-selected" : "";
+            return `<label class="vcv-mount-option${selectedClass}"><input type="checkbox" ${checkedAttr} onchange="toggleMount('${key}')" /><span class="vcv-mount-name">${mountName}</span></label>`;
+          })
+          .join("");
+        const headerActions = `<div class="vcv-mount-modal-section-actions"><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="selectAllVaultMounts('${group.id}')">${selectAllLabel}</button><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="deselectAllVaultMounts('${group.id}')">${deselectAllLabel}</button></div>`;
+        return `<div class="vcv-mount-modal-section"><div class="vcv-mount-modal-section-header"><div class="vcv-mount-modal-section-title">${title}</div>${headerActions}</div><div class="vcv-mount-modal-section-options">${options}</div></div>`;
+      })
+      .join("");
+    listContainer.innerHTML = content;
+    return;
+  }
   const items = state.availableMounts.map((mount) => {
-    const isSelected = state.selectedMounts.includes(mount);
+    const isSelected = selectedSet.has(mount);
     const checkedAttr = isSelected ? "checked" : "";
     const selectedClass = isSelected ? "selected" : "";
-    return `
-      <label class="vcv-mount-modal-option ${selectedClass}">
-        <input type="checkbox" ${checkedAttr} onchange="toggleMount('${mount}')">
-        <span class="vcv-mount-modal-name">${mount}</span>
-      </label>
-    `;
+    return `<label class="vcv-mount-modal-option ${selectedClass}"><input type="checkbox" ${checkedAttr} onchange="toggleMount('${mount}')"><span class="vcv-mount-modal-name">${mount}</span></label>`;
   });
-  const emptyText = typeof state.messages.noData === "string" && state.messages.noData !== "" ? state.messages.noData : "No data";
+  const emptyText = typeof messages.noData === "string" && messages.noData !== "" ? messages.noData : "No data";
   listContainer.innerHTML = items.join("") || `<p class="vcv-empty">${emptyText}</p>`;
 }
 
@@ -762,6 +797,29 @@ function selectAllMounts() {
 
 function deselectAllMounts() {
   state.selectedMounts = [];
+  renderMountSelector();
+  renderMountModalList();
+  refreshHtmxCertsTable();
+}
+
+function selectAllVaultMounts(vaultId) {
+  const groups = Array.isArray(state.vaultMountGroups) ? state.vaultMountGroups : [];
+  const group = groups.find((item) => item.id === vaultId);
+  if (!group || !Array.isArray(group.mounts)) {
+    return;
+  }
+  const keysToAdd = group.mounts.map((mount) => buildVaultMountKey(vaultId, mount));
+  const selectedSet = new Set(state.selectedMounts);
+  keysToAdd.forEach((key) => selectedSet.add(key));
+  state.selectedMounts = Array.from(selectedSet);
+  renderMountSelector();
+  renderMountModalList();
+  refreshHtmxCertsTable();
+}
+
+function deselectAllVaultMounts(vaultId) {
+  const prefix = `${vaultId}|`;
+  state.selectedMounts = state.selectedMounts.filter((key) => !key.startsWith(prefix));
   renderMountSelector();
   renderMountModalList();
   refreshHtmxCertsTable();
@@ -812,7 +870,27 @@ async function loadConfig() {
       return;
     }
     const data = await response.json();
-    if (!data || !Array.isArray(data.pkiMounts)) {
+    if (!data) {
+      return;
+    }
+    const vaults = Array.isArray(data.vaults) ? data.vaults : [];
+    if (vaults.length > 0) {
+      state.vaultMountGroups = vaults
+        .map((vault) => {
+          const id = (vault && typeof vault.id === "string") ? vault.id : "";
+          const displayName = (vault && typeof vault.displayName === "string") ? vault.displayName : "";
+          const mounts = Array.isArray(vault && vault.pkiMounts) ? vault.pkiMounts : [];
+          const normalizedMounts = mounts.map((mount) => String(mount)).map((mount) => mount.trim()).filter((mount) => mount !== "");
+          return { id, displayName, mounts: normalizedMounts };
+        })
+        .filter((vault) => vault.id !== "" && vault.mounts.length > 0);
+      state.availableMounts = state.vaultMountGroups
+        .map((vault) => vault.mounts.map((mount) => buildVaultMountKey(vault.id, mount)))
+        .reduce((acc, keys) => acc.concat(keys), []);
+      state.selectedMounts = [...state.availableMounts];
+      return;
+    }
+    if (!Array.isArray(data.pkiMounts)) {
       return;
     }
     state.availableMounts = data.pkiMounts;
@@ -876,6 +954,8 @@ window.closeMountModal = closeMountModal;
 window.toggleMount = toggleMount;
 window.selectAllMounts = selectAllMounts;
 window.deselectAllMounts = deselectAllMounts;
+window.selectAllVaultMounts = selectAllVaultMounts;
+window.deselectAllVaultMounts = deselectAllVaultMounts;
 window.openCertificateModal = openCertificateModal;
 window.closeCertificateModal = closeCertificateModal;
 window.dismissNotifications = dismissNotifications;

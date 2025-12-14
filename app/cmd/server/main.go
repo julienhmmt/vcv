@@ -42,7 +42,7 @@ func main() {
 		Msg("Configuration loaded")
 
 	r := chi.NewRouter()
-	vaultClient, vaultError := vault.NewClientFromConfig(cfg.Vault)
+	primaryVaultClient, vaultError := vault.NewClientFromConfig(cfg.Vault)
 	if vaultError != nil {
 		log.Fatal().Err(vaultError).
 			Msg("Failed to initialize Vault client")
@@ -58,7 +58,7 @@ func main() {
 			continue
 		}
 		if primaryID != "" && instance.ID == primaryID {
-			statusClients[instance.ID] = vaultClient
+			statusClients[instance.ID] = primaryVaultClient
 			continue
 		}
 		statusCfg := config.VaultConfig{Addr: instance.Address, PKIMounts: instance.PKIMounts, ReadToken: instance.Token, TLSInsecure: instance.TLSInsecure}
@@ -71,6 +71,8 @@ func main() {
 		statusClients[instance.ID] = client
 	}
 
+	multiVaultClient := vault.NewMultiClient(cfg.Vaults, statusClients)
+
 	log.Info().
 		Str("vault_addr", cfg.Vault.Addr).
 		Strs("vault_mounts", cfg.Vault.PKIMounts).
@@ -78,7 +80,7 @@ func main() {
 
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(collectors.NewGoCollector())
-	registry.MustRegister(metrics.NewCertificateCollector(vaultClient))
+	registry.MustRegister(metrics.NewCertificateCollector(multiVaultClient))
 
 	webFS, fsError := fs.Sub(embeddedWeb, "web")
 	if fsError != nil {
@@ -131,7 +133,7 @@ func main() {
 			Vaults         []vaultStatusEntry `json:"vaults"`
 		}
 		response := statusResponse{Version: version.Version, Vaults: make([]vaultStatusEntry, 0, len(cfg.Vaults))}
-		if err := vaultClient.CheckConnection(ctx); err != nil {
+		if err := primaryVaultClient.CheckConnection(ctx); err != nil {
 			response.VaultConnected = false
 			response.VaultError = err.Error()
 		} else {
@@ -165,8 +167,8 @@ func main() {
 	r.Get("/api/config", handlers.GetConfig(cfg))
 	r.Get("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP)
 	handlers.RegisterI18nRoutes(r)
-	handlers.RegisterCertRoutes(r, vaultClient)
-	handlers.RegisterUIRoutes(r, vaultClient, cfg.Vaults, statusClients, webFS, cfg.ExpirationThresholds)
+	handlers.RegisterCertRoutes(r, multiVaultClient)
+	handlers.RegisterUIRoutes(r, multiVaultClient, cfg.Vaults, statusClients, webFS, cfg.ExpirationThresholds)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
