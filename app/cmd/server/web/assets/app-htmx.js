@@ -289,7 +289,6 @@ function applyTranslations() {
   if (!messages) {
     return;
   }
-  setText(document.querySelector(".vcv-subtitle"), messages.appSubtitle);
   setText(document.getElementById("mount-modal-title"), messages.mountSelectorTitle);
   setText(document.getElementById("mount-deselect-all"), messages.deselectAll);
   setText(document.getElementById("mount-select-all"), messages.selectAll);

@@ -15,7 +15,6 @@ const (
 
 // Messages contains all translatable UI strings used by the web interface.
 type Messages struct {
-	AppSubtitle                 string `json:"appSubtitle"`
 	AppTitle                    string `json:"appTitle"`
 	ButtonClose                 string `json:"buttonClose"`
 	ButtonDetails               string `json:"buttonDetails"`
@@ -111,7 +110,6 @@ type Response struct {
 }
 
 var englishMessages = Messages{
-	AppSubtitle:                 "List of certificates from the configured Vault PKI mount",
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Close",
 	ButtonDetails:               "Details",
@@ -201,7 +199,6 @@ var englishMessages = Messages{
 }
 
 var frenchMessages = Messages{
-	AppSubtitle:                 "Liste des certificats du moteur PKI Vault",
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Fermer",
 	ButtonDetails:               "Détails",
@@ -291,7 +288,6 @@ var frenchMessages = Messages{
 }
 
 var spanishMessages = Messages{
-	AppSubtitle:                 "Lista de certificados del motor PKI de Vault",
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Cerrar",
 	ButtonDetails:               "Detalles",
@@ -381,7 +377,6 @@ var spanishMessages = Messages{
 }
 
 var germanMessages = Messages{
-	AppSubtitle:                 "Zertifikate aus dem Vault-PKI-Mount",
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Schließen",
 	ButtonDetails:               "Details",
@@ -471,7 +466,6 @@ var germanMessages = Messages{
 }
 
 var italianMessages = Messages{
-	AppSubtitle:                 "Lista dei certificati dal mount PKI Vault",
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Chiudi",
 	ButtonDetails:               "Dettagli",

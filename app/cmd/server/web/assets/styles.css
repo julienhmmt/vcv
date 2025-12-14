@@ -44,12 +44,6 @@ body {
   letter-spacing: -0.025em;
 }
 
-.vcv-subtitle {
-  margin-top: 0.25rem;
-  font-size: 0.875rem;
-  color: #64748b;
-}
-
 .vcv-header-right {
   display: flex;
   align-items: center;
@@ -1302,10 +1296,6 @@ body {
 
 [data-theme="dark"] .vcv-title {
   color: #f1f5f9;
-}
-
-[data-theme="dark"] .vcv-subtitle {
-  color: #94a3b8;
 }
 
 [data-theme="dark"] .vcv-input,
