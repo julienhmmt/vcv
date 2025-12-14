@@ -1,10 +1,10 @@
-# VaultCertsViewer
+# VaultCertsViewer 🔐
 
 VaultCertsViewer (vcv) is a lightweight web UI that lists and inspects certificates stored in one or more HashiCorp Vault PKI mounts, especially their expiration dates and SANs.
 
 VaultCertsViewer can simultaneously monitor multiple PKI engines through a single interface, with a modal selector to choose which mounts to display. At the moment, VCV can be connected to only one Vault instance. If you have (example) five Vault instances, you have to create five VCV instances.
 
-## What it does
+## ✨ What it does
 
 - Discovers all certificates in one or more Vault PKI mounts and shows them in a searchable, filterable table.
 - Multi-PKI engine support: Select which mounts to display via an intuitive modal interface with real-time certificate count badges.
@@ -14,16 +14,16 @@ VaultCertsViewer can simultaneously monitor multiple PKI engines through a singl
 - Lets you pick UI language (en, fr, es, de, it) and theme (light/dark).
 - Real-time Vault connection status with toast notifications when connection is lost/restored.
 
-## Why it exists
+## 🎯 Why it exists
 
 The native Vault UI is heavy and not convenient for quickly checking certificate expirations and details. VaultCertsViewer gives platform / security / ops teams a fast, **read-only** view of the Vault PKI inventory with only the essential information.
 
-## Who should use it
+## 👥 Who should use it
 
 - Teams operating Vault PKI who need visibility on their certificates.
 - Operators who want a ready-to-use browser view alongside Vault CLI or Web UI.
 
-## How to deploy and use
+## 🚀 How to deploy and use
 
 In HashiCorp Vault, create a read-only role and token for the API to reach the target PKI engines. For multiple mounts, you can either specify each mount explicitly or use wildcard patterns:
 
@@ -50,6 +50,8 @@ vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 
 This dedicated token limits permissions to certificate listing/reading, can be renewed, and is used as `VAULT_READ_TOKEN` by the app.
 
+## 🧩 Multi-PKI engine support
+
 VaultCertsViewer can monitor multiple PKI engines simultaneously through a single web interface:
 
 - **Mount selection**: Click the mount selector button in the header to open a modal showing all available PKI engines
@@ -65,7 +67,7 @@ VaultCertsViewer can monitor multiple PKI engines simultaneously through a singl
 
 This approach eliminates the need to deploy multiple vcv instances when you have several PKI engines to monitor.
 
-### docker-compose
+### 🐳 docker-compose
 
 Grab `docker-compose.yml`, put it in a directory and create `.env` file with these variables:
 
@@ -95,7 +97,7 @@ docker compose up -d
 
 No storage needed, unless you want to log to a file.
 
-### docker run
+### 🐳 docker run
 
 Start the container with this command:
 
@@ -115,7 +117,7 @@ docker run -d \
   -p 52000:52000 jhmmt/vcv:1.3
 ```
 
-## Certificate expiration thresholds
+## ⏱️ Certificate expiration thresholds
 
 By default, VaultCertsViewer alerts on certificates expiring within **7 days** (critical) and **30 days** (warning). You can customize these thresholds using environment variables:
 
@@ -131,11 +133,11 @@ These values control:
 - The timeline visualization on the dashboard
 - The "expiring soon" count in the dashboard
 
-## Translations
+## 🌍 Translations
 
 The UI is localized in English, French, Spanish, German, and Italian. Language is selectable in the header or via `?lang=xx`.
 
-## Export metrics to Prometheus
+## 📊 Export metrics to Prometheus
 
 Metrics are exposed at `/metrics` endpoint.
 
@@ -214,39 +216,14 @@ If you are using AlertManager, you can create alerts based on these metrics. For
 
 You can adjust the "soon" window (here 14 days) directly in PromQL without changing the exporter.
 
-## More details
+## 🔎 More details
 
 - Technical documentation: [app/README.md](app/README.md)
 - French overview: [README.fr.md](README.fr.md)
-- Docker Hub: [jhmmt/vcv](https://hub.docker.com/r/jhmmt/vcv)
-- Source Code: [github.com/julienhmmt/vcv](https://github.com/julienhmmt/vcv)
+- Docker hub: [jhmmt/vcv](https://hub.docker.com/r/jhmmt/vcv)
+- Source code: [github.com/julienhmmt/vcv](https://github.com/julienhmmt/vcv)
 
-## Version History
-
-### v1.3 (Current)
-
-- Added HTMX-powered reactive UI
-- Implemented visual loading states and skeleton screens
-- Added Vault connection monitoring with toast notifications
-- Introduced certificate status badges
-- Enhanced error handling with automatic retry
-- Added deep-linking support
-- Improved responsive design and mobile experience
-
-### v1.2
-
-- Multi-PKI engine support with mount selection modal
-- Configurable expiration thresholds
-- Enhanced dashboard with timeline visualization
-
-### v1.1
-
-- Basic certificate listing and filtering
-- Multi-language support (en, fr, es, de, it)
-- Prometheus metrics export
-- Dark/light theme toggle
-
-## Picture of the app
+## 🖼️ Picture of the app
 
 ![VaultCertsViewer v1.3](img/VaultCertsViewer-v1.3.png)
 
