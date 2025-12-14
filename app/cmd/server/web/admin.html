@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VaultCertsViewer Admin</title>
+    <style>
+      .vcv-hidden { display: none; }
+    </style>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="stylesheet" href="/assets/style-admin.css" />
+    <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
+  </head>
+  <body>
+    <div class="vcv-layout">
+      <header class="vcv-header">
+        <div class="vcv-header-bar">
+          <div class="vcv-header-left">
+            <h1 class="vcv-title">VaultCertsViewer Admin</h1>
+          </div>
+          <div class="vcv-header-actions">
+            <a class="vcv-button" href="/">Back to VCV</a>
+          </div>
+        </div>
+      </header>
+
+      <section id="admin-login" class="vcv-table-wrapper admin-surface admin-login">
+        <h2 class="admin-card-title">Login</h2>
+        <div id="admin-login-error" class="admin-alert admin-alert-error vcv-hidden"></div>
+        <form id="admin-login-form" class="admin-form">
+          <!-- <div class="admin-form-row"> -->
+            <!-- <label class="admin-label" for="admin-username">Username</label> -->
+            <input class="vcv-input" id="admin-username" name="username" value="admin" autocomplete="username" required />
+          <!-- </div> -->
+          <div class="admin-form-row">
+            <label class="admin-label" for="admin-password">Password</label>
+            <input class="vcv-input" id="admin-password" name="password" type="password" autocomplete="current-password" required />
+          </div>
+          <div class="admin-actions">
+            <button class="vcv-button vcv-button-primary" type="submit">Login</button>
+          </div>
+        </form>
+      </section>
+
+      <section id="admin-panel" class="vcv-hidden">
+        <div id="admin-alert-success" class="admin-alert admin-alert-success vcv-hidden"></div>
+        <div id="admin-alert-error" class="admin-alert admin-alert-error vcv-hidden"></div>
+
+        <section class="vcv-table-wrapper admin-surface admin-panel-surface">
+          <div class="admin-card-header">
+            <h2 class="admin-card-title">Settings</h2>
+            <div class="admin-actions">
+              <button class="vcv-button vcv-button-secondary" id="admin-logout" type="button">Logout</button>
+            </div>
+          </div>
+
+          <form id="admin-settings-form" class="admin-form">
+            <fieldset class="admin-fieldset">
+              <legend class="admin-legend">App</legend>
+              <div class="admin-grid">
+                <div class="admin-form-row">
+                  <label class="admin-label" for="settings-app-port">Port</label>
+                  <input class="vcv-input" id="settings-app-port" name="port" type="number" min="1" max="65535" disabled />
+                </div>
+                <div class="admin-form-row">
+                  <label class="admin-label" for="settings-log-level">Log level</label>
+                  <input class="vcv-input" id="settings-log-level" name="logLevel" disabled />
+                </div>
+                <div class="admin-form-row">
+                  <label class="admin-label" for="settings-log-format">Log format</label>
+                  <input class="vcv-input" id="settings-log-format" name="logFormat" disabled />
+                </div>
+                <div class="admin-form-row">
+                  <label class="admin-label" for="settings-log-output">Log output</label>
+                  <input class="vcv-input" id="settings-log-output" name="logOutput" disabled />
+                </div>
+                <div class="admin-form-row">
+                  <label class="admin-label" for="settings-log-file">Log file path</label>
+                  <input class="vcv-input" id="settings-log-file" name="logFilePath" disabled />
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="admin-fieldset">
+              <legend class="admin-legend">Certificates</legend>
+              <div class="admin-grid">
+                <div class="admin-form-row">
+                  <label class="admin-label" for="settings-expire-critical">Critical threshold (days)</label>
+                  <input class="vcv-input" id="settings-expire-critical" name="expireCritical" type="number" min="1" max="3650" />
+                </div>
+                <div class="admin-form-row">
+                  <label class="admin-label" for="settings-expire-warning">Warning threshold (days)</label>
+                  <input class="vcv-input" id="settings-expire-warning" name="expireWarning" type="number" min="1" max="3650" />
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset class="admin-fieldset">
+              <legend class="admin-legend">CORS</legend>
+              <div class="admin-grid">
+                <div class="admin-form-row admin-form-row-full">
+                  <label class="admin-label" for="settings-cors-origins">Allowed origins (comma-separated)</label>
+                  <textarea class="vcv-input admin-textarea" id="settings-cors-origins" name="corsOrigins" rows="3"></textarea>
+                </div>
+                <!-- <div class="admin-form-row">
+                  <label class="admin-label" for="settings-cors-credentials">Allow credentials</label>
+                  <input id="settings-cors-credentials" name="corsCredentials" type="checkbox" />
+                </div> -->
+              </div>
+            </fieldset>
+
+            <fieldset class="admin-fieldset">
+              <legend class="admin-legend">Vaults</legend>
+              <div class="admin-actions admin-actions-space">
+                <button class="vcv-button vcv-button-secondary" id="admin-add-vault" type="button">Add vault</button>
+              </div>
+              <div class="vcv-table-wrapper admin-vaults-table-wrapper">
+                <table class="vcv-table admin-vaults-table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Display name</th>
+                      <th>Address</th>
+                      <th>Token</th>
+                      <th>PKI mounts</th>
+                      <th>TLS insecure</th>
+                      <th>Enabled</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="admin-vaults-body"></tbody>
+                </table>
+              </div>
+            </fieldset>
+
+            <div class="admin-actions admin-actions-space">
+              <button class="vcv-button vcv-button-primary" type="submit">Save settings.json</button>
+            </div>
+
+            <div class="admin-note">
+              Changes are persisted to the settings file. A server restart may be required for all changes to take effect.
+            </div>
+          </form>
+        </section>
+      </section>
+    </div>
+
+    <script>
+      const loginSection = document.getElementById('admin-login');
+      const panelSection = document.getElementById('admin-panel');
+      const loginForm = document.getElementById('admin-login-form');
+      const settingsForm = document.getElementById('admin-settings-form');
+      const logoutButton = document.getElementById('admin-logout');
+      const addVaultButton = document.getElementById('admin-add-vault');
+      const vaultsBody = document.getElementById('admin-vaults-body');
+
+      function getEl(id) {
+        return document.getElementById(id);
+      }
+
+      function setValue(id, value) {
+        const el = getEl(id);
+        if (!el) return;
+        el.value = value;
+      }
+
+      function setChecked(id, checked) {
+        const el = getEl(id);
+        if (!el) return;
+        el.checked = !!checked;
+      }
+
+      function getValue(id) {
+        const el = getEl(id);
+        if (!el) return '';
+        return el.value;
+      }
+
+      function getChecked(id) {
+        const el = getEl(id);
+        if (!el) return false;
+        return el.checked;
+      }
+
+      function show(el) {
+        if (!el) return;
+        el.classList.remove('vcv-hidden');
+      }
+
+      function hide(el) {
+        if (!el) return;
+        el.classList.add('vcv-hidden');
+      }
+
+      function showError(message) {
+        const el = document.getElementById('admin-alert-error');
+        if (!el) return;
+        el.textContent = message;
+        show(el);
+        setTimeout(() => hide(el), 6000);
+      }
+
+      function showSuccess(message) {
+        const el = document.getElementById('admin-alert-success');
+        if (!el) return;
+        el.textContent = message;
+        show(el);
+        setTimeout(() => hide(el), 4000);
+      }
+
+      function showLoginError(message) {
+        const el = document.getElementById('admin-login-error');
+        if (!el) return;
+        el.textContent = message;
+        show(el);
+      }
+
+      function clearLoginError() {
+        const el = document.getElementById('admin-login-error');
+        if (!el) return;
+        hide(el);
+        el.textContent = '';
+      }
+
+      function createVaultRow(vault) {
+        const row = document.createElement('tr');
+        row.className = 'admin-table-row';
+        row.innerHTML = `
+          <td><input class="vcv-input admin-input" name="vault-id" value="${vault.id || ''}" required /></td>
+          <td><input class="vcv-input admin-input" name="vault-display" value="${vault.display_name || ''}" /></td>
+          <td><input class="vcv-input admin-input" name="vault-address" value="${vault.address || ''}" required /></td>
+          <td><input class="vcv-input admin-input" name="vault-token" type="password" value="${vault.token || ''}" required /></td>
+          <td><input class="vcv-input admin-input" name="vault-mounts" value="${Array.isArray(vault.pki_mounts) ? vault.pki_mounts.join(',') : (vault.pki_mount ? vault.pki_mount : '')}" /></td>
+          <td class="admin-table-center"><input name="vault-tls" type="checkbox" ${vault.tls_insecure ? 'checked' : ''} /></td>
+          <td class="admin-table-center"><input name="vault-enabled" type="checkbox" ${vault.enabled === false ? '' : 'checked'} /></td>
+          <td class="admin-table-center"><button class="vcv-button vcv-button-danger vcv-button-small" type="button">Remove</button></td>
+        `;
+        const removeButton = row.querySelector('button');
+        if (removeButton) {
+          removeButton.addEventListener('click', () => row.remove());
+        }
+        return row;
+      }
+
+      function renderVaults(vaults) {
+        if (!vaultsBody) return;
+        vaultsBody.innerHTML = '';
+        vaults.forEach((vault) => {
+          vaultsBody.appendChild(createVaultRow(vault));
+        });
+      }
+
+      function readVaultsFromTable() {
+        if (!vaultsBody) return [];
+        const rows = Array.from(vaultsBody.querySelectorAll('tr'));
+        return rows.map((row) => {
+          const id = row.querySelector('input[name="vault-id"]').value.trim();
+          const displayName = row.querySelector('input[name="vault-display"]').value.trim();
+          const address = row.querySelector('input[name="vault-address"]').value.trim();
+          const token = row.querySelector('input[name="vault-token"]').value;
+          const mountsValue = row.querySelector('input[name="vault-mounts"]').value;
+          const pkiMounts = mountsValue.split(',').map((v) => v.trim()).filter((v) => v !== '');
+          const tlsInsecure = row.querySelector('input[name="vault-tls"]').checked;
+          const enabled = row.querySelector('input[name="vault-enabled"]').checked;
+          return {
+            id,
+            display_name: displayName,
+            address,
+            token,
+            pki_mount: pkiMounts.length > 0 ? pkiMounts[0] : 'pki',
+            pki_mounts: pkiMounts.length > 0 ? pkiMounts : ['pki'],
+            tls_insecure: tlsInsecure,
+            enabled,
+          };
+        });
+      }
+
+      function applySettingsToForm(settings) {
+        setValue('settings-app-env', settings.app?.env || 'dev');
+        setValue('settings-app-port', settings.app?.port || '');
+        setValue('settings-log-level', settings.app?.logging?.level || '');
+        setValue('settings-log-format', settings.app?.logging?.format || '');
+        setValue('settings-log-output', settings.app?.logging?.output || '');
+        setValue('settings-log-file', settings.app?.logging?.file_path || '');
+        setValue('settings-expire-critical', settings.certificates?.expiration_thresholds?.critical || '');
+        setValue('settings-expire-warning', settings.certificates?.expiration_thresholds?.warning || '');
+        const origins = Array.isArray(settings.cors?.allowed_origins) ? settings.cors.allowed_origins : [];
+        setValue('settings-cors-origins', origins.join(','));
+        setChecked('settings-cors-credentials', !!settings.cors?.allow_credentials);
+        renderVaults(Array.isArray(settings.vaults) ? settings.vaults : []);
+      }
+
+      function buildSettingsFromForm() {
+        const envValue = getValue('settings-app-env');
+        const env = envValue !== '' ? envValue : 'dev';
+        const port = parseInt(getValue('settings-app-port'), 10);
+        const logLevel = getValue('settings-log-level').trim();
+        const logFormat = getValue('settings-log-format').trim();
+        const logOutput = getValue('settings-log-output').trim();
+        const logFilePath = getValue('settings-log-file').trim();
+        const critical = parseInt(getValue('settings-expire-critical'), 10);
+        const warning = parseInt(getValue('settings-expire-warning'), 10);
+        const corsOriginsRaw = getValue('settings-cors-origins');
+        const corsOrigins = corsOriginsRaw.split(',').map((v) => v.trim()).filter((v) => v !== '');
+        const corsCredentials = getChecked('settings-cors-credentials');
+        const vaults = readVaultsFromTable();
+        return {
+          app: {
+            env,
+            port: Number.isFinite(port) ? port : 0,
+            logging: {
+              level: logLevel,
+              format: logFormat,
+              output: logOutput,
+              file_path: logFilePath,
+            },
+          },
+          certificates: {
+            expiration_thresholds: {
+              critical: Number.isFinite(critical) ? critical : 0,
+              warning: Number.isFinite(warning) ? warning : 0,
+            },
+          },
+          cors: {
+            allowed_origins: corsOrigins,
+            allow_credentials: corsCredentials,
+          },
+          vaults,
+        };
+      }
+
+      async function getSettings() {
+        const response = await fetch('/api/admin/settings');
+        if (!response.ok) {
+          throw new Error(`Failed to load settings (${response.status})`);
+        }
+        return response.json();
+      }
+
+      async function saveSettings(settings) {
+        const response = await fetch('/api/admin/settings', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(settings),
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text || `Failed to save settings (${response.status})`);
+        }
+      }
+
+      async function bootstrap() {
+        try {
+          const settings = await getSettings();
+          hide(loginSection);
+          show(panelSection);
+          applySettingsToForm(settings);
+        } catch {
+          show(loginSection);
+          hide(panelSection);
+        }
+      }
+
+      if (loginForm) {
+        loginForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          clearLoginError();
+          const username = document.getElementById('admin-username').value;
+          const password = document.getElementById('admin-password').value;
+          try {
+            const response = await fetch('/api/admin/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ username, password }),
+            });
+            if (!response.ok) {
+              throw new Error('Invalid credentials');
+            }
+            await bootstrap();
+            document.getElementById('admin-password').value = '';
+          } catch (error) {
+            showLoginError(error.message);
+          }
+        });
+      }
+
+      if (logoutButton) {
+        logoutButton.addEventListener('click', async () => {
+          try {
+            await fetch('/api/admin/logout', { method: 'POST' });
+          } finally {
+            show(loginSection);
+            hide(panelSection);
+          }
+        });
+      }
+
+      if (addVaultButton) {
+        addVaultButton.addEventListener('click', () => {
+          const row = createVaultRow({
+            id: '',
+            display_name: '',
+            address: '',
+            token: '',
+            pki_mount: 'pki',
+            pki_mounts: ['pki'],
+            tls_insecure: false,
+            enabled: true,
+          });
+          if (vaultsBody) {
+            vaultsBody.appendChild(row);
+          }
+        });
+      }
+
+      if (settingsForm) {
+        settingsForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          try {
+            const settings = buildSettingsFromForm();
+            await saveSettings(settings);
+            showSuccess('Settings saved');
+          } catch (error) {
+            showError(error.message);
+          }
+        });
+      }
+
+      bootstrap();
+    </script>
+  </body>
+</html>

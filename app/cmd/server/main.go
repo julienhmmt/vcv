@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 	"vcv/internal/metrics"
@@ -93,6 +96,25 @@ func main() {
 			Msg("Failed to initialize embedded assets filesystem")
 	}
 
+	settingsPath := strings.TrimSpace(os.Getenv("SETTINGS_PATH"))
+	if settingsPath == "" {
+		candidates := []string{fmt.Sprintf("settings.%s.json", string(cfg.Env)), "settings.json", "./settings.json", "/etc/vcv/settings.json"}
+		for _, candidate := range candidates {
+			absPath, absErr := filepath.Abs(candidate)
+			if absErr != nil {
+				continue
+			}
+			if _, statErr := os.Stat(absPath); statErr != nil {
+				continue
+			}
+			settingsPath = absPath
+			break
+		}
+		if settingsPath == "" {
+			settingsPath = filepath.Join(".", fmt.Sprintf("settings.%s.json", string(cfg.Env)))
+		}
+	}
+
 	// Middleware must be registered before any routes
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
@@ -169,6 +191,7 @@ func main() {
 	handlers.RegisterI18nRoutes(r)
 	handlers.RegisterCertRoutes(r, multiVaultClient)
 	handlers.RegisterUIRoutes(r, multiVaultClient, cfg.Vaults, statusClients, webFS, cfg.ExpirationThresholds)
+	handlers.RegisterAdminRoutes(r, webFS, settingsPath, cfg.Env)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
