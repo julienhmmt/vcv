@@ -26,6 +26,7 @@ import (
 type certDetailsTemplateData struct {
 	Certificate   certs.DetailedCertificate
 	Messages      i18n.Messages
+	Badges        []certStatusBadgeTemplateData
 	KeySummary    string
 	UsageSummary  string
 	Language      i18n.Language
@@ -287,11 +288,17 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 		}
 		language := resolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
+		statuses := certificateStatuses(details.Certificate, time.Now())
+		badgeViews := make([]certStatusBadgeTemplateData, 0, len(statuses))
+		for _, status := range statuses {
+			badgeViews = append(badgeViews, certStatusBadgeTemplateData{Class: "vcv-badge vcv-badge-" + status, Label: statusLabelForMessages(status, messages)})
+		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		data := certDetailsTemplateData{
 			Certificate:   details,
 			Messages:      messages,
+			Badges:        badgeViews,
 			KeySummary:    buildKeySummary(details),
 			UsageSummary:  buildUsageSummary(details.Usage),
 			Language:      language,

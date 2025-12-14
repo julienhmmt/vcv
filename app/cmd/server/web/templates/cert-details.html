@@ -2,6 +2,12 @@
   <div class="vcv-detail-section-header">{{.Messages.CertificateInformationTitle}}</div>
   <div class="vcv-detail-section-content">
     <div class="vcv-detail-row">
+      <div class="vcv-detail-label">{{.Messages.ColumnStatus}}</div>
+      <div class="vcv-detail-value">
+        {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
+      </div>
+    </div>
+    <div class="vcv-detail-row">
       <div class="vcv-detail-label">{{.Messages.LabelSerialNumber}}</div>
       <div class="vcv-detail-value"><code>{{.Certificate.SerialNumber}}</code></div>
     </div>
