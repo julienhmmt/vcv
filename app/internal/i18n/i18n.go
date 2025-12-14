@@ -111,7 +111,7 @@ type Response struct {
 }
 
 var englishMessages = Messages{
-	AppSubtitle:                 "Certificates from the configured Vault PKI mount",
+	AppSubtitle:                 "List of certificates from the configured Vault PKI mount",
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Close",
 	ButtonDetails:               "Details",
@@ -119,12 +119,12 @@ var englishMessages = Messages{
 	ButtonRefresh:               "Refresh",
 	CacheInvalidateFailed:       "Failed to clear cache",
 	CacheInvalidated:            "Cache cleared and data refreshed",
-	CertificateInformationTitle: "Certificate Information",
-	ChartExpiryTimeline:         "Expiration Timeline",
+	CertificateInformationTitle: "Certificate information",
+	ChartExpiryTimeline:         "Expiration timeline",
 	ChartLegendExpired:          "Expired",
 	ChartLegendRevoked:          "Revoked",
 	ChartLegendValid:            "Valid",
-	ChartStatusDistribution:     "Status Distribution",
+	ChartStatusDistribution:     "Status distribution",
 	ColumnActions:               "Actions",
 	ColumnCommonName:            "Common name",
 	ColumnCreatedAt:             "Created at",
@@ -132,9 +132,9 @@ var englishMessages = Messages{
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Status",
 	DashboardExpired:            "Expired",
-	DashboardExpiring:           "Expiring Soon",
+	DashboardExpiring:           "Expiring soon",
 	DashboardRevoked:            "Revoked",
-	DashboardTotal:              "Total Certificates",
+	DashboardTotal:              "Total certificates",
 	DashboardValid:              "Valid",
 	DaysRemaining:               "{{days}} days remaining",
 	DaysRemainingShort:          "{{days}}d",
@@ -173,8 +173,8 @@ var englishMessages = Messages{
 	LoadSuccess:                 "Certificates loaded successfully",
 	LoadUnexpectedFormat:        "Unexpected response format from server",
 	LoadingDetails:              "Loading certificate details...",
-	ModalDetailsTitle:           "Certificate Details",
-	MountSelectorTitle:          "PKI Engines",
+	ModalDetailsTitle:           "Certificate details",
+	MountSelectorTitle:          "PKI engines",
 	NoCertsExpiringSoon:         "No certificates expiring soon",
 	NoData:                      "No data",
 	NotificationCritical:        "{{count}} certificate(s) expiring within {{threshold}} days or less!",
@@ -185,7 +185,7 @@ var englishMessages = Messages{
 	PaginationPageSizeLabel:     "Results per page",
 	PaginationPrev:              "Previous",
 	SearchPlaceholder:           "CN or SAN",
-	SelectAll:                   "Select All",
+	SelectAll:                   "Select all",
 	StatusFilterAll:             "All",
 	StatusFilterExpired:         "Expired",
 	StatusFilterRevoked:         "Revoked",
@@ -197,11 +197,11 @@ var englishMessages = Messages{
 	SummaryAll:                  "{{total}} certificates",
 	SummaryNoCertificates:       "No certificates.",
 	SummarySome:                 "{{visible}} of {{total}} certificates shown",
-	TechnicalDetailsTitle:       "Technical Details",
+	TechnicalDetailsTitle:       "Technical details",
 }
 
 var frenchMessages = Messages{
-	AppSubtitle:                 "Certificats du PKI Vault configuré",
+	AppSubtitle:                 "Liste des certificats du moteur PKI Vault",
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Fermer",
 	ButtonDetails:               "Détails",
@@ -291,7 +291,7 @@ var frenchMessages = Messages{
 }
 
 var spanishMessages = Messages{
-	AppSubtitle:                 "Certificados del PKI de Vault configurado",
+	AppSubtitle:                 "Lista de certificados del motor PKI de Vault",
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Cerrar",
 	ButtonDetails:               "Detalles",
@@ -381,7 +381,7 @@ var spanishMessages = Messages{
 }
 
 var germanMessages = Messages{
-	AppSubtitle:                 "Zertifikate aus dem konfigurierten Vault-PKI-Mount",
+	AppSubtitle:                 "Zertifikate aus dem Vault-PKI-Mount",
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Schließen",
 	ButtonDetails:               "Details",
@@ -471,7 +471,7 @@ var germanMessages = Messages{
 }
 
 var italianMessages = Messages{
-	AppSubtitle:                 "Certificati dal mount PKI Vault configurato",
+	AppSubtitle:                 "Lista dei certificati dal mount PKI Vault",
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Chiudi",
 	ButtonDetails:               "Dettagli",
