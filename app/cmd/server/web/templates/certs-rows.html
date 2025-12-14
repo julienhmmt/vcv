@@ -1,13 +1,15 @@
 {{define "certs-rows"}}
 {{range .Rows}}
 <tr class="{{.RowClass}}">
-  <td>{{.CommonName}}</td>
-  <td>{{.Sans}}</td>
-  <td>{{.CreatedAt}}</td>
+  <td>
+    <div><b>{{.CommonName}}</b></div>
+    {{if .ShowVaultMount}}<div class="vcv-cert-meta"><span class="vcv-cert-meta-item">{{.VaultName}}</span><span class="vcv-cert-meta-sep">·</span><span class="vcv-cert-meta-item">{{.MountName}}</span></div>{{end}}
+  </td>
+  <td><code>{{.Sans}}</code></td>
+  <td><i>{{.CreatedAt}}</i></td>
   <td class="{{.ExpiresCellClass}}">
     <div class="{{.ExpiresDateClass}}">{{.ExpiresAt}}</div>
     {{if .DaysRemainingText}}<div class="{{.DaysRemainingClass}}">{{.DaysRemainingText}}</div>{{end}}
-  </td>
   <td>
     {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
   </td>

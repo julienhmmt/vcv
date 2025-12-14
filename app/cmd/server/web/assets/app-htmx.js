@@ -85,12 +85,14 @@ function buildCertsPageUrl() {
   }
   params.set("expiry", values.expiry);
   params.set("mounts", values.mounts);
+  params.set("pki", values.pki);
   params.set("page", values.page);
   params.set("pageSize", values.pageSize);
   params.set("search", values.search);
   params.set("sortDir", values.sortDir);
   params.set("sortKey", values.sortKey);
   params.set("status", values.status);
+  params.set("vault", values.vault);
   return `/?${params.toString()}`;
 }
 
@@ -124,6 +126,14 @@ function applyCertsStateFromUrl() {
   if (sortDirInput && params.has("sortDir")) {
     sortDirInput.value = params.get("sortDir") || "asc";
   }
+  const vaultFilter = document.getElementById("vcv-vault-filter");
+  if (vaultFilter && params.has("vault")) {
+    vaultFilter.value = params.get("vault") || "all";
+  }
+  const pkiFilter = document.getElementById("vcv-pki-filter");
+  if (pkiFilter && params.has("pki")) {
+    pkiFilter.value = params.get("pki") || "all";
+  }
   const mountsValue = params.get("mounts");
   if (typeof mountsValue === "string") {
     if (mountsValue === mountsAllSentinel) {
@@ -134,6 +144,36 @@ function applyCertsStateFromUrl() {
       const requested = mountsValue.split(",").map((value) => value.trim()).filter((value) => value !== "");
       state.selectedMounts = requested.filter((value) => state.availableMounts.includes(value));
     }
+  }
+}
+
+function updateSelectOptions(select, options) {
+  if (!select) {
+    return;
+  }
+  const current = typeof select.value === "string" && select.value !== "" ? select.value : "all";
+  select.innerHTML = "";
+  const allOption = document.createElement("option");
+  allOption.value = "all";
+  allOption.textContent = "All";
+  select.appendChild(allOption);
+  options.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  });
+  select.value = current;
+}
+
+function updateVaultPkiFiltersVisibility(vaultOptions, pkiOptions) {
+  const vaultGroup = document.getElementById("vcv-vault-filter-group");
+  const pkiGroup = document.getElementById("vcv-pki-filter-group");
+  if (vaultGroup) {
+    vaultGroup.classList.toggle("vcv-hidden", !(Array.isArray(vaultOptions) && vaultOptions.length > 1));
+  }
+  if (pkiGroup) {
+    pkiGroup.classList.toggle("vcv-hidden", !(Array.isArray(pkiOptions) && pkiOptions.length > 1));
   }
 }
 
@@ -587,20 +627,22 @@ function applyTranslations() {
   if (!messages) {
     return;
   }
-  setText(document.getElementById("mount-modal-title"), messages.mountSelectorTitle);
-  setText(document.getElementById("mount-deselect-all"), messages.deselectAll);
-  setText(document.getElementById("mount-select-all"), messages.selectAll);
-  setText(document.getElementById("mount-close"), messages.buttonClose);
+  setText(document.getElementById("certificate-modal-close"), messages.buttonClose);
+  setText(document.getElementById("chart-expiry-title"), messages.chartExpiryTimeline);
+  setText(document.getElementById("chart-status-title"), messages.chartStatusDistribution);
+  setText(document.getElementById("dashboard-expired-label"), messages.dashboardExpired);
+  setText(document.getElementById("dashboard-expiring-label"), messages.dashboardExpiring);
   setText(document.getElementById("dashboard-total-label"), messages.dashboardTotal);
   setText(document.getElementById("dashboard-valid-label"), messages.dashboardValid);
-  setText(document.getElementById("dashboard-expiring-label"), messages.dashboardExpiring);
-  setText(document.getElementById("dashboard-expired-label"), messages.dashboardExpired);
-  setText(document.getElementById("chart-status-title"), messages.chartStatusDistribution);
-  setText(document.getElementById("chart-expiry-title"), messages.chartExpiryTimeline);
-  setText(document.getElementById("vcv-status-filter-label"), messages.statusFilterTitle);
+  setText(document.getElementById("mount-close"), messages.buttonClose);
+  setText(document.getElementById("mount-deselect-all"), messages.deselectAll);
+  setText(document.getElementById("mount-modal-title"), messages.mountSelectorTitle);
+  setText(document.getElementById("mount-select-all"), messages.selectAll);
   setText(document.getElementById("vcv-page-size-label"), messages.paginationPageSizeLabel);
+  setText(document.getElementById("vcv-pki-filter-label"), "PKI");
+  setText(document.getElementById("vcv-status-filter-label"), messages.statusFilterTitle);
+  setText(document.getElementById("vcv-vault-filter-label"), "Vault");
   setText(document.querySelector("#certificate-modal .vcv-modal-title"), messages.modalDetailsTitle);
-  setText(document.getElementById("certificate-modal-close"), messages.buttonClose);
   const searchInput = document.getElementById("vcv-search");
   if (searchInput && typeof messages.searchPlaceholder === "string" && messages.searchPlaceholder !== "") {
     searchInput.setAttribute("placeholder", messages.searchPlaceholder);
@@ -608,9 +650,9 @@ function applyTranslations() {
   const statusSelect = document.getElementById("vcv-status-filter");
   if (statusSelect) {
     setText(statusSelect.querySelector("option[value='all']"), messages.statusFilterAll);
-    setText(statusSelect.querySelector("option[value='valid']"), messages.statusFilterValid);
     setText(statusSelect.querySelector("option[value='expired']"), messages.statusFilterExpired);
     setText(statusSelect.querySelector("option[value='revoked']"), messages.statusFilterRevoked);
+    setText(statusSelect.querySelector("option[value='valid']"), messages.statusFilterValid);
   }
   const expirySelect = document.getElementById("vcv-expiry-filter");
   if (expirySelect) {
@@ -669,24 +711,57 @@ function setMountsHiddenField() {
 }
 
 function getCertsHtmxValues() {
-  const searchInput = document.getElementById("vcv-search");
-  const statusFilter = document.getElementById("vcv-status-filter");
   const expiryFilter = document.getElementById("vcv-expiry-filter");
-  const pageSizeSelect = document.getElementById("vcv-page-size");
-  const pageInput = document.getElementById("vcv-page");
-  const sortKeyInput = document.getElementById("vcv-sort-key");
-  const sortDirInput = document.getElementById("vcv-sort-dir");
   const mountsInput = document.getElementById("vcv-mounts");
+  const pageInput = document.getElementById("vcv-page");
+  const pageSizeSelect = document.getElementById("vcv-page-size");
+  const pkiFilter = document.getElementById("vcv-pki-filter");
+  const searchInput = document.getElementById("vcv-search");
+  const sortDirInput = document.getElementById("vcv-sort-dir");
+  const sortKeyInput = document.getElementById("vcv-sort-key");
+  const statusFilter = document.getElementById("vcv-status-filter");
+  const vaultFilter = document.getElementById("vcv-vault-filter");
   return {
-    search: searchInput ? searchInput.value : "",
-    status: statusFilter ? statusFilter.value : "all",
     expiry: expiryFilter ? expiryFilter.value : "all",
-    pageSize: pageSizeSelect ? pageSizeSelect.value : "25",
-    page: pageInput ? pageInput.value : "0",
-    sortKey: sortKeyInput ? sortKeyInput.value : "commonName",
-    sortDir: sortDirInput ? sortDirInput.value : "asc",
     mounts: mountsInput ? mountsInput.value : "",
+    page: pageInput ? pageInput.value : "0",
+    pageSize: pageSizeSelect ? pageSizeSelect.value : "25",
+    pki: pkiFilter ? pkiFilter.value : "all",
+    search: searchInput ? searchInput.value : "",
+    sortDir: sortDirInput ? sortDirInput.value : "asc",
+    sortKey: sortKeyInput ? sortKeyInput.value : "commonName",
+    status: statusFilter ? statusFilter.value : "all",
+    vault: vaultFilter ? vaultFilter.value : "all",
   };
+}
+
+function handleSortClick(event) {
+  const button = event.target && event.target.closest ? event.target.closest(".vcv-sort") : null;
+  if (!button) {
+    return;
+  }
+  const sortKey = button.getAttribute("data-sort-key") || "";
+  if (sortKey === "") {
+    return;
+  }
+  const activeKeyInput = document.getElementById("vcv-sort-key");
+  const activeDirInput = document.getElementById("vcv-sort-dir");
+  if (!activeKeyInput || !activeDirInput) {
+    return;
+  }
+  const currentKey = activeKeyInput.value || "commonName";
+  const currentDir = activeDirInput.value || "asc";
+  if (sortKey === currentKey) {
+    activeDirInput.value = currentDir === "asc" ? "desc" : "asc";
+  } else {
+    activeKeyInput.value = sortKey;
+    activeDirInput.value = "asc";
+  }
+  const pageInput = document.getElementById("vcv-page");
+  if (pageInput) {
+    pageInput.value = "0";
+  }
+  refreshHtmxCertsTable();
 }
 
 function refreshHtmxCertsTable() {
@@ -724,10 +799,10 @@ function renderMountModalList() {
   if (!listContainer) {
     return;
   }
-  const messages = state.messages || {};
-  const selectAllLabel = typeof messages.selectAll === "string" && messages.selectAll !== "" ? messages.selectAll : "All";
   const deselectAllLabel = typeof messages.deselectAll === "string" && messages.deselectAll !== "" ? messages.deselectAll : "None";
   const groups = Array.isArray(state.vaultMountGroups) ? state.vaultMountGroups : [];
+  const messages = state.messages || {};
+  const selectAllLabel = typeof messages.selectAll === "string" && messages.selectAll !== "" ? messages.selectAll : "All";
   const selectedSet = new Set(state.selectedMounts);
   if (groups.length > 0) {
     const content = groups
@@ -750,8 +825,8 @@ function renderMountModalList() {
     return;
   }
   const items = state.availableMounts.map((mount) => {
-    const isSelected = selectedSet.has(mount);
     const checkedAttr = isSelected ? "checked" : "";
+    const isSelected = selectedSet.has(mount);
     const selectedClass = isSelected ? "selected" : "";
     return `<label class="vcv-mount-modal-option ${selectedClass}"><input type="checkbox" ${checkedAttr} onchange="toggleMount('${mount}')"><span class="vcv-mount-modal-name">${mount}</span></label>`;
   });
@@ -888,6 +963,20 @@ async function loadConfig() {
         .map((vault) => vault.mounts.map((mount) => buildVaultMountKey(vault.id, mount)))
         .reduce((acc, keys) => acc.concat(keys), []);
       state.selectedMounts = [...state.availableMounts];
+
+      const vaultFilter = document.getElementById("vcv-vault-filter");
+      const pkiFilter = document.getElementById("vcv-pki-filter");
+      const vaultOptions = state.vaultMountGroups.map((group) => group.id);
+      const uniquePki = state.vaultMountGroups
+        .map((group) => group.mounts)
+        .reduce((acc, mounts) => acc.concat(mounts), [])
+        .map((value) => String(value).trim())
+        .filter((value) => value !== "");
+      const pkiOptions = Array.from(new Set(uniquePki)).sort();
+      updateSelectOptions(vaultFilter, vaultOptions);
+      updateSelectOptions(pkiFilter, pkiOptions);
+      updateVaultPkiFiltersVisibility(vaultOptions, pkiOptions);
+      applyTranslations();
       return;
     }
     if (!Array.isArray(data.pkiMounts)) {
@@ -895,6 +984,13 @@ async function loadConfig() {
     }
     state.availableMounts = data.pkiMounts;
     state.selectedMounts = [...data.pkiMounts];
+
+    const vaultFilter = document.getElementById("vcv-vault-filter");
+    const pkiFilter = document.getElementById("vcv-pki-filter");
+    updateSelectOptions(vaultFilter, []);
+    updateSelectOptions(pkiFilter, state.availableMounts);
+    updateVaultPkiFiltersVisibility([], state.availableMounts);
+    applyTranslations();
   } catch {
   }
 }
@@ -916,6 +1012,10 @@ function initEventHandlers() {
       }
     });
   }
+
+  document.querySelectorAll(".vcv-sort").forEach((button) => {
+    button.addEventListener("click", handleSortClick);
+  });
 }
 
 function dismissNotifications() {
@@ -928,14 +1028,8 @@ function dismissNotifications() {
 async function main() {
   applyThemeFromStorage();
   initLanguageFromURL();
-  await loadMessages();
-  applyTranslations();
   initEventHandlers();
-  await loadConfig();
-  applyCertsStateFromUrl();
-  renderMountSelector();
-  setMountsHiddenField();
-  
+
   // Initialize HTMX enhancements
   initHtmxErrorHandler();
   initLoadingIndicators();
@@ -943,8 +1037,16 @@ async function main() {
   initCacheManagement();
   initUrlSync();
   initVaultConnectionNotifications();
-  
+
+  // Apply URL state and trigger first table load ASAP.
+  applyCertsStateFromUrl();
   refreshHtmxCertsTable();
+
+  // Load non-critical startup data in parallel.
+  await Promise.all([loadMessages(), loadConfig()]);
+  applyTranslations();
+  renderMountSelector();
+  setMountsHiddenField();
 }
 
 main();

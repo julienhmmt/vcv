@@ -692,8 +692,8 @@ body {
 /* Loading indicator */
 .vcv-loading-indicator {
   position: fixed;
-  inset: 0;
-  margin: auto;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
@@ -1706,4 +1706,24 @@ body {
 
 .vcv-table td:last-child .vcv-button:last-child {
   margin-right: 0;
+}
+
+.vcv-cert-meta {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.1;
+  color: #64748b;
+}
+
+.vcv-cert-meta-item {
+  font-weight: 500;
+}
+
+.vcv-cert-meta-sep {
+  margin: 0 0.375rem;
+  opacity: 0.7;
+}
+
+[data-theme="dark"] .vcv-cert-meta {
+  color: #94a3b8;
 }
