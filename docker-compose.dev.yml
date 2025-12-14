@@ -63,21 +63,6 @@ services:
       - "52000:52000/tcp"
     networks:
       - vcv-network
-    environment:
-      - APP_ENV=dev
-      - LOG_LEVEL=debug
-      - LOG_FORMAT=json
-      # Log file path (required if LOG_OUTPUT is 'file' or 'both')
-      - LOG_FILE_PATH=/var/log/app/vcv.log
-      - LOG_OUTPUT=both # 'file', 'stdout' or 'both'
-      - PORT=52000
-      - VAULT_ADDR=http://vault:8200
-      - VAULT_PKI_MOUNTS=pki,pki_dev,pki_stage,pki_production
-      - VAULT_READ_TOKEN=root
-      - VAULT_TLS_INSECURE=true
-      # Certificate expiration thresholds (in days)
-      - VCV_EXPIRE_CRITICAL=2
-      - VCV_EXPIRE_WARNING=10
     depends_on:
       - vault
     read_only: true
@@ -85,6 +70,7 @@ services:
       - no-new-privileges:true
     volumes:
       - ./vcv.log:/var/log/app/vcv.log
+      - ./settings.dev.json:/app/settings.dev.json:ro
     deploy:
       resources:
         limits:

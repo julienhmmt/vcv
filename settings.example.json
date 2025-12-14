@@ -1,0 +1,35 @@
+{
+  "app": {
+    "env": "prod",
+    "port": 52000,
+    "logging": {
+      "level": "info",
+      "format": "json",
+      "output": "stdout",
+      "file_path": "/var/log/app/vcv.log"
+    }
+  },
+  "cors": {
+    "allowed_origins": [],
+    "allow_credentials": true
+  },
+  "certificates": {
+    "expiration_thresholds": {
+      "critical": 7,
+      "warning": 30
+    }
+  },
+  "vaults": [
+    {
+      "id": "prod",
+      "display_name": "Production",
+      "address": "https://vault-prod.example.com:8200",
+      "token": "your-vault-token-here",
+      "pki_mount": "pki",
+      "pki_mounts": [
+        "pki"
+      ],
+      "tls_insecure": false
+    }
+  ]
+}

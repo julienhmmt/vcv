@@ -1,0 +1,70 @@
+{
+  "app": {
+    "env": "dev",
+    "port": 52000,
+    "logging": {
+      "level": "debug",
+      "format": "json",
+      "output": "both",
+      "file_path": "/var/log/app/vcv.log"
+    }
+  },
+  "cors": {
+    "allowed_origins": [
+      "http://localhost:4321",
+      "http://localhost:3000"
+    ],
+    "allow_credentials": true
+  },
+  "certificates": {
+    "expiration_thresholds": {
+      "critical": 2,
+      "warning": 10
+    }
+  },
+  "vaults": [
+    {
+      "id": "vault-main",
+      "display_name": "Vault",
+      "address": "http://vault:8200",
+      "token": "root",
+      "pki_mount": "pki",
+      "pki_mounts": [
+        "pki",
+        "pki_dev",
+        "pki_stage",
+        "pki_production"
+      ],
+      "tls_insecure": true
+    },
+    {
+      "id": "vault-dev-2",
+      "display_name": "Vault dev-2",
+      "address": "http://vault-dev-2:8200",
+      "token": "root",
+      "pki_mount": "pki_vault2",
+      "pki_mounts": [
+        "pki_vault2",
+        "pki_corporate",
+        "pki_external",
+        "pki_partners"
+      ],
+      "tls_insecure": true
+    },
+    {
+      "id": "vault-dev-3",
+      "display_name": "Vault dev-3",
+      "address": "http://vault-dev-3:8200",
+      "token": "root",
+      "pki_mount": "pki_vault3",
+      "pki_mounts": [
+        "pki_vault3",
+        "pki_cloud",
+        "pki_edge",
+        "pki_iot",
+        "pki_blockchain"
+      ],
+      "tls_insecure": true
+    }
+  ]
+}

@@ -1,7 +1,10 @@
 package config
 
 import (
+	"encoding/json"
+	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -24,8 +27,10 @@ type Config struct {
 	LogLevel             string
 	LogFormat            string
 	LogOutput            string
+	LogFilePath          string
 	CORS                 CORSConfig
 	Vault                VaultConfig
+	Vaults               []VaultInstance
 	ExpirationThresholds ExpirationThresholds
 }
 
@@ -44,15 +49,59 @@ type VaultConfig struct {
 
 // ExpirationThresholds holds certificate expiration alert thresholds (in days).
 type ExpirationThresholds struct {
-	Critical int
-	Warning  int
+	Critical int `json:"critical"`
+	Warning  int `json:"warning"`
+}
+
+type SettingsFile struct {
+	App          AppSettings         `json:"app"`
+	Certificates CertificateSettings `json:"certificates"`
+	CORS         CORSSettings        `json:"cors"`
+	Vaults       []VaultInstance     `json:"vaults"`
+}
+
+type AppSettings struct {
+	Env     string          `json:"env"`
+	Logging LoggingSettings `json:"logging"`
+	Port    int             `json:"port"`
+}
+
+type LoggingSettings struct {
+	Level    string `json:"level"`
+	Format   string `json:"format"`
+	Output   string `json:"output"`
+	FilePath string `json:"file_path"`
+}
+
+type CORSSettings struct {
+	AllowedOrigins   []string `json:"allowed_origins"`
+	AllowCredentials bool     `json:"allow_credentials"`
+}
+
+type CertificateSettings struct {
+	ExpirationThresholds ExpirationThresholds `json:"expiration_thresholds"`
 }
 
 // Load reads configuration from environment variables.
 func Load() Config {
 	_ = godotenv.Load()
+	settings, settingsPath, settingsErr := loadSettingsFile()
+	if settingsErr == nil && settings != nil {
+		cfg := buildConfigFromSettings(*settings)
+		vaults, normalizeErr := normalizeVaultInstances(settings.Vaults)
+		if normalizeErr != nil {
+			panic(fmt.Sprintf("invalid settings file %s: %v", settingsPath, normalizeErr))
+		}
+		cfg.Vaults = vaults
+		if len(vaults) > 0 {
+			cfg.Vault = convertVaultInstanceToLegacy(vaults[0])
+		}
+		applyLoggingEnv(cfg)
+		return cfg
+	}
 
 	env := parseEnv(getEnv("APP_ENV", "dev"))
+	legacyVault := loadVaultConfig()
 
 	cfg := Config{
 		Env:                  env,
@@ -60,12 +109,117 @@ func Load() Config {
 		LogLevel:             getEnv("LOG_LEVEL", defaultLogLevel(env)),
 		LogFormat:            getEnv("LOG_FORMAT", defaultLogFormat(env)),
 		LogOutput:            getEnv("LOG_OUTPUT", "stdout"),
+		LogFilePath:          getEnv("LOG_FILE_PATH", ""),
 		CORS:                 loadCORSConfig(env),
-		Vault:                loadVaultConfig(),
+		Vault:                legacyVault,
 		ExpirationThresholds: loadExpirationThresholds(),
 	}
 
+	vaultInstances, vaultErr := LoadVaultInstances()
+	if vaultErr == nil && len(vaultInstances) > 0 {
+		cfg.Vaults = vaultInstances
+		cfg.Vault = convertVaultInstanceToLegacy(vaultInstances[0])
+	}
+
 	return cfg
+}
+
+func loadSettingsFile() (*SettingsFile, string, error) {
+	settingsPath := strings.TrimSpace(getEnv("SETTINGS_PATH", ""))
+	if settingsPath != "" {
+		data, readErr := os.ReadFile(settingsPath)
+		if readErr != nil {
+			return nil, settingsPath, readErr
+		}
+		var settings SettingsFile
+		if err := json.Unmarshal(data, &settings); err != nil {
+			return nil, settingsPath, err
+		}
+		return &settings, settingsPath, nil
+	}
+
+	envName := strings.ToLower(strings.TrimSpace(getEnv("APP_ENV", "dev")))
+	candidates := []string{fmt.Sprintf("settings.%s.json", envName), "settings.json", "./settings.json", "/etc/vcv/settings.json"}
+	for _, candidate := range candidates {
+		absPath, absErr := filepath.Abs(candidate)
+		if absErr != nil {
+			continue
+		}
+		if _, statErr := os.Stat(absPath); statErr != nil {
+			continue
+		}
+		data, readErr := os.ReadFile(absPath)
+		if readErr != nil {
+			return nil, absPath, readErr
+		}
+		var settings SettingsFile
+		if err := json.Unmarshal(data, &settings); err != nil {
+			return nil, absPath, err
+		}
+		return &settings, absPath, nil
+	}
+	return nil, "", os.ErrNotExist
+}
+
+func buildConfigFromSettings(settings SettingsFile) Config {
+	envValue := strings.TrimSpace(settings.App.Env)
+	if envValue == "" {
+		envValue = "dev"
+	}
+	env := parseEnv(envValue)
+	port := "52000"
+	if settings.App.Port > 0 {
+		port = strconv.Itoa(settings.App.Port)
+	}
+	logLevel := strings.TrimSpace(settings.App.Logging.Level)
+	if logLevel == "" {
+		logLevel = defaultLogLevel(env)
+	}
+	logFormat := strings.TrimSpace(settings.App.Logging.Format)
+	if logFormat == "" {
+		logFormat = defaultLogFormat(env)
+	}
+	logOutput := strings.TrimSpace(settings.App.Logging.Output)
+	if logOutput == "" {
+		logOutput = "stdout"
+	}
+	logFilePath := strings.TrimSpace(settings.App.Logging.FilePath)
+	cors := loadCORSConfig(env)
+	if len(settings.CORS.AllowedOrigins) > 0 {
+		cors.AllowedOrigins = settings.CORS.AllowedOrigins
+		cors.AllowCredentials = settings.CORS.AllowCredentials
+	}
+	expirationThresholds := ExpirationThresholds{Critical: 7, Warning: 30}
+	if settings.Certificates.ExpirationThresholds.Critical > 0 {
+		expirationThresholds.Critical = settings.Certificates.ExpirationThresholds.Critical
+	}
+	if settings.Certificates.ExpirationThresholds.Warning > 0 {
+		expirationThresholds.Warning = settings.Certificates.ExpirationThresholds.Warning
+	}
+	return Config{
+		Env:                  env,
+		Port:                 port,
+		LogLevel:             logLevel,
+		LogFormat:            logFormat,
+		LogOutput:            logOutput,
+		LogFilePath:          logFilePath,
+		CORS:                 cors,
+		Vault:                VaultConfig{},
+		Vaults:               []VaultInstance{},
+		ExpirationThresholds: expirationThresholds,
+	}
+}
+
+func applyLoggingEnv(cfg Config) {
+	if strings.TrimSpace(cfg.LogOutput) != "" {
+		_ = os.Setenv("LOG_OUTPUT", cfg.LogOutput)
+	}
+	if strings.TrimSpace(cfg.LogFormat) != "" {
+		_ = os.Setenv("LOG_FORMAT", cfg.LogFormat)
+	}
+	if strings.TrimSpace(cfg.LogFilePath) != "" {
+		_ = os.Setenv("LOG_FILE_PATH", cfg.LogFilePath)
+	}
 }
 
 // IsDev returns true if the environment is development.
@@ -142,7 +296,7 @@ func loadVaultConfig() VaultConfig {
 	pkiMountsStr := getEnv("VAULT_PKI_MOUNTS", "")
 	if pkiMountsStr == "" {
 		// Fallback to legacy single mount for backward compatibility
-		legacyMount := getEnv("VAULT_PKI_MOUNT", "pki")
+		legacyMount := getEnv("VAULT_PKI_MOUNT", defaultPKIMount)
 		pkiMountsStr = legacyMount
 	}
 
@@ -159,6 +313,23 @@ func loadVaultConfig() VaultConfig {
 		PKIMounts:   pkiMounts,
 		ReadToken:   getEnv("VAULT_READ_TOKEN", ""),
 		TLSInsecure: tlsInsecure,
+	}
+}
+
+func convertVaultInstanceToLegacy(instance VaultInstance) VaultConfig {
+	defaultMount := defaultPKIMount
+	if strings.TrimSpace(instance.PKIMount) != "" {
+		defaultMount = strings.TrimSpace(instance.PKIMount)
+	}
+	pkiMounts := instance.PKIMounts
+	if len(pkiMounts) == 0 {
+		pkiMounts = []string{defaultMount}
+	}
+	return VaultConfig{
+		Addr:        instance.Address,
+		PKIMounts:   pkiMounts,
+		ReadToken:   instance.Token,
+		TLSInsecure: instance.TLSInsecure,
 	}
 }
 
