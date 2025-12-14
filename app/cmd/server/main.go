@@ -48,6 +48,26 @@ func main() {
 			Msg("Failed to initialize Vault client")
 	}
 
+	statusClients := make([]vault.Client, 0, len(cfg.Vaults))
+	primaryID := ""
+	if len(cfg.Vaults) > 0 {
+		primaryID = cfg.Vaults[0].ID
+	}
+	for _, instance := range cfg.Vaults {
+		if primaryID != "" && instance.ID == primaryID {
+			statusClients = append(statusClients, vaultClient)
+			continue
+		}
+		statusCfg := config.VaultConfig{Addr: instance.Address, PKIMounts: instance.PKIMounts, ReadToken: instance.Token, TLSInsecure: instance.TLSInsecure}
+		client, err := vault.NewClientFromConfig(statusCfg)
+		if err != nil {
+			log.Fatal().Err(err).
+				Str("vault_id", instance.ID).
+				Msg("Failed to initialize Vault status client")
+		}
+		statusClients = append(statusClients, client)
+	}
+
 	log.Info().
 		Str("vault_addr", cfg.Vault.Addr).
 		Strs("vault_mounts", cfg.Vault.PKIMounts).
@@ -115,7 +135,7 @@ func main() {
 	r.Get("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP)
 	handlers.RegisterI18nRoutes(r)
 	handlers.RegisterCertRoutes(r, vaultClient)
-	handlers.RegisterUIRoutes(r, vaultClient, webFS, cfg.ExpirationThresholds)
+	handlers.RegisterUIRoutes(r, vaultClient, cfg.Vaults, statusClients, webFS, cfg.ExpirationThresholds)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
@@ -144,8 +164,12 @@ func main() {
 		log.Fatal().Err(err).Msg("Server forced to shutdown")
 	}
 
-	// Shutdown Vault client (stops background goroutines)
-	vaultClient.Shutdown()
+	for _, client := range statusClients {
+		if client == nil {
+			continue
+		}
+		client.Shutdown()
+	}
 
 	log.Info().Msg("Server stopped")
 }

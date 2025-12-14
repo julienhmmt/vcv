@@ -1,2 +1,6 @@
 <span id="vcv-footer-version" class="vcv-footer-version" hx-swap-oob="true">{{.VersionText}}</span>
-<span id="vcv-footer-vault" class="{{.VaultClass}}" title="{{.VaultTitle}}" hx-swap-oob="true">{{.VaultText}}</span>
+<div id="vcv-footer-vaults" class="vcv-footer-right" hx-swap-oob="true">
+  {{- range .VaultPills -}}
+    <span class="{{.Class}}" title="{{.Title}}">{{.Text}}</span>
+  {{- end -}}
+</div>

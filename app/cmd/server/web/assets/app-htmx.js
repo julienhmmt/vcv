@@ -340,16 +340,16 @@ function initVaultConnectionNotifications() {
 			return;
 		}
 		setTimeout(() => {
-			const pill = document.getElementById('vcv-footer-vault');
-			if (!pill) {
+			const container = document.getElementById('vcv-footer-vaults');
+			if (!container) {
 				return;
 			}
-			const isConnected = pill.classList.contains('vcv-footer-pill-ok');
-			const isDisconnected = pill.classList.contains('vcv-footer-pill-error');
-			if (!isConnected && !isDisconnected) {
+			const connectedCount = container.querySelectorAll('.vcv-footer-pill-ok').length;
+			const disconnectedCount = container.querySelectorAll('.vcv-footer-pill-error').length;
+			if (connectedCount === 0 && disconnectedCount === 0) {
 				return;
 			}
-			const nextState = isConnected;
+			const nextState = disconnectedCount === 0;
 			if (state.vaultConnected === null) {
 				state.vaultConnected = nextState;
 				return;

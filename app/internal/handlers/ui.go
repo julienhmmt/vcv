@@ -36,9 +36,13 @@ type certDetailsTemplateData struct {
 
 type footerStatusTemplateData struct {
 	VersionText string
-	VaultText   string
-	VaultClass  string
-	VaultTitle  string
+	VaultPills  []footerVaultStatusTemplateData
+}
+
+type footerVaultStatusTemplateData struct {
+	Text  string
+	Class string
+	Title string
 }
 
 type themeToggleTemplateData struct {
@@ -135,7 +139,7 @@ type certsQueryState struct {
 	TriggerID      string
 }
 
-func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, expirationThresholds config.ExpirationThresholds) {
+func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstances []config.VaultInstance, vaultStatusClients []vault.Client, webFS fs.FS, expirationThresholds config.ExpirationThresholds) {
 	templates, err := template.ParseFS(webFS, "templates/*.html")
 	if err != nil {
 		panic(err)
@@ -227,28 +231,38 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 	router.Get("/ui/status", func(w http.ResponseWriter, r *http.Request) {
 		language := resolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
-		vaultTitle := ""
-		var vaultClass string
-		var vaultText string
-		if vaultErr := vaultClient.CheckConnection(r.Context()); vaultErr != nil {
-			if errors.Is(vaultErr, vault.ErrVaultNotConfigured) {
-				vaultClass = "vcv-footer-pill"
-				vaultText = messages.FooterVaultNotConfigured
-				vaultTitle = vaultErr.Error()
-			} else {
-				vaultClass = "vcv-footer-pill vcv-footer-pill-error"
-				vaultText = messages.FooterVaultDisconnected
-				vaultTitle = vaultErr.Error()
-			}
+		vaultPills := make([]footerVaultStatusTemplateData, 0, len(vaultInstances))
+		if len(vaultInstances) == 0 || len(vaultInstances) != len(vaultStatusClients) {
+			vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: messages.FooterVaultNotConfigured, Class: "vcv-footer-pill", Title: vault.ErrVaultNotConfigured.Error()})
 		} else {
-			vaultClass = "vcv-footer-pill vcv-footer-pill-ok"
-			vaultText = messages.FooterVaultConnected
+			for index, instance := range vaultInstances {
+				name := strings.TrimSpace(instance.DisplayName)
+				if name == "" {
+					name = strings.TrimSpace(instance.ID)
+				}
+				if name == "" {
+					name = "Vault"
+				}
+				client := vaultStatusClients[index]
+				title := ""
+				cssClass := "vcv-footer-pill"
+				if vaultErr := client.CheckConnection(r.Context()); vaultErr != nil {
+					if errors.Is(vaultErr, vault.ErrVaultNotConfigured) {
+						title = messages.FooterVaultNotConfigured
+					} else {
+						cssClass = "vcv-footer-pill vcv-footer-pill-error"
+						title = vaultErr.Error()
+					}
+				} else {
+					cssClass = "vcv-footer-pill vcv-footer-pill-ok"
+					title = messages.FooterVaultConnected
+				}
+				vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: name, Class: cssClass, Title: title})
+			}
 		}
 		data := footerStatusTemplateData{
 			VersionText: interpolatePlaceholder(messages.FooterVersion, "version", version.Version),
-			VaultText:   vaultText,
-			VaultClass:  vaultClass,
-			VaultTitle:  vaultTitle,
+			VaultPills:  vaultPills,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)

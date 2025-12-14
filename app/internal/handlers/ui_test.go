@@ -24,7 +24,7 @@ import (
 func setupUIRouter(mockVault *vault.MockClient, webFS fs.FS) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
-	handlers.RegisterUIRoutes(router, mockVault, webFS, config.ExpirationThresholds{Critical: 7, Warning: 30})
+	handlers.RegisterUIRoutes(router, mockVault, []config.VaultInstance{}, []vault.Client{}, webFS, config.ExpirationThresholds{Critical: 7, Warning: 30})
 	return router
 }
 
