@@ -42,7 +42,7 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 ## Configuration (env vars)
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| -------- | ------- | ----------- |
 | `APP_ENV` | `dev` | Environment: `dev`, `stage`, `prod` |
 | `LOG_FILE_PATH` | — | Log file path (if output includes file) |
 | `LOG_FORMAT` | `console`/`json` | Log format (env-dependent default) |
