@@ -644,6 +644,84 @@ body {
   opacity: 1;
 }
 
+/* Loading indicator */
+.vcv-loading-indicator {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  z-index: 1000;
+  transition: opacity 0.2s ease;
+}
+
+.vcv-loading-indicator.vcv-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vcv-loading-spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.vcv-loading-text {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #64748b;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Loading state for tables */
+.vcv-loading {
+  position: relative;
+  opacity: 0.6;
+}
+
+.vcv-loading::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.vcv-loading::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid #e2e8f0;
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  z-index: 11;
+}
+
 @keyframes toast-in {
   from {
     transform: translateY(1rem);
@@ -1453,7 +1531,20 @@ body {
 }
 
 [data-theme="dark"] .vcv-toast-info {
-  background: #334155;
+  background: #1e293b;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .vcv-loading-indicator {
+  background: rgba(30, 41, 59, 0.95);
+}
+
+[data-theme="dark"] .vcv-loading-text {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .vcv-loading::after {
+  background: rgba(30, 41, 59, 0.8);
 }
 
 [data-theme="dark"] .vcv-notifications {

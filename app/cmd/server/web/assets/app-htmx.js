@@ -4,7 +4,255 @@ const state = {
   availableMounts: [],
   selectedMounts: [],
   messages: {},
+  retryCount: new Map(),
+  maxRetries: 3,
 };
+
+// HTMX Error Handler with translation support
+function initHtmxErrorHandler() {
+  document.body.addEventListener('htmx:responseError', function(evt) {
+    const errorInfo = {
+      status: evt.detail.xhr.status,
+      statusText: evt.detail.xhr.statusText,
+      url: evt.detail.xhr.responseURL,
+      errorId: evt.detail.target.id || 'unknown'
+    };
+    
+    console.error('HTMX request failed:', errorInfo);
+    
+    // Show translated error message
+    const messages = state.messages;
+    let errorMessage = messages.errorGeneric || "Request failed";
+    
+    if (evt.detail.xhr.status === 404) {
+      errorMessage = messages.errorNotFound || "Resource not found";
+    } else if (evt.detail.xhr.status === 500) {
+      errorMessage = messages.errorServer || "Server error occurred";
+    } else if (evt.detail.xhr.status === 0) {
+      errorMessage = messages.errorNetwork || "Network error";
+    }
+    
+    // Show error toast
+    showErrorToast(errorMessage);
+    
+    // Implement retry logic for network errors
+    if (evt.detail.xhr.status === 0 || evt.detail.xhr.status >= 500) {
+      handleRetry(evt.detail);
+    }
+  });
+  
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    // Reset retry count on success
+    if (evt.detail.successful) {
+      state.retryCount.delete(evt.detail.target.id);
+    }
+  });
+}
+
+// Retry strategy with exponential backoff
+function handleRetry(detail) {
+  const targetId = detail.target.id;
+  const currentRetries = state.retryCount.get(targetId) || 0;
+  
+  if (currentRetries >= state.maxRetries) {
+    state.retryCount.delete(targetId);
+    const messages = state.messages;
+    const finalError = messages.errorMaxRetries || "Maximum retry attempts reached";
+    showErrorToast(finalError);
+    return;
+  }
+  
+  const delay = Math.pow(2, currentRetries) * 1000; // 1s, 2s, 4s
+  state.retryCount.set(targetId, currentRetries + 1);
+  
+  const messages = state.messages;
+  const retryMessage = messages.errorRetry || `Retrying... (${currentRetries + 1}/${state.maxRetries})`;
+  showInfoToast(retryMessage);
+  
+  setTimeout(() => {
+    // Retry the original request
+    if (detail.requestConfig) {
+      window.htmx.ajax(detail.requestConfig.verb, detail.requestConfig.path, detail.requestConfig);
+    }
+  }, delay);
+}
+
+// Loading indicators
+function initLoadingIndicators() {
+  // Show loading spinner
+  document.body.addEventListener('htmx:beforeRequest', function(evt) {
+    const target = evt.detail.target;
+    const loadingIndicator = document.getElementById('vcv-loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.classList.remove('vcv-hidden');
+    }
+    
+    // Show loading state on specific elements
+    if (target.id === 'vcv-certs-body') {
+      target.classList.add('vcv-loading');
+    }
+  });
+  
+  // Hide loading spinner
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    const loadingIndicator = document.getElementById('vcv-loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.classList.add('vcv-hidden');
+    }
+    
+    const target = evt.detail.target;
+    if (target.id === 'vcv-certs-body') {
+      target.classList.remove('vcv-loading');
+    }
+  });
+  
+  // Hide loading on error
+  document.body.addEventListener('htmx:responseError', function(evt) {
+    const loadingIndicator = document.getElementById('vcv-loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.classList.add('vcv-hidden');
+    }
+    
+    const target = evt.detail.target;
+    if (target.id === 'vcv-certs-body') {
+      target.classList.remove('vcv-loading');
+    }
+  });
+}
+
+// Client-side validation
+function initClientValidation() {
+  document.body.addEventListener('htmx:beforeRequest', function(evt) {
+    const target = evt.detail.target;
+    const params = evt.detail.parameters;
+    
+    // Validate search input
+    if (params.search && params.search.length > 0) {
+      if (params.search.length < 2) {
+        evt.preventDefault();
+        const messages = state.messages;
+        const validationError = messages.errorSearchTooShort || "Search term must be at least 2 characters";
+        showErrorToast(validationError);
+        return;
+      }
+      
+      // Check for potentially dangerous patterns
+      const dangerousPatterns = /[<>\"'&]/;
+      if (dangerousPatterns.test(params.search)) {
+        evt.preventDefault();
+        const messages = state.messages;
+        const validationError = messages.errorInvalidChars || "Search contains invalid characters";
+        showErrorToast(validationError);
+        return;
+      }
+    }
+    
+    // Validate page size
+    if (params.pageSize) {
+      const validSizes = ['25', '50', '100', 'all'];
+      if (!validSizes.includes(params.pageSize)) {
+        evt.preventDefault();
+        const messages = state.messages;
+        const validationError = messages.errorInvalidPageSize || "Invalid page size";
+        showErrorToast(validationError);
+        return;
+      }
+    }
+    
+    // Validate date range for expiry filter
+    if (params.expiry && params.expiry !== 'all') {
+      const days = parseInt(params.expiry);
+      if (isNaN(days) || days < 1 || days > 365) {
+        evt.preventDefault();
+        const messages = state.messages;
+        const validationError = messages.errorInvalidExpiry || "Expiry days must be between 1 and 365";
+        showErrorToast(validationError);
+        return;
+      }
+    }
+  });
+}
+
+// Cache management
+function initCacheManagement() {
+  // Configure HTMX cache behavior
+  document.body.addEventListener('htmx:configRequest', function(evt) {
+    // Add cache control headers
+    const headers = evt.detail.headers;
+    
+    // Cache GET requests for 5 minutes
+    if (evt.detail.verb === 'GET') {
+      headers['Cache-Control'] = 'max-age=300';
+    }
+    
+    // Add ETag support
+    headers['If-None-Match'] = localStorage.getItem('vcv-etag-' + evt.detail.path) || '';
+  });
+  
+  // Handle cache responses
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    const xhr = evt.detail.xhr;
+    const etag = xhr.getResponseHeader('ETag');
+    
+    if (etag && evt.detail.path) {
+      localStorage.setItem('vcv-etag-' + evt.detail.path, etag);
+    }
+    
+    // Handle 304 Not Modified
+    if (xhr.status === 304) {
+      evt.preventDefault();
+      console.log('Using cached version for:', evt.detail.path);
+    }
+  });
+  
+  // Clear cache on refresh
+  document.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.path === '/ui/certs/refresh') {
+      // Clear all cache when explicitly refreshing
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('vcv-etag-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      const messages = state.messages;
+      const cacheCleared = messages.cacheCleared || "Cache cleared";
+      showInfoToast(cacheCleared);
+    }
+  });
+}
+
+// Toast notification system
+function showErrorToast(message) {
+  showToast(message, 'error', 5000);
+}
+
+function showInfoToast(message) {
+  showToast(message, 'info', 3000);
+}
+
+function showToast(message, type = 'info', duration = 5000) {
+  const toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) return;
+  
+  const toast = document.createElement('div');
+  toast.className = `vcv-toast vcv-toast-${type}`;
+  toast.innerHTML = `
+    <span>${message}</span>
+    <button class="vcv-toast-close" onclick="this.parentElement.remove()">×</button>
+  `;
+  
+  toastContainer.appendChild(toast);
+  
+  // Auto-remove after duration
+  if (duration > 0) {
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.remove();
+      }
+    }, duration);
+  }
+}
 
 function getCurrentLanguage() {
   const params = new URLSearchParams(window.location.search || "");
@@ -326,6 +574,13 @@ async function main() {
   await loadConfig();
   renderMountSelector();
   setMountsHiddenField();
+  
+  // Initialize HTMX enhancements
+  initHtmxErrorHandler();
+  initLoadingIndicators();
+  initClientValidation();
+  initCacheManagement();
+  
   refreshHtmxCertsTable();
 }
 
