@@ -344,6 +344,32 @@ function initVaultConnectionNotifications() {
 			if (!container) {
 				return;
 			}
+			const summaryPill = container.querySelector('.vcv-footer-pill-summary');
+			if (summaryPill) {
+				const isOk = summaryPill.classList.contains('vcv-footer-pill-ok');
+				const isError = summaryPill.classList.contains('vcv-footer-pill-error');
+				if (!isOk && !isError) {
+					return;
+				}
+				const nextState = isOk;
+				if (state.vaultConnected === null) {
+					state.vaultConnected = nextState;
+					return;
+				}
+				if (state.vaultConnected === nextState) {
+					return;
+				}
+				state.vaultConnected = nextState;
+				const messages = state.messages || {};
+				if (nextState) {
+					const restored = messages.vaultConnectionRestored || "Vault connection restored";
+					showSuccessToast(restored);
+					return;
+				}
+				const lost = messages.vaultConnectionLost || "Vault connection lost";
+				showErrorToast(lost);
+				return;
+			}
 			const connectedCount = container.querySelectorAll('.vcv-footer-pill-ok').length;
 			const disconnectedCount = container.querySelectorAll('.vcv-footer-pill-error').length;
 			if (connectedCount === 0 && disconnectedCount === 0) {

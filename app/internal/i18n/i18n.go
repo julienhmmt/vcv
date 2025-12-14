@@ -55,6 +55,7 @@ type Messages struct {
 	FooterVaultDisconnected     string `json:"footerVaultDisconnected"`
 	FooterVaultLoading          string `json:"footerVaultLoading"`
 	FooterVaultNotConfigured    string `json:"footerVaultNotConfigured"`
+	FooterVaultSummary          string `json:"footerVaultSummary"`
 	FooterVersion               string `json:"footerVersion"`
 	LabelFingerprintSHA1        string `json:"labelFingerprintSHA1"`
 	LabelFingerprintSHA256      string `json:"labelFingerprintSHA256"`
@@ -153,6 +154,7 @@ var englishMessages = Messages{
 	FooterVaultDisconnected:     "Vault: disconnected",
 	FooterVaultLoading:          "Vault: …",
 	FooterVaultNotConfigured:    "Vault: not configured",
+	FooterVaultSummary:          "Vaults: {{up}}/{{total}} up",
 	FooterVersion:               "VCV v{{version}}",
 	LabelFingerprintSHA1:        "SHA-1 Fingerprint",
 	LabelFingerprintSHA256:      "SHA-256 Fingerprint",
@@ -245,6 +247,7 @@ var frenchMessages = Messages{
 	FooterVaultDisconnected:     "Vault : déconnecté",
 	FooterVaultLoading:          "Vault : …",
 	FooterVaultNotConfigured:    "Vault : non configuré",
+	FooterVaultSummary:          "Vaults : {{up}}/{{total}} OK",
 	FooterVersion:               "VCV v{{version}}",
 	LabelFingerprintSHA1:        "Empreinte SHA-1",
 	LabelFingerprintSHA256:      "Empreinte SHA-256",
@@ -337,6 +340,7 @@ var spanishMessages = Messages{
 	FooterVaultDisconnected:     "Vault: desconectado",
 	FooterVaultLoading:          "Vault: …",
 	FooterVaultNotConfigured:    "Vault: no configurado",
+	FooterVaultSummary:          "Vaults: {{up}}/{{total}} OK",
 	FooterVersion:               "VCV v{{version}}",
 	LabelFingerprintSHA1:        "Huella SHA-1",
 	LabelFingerprintSHA256:      "Huella SHA-256",
@@ -429,6 +433,7 @@ var germanMessages = Messages{
 	FooterVaultDisconnected:     "Vault: getrennt",
 	FooterVaultLoading:          "Vault: …",
 	FooterVaultNotConfigured:    "Vault: nicht konfiguriert",
+	FooterVaultSummary:          "Vaults: {{up}}/{{total}} OK",
 	FooterVersion:               "VCV v{{version}}",
 	LabelFingerprintSHA1:        "SHA-1-Fingerabdruck",
 	LabelFingerprintSHA256:      "SHA-256-Fingerabdruck",
@@ -521,6 +526,7 @@ var italianMessages = Messages{
 	FooterVaultDisconnected:     "Vault: disconnesso",
 	FooterVaultLoading:          "Vault: …",
 	FooterVaultNotConfigured:    "Vault: non configurato",
+	FooterVaultSummary:          "Vaults: {{up}}/{{total}} OK",
 	FooterVersion:               "VCV v{{version}}",
 	LabelFingerprintSHA1:        "Impronta SHA-1",
 	LabelFingerprintSHA256:      "Impronta SHA-256",

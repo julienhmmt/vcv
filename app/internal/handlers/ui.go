@@ -11,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -23,6 +24,8 @@ import (
 	"vcv/internal/version"
 	"vcv/middleware"
 )
+
+const footerVaultPreviewMaxCount int = 3
 
 type certDetailsTemplateData struct {
 	Certificate   certs.DetailedCertificate
@@ -37,12 +40,53 @@ type certDetailsTemplateData struct {
 type footerStatusTemplateData struct {
 	VersionText string
 	VaultPills  []footerVaultStatusTemplateData
+
+	VaultSummaryPill  *footerVaultStatusTemplateData
+	VaultPreviewPills []footerVaultStatusTemplateData
+	VaultAllPills     []footerVaultStatusTemplateData
+	VaultHiddenCount  int
 }
 
 type footerVaultStatusTemplateData struct {
 	Text  string
 	Class string
 	Title string
+}
+
+type footerVaultHealthCache struct {
+	ttl    time.Duration
+	mu     sync.Mutex
+	values map[string]footerVaultHealthCacheEntry
+}
+
+type footerVaultHealthCacheEntry struct {
+	checkedAt       time.Time
+	connected       bool
+	errText         string
+	isNotConfigured bool
+}
+
+func newFooterVaultHealthCache(ttl time.Duration) *footerVaultHealthCache {
+	return &footerVaultHealthCache{ttl: ttl, values: make(map[string]footerVaultHealthCacheEntry)}
+}
+
+func (c *footerVaultHealthCache) get(vaultID string) (footerVaultHealthCacheEntry, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	entry, ok := c.values[vaultID]
+	if !ok {
+		return footerVaultHealthCacheEntry{}, false
+	}
+	if time.Since(entry.checkedAt) > c.ttl {
+		return footerVaultHealthCacheEntry{}, false
+	}
+	return entry, true
+}
+
+func (c *footerVaultHealthCache) set(vaultID string, entry footerVaultHealthCacheEntry) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.values[vaultID] = entry
 }
 
 type themeToggleTemplateData struct {
@@ -139,11 +183,12 @@ type certsQueryState struct {
 	TriggerID      string
 }
 
-func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstances []config.VaultInstance, vaultStatusClients []vault.Client, webFS fs.FS, expirationThresholds config.ExpirationThresholds) {
+func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstances []config.VaultInstance, vaultStatusClients map[string]vault.Client, webFS fs.FS, expirationThresholds config.ExpirationThresholds) {
 	templates, err := template.ParseFS(webFS, "templates/*.html")
 	if err != nil {
 		panic(err)
 	}
+	vaultHealthCache := newFooterVaultHealthCache(5 * time.Second)
 	router.Post("/ui/theme/toggle", func(w http.ResponseWriter, r *http.Request) {
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -232,10 +277,12 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 		language := resolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
 		vaultPills := make([]footerVaultStatusTemplateData, 0, len(vaultInstances))
-		if len(vaultInstances) == 0 || len(vaultInstances) != len(vaultStatusClients) {
+		connectedCount := 0
+		totalCount := len(vaultInstances)
+		if len(vaultInstances) == 0 || len(vaultStatusClients) == 0 {
 			vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: messages.FooterVaultNotConfigured, Class: "vcv-footer-pill", Title: vault.ErrVaultNotConfigured.Error()})
 		} else {
-			for index, instance := range vaultInstances {
+			for _, instance := range vaultInstances {
 				name := strings.TrimSpace(instance.DisplayName)
 				if name == "" {
 					name = strings.TrimSpace(instance.ID)
@@ -243,26 +290,59 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 				if name == "" {
 					name = "Vault"
 				}
-				client := vaultStatusClients[index]
+				client, ok := vaultStatusClients[instance.ID]
+				if !ok || client == nil {
+					vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: name, Class: "vcv-footer-pill vcv-footer-pill-error", Title: "missing vault status client"})
+					continue
+				}
 				title := ""
 				cssClass := "vcv-footer-pill"
-				if vaultErr := client.CheckConnection(r.Context()); vaultErr != nil {
-					if errors.Is(vaultErr, vault.ErrVaultNotConfigured) {
+				entry, found := vaultHealthCache.get(instance.ID)
+				if !found {
+					vaultErr := client.CheckConnection(r.Context())
+					entry = footerVaultHealthCacheEntry{checkedAt: time.Now(), connected: vaultErr == nil}
+					if vaultErr != nil {
+						entry.errText = vaultErr.Error()
+						entry.isNotConfigured = errors.Is(vaultErr, vault.ErrVaultNotConfigured)
+					}
+					vaultHealthCache.set(instance.ID, entry)
+				}
+				if !entry.connected {
+					if entry.isNotConfigured {
 						title = messages.FooterVaultNotConfigured
 					} else {
 						cssClass = "vcv-footer-pill vcv-footer-pill-error"
-						title = vaultErr.Error()
+						title = entry.errText
 					}
 				} else {
 					cssClass = "vcv-footer-pill vcv-footer-pill-ok"
 					title = messages.FooterVaultConnected
+					connectedCount++
 				}
 				vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: name, Class: cssClass, Title: title})
 			}
 		}
-		data := footerStatusTemplateData{
-			VersionText: interpolatePlaceholder(messages.FooterVersion, "version", version.Version),
-			VaultPills:  vaultPills,
+		data := footerStatusTemplateData{VersionText: interpolatePlaceholder(messages.FooterVersion, "version", version.Version), VaultPills: vaultPills}
+		if totalCount > 1 {
+			summaryValue := interpolatePlaceholder(messages.FooterVaultSummary, "up", fmt.Sprintf("%d", connectedCount))
+			summaryText := interpolatePlaceholder(summaryValue, "total", fmt.Sprintf("%d", totalCount))
+			summaryClass := "vcv-footer-pill vcv-footer-pill-summary"
+			if connectedCount == totalCount {
+				summaryClass = summaryClass + " vcv-footer-pill-ok"
+			} else {
+				summaryClass = summaryClass + " vcv-footer-pill-error"
+			}
+			summary := footerVaultStatusTemplateData{Text: summaryText, Class: summaryClass, Title: summaryText}
+			previewEnd := footerVaultPreviewMaxCount
+			if previewEnd > len(vaultPills) {
+				previewEnd = len(vaultPills)
+			}
+			preview := make([]footerVaultStatusTemplateData, 0, previewEnd)
+			preview = append(preview, vaultPills[:previewEnd]...)
+			data.VaultSummaryPill = &summary
+			data.VaultPreviewPills = preview
+			data.VaultAllPills = vaultPills
+			data.VaultHiddenCount = len(vaultPills) - previewEnd
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)

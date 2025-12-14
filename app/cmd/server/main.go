@@ -48,14 +48,17 @@ func main() {
 			Msg("Failed to initialize Vault client")
 	}
 
-	statusClients := make([]vault.Client, 0, len(cfg.Vaults))
+	statusClients := make(map[string]vault.Client, len(cfg.Vaults))
 	primaryID := ""
 	if len(cfg.Vaults) > 0 {
 		primaryID = cfg.Vaults[0].ID
 	}
 	for _, instance := range cfg.Vaults {
+		if instance.ID == "" {
+			continue
+		}
 		if primaryID != "" && instance.ID == primaryID {
-			statusClients = append(statusClients, vaultClient)
+			statusClients[instance.ID] = vaultClient
 			continue
 		}
 		statusCfg := config.VaultConfig{Addr: instance.Address, PKIMounts: instance.PKIMounts, ReadToken: instance.Token, TLSInsecure: instance.TLSInsecure}
@@ -65,7 +68,7 @@ func main() {
 				Str("vault_id", instance.ID).
 				Msg("Failed to initialize Vault status client")
 		}
-		statusClients = append(statusClients, client)
+		statusClients[instance.ID] = client
 	}
 
 	log.Info().
@@ -115,17 +118,45 @@ func main() {
 	r.Get("/api/ready", handlers.ReadinessCheck)
 	r.Get("/api/status", func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
-		status := map[string]interface{}{
-			"version": version.Version,
+		type vaultStatusEntry struct {
+			ID          string `json:"id"`
+			DisplayName string `json:"display_name"`
+			Connected   bool   `json:"connected"`
+			Error       string `json:"error,omitempty"`
 		}
+		type statusResponse struct {
+			Version        string             `json:"version"`
+			VaultConnected bool               `json:"vault_connected"`
+			VaultError     string             `json:"vault_error,omitempty"`
+			Vaults         []vaultStatusEntry `json:"vaults"`
+		}
+		response := statusResponse{Version: version.Version, Vaults: make([]vaultStatusEntry, 0, len(cfg.Vaults))}
 		if err := vaultClient.CheckConnection(ctx); err != nil {
-			status["vault_connected"] = false
-			status["vault_error"] = err.Error()
+			response.VaultConnected = false
+			response.VaultError = err.Error()
 		} else {
-			status["vault_connected"] = true
+			response.VaultConnected = true
+		}
+		for _, instance := range cfg.Vaults {
+			name := instance.DisplayName
+			client := statusClients[instance.ID]
+			entry := vaultStatusEntry{ID: instance.ID, DisplayName: name}
+			if client == nil {
+				entry.Connected = false
+				entry.Error = "missing vault status client"
+				response.Vaults = append(response.Vaults, entry)
+				continue
+			}
+			if err := client.CheckConnection(ctx); err != nil {
+				entry.Connected = false
+				entry.Error = err.Error()
+			} else {
+				entry.Connected = true
+			}
+			response.Vaults = append(response.Vaults, entry)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(status)
+		_ = json.NewEncoder(w).Encode(response)
 	})
 	r.Get("/api/version", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -164,10 +195,14 @@ func main() {
 		log.Fatal().Err(err).Msg("Server forced to shutdown")
 	}
 
+	uniqueClients := make(map[vault.Client]struct{})
 	for _, client := range statusClients {
 		if client == nil {
 			continue
 		}
+		uniqueClients[client] = struct{}{}
+	}
+	for client := range uniqueClients {
 		client.Shutdown()
 	}
 

@@ -55,7 +55,7 @@
     },
     {
       "id": "vault-dev-3",
-      "enabled": false,
+      "enabled": true,
       "display_name": "Vault dev-3",
       "address": "http://vault-dev-3:8200",
       "token": "root",
@@ -66,6 +66,48 @@
         "pki_edge",
         "pki_iot",
         "pki_blockchain"
+      ],
+      "tls_insecure": true
+    },
+    {
+      "id": "vault-dev-4",
+      "enabled": true,
+      "display_name": "Vault dev-4",
+      "address": "http://vault-dev-4:8200",
+      "token": "root",
+      "pki_mount": "pki_vault4",
+      "pki_mounts": [
+        "pki_vault4",
+        "pki_lab",
+        "pki_qa",
+        "pki_perf"
+      ],
+      "tls_insecure": true
+    },
+    {
+      "id": "vault-dev-5",
+      "enabled": true,
+      "display_name": "Vault dev-5",
+      "address": "http://vault-dev-5:8200",
+      "token": "root",
+      "pki_mount": "pki_vault5",
+      "pki_mounts": [
+        "pki_vault5",
+        "pki_internal",
+        "pki_dmz",
+        "pki_shared"
+      ],
+      "tls_insecure": true
+    },
+    {
+      "id": "vault-dev-6",
+      "enabled": true,
+      "display_name": "Vault dev-6 (fake)",
+      "address": "http://127.0.0.1:1",
+      "token": "root",
+      "pki_mount": "pki_fake",
+      "pki_mounts": [
+        "pki_fake"
       ],
       "tls_insecure": true
     }

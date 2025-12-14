@@ -119,6 +119,15 @@ vault write pki_vault2/issue/vcv common_name="services.vault2.local" alt_names="
 vault write pki_vault2/issue/vcv common_name="admin.vault2.local" alt_names="console.admin.vault2.local,manage.admin.vault2.local" >/dev/null 2>&1 || true
 vault write pki_vault2/issue/vcv common_name="data.vault2.local" alt_names="primary.data.vault2.local,backup.data.vault2.local" >/dev/null 2>&1 || true
 
+# Short-lived certificates (minutes)
+vault write pki_vault2/issue/vcv common_name="short-1.vault2.local" ttl="120s" >/dev/null 2>&1 || true
+vault write pki_vault2/issue/vcv common_name="short-2.vault2.local" ttl="180s" >/dev/null 2>&1 || true
+vault write pki_vault2/issue/vcv common_name="short-3.vault2.local" ttl="300s" >/dev/null 2>&1 || true
+
+# Long-lived certificates (years)
+vault write pki_vault2/issue/vcv common_name="long-1.vault2.local" ttl="8760h" >/dev/null 2>&1 || true
+vault write pki_vault2/issue/vcv common_name="long-2.vault2.local" ttl="8760h" >/dev/null 2>&1 || true
+
 # Certificates expiring soon (24h-72h)
 vault write pki_vault2/issue/vcv common_name="critical-expiring-1.vault2.local" ttl="48h" >/dev/null 2>&1 || true
 vault write pki_vault2/issue/vcv common_name="critical-expiring-2.vault2.local" ttl="72h" >/dev/null 2>&1 || true
@@ -156,6 +165,9 @@ vault write pki_external/issue/vcv common_name="partner-gateway.external.local" 
 # External certificates expiring soon
 vault write pki_external/issue/vcv common_name="external-expiring-1.local" ttl="48h" >/dev/null 2>&1 || true
 vault write pki_external/issue/vcv common_name="external-expiring-2.local" ttl="72h" >/dev/null 2>&1 || true
+
+# External long-lived certificate
+vault write pki_external/issue/vcv common_name="external-long-1.local" ttl="8760h" >/dev/null 2>&1 || true
 
 # Issue certificates for PKI PARTNERS engine
 echo "Creating certificates for pki_partners engine..."
