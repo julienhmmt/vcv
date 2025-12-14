@@ -1,0 +1,855 @@
+const mountsAllSentinel = "__all__";
+
+const state = {
+  availableMounts: [],
+  hasSyncedInitialUrl: false,
+  lastErrorAtByTargetId: new Map(),
+  lastRequestByTargetId: new Map(),
+  maxRetries: 3,
+  messages: {},
+  retryCount: new Map(),
+  selectedMounts: [],
+  suppressUrlUpdateUntilNextSuccess: false,
+  vaultConnected: null,
+};
+
+function getRequestTargetId(detail) {
+  const target = detail && detail.target;
+  if (!target || !target.id) {
+    return "unknown";
+  }
+  return target.id;
+}
+
+function shouldSuppressErrorToast(detail) {
+  const xhr = detail && detail.xhr;
+  if (!xhr) {
+    return false;
+  }
+  const isAbort = xhr.status === 0 && (xhr.statusText === "abort" || xhr.statusText === "");
+  return isAbort;
+}
+
+function isRetryable(detail) {
+  const xhr = detail && detail.xhr;
+  if (!xhr) {
+    return true;
+  }
+  if (xhr.status === 0) {
+    return true;
+  }
+  return xhr.status >= 500;
+}
+
+function setCertsBusy(isBusy) {
+  const toolbar = document.querySelector(".vcv-toolbar");
+  if (toolbar) {
+    if (isBusy) {
+      toolbar.setAttribute("aria-busy", "true");
+    } else {
+      toolbar.removeAttribute("aria-busy");
+    }
+  }
+  const refreshButton = document.getElementById("refresh-btn");
+  if (refreshButton) {
+    refreshButton.disabled = isBusy;
+    if (isBusy) {
+      refreshButton.classList.add("vcv-button-loading");
+    } else {
+      refreshButton.classList.remove("vcv-button-loading");
+    }
+  }
+}
+
+function buildCertsPageUrl() {
+  const values = getCertsHtmxValues();
+  const langSelect = document.getElementById("vcv-lang-select");
+  const params = new URLSearchParams();
+  if (langSelect && typeof langSelect.value === "string" && langSelect.value !== "") {
+    params.set("lang", langSelect.value);
+  }
+  params.set("expiry", values.expiry);
+  params.set("mounts", values.mounts);
+  params.set("page", values.page);
+  params.set("pageSize", values.pageSize);
+  params.set("search", values.search);
+  params.set("sortDir", values.sortDir);
+  params.set("sortKey", values.sortKey);
+  params.set("status", values.status);
+  return `/?${params.toString()}`;
+}
+
+function applyCertsStateFromUrl() {
+  const params = new URLSearchParams(window.location.search || "");
+  const searchInput = document.getElementById("vcv-search");
+  if (searchInput && params.has("search")) {
+    searchInput.value = params.get("search") || "";
+  }
+  const statusSelect = document.getElementById("vcv-status-filter");
+  if (statusSelect && params.has("status")) {
+    statusSelect.value = params.get("status") || "all";
+  }
+  const expirySelect = document.getElementById("vcv-expiry-filter");
+  if (expirySelect && params.has("expiry")) {
+    expirySelect.value = params.get("expiry") || "all";
+  }
+  const pageSizeSelect = document.getElementById("vcv-page-size");
+  if (pageSizeSelect && params.has("pageSize")) {
+    pageSizeSelect.value = params.get("pageSize") || "25";
+  }
+  const pageInput = document.getElementById("vcv-page");
+  if (pageInput && params.has("page")) {
+    pageInput.value = params.get("page") || "0";
+  }
+  const sortKeyInput = document.getElementById("vcv-sort-key");
+  if (sortKeyInput && params.has("sortKey")) {
+    sortKeyInput.value = params.get("sortKey") || "commonName";
+  }
+  const sortDirInput = document.getElementById("vcv-sort-dir");
+  if (sortDirInput && params.has("sortDir")) {
+    sortDirInput.value = params.get("sortDir") || "asc";
+  }
+  const mountsValue = params.get("mounts");
+  if (typeof mountsValue === "string") {
+    if (mountsValue === mountsAllSentinel) {
+      state.selectedMounts = [...state.availableMounts];
+    } else if (mountsValue === "") {
+      state.selectedMounts = [];
+    } else {
+      const requested = mountsValue.split(",").map((value) => value.trim()).filter((value) => value !== "");
+      state.selectedMounts = requested.filter((value) => state.availableMounts.includes(value));
+    }
+  }
+}
+
+// HTMX Error Handler with translation support
+function initHtmxErrorHandler() {
+  document.body.addEventListener('htmx:configRequest', function(evt) {
+    const detail = evt.detail;
+    const targetId = getRequestTargetId(detail);
+    if (targetId !== "unknown") {
+      state.lastRequestByTargetId.set(targetId, {
+        verb: detail.verb,
+        path: detail.path,
+        requestConfig: detail.requestConfig,
+      });
+    }
+  });
+
+  const handleErrorEvent = function(evt, kind) {
+    const detail = evt.detail;
+    const targetId = getRequestTargetId(detail);
+    const now = Date.now();
+    const lastAt = state.lastErrorAtByTargetId.get(targetId) || 0;
+    if (now-lastAt < 200) {
+      return;
+    }
+    state.lastErrorAtByTargetId.set(targetId, now);
+    if (shouldSuppressErrorToast(detail)) {
+      return;
+    }
+    const xhr = detail.xhr;
+    const status = xhr ? xhr.status : 0;
+    const statusText = xhr ? xhr.statusText : kind;
+    const url = xhr ? xhr.responseURL : "";
+    console.error('HTMX request failed:', {status, statusText, url, targetId});
+    const messages = state.messages;
+    let errorMessage = messages.errorGeneric || "Request failed";
+    if (status === 404) {
+      errorMessage = messages.errorNotFound || "Resource not found";
+    } else if (status >= 500) {
+      errorMessage = messages.errorServer || "Server error occurred";
+    } else if (status === 0) {
+      errorMessage = messages.errorNetwork || "Network error";
+    }
+    showErrorToast(errorMessage);
+    if (isRetryable(detail)) {
+      handleRetry(targetId);
+    }
+  };
+
+  document.body.addEventListener('htmx:responseError', function(evt) {
+    handleErrorEvent(evt, "responseError");
+  });
+
+  document.body.addEventListener('htmx:sendError', function(evt) {
+    handleErrorEvent(evt, "sendError");
+  });
+
+  document.body.addEventListener('htmx:timeout', function(evt) {
+    handleErrorEvent(evt, "timeout");
+  });
+  
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    // Reset retry count on success
+    if (evt.detail.successful) {
+      state.retryCount.delete(evt.detail.target.id);
+    }
+  });
+}
+
+// Retry strategy with exponential backoff
+function handleRetry(targetId) {
+  const currentRetries = state.retryCount.get(targetId) || 0;
+  
+  if (currentRetries >= state.maxRetries) {
+    state.retryCount.delete(targetId);
+    const messages = state.messages;
+    const finalError = messages.errorMaxRetries || "Maximum retry attempts reached";
+    showErrorToast(finalError);
+    return;
+  }
+  
+  const delay = Math.pow(2, currentRetries) * 1000; // 1s, 2s, 4s
+  state.retryCount.set(targetId, currentRetries + 1);
+  
+  const messages = state.messages;
+  const retryMessage = messages.errorRetry || `Retrying... (${currentRetries + 1}/${state.maxRetries})`;
+  showInfoToast(retryMessage);
+  
+  setTimeout(() => {
+    const lastRequest = state.lastRequestByTargetId.get(targetId);
+    if (!lastRequest || !lastRequest.requestConfig) {
+      return;
+    }
+    window.htmx.ajax(lastRequest.verb, lastRequest.path, lastRequest.requestConfig);
+  }, delay);
+}
+
+// Loading indicators
+function initLoadingIndicators() {
+  // Show loading spinner
+  document.body.addEventListener('htmx:beforeRequest', function(evt) {
+    const target = evt.detail.target;
+    if (target.id !== 'vcv-certs-body') {
+      return;
+    }
+    const loadingIndicator = document.getElementById('vcv-loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.classList.remove('vcv-hidden');
+    }
+    target.classList.add('vcv-loading');
+    setCertsBusy(true);
+  });
+  
+  // Hide loading spinner
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    const target = evt.detail.target;
+    if (target.id !== 'vcv-certs-body') {
+      return;
+    }
+    const loadingIndicator = document.getElementById('vcv-loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.classList.add('vcv-hidden');
+    }
+    target.classList.remove('vcv-loading');
+    setCertsBusy(false);
+  });
+  
+  // Hide loading on error
+  document.body.addEventListener('htmx:responseError', function(evt) {
+    const target = evt.detail.target;
+    if (target.id !== 'vcv-certs-body') {
+      return;
+    }
+    const loadingIndicator = document.getElementById('vcv-loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.classList.add('vcv-hidden');
+    }
+    target.classList.remove('vcv-loading');
+    setCertsBusy(false);
+  });
+
+  document.body.addEventListener('htmx:sendError', function(evt) {
+    const target = evt.detail.target;
+    if (target.id !== 'vcv-certs-body') {
+      return;
+    }
+    const loadingIndicator = document.getElementById('vcv-loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.classList.add('vcv-hidden');
+    }
+    target.classList.remove('vcv-loading');
+    setCertsBusy(false);
+  });
+
+  document.body.addEventListener('htmx:timeout', function(evt) {
+    const target = evt.detail.target;
+    if (target.id !== 'vcv-certs-body') {
+      return;
+    }
+    const loadingIndicator = document.getElementById('vcv-loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.classList.add('vcv-hidden');
+    }
+    target.classList.remove('vcv-loading');
+    setCertsBusy(false);
+  });
+}
+
+function initUrlSync() {
+  if (!window.htmx) {
+    return;
+  }
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    const detail = evt.detail;
+    if (!detail || !detail.successful) {
+      return;
+    }
+    if (detail.path !== '/ui/certs') {
+      return;
+    }
+    const target = detail.target;
+    if (!target || target.id !== 'vcv-certs-body') {
+      return;
+    }
+    if (state.suppressUrlUpdateUntilNextSuccess) {
+      state.suppressUrlUpdateUntilNextSuccess = false;
+      return;
+    }
+    const url = buildCertsPageUrl();
+    const triggeringEvent = (detail.requestConfig && detail.requestConfig.triggeringEvent) || detail.triggeringEvent;
+    const isInputEvent = triggeringEvent && triggeringEvent.type === 'input';
+    if (!state.hasSyncedInitialUrl) {
+      state.hasSyncedInitialUrl = true;
+      window.history.replaceState({}, '', url);
+      return;
+    }
+    if (isInputEvent) {
+      window.history.replaceState({}, '', url);
+      return;
+    }
+    window.history.pushState({}, '', url);
+  });
+
+  window.addEventListener('popstate', function() {
+    state.suppressUrlUpdateUntilNextSuccess = true;
+    applyCertsStateFromUrl();
+    renderMountSelector();
+    setMountsHiddenField();
+    refreshHtmxCertsTable();
+  });
+}
+
+function initVaultConnectionNotifications() {
+	document.body.addEventListener('htmx:afterSwap', function(evt) {
+		const detail = evt.detail;
+		const requestConfig = detail && detail.requestConfig;
+		const requestPath = (requestConfig && typeof requestConfig.path === 'string') ? requestConfig.path : '';
+		if (requestPath === '' || !requestPath.startsWith('/ui/status')) {
+			return;
+		}
+		setTimeout(() => {
+			const pill = document.getElementById('vcv-footer-vault');
+			if (!pill) {
+				return;
+			}
+			const isConnected = pill.classList.contains('vcv-footer-pill-ok');
+			const isDisconnected = pill.classList.contains('vcv-footer-pill-error');
+			if (!isConnected && !isDisconnected) {
+				return;
+			}
+			const nextState = isConnected;
+			if (state.vaultConnected === null) {
+				state.vaultConnected = nextState;
+				return;
+			}
+			if (state.vaultConnected === nextState) {
+				return;
+			}
+			state.vaultConnected = nextState;
+			const messages = state.messages || {};
+			if (nextState) {
+				const restored = messages.vaultConnectionRestored || "Vault connection restored";
+				showSuccessToast(restored);
+				return;
+			}
+			const lost = messages.vaultConnectionLost || "Vault connection lost";
+			showErrorToast(lost);
+		}, 0);
+	});
+}
+
+// Client-side validation
+function initClientValidation() {
+  document.body.addEventListener('htmx:beforeRequest', function(evt) {
+    const detail = evt.detail;
+    if (!detail) {
+      return;
+    }
+    const params = detail.parameters || {};
+    
+    // Validate search input
+    if (typeof params.search === 'string' && params.search.length > 0) {
+      if (params.search.length < 2) {
+        evt.preventDefault();
+        const messages = state.messages || {};
+        const validationError = messages.errorSearchTooShort || "Search term must be at least 2 characters";
+        showErrorToast(validationError);
+        return;
+      }
+      
+      // Check for potentially dangerous patterns
+      const dangerousPatterns = /[<>\"'&]/;
+      if (dangerousPatterns.test(params.search)) {
+        evt.preventDefault();
+        const messages = state.messages || {};
+        const validationError = messages.errorInvalidChars || "Search contains invalid characters";
+        showErrorToast(validationError);
+        return;
+      }
+    }
+    
+    // Validate page size
+    if (params.pageSize) {
+      const validSizes = ['25', '50', '100', 'all'];
+      if (!validSizes.includes(params.pageSize)) {
+        evt.preventDefault();
+        const messages = state.messages || {};
+        const validationError = messages.errorInvalidPageSize || "Invalid page size";
+        showErrorToast(validationError);
+        return;
+      }
+    }
+    
+    // Validate date range for expiry filter
+    if (params.expiry && params.expiry !== 'all') {
+      const days = parseInt(params.expiry, 10);
+      if (isNaN(days) || days < 1 || days > 365) {
+        evt.preventDefault();
+        const messages = state.messages || {};
+        const validationError = messages.errorInvalidExpiry || "Expiry days must be between 1 and 365";
+        showErrorToast(validationError);
+        return;
+      }
+    }
+  });
+}
+
+// Cache management
+function initCacheManagement() {
+  // Configure HTMX cache behavior
+  document.body.addEventListener('htmx:configRequest', function(evt) {
+    // Add cache control headers
+    const headers = evt.detail.headers;
+    
+    // Cache GET requests for 5 minutes
+    if (evt.detail.verb === 'GET') {
+      headers['Cache-Control'] = 'max-age=300';
+    }
+    
+    // Add ETag support
+    headers['If-None-Match'] = localStorage.getItem('vcv-etag-' + evt.detail.path) || '';
+  });
+  
+  // Handle cache responses
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    const xhr = evt.detail.xhr;
+    const etag = xhr.getResponseHeader('ETag');
+    
+    if (etag && evt.detail.path) {
+      localStorage.setItem('vcv-etag-' + evt.detail.path, etag);
+    }
+    
+    // Handle 304 Not Modified
+    if (xhr.status === 304) {
+      evt.preventDefault();
+      console.log('Using cached version for:', evt.detail.path);
+    }
+  });
+  
+  // Clear cache on refresh
+  document.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.path === '/ui/certs/refresh') {
+      // Clear all cache when explicitly refreshing
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('vcv-etag-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      const messages = state.messages;
+      const cacheCleared = messages.cacheCleared || "Cache cleared";
+      showInfoToast(cacheCleared);
+    }
+  });
+}
+
+// Toast notification system
+function showErrorToast(message) {
+  showToast(message, 'error', 5000);
+}
+
+function showInfoToast(message) {
+  showToast(message, 'info', 3000);
+}
+
+function showSuccessToast(message) {
+  showToast(message, 'success', 3000);
+}
+
+function showToast(message, type = 'info', duration = 5000) {
+  const toastContainer = document.getElementById('toast-container');
+  if (!toastContainer) return;
+  
+  const toast = document.createElement('div');
+  toast.className = `vcv-toast vcv-toast-${type}`;
+  toast.innerHTML = `
+    <span>${message}</span>
+    <button class="vcv-toast-close" onclick="this.parentElement.remove()">×</button>
+  `;
+  
+  toastContainer.appendChild(toast);
+  
+  // Auto-remove after duration
+  if (duration > 0) {
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.remove();
+      }
+    }, duration);
+  }
+}
+
+function getCurrentLanguage() {
+  const params = new URLSearchParams(window.location.search || "");
+  const lang = params.get("lang");
+  return lang || "";
+}
+
+async function loadMessages() {
+  try {
+    const lang = getCurrentLanguage();
+    const url = lang ? `/api/i18n?lang=${encodeURIComponent(lang)}` : "/api/i18n";
+    const response = await fetch(url);
+    if (!response.ok) {
+      return;
+    }
+    const payload = await response.json();
+    if (!payload || !payload.messages) {
+      return;
+    }
+    state.messages = payload.messages;
+  } catch {
+  }
+}
+
+function setText(element, value) {
+  if (!element || typeof value !== "string" || value === "") {
+    return;
+  }
+  element.textContent = value;
+}
+
+function applyTranslations() {
+  const messages = state.messages;
+  if (!messages) {
+    return;
+  }
+  setText(document.getElementById("mount-modal-title"), messages.mountSelectorTitle);
+  setText(document.getElementById("mount-deselect-all"), messages.deselectAll);
+  setText(document.getElementById("mount-select-all"), messages.selectAll);
+  setText(document.getElementById("mount-close"), messages.buttonClose);
+  setText(document.getElementById("dashboard-total-label"), messages.dashboardTotal);
+  setText(document.getElementById("dashboard-valid-label"), messages.dashboardValid);
+  setText(document.getElementById("dashboard-expiring-label"), messages.dashboardExpiring);
+  setText(document.getElementById("dashboard-expired-label"), messages.dashboardExpired);
+  setText(document.getElementById("chart-status-title"), messages.chartStatusDistribution);
+  setText(document.getElementById("chart-expiry-title"), messages.chartExpiryTimeline);
+  setText(document.getElementById("vcv-status-filter-label"), messages.statusFilterTitle);
+  setText(document.getElementById("vcv-page-size-label"), messages.paginationPageSizeLabel);
+  setText(document.querySelector("#certificate-modal .vcv-modal-title"), messages.modalDetailsTitle);
+  setText(document.getElementById("certificate-modal-close"), messages.buttonClose);
+  const searchInput = document.getElementById("vcv-search");
+  if (searchInput && typeof messages.searchPlaceholder === "string" && messages.searchPlaceholder !== "") {
+    searchInput.setAttribute("placeholder", messages.searchPlaceholder);
+  }
+  const statusSelect = document.getElementById("vcv-status-filter");
+  if (statusSelect) {
+    setText(statusSelect.querySelector("option[value='all']"), messages.statusFilterAll);
+    setText(statusSelect.querySelector("option[value='valid']"), messages.statusFilterValid);
+    setText(statusSelect.querySelector("option[value='expired']"), messages.statusFilterExpired);
+    setText(statusSelect.querySelector("option[value='revoked']"), messages.statusFilterRevoked);
+  }
+  const expirySelect = document.getElementById("vcv-expiry-filter");
+  if (expirySelect) {
+    setText(expirySelect.querySelector("option[value='all']"), messages.expiryFilterAll);
+    setText(expirySelect.querySelector("option[value='7']"), messages.expiryFilter7Days);
+    setText(expirySelect.querySelector("option[value='30']"), messages.expiryFilter30Days);
+    setText(expirySelect.querySelector("option[value='90']"), messages.expiryFilter90Days);
+  }
+  const pageSizeSelect = document.getElementById("vcv-page-size");
+  if (pageSizeSelect) {
+    setText(pageSizeSelect.querySelector("option[value='all']"), messages.paginationAll);
+  }
+  setText(document.getElementById("vcv-page-prev"), messages.paginationPrev);
+  setText(document.getElementById("vcv-page-next"), messages.paginationNext);
+  const legend = document.querySelector(".vcv-legend");
+  if (legend) {
+    const validBadge = legend.querySelector(".vcv-badge-valid");
+    const validItem = validBadge ? validBadge.closest(".vcv-legend-item") : null;
+    if (validItem) {
+      setText(validItem.querySelector(".vcv-badge-valid"), messages.legendValidTitle);
+      setText(validItem.querySelector(".vcv-legend-text"), messages.legendValidText);
+    }
+    const expiredBadge = legend.querySelector(".vcv-badge-expired");
+    const expiredItem = expiredBadge ? expiredBadge.closest(".vcv-legend-item") : null;
+    if (expiredItem) {
+      setText(expiredItem.querySelector(".vcv-badge-expired"), messages.legendExpiredTitle);
+      setText(expiredItem.querySelector(".vcv-legend-text"), messages.legendExpiredText);
+    }
+    const revokedBadge = legend.querySelector(".vcv-badge-revoked");
+    const revokedItem = revokedBadge ? revokedBadge.closest(".vcv-legend-item") : null;
+    if (revokedItem) {
+      setText(revokedItem.querySelector(".vcv-badge-revoked"), messages.legendRevokedTitle);
+      setText(revokedItem.querySelector(".vcv-legend-text"), messages.legendRevokedText);
+    }
+  }
+}
+
+function setMountsHiddenField() {
+  const mountsInput = document.getElementById("vcv-mounts");
+  if (!mountsInput) {
+    return;
+  }
+  if (state.availableMounts.length === 0) {
+    mountsInput.value = mountsAllSentinel;
+    return;
+  }
+  if (state.selectedMounts.length === 0) {
+    mountsInput.value = "";
+    return;
+  }
+  if (state.selectedMounts.length === state.availableMounts.length) {
+    mountsInput.value = mountsAllSentinel;
+    return;
+  }
+  mountsInput.value = state.selectedMounts.join(",");
+}
+
+function getCertsHtmxValues() {
+  const searchInput = document.getElementById("vcv-search");
+  const statusFilter = document.getElementById("vcv-status-filter");
+  const expiryFilter = document.getElementById("vcv-expiry-filter");
+  const pageSizeSelect = document.getElementById("vcv-page-size");
+  const pageInput = document.getElementById("vcv-page");
+  const sortKeyInput = document.getElementById("vcv-sort-key");
+  const sortDirInput = document.getElementById("vcv-sort-dir");
+  const mountsInput = document.getElementById("vcv-mounts");
+  return {
+    search: searchInput ? searchInput.value : "",
+    status: statusFilter ? statusFilter.value : "all",
+    expiry: expiryFilter ? expiryFilter.value : "all",
+    pageSize: pageSizeSelect ? pageSizeSelect.value : "25",
+    page: pageInput ? pageInput.value : "0",
+    sortKey: sortKeyInput ? sortKeyInput.value : "commonName",
+    sortDir: sortDirInput ? sortDirInput.value : "asc",
+    mounts: mountsInput ? mountsInput.value : "",
+  };
+}
+
+function refreshHtmxCertsTable() {
+  const certsBody = document.getElementById("vcv-certs-body");
+  if (!certsBody || !window.htmx) {
+    return;
+  }
+  setMountsHiddenField();
+  window.htmx.ajax("GET", "/ui/certs", {
+    target: "#vcv-certs-body",
+    swap: "innerHTML",
+    values: getCertsHtmxValues(),
+  });
+}
+
+function renderMountSelector() {
+  const container = document.getElementById("mount-selector");
+  if (!container) {
+    return;
+  }
+  const totalMounts = state.availableMounts.length;
+  const selectedCount = state.selectedMounts.length;
+  const label = typeof state.messages.mountSelectorTitle === "string" && state.messages.mountSelectorTitle !== "" ? state.messages.mountSelectorTitle : "PKI Engines";
+  const summary = totalMounts === 0 ? "—" : `${selectedCount}/${totalMounts}`;
+  container.innerHTML = `
+    <button type="button" class="vcv-button vcv-button-ghost vcv-mount-trigger" onclick="openMountModal()">
+      <span class="vcv-mount-trigger-label">${label}</span>
+      <span class="vcv-badge vcv-badge-neutral">${summary}</span>
+    </button>
+  `;
+}
+
+function renderMountModalList() {
+  const listContainer = document.getElementById("mount-modal-list");
+  if (!listContainer) {
+    return;
+  }
+  const items = state.availableMounts.map((mount) => {
+    const isSelected = state.selectedMounts.includes(mount);
+    const checkedAttr = isSelected ? "checked" : "";
+    const selectedClass = isSelected ? "selected" : "";
+    return `
+      <label class="vcv-mount-modal-option ${selectedClass}">
+        <input type="checkbox" ${checkedAttr} onchange="toggleMount('${mount}')">
+        <span class="vcv-mount-modal-name">${mount}</span>
+      </label>
+    `;
+  });
+  const emptyText = typeof state.messages.noData === "string" && state.messages.noData !== "" ? state.messages.noData : "No data";
+  listContainer.innerHTML = items.join("") || `<p class="vcv-empty">${emptyText}</p>`;
+}
+
+function openMountModal() {
+  const modal = document.getElementById("mount-modal");
+  if (!modal) {
+    return;
+  }
+  renderMountModalList();
+  modal.classList.remove("vcv-hidden");
+}
+
+function closeMountModal() {
+  const modal = document.getElementById("mount-modal");
+  if (!modal) {
+    return;
+  }
+  modal.classList.add("vcv-hidden");
+}
+
+function toggleMount(mount) {
+  const index = state.selectedMounts.indexOf(mount);
+  if (index > -1) {
+    state.selectedMounts.splice(index, 1);
+  } else {
+    state.selectedMounts.push(mount);
+  }
+  renderMountSelector();
+  renderMountModalList();
+  refreshHtmxCertsTable();
+}
+
+function selectAllMounts() {
+  state.selectedMounts = [...state.availableMounts];
+  renderMountSelector();
+  renderMountModalList();
+  refreshHtmxCertsTable();
+}
+
+function deselectAllMounts() {
+  state.selectedMounts = [];
+  renderMountSelector();
+  renderMountModalList();
+  refreshHtmxCertsTable();
+}
+
+function openCertificateModal() {
+  const modal = document.getElementById("certificate-modal");
+  if (!modal) {
+    return;
+  }
+  modal.classList.remove("vcv-hidden");
+}
+
+function closeCertificateModal() {
+  const modal = document.getElementById("certificate-modal");
+  if (!modal) {
+    return;
+  }
+  modal.classList.add("vcv-hidden");
+}
+
+function applyThemeFromStorage() {
+  const theme = localStorage.getItem("vcv-theme") || "light";
+  document.documentElement.setAttribute("data-theme", theme);
+  const themeValue = document.getElementById("vcv-theme-value");
+  if (themeValue) {
+    themeValue.value = theme;
+  }
+}
+
+function initLanguageFromURL() {
+  const langSelect = document.getElementById("vcv-lang-select");
+  if (!langSelect) {
+    return;
+  }
+  const params = new URLSearchParams(window.location.search || "");
+  const lang = params.get("lang");
+  if (!lang) {
+    return;
+  }
+  langSelect.value = lang;
+}
+
+async function loadConfig() {
+  try {
+    const response = await fetch("/api/config");
+    if (!response.ok) {
+      return;
+    }
+    const data = await response.json();
+    if (!data || !Array.isArray(data.pkiMounts)) {
+      return;
+    }
+    state.availableMounts = data.pkiMounts;
+    state.selectedMounts = [...data.pkiMounts];
+  } catch {
+  }
+}
+
+function initEventHandlers() {
+  const mountModal = document.getElementById("mount-modal");
+  if (mountModal) {
+    mountModal.addEventListener("click", (e) => {
+      if (e.target === mountModal) {
+        closeMountModal();
+      }
+    });
+  }
+  const certModal = document.getElementById("certificate-modal");
+  if (certModal) {
+    certModal.addEventListener("click", (e) => {
+      if (e.target === certModal) {
+        closeCertificateModal();
+      }
+    });
+  }
+}
+
+function dismissNotifications() {
+  const banner = document.getElementById("vcv-notifications");
+  if (banner) {
+    banner.classList.add("vcv-hidden");
+  }
+}
+
+async function main() {
+  applyThemeFromStorage();
+  initLanguageFromURL();
+  await loadMessages();
+  applyTranslations();
+  initEventHandlers();
+  await loadConfig();
+  applyCertsStateFromUrl();
+  renderMountSelector();
+  setMountsHiddenField();
+  
+  // Initialize HTMX enhancements
+  initHtmxErrorHandler();
+  initLoadingIndicators();
+  initClientValidation();
+  initCacheManagement();
+  initUrlSync();
+  initVaultConnectionNotifications();
+  
+  refreshHtmxCertsTable();
+}
+
+main();
+
+window.openMountModal = openMountModal;
+window.closeMountModal = closeMountModal;
+window.toggleMount = toggleMount;
+window.selectAllMounts = selectAllMounts;
+window.deselectAllMounts = deselectAllMounts;
+window.openCertificateModal = openCertificateModal;
+window.closeCertificateModal = closeCertificateModal;
+window.dismissNotifications = dismissNotifications;

@@ -1,10 +1,10 @@
-# VaultCertsViewer
+# VaultCertsViewer 🔐
 
 VaultCertsViewer (vcv) is a lightweight web UI that lists and inspects certificates stored in one or more HashiCorp Vault PKI mounts, especially their expiration dates and SANs.
 
 VaultCertsViewer can simultaneously monitor multiple PKI engines through a single interface, with a modal selector to choose which mounts to display. At the moment, VCV can be connected to only one Vault instance. If you have (example) five Vault instances, you have to create five VCV instances.
 
-## What it does
+## ✨ What it does
 
 - Discovers all certificates in one or more Vault PKI mounts and shows them in a searchable, filterable table.
 - Multi-PKI engine support: Select which mounts to display via an intuitive modal interface with real-time certificate count badges.
@@ -12,17 +12,18 @@ VaultCertsViewer can simultaneously monitor multiple PKI engines through a singl
 - Displays status distribution (valid / expired / revoked) and upcoming expirations.
 - Highlights certificates expiring soon (7/30 days) and shows details (CN, SAN, fingerprints, issuer, validity).
 - Lets you pick UI language (en, fr, es, de, it) and theme (light/dark).
+- Real-time Vault connection status with toast notifications when connection is lost/restored.
 
-## Why it exists
+## 🎯 Why it exists
 
 The native Vault UI is heavy and not convenient for quickly checking certificate expirations and details. VaultCertsViewer gives platform / security / ops teams a fast, **read-only** view of the Vault PKI inventory with only the essential information.
 
-## Who should use it
+## 👥 Who should use it
 
 - Teams operating Vault PKI who need visibility on their certificates.
 - Operators who want a ready-to-use browser view alongside Vault CLI or Web UI.
 
-## How to deploy and use
+## 🚀 How to deploy and use
 
 In HashiCorp Vault, create a read-only role and token for the API to reach the target PKI engines. For multiple mounts, you can either specify each mount explicitly or use wildcard patterns:
 
@@ -49,7 +50,7 @@ vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 
 This dedicated token limits permissions to certificate listing/reading, can be renewed, and is used as `VAULT_READ_TOKEN` by the app.
 
-## Multi-PKI engine support
+## 🧩 Multi-PKI engine support
 
 VaultCertsViewer can monitor multiple PKI engines simultaneously through a single web interface:
 
@@ -58,10 +59,15 @@ VaultCertsViewer can monitor multiple PKI engines simultaneously through a singl
 - **Flexible configuration**: Specify mounts using comma-separated values in `VAULT_PKI_MOUNTS` (e.g., `pki,pki2,pki-prod`)
 - **Independent views**: Select or deselect any combination of mounts to customize your certificate view
 - **Dashboard**: All selected mounts are aggregated in the same table, dashboard, and metrics
+- **Real-time search**: Instant filtering as you type in the search box with 300ms debouncing
+- **Status filtering**: Quick filters for valid/expired/revoked certificates
+- **Expiry timeline**: Visual timeline showing certificate expiration distribution
+- **Pagination**: Configurable page size (25/50/75/100/all) with navigation controls
+- **Sort options**: Sort by common name, expiration date, or serial number
 
 This approach eliminates the need to deploy multiple vcv instances when you have several PKI engines to monitor.
 
-### docker-compose
+### 🐳 docker-compose
 
 Grab `docker-compose.yml`, put it in a directory and create `.env` file with these variables:
 
@@ -91,7 +97,7 @@ docker compose up -d
 
 No storage needed, unless you want to log to a file.
 
-### docker run
+### 🐳 docker run
 
 Start the container with this command:
 
@@ -111,7 +117,7 @@ docker run -d \
   -p 52000:52000 jhmmt/vcv:1.3
 ```
 
-## Certificate expiration thresholds
+## ⏱️ Certificate expiration thresholds
 
 By default, VaultCertsViewer alerts on certificates expiring within **7 days** (critical) and **30 days** (warning). You can customize these thresholds using environment variables:
 
@@ -127,11 +133,11 @@ These values control:
 - The timeline visualization on the dashboard
 - The "expiring soon" count in the dashboard
 
-## Translations
+## 🌍 Translations
 
 The UI is localized in English, French, Spanish, German, and Italian. Language is selectable in the header or via `?lang=xx`.
 
-## Export metrics to Prometheus
+## 📊 Export metrics to Prometheus
 
 Metrics are exposed at `/metrics` endpoint.
 
@@ -139,6 +145,7 @@ Metrics are exposed at `/metrics` endpoint.
 - vcv_certificate_expiry_timestamp_seconds{serial_number, common_name, status}
 - vcv_certificate_exporter_last_scrape_success
 - vcv_certificates_expired_count
+- vcv_certificates_expires_soon_count Number of certificates expiring soon within threshold window
 - vcv_certificates_last_fetch_timestamp_seconds
 - vcv_certificates_total{status}
 - vcv_vault_connected
@@ -209,12 +216,14 @@ If you are using AlertManager, you can create alerts based on these metrics. For
 
 You can adjust the "soon" window (here 14 days) directly in PromQL without changing the exporter.
 
-## More details
+## 🔎 More details
 
 - Technical documentation: [app/README.md](app/README.md)
 - French overview: [README.fr.md](README.fr.md)
+- Docker hub: [jhmmt/vcv](https://hub.docker.com/r/jhmmt/vcv)
+- Source code: [github.com/julienhmmt/vcv](https://github.com/julienhmmt/vcv)
 
-## Picture of the app
+## 🖼️ Picture of the app
 
 ![VaultCertsViewer v1.3](img/VaultCertsViewer-v1.3.png)
 

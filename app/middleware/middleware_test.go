@@ -165,3 +165,33 @@ func TestCORS_Preflight(t *testing.T) {
 		t.Error("expected Access-Control-Allow-Methods header for preflight")
 	}
 }
+
+func TestLogger_LogsRequest(t *testing.T) {
+	// Create a handler that will be wrapped by Logger
+	var writeErr error
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		_, err := w.Write([]byte("response"))
+		writeErr = err
+	})
+
+	handler := middleware.Logger(nextHandler)
+
+	req := httptest.NewRequest(http.MethodGet, "/test/path", nil)
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+	if writeErr != nil {
+		t.Fatalf("expected no write error, got %v", writeErr)
+	}
+
+	// The Logger middleware should pass through the request
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected status %d, got %d", http.StatusOK, rec.Code)
+	}
+
+	// Add a new assertion to check the response body
+	if rec.Body.String() != "response" {
+		t.Errorf("expected response body %q, got %q", "response", rec.Body.String())
+	}
+}

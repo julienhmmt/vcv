@@ -1,0 +1,4 @@
+{{define "certs-pagination"}}
+<button type="button" id="vcv-page-prev" class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill" hx-swap-oob="true" hx-get="/ui/certs" hx-target="#vcv-certs-body" hx-swap="innerHTML" hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts" hx-vals='{"pageAction":"prev"}' {{if .PagePrevDisabled}}disabled{{end}}>{{.PaginationPrevText}}</button>
+<button type="button" id="vcv-page-next" class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill" hx-swap-oob="true" hx-get="/ui/certs" hx-target="#vcv-certs-body" hx-swap="innerHTML" hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts" hx-vals='{"pageAction":"next"}' {{if .PageNextDisabled}}disabled{{end}}>{{.PaginationNextText}}</button>
+{{end}}
