@@ -29,11 +29,50 @@ body {
 /* Header */
 .vcv-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1.5rem;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  padding: 0.75rem 0;
+  background: rgb(248, 250, 252, 75%);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgb(226, 232, 240, 70%);
   margin-bottom: 2rem;
+}
+
+.vcv-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
   flex-wrap: wrap;
+}
+
+.vcv-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.vcv-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgb(15, 23, 42, 6%);
+}
+
+.vcv-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .vcv-title {
@@ -55,6 +94,52 @@ body {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.vcv-filter-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.vcv-filter-group-search {
+  flex: 1;
+}
+
+.vcv-filter-group-search .vcv-input {
+  width: 100%;
+  min-width: 10rem;
+}
+
+.vcv-filter-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #475569;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .vcv-toolbar {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+  .vcv-toolbar-actions {
+    justify-content: flex-end;
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .vcv-filter-group {
+    width: 100%;
+  }
+  .vcv-filter-group-search .vcv-input {
+    min-width: 0;
+  }
 }
 
 /* Mount selector */
@@ -1294,8 +1379,23 @@ body {
   color: #e2e8f0;
 }
 
+[data-theme="dark"] .vcv-header {
+  background: rgb(15, 23, 42, 75%);
+  border-bottom: 1px solid rgb(51, 65, 85, 70%);
+}
+
 [data-theme="dark"] .vcv-title {
   color: #f1f5f9;
+}
+
+[data-theme="dark"] .vcv-toolbar {
+  background: #0f172a;
+  border-color: #334155;
+  box-shadow: 0 1px 2px rgb(0, 0, 0, 35%);
+}
+
+[data-theme="dark"] .vcv-filter-label {
+  color: #94a3b8;
 }
 
 [data-theme="dark"] .vcv-input,
