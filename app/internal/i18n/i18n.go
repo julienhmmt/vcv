@@ -6,11 +6,11 @@ import "strings"
 type Language string
 
 const (
-	LanguageGerman  Language = "de"
 	LanguageEnglish Language = "en"
-	LanguageSpanish Language = "es"
 	LanguageFrench  Language = "fr"
+	LanguageGerman  Language = "de"
 	LanguageItalian Language = "it"
+	LanguageSpanish Language = "es"
 )
 
 // Messages contains all translatable UI strings used by the web interface.
@@ -101,6 +101,8 @@ type Messages struct {
 	SummaryNoCertificates       string `json:"summaryNoCertificates"`
 	SummarySome                 string `json:"summarySome"`
 	TechnicalDetailsTitle       string `json:"technicalDetailsTitle"`
+	VaultConnectionLost         string `json:"vaultConnectionLost"`
+	VaultConnectionRestored     string `json:"vaultConnectionRestored"`
 }
 
 // Response is the payload returned by the /api/i18n endpoint.
@@ -196,6 +198,8 @@ var englishMessages = Messages{
 	SummaryNoCertificates:       "No certificates.",
 	SummarySome:                 "{{visible}} of {{total}} certificates shown",
 	TechnicalDetailsTitle:       "Technical details",
+	VaultConnectionLost:         "Vault connection lost",
+	VaultConnectionRestored:     "Vault connection restored",
 }
 
 var frenchMessages = Messages{
@@ -285,6 +289,8 @@ var frenchMessages = Messages{
 	SummaryNoCertificates:       "Aucun certificat.",
 	SummarySome:                 "{{visible}} sur {{total}} certificats affichés",
 	TechnicalDetailsTitle:       "Détails techniques",
+	VaultConnectionLost:         "Connexion à Vault perdue",
+	VaultConnectionRestored:     "Connexion à Vault rétablie",
 }
 
 var spanishMessages = Messages{
@@ -374,6 +380,8 @@ var spanishMessages = Messages{
 	SummaryNoCertificates:       "Ningún certificado.",
 	SummarySome:                 "{{visible}} de {{total}} certificados mostrados",
 	TechnicalDetailsTitle:       "Detalles técnicos",
+	VaultConnectionLost:         "Conexión a Vault perdida",
+	VaultConnectionRestored:     "Conexión a Vault restablecida",
 }
 
 var germanMessages = Messages{
@@ -463,6 +471,8 @@ var germanMessages = Messages{
 	SummaryNoCertificates:       "Keine Zertifikate.",
 	SummarySome:                 "{{visible}} von {{total}} Zertifikaten angezeigt",
 	TechnicalDetailsTitle:       "Technische Details",
+	VaultConnectionLost:         "Verbindung zu Vault unterbrochen",
+	VaultConnectionRestored:     "Verbindung zu Vault wiederhergestellt",
 }
 
 var italianMessages = Messages{
@@ -552,6 +562,8 @@ var italianMessages = Messages{
 	SummaryNoCertificates:       "Nessun certificato.",
 	SummarySome:                 "Mostrati {{visible}} di {{total}} certificati",
 	TechnicalDetailsTitle:       "Dettagli tecnici",
+	VaultConnectionLost:         "Connessione al Vault interrotta",
+	VaultConnectionRestored:     "Connessione al Vault ripristinata",
 }
 
 // MessagesForLanguage returns the translations for a given language code.

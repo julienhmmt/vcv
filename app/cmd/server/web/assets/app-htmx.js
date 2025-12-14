@@ -2,14 +2,15 @@ const mountsAllSentinel = "__all__";
 
 const state = {
   availableMounts: [],
-  selectedMounts: [],
+  hasSyncedInitialUrl: false,
+  lastErrorAtByTargetId: new Map(),
+  lastRequestByTargetId: new Map(),
+  maxRetries: 3,
   messages: {},
   retryCount: new Map(),
-  maxRetries: 3,
-  lastRequestByTargetId: new Map(),
-  lastErrorAtByTargetId: new Map(),
+  selectedMounts: [],
   suppressUrlUpdateUntilNextSuccess: false,
-  hasSyncedInitialUrl: false,
+  vaultConnected: null,
 };
 
 function getRequestTargetId(detail) {
@@ -52,6 +53,11 @@ function setCertsBusy(isBusy) {
   const refreshButton = document.getElementById("refresh-btn");
   if (refreshButton) {
     refreshButton.disabled = isBusy;
+    if (isBusy) {
+      refreshButton.classList.add("vcv-button-loading");
+    } else {
+      refreshButton.classList.remove("vcv-button-loading");
+    }
   }
 }
 
@@ -62,14 +68,14 @@ function buildCertsPageUrl() {
   if (langSelect && typeof langSelect.value === "string" && langSelect.value !== "") {
     params.set("lang", langSelect.value);
   }
-  params.set("search", values.search);
-  params.set("status", values.status);
   params.set("expiry", values.expiry);
-  params.set("pageSize", values.pageSize);
-  params.set("page", values.page);
-  params.set("sortKey", values.sortKey);
-  params.set("sortDir", values.sortDir);
   params.set("mounts", values.mounts);
+  params.set("page", values.page);
+  params.set("pageSize", values.pageSize);
+  params.set("search", values.search);
+  params.set("sortDir", values.sortDir);
+  params.set("sortKey", values.sortKey);
+  params.set("status", values.status);
   return `/?${params.toString()}`;
 }
 
@@ -325,17 +331,59 @@ function initUrlSync() {
   });
 }
 
+function initVaultConnectionNotifications() {
+	document.body.addEventListener('htmx:afterSwap', function(evt) {
+		const detail = evt.detail;
+		const requestConfig = detail && detail.requestConfig;
+		const requestPath = (requestConfig && typeof requestConfig.path === 'string') ? requestConfig.path : '';
+		if (requestPath === '' || !requestPath.startsWith('/ui/status')) {
+			return;
+		}
+		setTimeout(() => {
+			const pill = document.getElementById('vcv-footer-vault');
+			if (!pill) {
+				return;
+			}
+			const isConnected = pill.classList.contains('vcv-footer-pill-ok');
+			const isDisconnected = pill.classList.contains('vcv-footer-pill-error');
+			if (!isConnected && !isDisconnected) {
+				return;
+			}
+			const nextState = isConnected;
+			if (state.vaultConnected === null) {
+				state.vaultConnected = nextState;
+				return;
+			}
+			if (state.vaultConnected === nextState) {
+				return;
+			}
+			state.vaultConnected = nextState;
+			const messages = state.messages || {};
+			if (nextState) {
+				const restored = messages.vaultConnectionRestored || "Vault connection restored";
+				showSuccessToast(restored);
+				return;
+			}
+			const lost = messages.vaultConnectionLost || "Vault connection lost";
+			showErrorToast(lost);
+		}, 0);
+	});
+}
+
 // Client-side validation
 function initClientValidation() {
   document.body.addEventListener('htmx:beforeRequest', function(evt) {
-    const target = evt.detail.target;
-    const params = evt.detail.parameters;
+    const detail = evt.detail;
+    if (!detail) {
+      return;
+    }
+    const params = detail.parameters || {};
     
     // Validate search input
-    if (params.search && params.search.length > 0) {
+    if (typeof params.search === 'string' && params.search.length > 0) {
       if (params.search.length < 2) {
         evt.preventDefault();
-        const messages = state.messages;
+        const messages = state.messages || {};
         const validationError = messages.errorSearchTooShort || "Search term must be at least 2 characters";
         showErrorToast(validationError);
         return;
@@ -345,7 +393,7 @@ function initClientValidation() {
       const dangerousPatterns = /[<>\"'&]/;
       if (dangerousPatterns.test(params.search)) {
         evt.preventDefault();
-        const messages = state.messages;
+        const messages = state.messages || {};
         const validationError = messages.errorInvalidChars || "Search contains invalid characters";
         showErrorToast(validationError);
         return;
@@ -357,7 +405,7 @@ function initClientValidation() {
       const validSizes = ['25', '50', '100', 'all'];
       if (!validSizes.includes(params.pageSize)) {
         evt.preventDefault();
-        const messages = state.messages;
+        const messages = state.messages || {};
         const validationError = messages.errorInvalidPageSize || "Invalid page size";
         showErrorToast(validationError);
         return;
@@ -366,10 +414,10 @@ function initClientValidation() {
     
     // Validate date range for expiry filter
     if (params.expiry && params.expiry !== 'all') {
-      const days = parseInt(params.expiry);
+      const days = parseInt(params.expiry, 10);
       if (isNaN(days) || days < 1 || days > 365) {
         evt.preventDefault();
-        const messages = state.messages;
+        const messages = state.messages || {};
         const validationError = messages.errorInvalidExpiry || "Expiry days must be between 1 and 365";
         showErrorToast(validationError);
         return;
@@ -434,6 +482,10 @@ function showErrorToast(message) {
 
 function showInfoToast(message) {
   showToast(message, 'info', 3000);
+}
+
+function showSuccessToast(message) {
+  showToast(message, 'success', 3000);
 }
 
 function showToast(message, type = 'info', duration = 5000) {
@@ -786,6 +838,7 @@ async function main() {
   initClientValidation();
   initCacheManagement();
   initUrlSync();
+  initVaultConnectionNotifications();
   
   refreshHtmxCertsTable();
 }
