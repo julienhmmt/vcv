@@ -500,24 +500,6 @@ body {
   color: #475569;
 }
 
-.vcv-table td:last-child {
-  white-space: nowrap;
-}
-
-.vcv-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.vcv-table td:last-child .vcv-button {
-  display: inline-flex;
-  vertical-align: middle;
-  margin-right: 0.375rem;
-}
-
-.vcv-table td:last-child .vcv-button:last-child {
-  margin-right: 0;
-}
-
 /* Sort buttons */
 .vcv-sort {
   background: none;
@@ -751,6 +733,7 @@ body {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -793,6 +776,7 @@ body {
     transform: translateY(1rem);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -945,9 +929,8 @@ body {
   font-family: "JetBrains Mono", "Fira Code", monospace;
   font-size: 0.75rem;
   line-height: 1.6;
-  overflow-x: auto;
+  overflow: auto;
   max-height: 180px;
-  overflow-y: auto;
 }
 
 /* Loading */
@@ -1031,6 +1014,7 @@ body {
     transform: translateY(-100%);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -1654,4 +1638,22 @@ body {
 
 [data-theme="dark"] .vcv-summary {
   color: #94a3b8;
+}
+
+.vcv-table td:last-child {
+  white-space: nowrap;
+}
+
+.vcv-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.vcv-table td:last-child .vcv-button {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-right: 0.375rem;
+}
+
+.vcv-table td:last-child .vcv-button:last-child {
+  margin-right: 0;
 }
