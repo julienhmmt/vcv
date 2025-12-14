@@ -11,13 +11,14 @@ VaultCertsViewer (vcv) peut surveiller simultanément plusieurs moteurs PKI via 
 - Affichage des noms communs (CN) et des SANs des certificats.
 - Affiche la répartition des statuts (valide / expiré / révoqué) et les dates d'expirations à venir.
 - Met en avant les certificats qui expirent bientôt (7/30 jours) et affiche les détails (CN, SAN, empreintes, émetteur, validité).
-- Choix de la langue de l’UI (en, fr, es, de, it) et le thème (clair/sombre).
+- Choix de la langue de l'UI (en, fr, es, de, it) et le thème (clair/sombre).
+- Surveillance en temps réel de la connexion Vault avec notifications toast en cas de perte/rétablissement.
 
 ## Pourquoi cet outil existe-t-il ?
 
 L'interface de Vault est trop lourde et complexe pour consulter les certificats. Elle ne permet pas **facilement** et rapidement de consulter les dates d'expiration et les détails des certificats.
 
-VaultCertsViewer permet aux équipes plateforme / sécurité / ops une vue rapide et en **lecture seule** sur l’inventaire PKI Vault avec les seules informations nécessaires et utiles.
+VaultCertsViewer permet aux équipes plateforme / sécurité / ops une vue rapide et en **lecture seule** sur l'inventaire PKI Vault avec les seules informations nécessaires et utiles.
 
 ## À qui s'adresse-t-il ?
 
@@ -51,8 +52,6 @@ vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 
 Ce jeton dédié limite les droits à la consultation des certificats, peut être renouvelé et sert de valeur `VAULT_READ_TOKEN` pour l'application.
 
-## Support multi-moteurs PKI
-
 VaultCertsViewer peut surveiller simultanément plusieurs moteurs PKI via une seule interface web :
 
 - **Sélection des montages** : Cliquez sur le bouton de sélecteur de montage dans l'en-tête pour ouvrir une fenêtre modale montrant tous les moteurs PKI disponibles
@@ -60,6 +59,11 @@ VaultCertsViewer peut surveiller simultanément plusieurs moteurs PKI via une se
 - **Configuration flexible** : Spécifiez les montages en utilisant des valeurs séparées par des virgules dans `VAULT_PKI_MOUNTS` (par exemple, `pki,pki2,pki-prod`)
 - **Vues indépendantes** : Sélectionnez ou désélectionnez n'importe quelle combinaison de montages pour personnaliser votre vue des certificats
 - **Tableau de bord** : Tous les montages sélectionnés sont agrégés dans le même tableau, tableau de bord et métriques
+- **Recherche en temps réel** : Filtrage instantané pendant la saisie avec délai de 300ms
+- **Filtrage par statut** : Filtres rapides pour les certificats valides/expirés/révoqués
+- **Timeline d'expiration** : Visualisation temporelle de la distribution des expirations
+- **Pagination** : Taille de page configurable (25/50/75/100/tout) avec contrôles de navigation
+- **Options de tri** : Tri par nom commun, date d'expiration ou numéro de série
 
 Cette approche élimine le besoin de déployer plusieurs instances vcv lorsque vous avez plusieurs moteurs PKI à surveiller.
 
@@ -141,6 +145,7 @@ Les métriques sont exposées sur l’endpoint `/metrics`.
 - vcv_certificate_expiry_timestamp_seconds{serial_number, common_name, status}
 - vcv_certificate_exporter_last_scrape_success
 - vcv_certificates_expired_count
+- vcv_certificates_expires_soon_count Nombre de certificats expirant bientôt dans la fenêtre de seuil
 - vcv_certificates_last_fetch_timestamp_seconds
 - vcv_certificates_total{status}
 - vcv_vault_connected
@@ -215,6 +220,33 @@ Vous pouvez adapter librement la fenêtre « bientôt » (ici 14 jours) direct
 
 - Documentation technique : [app/README.md](app/README.md)
 - Version anglaise : [README.md](README.md)
+- Docker Hub : [jhmmt/vcv](https://hub.docker.com/r/jhmmt/vcv)
+- Code Source : [github.com/julienhmmt/vcv](https://github.com/julienhmmt/vcv)
+
+## Historique des Versions
+
+### v1.3 (Actuelle)
+
+- Ajout de l'interface réactive powered par HTMX
+- Implémentation des états de chargement visuels et écrans squelette
+- Ajout de la surveillance de connexion Vault avec notifications toast
+- Introduction des badges de statut de certificat
+- Gestion d'erreurs améliorée avec réessai automatique
+- Ajout du support des liens profonds
+- Amélioration du design responsive et de l'expérience mobile
+
+### v1.2
+
+- Support multi-moteurs PKI avec sélecteur de montage modal
+- Seuils d'expiration configurables
+- Dashboard amélioré avec visualisation timeline
+
+### v1.1
+
+- Listing et filtrage de base des certificats
+- Support multi-langue (en, fr, es, de, it)
+- Export des métriques Prometheus
+- Basculement thème sombre/clair
 
 ## Picture of the app
 

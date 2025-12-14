@@ -5,16 +5,17 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 ## Architecture
 
 - **Backend**: Go + chi router, Vault client (`github.com/hashicorp/vault/api`), zerolog-based logging.
-- **Frontend**: Plain `index.html`, `styles.css`, `app.js` served from the embedded filesystem (no Node/bundler).
+- **Frontend**: Plain `index.html`, `styles.css`, `app-htmx.js` served from the embedded filesystem (no Node/bundler).
 - **Binary layout**: `app/cmd/server` embeds `/web` assets via Go `embed`; a single executable serves both API and UI.
+- **HTMX Integration**: Reactive UI with seamless updates, request management, and error handling.
 
 ## Directory layout (app/)
 
 - `cmd/server/main.go` — entrypoint, router, middleware, static file serving, graceful shutdown.
-- `cmd/server/web/` — `index.html`, `assets/app.js`, `assets/styles.css`.
-- `config/` — environment-backed configuration loading.
+- `cmd/server/web/` — `index.html`, `assets/app-htmx.js`, `assets/styles.css`, `templates/` (HTMX partials).
+- `config/` — environment-backed configuration loading with expiration threshold support.
 - `internal/cache/` — simple in-memory TTL cache (used by Vault client).
-- `internal/handlers/` — HTTP handlers (`certs`, `i18n`, `health`, `ready`).
+- `internal/handlers/` — HTTP handlers (`certs`, `i18n`, `health`, `ready`, `ui` routes).
 - `internal/logger/` — zerolog initialization and structured helpers (HTTP events, panic).
 - `internal/vault/` — Vault client implementations with graceful shutdown support.
 - `internal/version/` — build version info (injected via ldflags).
@@ -29,10 +30,14 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 | `/api/certs/{id}/details` | GET | Detailed certificate view |
 | `/api/certs/{id}/pem` | GET | PEM content |
 | `/api/certs` | GET | List certificates |
+| `/api/config` | GET | Application configuration (thresholds) |
 | `/api/health` | GET | Liveness probe |
 | `/api/i18n` | GET | UI translations (lang via query param) |
 | `/api/ready` | GET | Readiness probe |
 | `/api/version` | GET | Application version info |
+| `/ui/*` | GET | HTMX partial templates for reactive UI |
+| `/ui/theme/toggle` | POST | Toggle dark/light theme |
+| `/ui/status` | GET | Real-time Vault connection status |
 
 ## Configuration (env vars)
 
@@ -68,6 +73,29 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 - Languages: en, fr, es, de, it.
 - `/api/i18n` returns messages; the UI selects language via header dropdown or `?lang=xx`.
 - Short day labels (`daysRemainingShort`) and expiry filters are translated.
+- Toast notifications for Vault connection status are fully translated.
+
+## Frontend Features
+
+### HTMX Integration
+
+- Reactive UI with partial template updates
+- Request synchronization and automatic cancellation
+- Intelligent retry with exponential backoff
+- URL state management for deep-linking
+- Loading states and skeleton screens
+
+### User Experience
+
+- Real-time search with debouncing (300ms)
+- Visual loading indicators on refresh button
+- Certificate status badges (valid/expired/revoked)
+- Vault connection monitoring with toast notifications
+- Responsive design with sticky header
+- Dark/light theme persistence
+- Modal mount selector for multi-PKI support
+- Configurable pagination (25/50/75/100/all)
+- Sortable columns with visual indicators
 
 ## Build & run
 
@@ -91,8 +119,32 @@ Binary serves UI and API at `http://localhost:52000`.
 cd app && go test ./...
 ```
 
+### Test Coverage
+
+- Unit tests for all major packages
+- Mock Vault client for offline testing
+- HTTP handler tests with httptest.Server
+- Configuration validation tests
+- Internationalization tests
+
+Test targets:
+
+- `make test-offline`: Run tests without Vault dependency
+- `make test-dev`: Run tests against dev Vault instance
+
 ## Development notes
 
-- No external frontend toolchain; edit `app.js`/`styles.css` directly.
+- No external frontend toolchain; edit `app-htmx.js`/`styles.css` directly.
 - Request IDs are added to all responses; include them when correlating logs.
 - Use `VAULT_TLS_INSECURE=true` only in development environments.
+- HTMX partial templates are in `cmd/server/web/templates/`.
+- JavaScript uses modern ES6+ features with browser-native APIs.
+- CSS uses custom properties for theming and responsive design.
+
+## Performance Considerations
+
+- In-memory caching with configurable TTL (default 5 minutes)
+- Request deduplication for concurrent identical requests
+- Efficient DOM updates via HTMX partial swapping
+- Lazy loading of certificate details
+- Optimized search with client-side filtering
