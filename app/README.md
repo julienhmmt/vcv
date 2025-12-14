@@ -24,7 +24,7 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 ## API surface
 
 | Endpoint | Method | Description |
-|----------|--------|-------------|
+| ---------- | -------- | ------------- |
 | `/` | GET | Embedded UI |
 | `/api/cache/invalidate` | POST | Clear Vault cache |
 | `/api/certs/{id}/details` | GET | Detailed certificate view |
