@@ -41,14 +41,11 @@ func LoadVaultInstances() ([]VaultInstance, error) {
 		return nil, settingsErr
 	}
 	if len(merged) == 0 {
-		return nil, fmt.Errorf("no vault configuration found in settings.json, VAULT_ADDRS, or legacy env variables")
+		return []VaultInstance{}, nil
 	}
 	normalized, normalizeErr := normalizeVaultInstances(merged)
 	if normalizeErr != nil {
 		return nil, normalizeErr
-	}
-	if len(normalized) == 0 {
-		return nil, fmt.Errorf("no enabled vault configuration found")
 	}
 	return normalized, nil
 }

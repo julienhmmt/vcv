@@ -92,9 +92,6 @@ func Load() Config {
 		if normalizeErr != nil {
 			panic(fmt.Sprintf("invalid settings file %s: %v", settingsPath, normalizeErr))
 		}
-		if len(vaults) == 0 {
-			panic(fmt.Sprintf("invalid settings file %s: no enabled vault configuration found", settingsPath))
-		}
 		cfg.Vaults = vaults
 		if len(vaults) > 0 {
 			cfg.Vault = convertVaultInstanceToLegacy(vaults[0])

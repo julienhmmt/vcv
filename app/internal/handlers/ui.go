@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -230,9 +231,15 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 		var vaultClass string
 		var vaultText string
 		if vaultErr := vaultClient.CheckConnection(r.Context()); vaultErr != nil {
-			vaultClass = "vcv-footer-pill vcv-footer-pill-error"
-			vaultText = messages.FooterVaultDisconnected
-			vaultTitle = vaultErr.Error()
+			if errors.Is(vaultErr, vault.ErrVaultNotConfigured) {
+				vaultClass = "vcv-footer-pill"
+				vaultText = messages.FooterVaultNotConfigured
+				vaultTitle = vaultErr.Error()
+			} else {
+				vaultClass = "vcv-footer-pill vcv-footer-pill-error"
+				vaultText = messages.FooterVaultDisconnected
+				vaultTitle = vaultErr.Error()
+			}
 		} else {
 			vaultClass = "vcv-footer-pill vcv-footer-pill-ok"
 			vaultText = messages.FooterVaultConnected

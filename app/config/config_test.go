@@ -172,6 +172,33 @@ func TestLoadFromSettingsFile_PrimarySkipsDisabledVaults(t *testing.T) {
 	}
 }
 
+func TestLoadFromSettingsFile_AllDisabledDoesNotPanic(t *testing.T) {
+	clearEnv(t)
+	tempDir := t.TempDir()
+	changeWorkingDirectory(t, tempDir)
+	_ = os.Setenv("APP_ENV", "dev")
+
+	settings := `{
+  "app": {"env": "dev", "port": 52000, "logging": {"level": "debug", "format": "json", "output": "stdout", "file_path": ""}},
+  "cors": {"allowed_origins": [], "allow_credentials": true},
+  "certificates": {"expiration_thresholds": {"critical": 2, "warning": 10}},
+  "vaults": [
+    {"id": "disabled", "enabled": false, "address": "http://vault:8200", "token": "root", "pki_mount": "pki", "tls_insecure": true}
+  ]
+}`
+	if err := os.WriteFile(filepath.Join(tempDir, "settings.dev.json"), []byte(settings), 0o644); err != nil {
+		t.Fatalf("failed to write settings.dev.json: %v", err)
+	}
+
+	cfg := Load()
+	if len(cfg.Vaults) != 0 {
+		t.Fatalf("expected 0 enabled vaults, got %d", len(cfg.Vaults))
+	}
+	if cfg.Vault.Addr != "" {
+		t.Fatalf("expected empty primary vault when all vaults are disabled")
+	}
+}
+
 func clearEnv(t *testing.T) {
 	t.Helper()
 	envs := []string{

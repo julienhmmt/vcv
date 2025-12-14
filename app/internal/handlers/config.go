@@ -27,6 +27,9 @@ func GetConfig(cfg config.Config) http.HandlerFunc {
 		resp.ExpirationThresholds.Critical = cfg.ExpirationThresholds.Critical
 		resp.ExpirationThresholds.Warning = cfg.ExpirationThresholds.Warning
 		resp.PKIMounts = cfg.Vault.PKIMounts
+		if resp.PKIMounts == nil {
+			resp.PKIMounts = []string{}
+		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)

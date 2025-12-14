@@ -178,7 +178,7 @@ func TestLoadVaultInstances_DisabledVaultsAreSkipped(t *testing.T) {
 	}
 }
 
-func TestLoadVaultInstances_AllDisabledIsError(t *testing.T) {
+func TestLoadVaultInstances_AllDisabledIsAllowed(t *testing.T) {
 	clearEnv(t)
 	tempDir := t.TempDir()
 	changeWorkingDirectory(t, tempDir)
@@ -187,9 +187,12 @@ func TestLoadVaultInstances_AllDisabledIsError(t *testing.T) {
     {"id": "disabled", "enabled": false, "address": "https://vault", "token": "tok"}
   ]
 }`)
-	_, err := LoadVaultInstances()
-	if err == nil {
-		t.Fatalf("expected error when all vaults are disabled")
+	instances, err := LoadVaultInstances()
+	if err != nil {
+		t.Fatalf("expected no error when all vaults are disabled, got %v", err)
+	}
+	if len(instances) != 0 {
+		t.Fatalf("expected 0 enabled instances, got %d", len(instances))
 	}
 }
 

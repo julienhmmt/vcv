@@ -95,20 +95,31 @@ func newRealClientForTest(t *testing.T, serverURL string, mounts []string) *real
 
 func TestNewClientFromConfig_Validation(t *testing.T) {
 	tests := []struct {
-		name string
-		cfg  config.VaultConfig
+		name        string
+		cfg         config.VaultConfig
+		expectError bool
 	}{
-		{name: "empty address", cfg: config.VaultConfig{Addr: "", ReadToken: "token"}},
-		{name: "empty token", cfg: config.VaultConfig{Addr: "http://localhost:8200", ReadToken: ""}},
+		{name: "no vault configured", cfg: config.VaultConfig{Addr: "", ReadToken: ""}, expectError: false},
+		{name: "empty address", cfg: config.VaultConfig{Addr: "", ReadToken: "token"}, expectError: true},
+		{name: "empty token", cfg: config.VaultConfig{Addr: "http://localhost:8200", ReadToken: ""}, expectError: true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			client, err := NewClientFromConfig(tt.cfg)
-			if err == nil {
-				t.Fatalf("expected error")
+			if tt.expectError {
+				if err == nil {
+					t.Fatalf("expected error")
+				}
+				if client != nil {
+					t.Fatalf("expected nil client")
+				}
+				return
 			}
-			if client != nil {
-				t.Fatalf("expected nil client")
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+			if client == nil {
+				t.Fatalf("expected client")
 			}
 		})
 	}
