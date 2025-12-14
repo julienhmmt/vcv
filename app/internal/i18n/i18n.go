@@ -42,6 +42,7 @@ type Messages struct {
 	DaysRemaining               string `json:"daysRemaining"`
 	DaysRemainingShort          string `json:"daysRemainingShort"`
 	DaysRemainingSingular       string `json:"daysRemainingSingular"`
+	ExpiredSince                string `json:"expiredSince"`
 	DeselectAll                 string `json:"deselectAll"`
 	DownloadPEMFailed           string `json:"downloadPEMFailed"`
 	DownloadPEMNetworkError     string `json:"downloadPEMNetworkError"`
@@ -141,6 +142,7 @@ var englishMessages = Messages{
 	DaysRemaining:               "{{days}} days remaining",
 	DaysRemainingShort:          "{{days}}d",
 	DaysRemainingSingular:       "{{days}} day remaining",
+	ExpiredSince:                "Expired since the {{date}}",
 	DeselectAll:                 "Deselect all",
 	DownloadPEMFailed:           "Failed to download certificate PEM ({{status}})",
 	DownloadPEMNetworkError:     "Network error downloading certificate PEM. Please try again.",
@@ -234,6 +236,7 @@ var frenchMessages = Messages{
 	DaysRemaining:               "{{days}} jours restants",
 	DaysRemainingShort:          "{{days}}j",
 	DaysRemainingSingular:       "{{days}} jour restant",
+	ExpiredSince:                "Expiré depuis le {{date}}",
 	DeselectAll:                 "Tout désélectionner",
 	DownloadPEMFailed:           "Échec du téléchargement du certificat PEM ({{status}})",
 	DownloadPEMNetworkError:     "Erreur réseau lors du téléchargement du certificat PEM. Veuillez réessayer.",
@@ -327,6 +330,7 @@ var spanishMessages = Messages{
 	DaysRemaining:               "{{days}} días restantes",
 	DaysRemainingShort:          "{{days}}d",
 	DaysRemainingSingular:       "{{days}} día restante",
+	ExpiredSince:                "Vencido desde el {{date}}",
 	DeselectAll:                 "Deseleccionar todo",
 	DownloadPEMFailed:           "Error al descargar el certificado PEM ({{status}})",
 	DownloadPEMNetworkError:     "Error de red al descargar el certificado PEM. Por favor intente nuevamente.",
@@ -420,6 +424,7 @@ var germanMessages = Messages{
 	DaysRemaining:               "{{days}} verbleibende Tage",
 	DaysRemainingShort:          "{{days}}T",
 	DaysRemainingSingular:       "{{days}} verbleibender Tag",
+	ExpiredSince:                "Abgelaufen seit dem {{date}}",
 	DeselectAll:                 "Alle abwählen",
 	DownloadPEMFailed:           "Zertifikat-PEM konnte nicht heruntergeladen werden ({{status}})",
 	DownloadPEMNetworkError:     "Netzwerkfehler beim Herunterladen des Zertifikat-PEM. Bitte versuchen Sie es erneut.",
@@ -513,10 +518,11 @@ var italianMessages = Messages{
 	DaysRemaining:               "{{days}} giorni rimanenti",
 	DaysRemainingShort:          "{{days}}g",
 	DaysRemainingSingular:       "{{days}} giorno rimanente",
+	ExpiredSince:                "Scaduto dal {{date}}",
 	DeselectAll:                 "Deseleziona tutto",
 	DownloadPEMFailed:           "Impossibile scaricare il certificato PEM ({{status}})",
 	DownloadPEMNetworkError:     "Errore di rete durante il download del certificato PEM. Riprova.",
-	DownloadPEMSuccess:          "Certificato PEM scaricato correttamente",
+	DownloadPEMSuccess:          "Certificato PEM scaricato con successo",
 	DualStatusNote:              "{{count}} certificato(i) sono sia scaduti che revocati",
 	ExpiryFilter30Days:          "≤ 30 giorni",
 	ExpiryFilter7Days:           "≤ 7 giorni",

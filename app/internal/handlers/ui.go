@@ -819,18 +819,28 @@ func buildCertRows(items []certs.Certificate, messages i18n.Messages, thresholds
 		daysRemainingText := ""
 		daysRemainingClass := ""
 		daysRemaining := daysUntil(certificate.ExpiresAt.UTC(), now)
+		hasExpired := !certificate.ExpiresAt.IsZero() && !certificate.ExpiresAt.After(now)
+		if hasExpired {
+			expiredSince := interpolatePlaceholder(messages.ExpiredSince, "date", certificate.ExpiresAt.UTC().Format("2006-01-02"))
+			daysRemainingText = expiredSince
+			daysRemainingClass = "vcv-days-remaining vcv-days-critical"
+		}
 		if thresholds.Warning > 0 && daysRemaining >= 0 && daysRemaining <= thresholds.Warning {
+			if hasExpired {
+				goto appendRow
+			}
 			if thresholds.Critical > 0 && daysRemaining <= thresholds.Critical {
 				daysRemainingClass = "vcv-days-remaining vcv-days-critical"
 			} else {
 				daysRemainingClass = "vcv-days-remaining vcv-days-warning"
 			}
-			if daysRemaining == 1 {
-				daysRemainingText = interpolatePlaceholder(messages.DaysRemainingSingular, "days", "1")
+			if daysRemaining == 0 || daysRemaining == 1 {
+				daysRemainingText = interpolatePlaceholder(messages.DaysRemainingSingular, "days", fmt.Sprintf("%d", daysRemaining))
 			} else {
 				daysRemainingText = interpolatePlaceholder(messages.DaysRemaining, "days", fmt.Sprintf("%d", daysRemaining))
 			}
 		}
+	appendRow:
 		rows = append(rows, certRowTemplateData{
 			ID:                 certificate.ID,
 			CommonName:         certificate.CommonName,
