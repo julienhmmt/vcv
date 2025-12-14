@@ -73,7 +73,7 @@ func (c *multiClient) GetCertificateDetails(ctx context.Context, serialNumber st
 	if err != nil {
 		return certs.DetailedCertificate{}, err
 	}
-	details.Certificate.ID = fmt.Sprintf("%s|%s", vaultID, mountSerial)
+	details.ID = fmt.Sprintf("%s|%s", vaultID, mountSerial)
 	return details, nil
 }
 
