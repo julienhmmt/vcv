@@ -61,12 +61,13 @@
                 id="vcv-search"
                 class="vcv-input"
                 type="search"
-                placeholder="CN or SAN"
+                placeholder="CN / SAN"
                 name="search"
                 hx-get="/ui/certs"
                 hx-trigger="input changed delay:300ms"
                 hx-target="#vcv-certs-body"
                 hx-swap="innerHTML"
+                hx-sync="#vcv-certs-body:replace"
                 hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
               />
             </div>
@@ -80,6 +81,7 @@
                 hx-trigger="change"
                 hx-target="#vcv-certs-body"
                 hx-swap="innerHTML"
+                hx-sync="#vcv-certs-body:replace"
                 hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
               >
                 <option value="all">All</option>
@@ -97,6 +99,7 @@
                 hx-trigger="change"
                 hx-target="#vcv-certs-body"
                 hx-swap="innerHTML"
+                hx-sync="#vcv-certs-body:replace"
                 hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
               >
                 <option value="all">All dates</option>
@@ -115,6 +118,7 @@
               hx-post="/ui/certs/refresh"
               hx-target="#vcv-certs-body"
               hx-swap="innerHTML"
+              hx-sync="#vcv-certs-body:replace"
               hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             >
               <span class="vcv-refresh-icon">↻</span>
@@ -208,6 +212,7 @@
             hx-trigger="change"
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
+            hx-sync="#vcv-certs-body:replace"
             hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
           >
             <option value="25">25</option>
@@ -224,6 +229,7 @@
             hx-get="/ui/certs"
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
+            hx-sync="#vcv-certs-body:replace"
             hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             hx-vals='{"pageAction":"prev"}'
           >
@@ -238,6 +244,7 @@
             hx-get="/ui/certs"
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
+            hx-sync="#vcv-certs-body:replace"
             hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             hx-vals='{"pageAction":"next"}'
           >

@@ -6,39 +6,172 @@ const state = {
   messages: {},
   retryCount: new Map(),
   maxRetries: 3,
+  lastRequestByTargetId: new Map(),
+  lastErrorAtByTargetId: new Map(),
+  suppressUrlUpdateUntilNextSuccess: false,
+  hasSyncedInitialUrl: false,
 };
+
+function getRequestTargetId(detail) {
+  const target = detail && detail.target;
+  if (!target || !target.id) {
+    return "unknown";
+  }
+  return target.id;
+}
+
+function shouldSuppressErrorToast(detail) {
+  const xhr = detail && detail.xhr;
+  if (!xhr) {
+    return false;
+  }
+  const isAbort = xhr.status === 0 && (xhr.statusText === "abort" || xhr.statusText === "");
+  return isAbort;
+}
+
+function isRetryable(detail) {
+  const xhr = detail && detail.xhr;
+  if (!xhr) {
+    return true;
+  }
+  if (xhr.status === 0) {
+    return true;
+  }
+  return xhr.status >= 500;
+}
+
+function setCertsBusy(isBusy) {
+  const toolbar = document.querySelector(".vcv-toolbar");
+  if (toolbar) {
+    if (isBusy) {
+      toolbar.setAttribute("aria-busy", "true");
+    } else {
+      toolbar.removeAttribute("aria-busy");
+    }
+  }
+  const refreshButton = document.getElementById("refresh-btn");
+  if (refreshButton) {
+    refreshButton.disabled = isBusy;
+  }
+}
+
+function buildCertsPageUrl() {
+  const values = getCertsHtmxValues();
+  const langSelect = document.getElementById("vcv-lang-select");
+  const params = new URLSearchParams();
+  if (langSelect && typeof langSelect.value === "string" && langSelect.value !== "") {
+    params.set("lang", langSelect.value);
+  }
+  params.set("search", values.search);
+  params.set("status", values.status);
+  params.set("expiry", values.expiry);
+  params.set("pageSize", values.pageSize);
+  params.set("page", values.page);
+  params.set("sortKey", values.sortKey);
+  params.set("sortDir", values.sortDir);
+  params.set("mounts", values.mounts);
+  return `/?${params.toString()}`;
+}
+
+function applyCertsStateFromUrl() {
+  const params = new URLSearchParams(window.location.search || "");
+  const searchInput = document.getElementById("vcv-search");
+  if (searchInput && params.has("search")) {
+    searchInput.value = params.get("search") || "";
+  }
+  const statusSelect = document.getElementById("vcv-status-filter");
+  if (statusSelect && params.has("status")) {
+    statusSelect.value = params.get("status") || "all";
+  }
+  const expirySelect = document.getElementById("vcv-expiry-filter");
+  if (expirySelect && params.has("expiry")) {
+    expirySelect.value = params.get("expiry") || "all";
+  }
+  const pageSizeSelect = document.getElementById("vcv-page-size");
+  if (pageSizeSelect && params.has("pageSize")) {
+    pageSizeSelect.value = params.get("pageSize") || "25";
+  }
+  const pageInput = document.getElementById("vcv-page");
+  if (pageInput && params.has("page")) {
+    pageInput.value = params.get("page") || "0";
+  }
+  const sortKeyInput = document.getElementById("vcv-sort-key");
+  if (sortKeyInput && params.has("sortKey")) {
+    sortKeyInput.value = params.get("sortKey") || "commonName";
+  }
+  const sortDirInput = document.getElementById("vcv-sort-dir");
+  if (sortDirInput && params.has("sortDir")) {
+    sortDirInput.value = params.get("sortDir") || "asc";
+  }
+  const mountsValue = params.get("mounts");
+  if (typeof mountsValue === "string") {
+    if (mountsValue === mountsAllSentinel) {
+      state.selectedMounts = [...state.availableMounts];
+    } else if (mountsValue === "") {
+      state.selectedMounts = [];
+    } else {
+      const requested = mountsValue.split(",").map((value) => value.trim()).filter((value) => value !== "");
+      state.selectedMounts = requested.filter((value) => state.availableMounts.includes(value));
+    }
+  }
+}
 
 // HTMX Error Handler with translation support
 function initHtmxErrorHandler() {
-  document.body.addEventListener('htmx:responseError', function(evt) {
-    const errorInfo = {
-      status: evt.detail.xhr.status,
-      statusText: evt.detail.xhr.statusText,
-      url: evt.detail.xhr.responseURL,
-      errorId: evt.detail.target.id || 'unknown'
-    };
-    
-    console.error('HTMX request failed:', errorInfo);
-    
-    // Show translated error message
+  document.body.addEventListener('htmx:configRequest', function(evt) {
+    const detail = evt.detail;
+    const targetId = getRequestTargetId(detail);
+    if (targetId !== "unknown") {
+      state.lastRequestByTargetId.set(targetId, {
+        verb: detail.verb,
+        path: detail.path,
+        requestConfig: detail.requestConfig,
+      });
+    }
+  });
+
+  const handleErrorEvent = function(evt, kind) {
+    const detail = evt.detail;
+    const targetId = getRequestTargetId(detail);
+    const now = Date.now();
+    const lastAt = state.lastErrorAtByTargetId.get(targetId) || 0;
+    if (now-lastAt < 200) {
+      return;
+    }
+    state.lastErrorAtByTargetId.set(targetId, now);
+    if (shouldSuppressErrorToast(detail)) {
+      return;
+    }
+    const xhr = detail.xhr;
+    const status = xhr ? xhr.status : 0;
+    const statusText = xhr ? xhr.statusText : kind;
+    const url = xhr ? xhr.responseURL : "";
+    console.error('HTMX request failed:', {status, statusText, url, targetId});
     const messages = state.messages;
     let errorMessage = messages.errorGeneric || "Request failed";
-    
-    if (evt.detail.xhr.status === 404) {
+    if (status === 404) {
       errorMessage = messages.errorNotFound || "Resource not found";
-    } else if (evt.detail.xhr.status === 500) {
+    } else if (status >= 500) {
       errorMessage = messages.errorServer || "Server error occurred";
-    } else if (evt.detail.xhr.status === 0) {
+    } else if (status === 0) {
       errorMessage = messages.errorNetwork || "Network error";
     }
-    
-    // Show error toast
     showErrorToast(errorMessage);
-    
-    // Implement retry logic for network errors
-    if (evt.detail.xhr.status === 0 || evt.detail.xhr.status >= 500) {
-      handleRetry(evt.detail);
+    if (isRetryable(detail)) {
+      handleRetry(targetId);
     }
+  };
+
+  document.body.addEventListener('htmx:responseError', function(evt) {
+    handleErrorEvent(evt, "responseError");
+  });
+
+  document.body.addEventListener('htmx:sendError', function(evt) {
+    handleErrorEvent(evt, "sendError");
+  });
+
+  document.body.addEventListener('htmx:timeout', function(evt) {
+    handleErrorEvent(evt, "timeout");
   });
   
   document.body.addEventListener('htmx:afterRequest', function(evt) {
@@ -50,8 +183,7 @@ function initHtmxErrorHandler() {
 }
 
 // Retry strategy with exponential backoff
-function handleRetry(detail) {
-  const targetId = detail.target.id;
+function handleRetry(targetId) {
   const currentRetries = state.retryCount.get(targetId) || 0;
   
   if (currentRetries >= state.maxRetries) {
@@ -70,10 +202,11 @@ function handleRetry(detail) {
   showInfoToast(retryMessage);
   
   setTimeout(() => {
-    // Retry the original request
-    if (detail.requestConfig) {
-      window.htmx.ajax(detail.requestConfig.verb, detail.requestConfig.path, detail.requestConfig);
+    const lastRequest = state.lastRequestByTargetId.get(targetId);
+    if (!lastRequest || !lastRequest.requestConfig) {
+      return;
     }
+    window.htmx.ajax(lastRequest.verb, lastRequest.path, lastRequest.requestConfig);
   }, delay);
 }
 
@@ -82,41 +215,113 @@ function initLoadingIndicators() {
   // Show loading spinner
   document.body.addEventListener('htmx:beforeRequest', function(evt) {
     const target = evt.detail.target;
+    if (target.id !== 'vcv-certs-body') {
+      return;
+    }
     const loadingIndicator = document.getElementById('vcv-loading-indicator');
     if (loadingIndicator) {
       loadingIndicator.classList.remove('vcv-hidden');
     }
-    
-    // Show loading state on specific elements
-    if (target.id === 'vcv-certs-body') {
-      target.classList.add('vcv-loading');
-    }
+    target.classList.add('vcv-loading');
+    setCertsBusy(true);
   });
   
   // Hide loading spinner
   document.body.addEventListener('htmx:afterRequest', function(evt) {
+    const target = evt.detail.target;
+    if (target.id !== 'vcv-certs-body') {
+      return;
+    }
     const loadingIndicator = document.getElementById('vcv-loading-indicator');
     if (loadingIndicator) {
       loadingIndicator.classList.add('vcv-hidden');
     }
-    
-    const target = evt.detail.target;
-    if (target.id === 'vcv-certs-body') {
-      target.classList.remove('vcv-loading');
-    }
+    target.classList.remove('vcv-loading');
+    setCertsBusy(false);
   });
   
   // Hide loading on error
   document.body.addEventListener('htmx:responseError', function(evt) {
+    const target = evt.detail.target;
+    if (target.id !== 'vcv-certs-body') {
+      return;
+    }
     const loadingIndicator = document.getElementById('vcv-loading-indicator');
     if (loadingIndicator) {
       loadingIndicator.classList.add('vcv-hidden');
     }
-    
+    target.classList.remove('vcv-loading');
+    setCertsBusy(false);
+  });
+
+  document.body.addEventListener('htmx:sendError', function(evt) {
     const target = evt.detail.target;
-    if (target.id === 'vcv-certs-body') {
-      target.classList.remove('vcv-loading');
+    if (target.id !== 'vcv-certs-body') {
+      return;
     }
+    const loadingIndicator = document.getElementById('vcv-loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.classList.add('vcv-hidden');
+    }
+    target.classList.remove('vcv-loading');
+    setCertsBusy(false);
+  });
+
+  document.body.addEventListener('htmx:timeout', function(evt) {
+    const target = evt.detail.target;
+    if (target.id !== 'vcv-certs-body') {
+      return;
+    }
+    const loadingIndicator = document.getElementById('vcv-loading-indicator');
+    if (loadingIndicator) {
+      loadingIndicator.classList.add('vcv-hidden');
+    }
+    target.classList.remove('vcv-loading');
+    setCertsBusy(false);
+  });
+}
+
+function initUrlSync() {
+  if (!window.htmx) {
+    return;
+  }
+  document.body.addEventListener('htmx:afterRequest', function(evt) {
+    const detail = evt.detail;
+    if (!detail || !detail.successful) {
+      return;
+    }
+    if (detail.path !== '/ui/certs') {
+      return;
+    }
+    const target = detail.target;
+    if (!target || target.id !== 'vcv-certs-body') {
+      return;
+    }
+    if (state.suppressUrlUpdateUntilNextSuccess) {
+      state.suppressUrlUpdateUntilNextSuccess = false;
+      return;
+    }
+    const url = buildCertsPageUrl();
+    const triggeringEvent = (detail.requestConfig && detail.requestConfig.triggeringEvent) || detail.triggeringEvent;
+    const isInputEvent = triggeringEvent && triggeringEvent.type === 'input';
+    if (!state.hasSyncedInitialUrl) {
+      state.hasSyncedInitialUrl = true;
+      window.history.replaceState({}, '', url);
+      return;
+    }
+    if (isInputEvent) {
+      window.history.replaceState({}, '', url);
+      return;
+    }
+    window.history.pushState({}, '', url);
+  });
+
+  window.addEventListener('popstate', function() {
+    state.suppressUrlUpdateUntilNextSuccess = true;
+    applyCertsStateFromUrl();
+    renderMountSelector();
+    setMountsHiddenField();
+    refreshHtmxCertsTable();
   });
 }
 
@@ -571,6 +776,7 @@ async function main() {
   applyTranslations();
   initEventHandlers();
   await loadConfig();
+  applyCertsStateFromUrl();
   renderMountSelector();
   setMountsHiddenField();
   
@@ -579,6 +785,7 @@ async function main() {
   initLoadingIndicators();
   initClientValidation();
   initCacheManagement();
+  initUrlSync();
   
   refreshHtmxCertsTable();
 }
