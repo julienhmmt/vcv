@@ -115,23 +115,7 @@
               <div class="admin-actions admin-actions-space">
                 <button class="vcv-button vcv-button-secondary" id="admin-add-vault" type="button">Add vault</button>
               </div>
-              <div class="vcv-table-wrapper admin-vaults-table-wrapper">
-                <table class="vcv-table admin-vaults-table">
-                  <thead>
-                    <tr>
-                      <th>ID</th>
-                      <th>Display name</th>
-                      <th>Address</th>
-                      <th>Token</th>
-                      <th>PKI mounts</th>
-                      <th>TLS insecure</th>
-                      <th>Enabled</th>
-                      <th></th>
-                    </tr>
-                  </thead>
-                  <tbody id="admin-vaults-body"></tbody>
-                </table>
-              </div>
+              <div id="admin-vaults-list" class="admin-vaults-list"></div>
             </fieldset>
 
             <div class="admin-actions admin-actions-space">
@@ -153,7 +137,7 @@
       const settingsForm = document.getElementById('admin-settings-form');
       const logoutButton = document.getElementById('admin-logout');
       const addVaultButton = document.getElementById('admin-add-vault');
-      const vaultsBody = document.getElementById('admin-vaults-body');
+      const vaultsList = document.getElementById('admin-vaults-list');
 
       function getEl(id) {
         return document.getElementById(id);
@@ -224,45 +208,77 @@
       }
 
       function createVaultRow(vault) {
-        const row = document.createElement('tr');
-        row.className = 'admin-table-row';
-        row.innerHTML = `
-          <td><input class="vcv-input admin-input" name="vault-id" value="${vault.id || ''}" required /></td>
-          <td><input class="vcv-input admin-input" name="vault-display" value="${vault.display_name || ''}" /></td>
-          <td><input class="vcv-input admin-input" name="vault-address" value="${vault.address || ''}" required /></td>
-          <td><input class="vcv-input admin-input" name="vault-token" type="password" value="${vault.token || ''}" required /></td>
-          <td><input class="vcv-input admin-input" name="vault-mounts" value="${Array.isArray(vault.pki_mounts) ? vault.pki_mounts.join(',') : (vault.pki_mount ? vault.pki_mount : '')}" /></td>
-          <td class="admin-table-center"><input name="vault-tls" type="checkbox" ${vault.tls_insecure ? 'checked' : ''} /></td>
-          <td class="admin-table-center"><input name="vault-enabled" type="checkbox" ${vault.enabled === false ? '' : 'checked'} /></td>
-          <td class="admin-table-center"><button class="vcv-button vcv-button-danger vcv-button-small" type="button">Remove</button></td>
+        const card = document.createElement('div');
+        card.className = 'admin-vault-card';
+        const mounts = Array.isArray(vault.pki_mounts) ? vault.pki_mounts.join(',') : (vault.pki_mount ? vault.pki_mount : '');
+        const enabled = vault.enabled === false ? '' : 'checked';
+        const tls = vault.tls_insecure ? 'checked' : '';
+        card.innerHTML = `
+          <div class="admin-vault-card-header">
+            <div class="admin-vault-card-title">
+              <input class="vcv-input admin-input" name="vault-id" value="${vault.id || ''}" placeholder="id" required />
+              <input class="vcv-input admin-input" name="vault-display" value="${vault.display_name || ''}" placeholder="display name" />
+            </div>
+            <div class="admin-vault-card-actions">
+              <button class="vcv-button vcv-button-danger vcv-button-small" type="button">Remove</button>
+            </div>
+          </div>
+          <div class="admin-vault-card-grid">
+            <div class="admin-form-row admin-form-row-full">
+              <label class="admin-label">Address</label>
+              <input class="vcv-input admin-input" name="vault-address" value="${vault.address || ''}" required />
+            </div>
+            <div class="admin-form-row">
+              <label class="admin-label">Token</label>
+              <input class="vcv-input admin-input" name="vault-token" type="password" value="${vault.token || ''}" required />
+            </div>
+            <div class="admin-form-row">
+              <label class="admin-label">PKI mounts</label>
+              <input class="vcv-input admin-input" name="vault-mounts" value="${mounts}" />
+            </div>
+            <div class="admin-form-row">
+              <label class="admin-label">TLS insecure</label>
+              <label class="admin-toggle">
+                <input name="vault-tls" type="checkbox" ${tls} />
+                <span class="admin-toggle-label">Enable</span>
+              </label>
+            </div>
+            <div class="admin-form-row">
+              <label class="admin-label">Enabled</label>
+              <label class="admin-toggle">
+                <input name="vault-enabled" type="checkbox" ${enabled} />
+                <span class="admin-toggle-label">Enable</span>
+              </label>
+            </div>
+          </div>
         `;
-        const removeButton = row.querySelector('button');
+        const removeButton = card.querySelector('button');
         if (removeButton) {
-          removeButton.addEventListener('click', () => row.remove());
+          removeButton.addEventListener('click', () => card.remove());
         }
-        return row;
+        return card;
       }
 
       function renderVaults(vaults) {
-        if (!vaultsBody) return;
-        vaultsBody.innerHTML = '';
+        if (!vaultsList) return;
+        vaultsList.innerHTML = '';
         vaults.forEach((vault) => {
-          vaultsBody.appendChild(createVaultRow(vault));
+          vaultsList.appendChild(createVaultRow(vault));
         });
       }
 
       function readVaultsFromTable() {
-        if (!vaultsBody) return [];
-        const rows = Array.from(vaultsBody.querySelectorAll('tr'));
-        return rows.map((row) => {
-          const id = row.querySelector('input[name="vault-id"]').value.trim();
-          const displayName = row.querySelector('input[name="vault-display"]').value.trim();
-          const address = row.querySelector('input[name="vault-address"]').value.trim();
-          const token = row.querySelector('input[name="vault-token"]').value;
-          const mountsValue = row.querySelector('input[name="vault-mounts"]').value;
+        if (!vaultsList) return [];
+        const cards = Array.from(vaultsList.querySelectorAll('.admin-vault-card'));
+        return cards.map((card) => {
+          const id = card.querySelector('input[name="vault-id"]').value.trim();
+          const displayName = card.querySelector('input[name="vault-display"]').value.trim();
+          const address = card.querySelector('input[name="vault-address"]').value.trim();
+          const token = card.querySelector('input[name="vault-token"]').value;
+          const mountsValue = card.querySelector('input[name="vault-mounts"]').value;
           const pkiMounts = mountsValue.split(',').map((v) => v.trim()).filter((v) => v !== '');
-          const tlsInsecure = row.querySelector('input[name="vault-tls"]').checked;
-          const enabled = row.querySelector('input[name="vault-enabled"]').checked;
+          const tlsInsecure = card.querySelector('input[name="vault-tls"]').checked;
+          const enabled = card.querySelector('input[name="vault-enabled"]').checked;
           return {
             id,
             display_name: displayName,
@@ -408,8 +424,8 @@
             tls_insecure: false,
             enabled: true,
           });
-          if (vaultsBody) {
-            vaultsBody.appendChild(row);
+          if (vaultsList) {
+            vaultsList.appendChild(row);
           }
         });
       }

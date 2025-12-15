@@ -97,6 +97,7 @@ services:
       - vcv-network
     environment:
       - VCV_ADMIN_PASSWORD=$$2y$$10$$.SWJT4Amz9tyq4qq2vqQyOZm/KZAf38YVVNxj/6EvYLk4I0C6Q9A2
+      - SETTINGS_PATH=/app/settings.dev.json
     depends_on:
       - vault
       - vault-dev-2
@@ -108,7 +109,7 @@ services:
       - no-new-privileges:true
     volumes:
       - ./vcv.log:/var/log/app/vcv.log
-      - ./settings.dev.json:/app/settings.dev.json:ro
+      - ./settings.dev.json:/app/settings.dev.json
     deploy:
       resources:
         limits:

@@ -11,8 +11,11 @@ services:
     read_only: true
     security_opt:
       - no-new-privileges:true
+    environment:
+      - VCV_ADMIN_PASSWORD=$$2y$$10$$.SWJT4Amz9tyq4qq2vqQyOZm/KZAf38YVVNxj/6EvYLk4I0C6Q9A2
+      - SETTINGS_PATH=/app/settings.json
     volumes:
-      - ./settings.json:/app/settings.json:ro
+      - ./settings.json:/app/settings.json
     deploy:
       resources:
         limits:

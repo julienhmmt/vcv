@@ -19,7 +19,10 @@ import (
 
 func newAdminWebFS() fstest.MapFS {
 	return fstest.MapFS{
-		"admin.html": &fstest.MapFile{Data: []byte("<html><body>admin</body></html>")},
+		"templates/admin-page.html":           &fstest.MapFile{Data: []byte("<html><body><div id=\"admin-root\"></div></body></html>")},
+		"templates/admin-login-fragment.html": &fstest.MapFile{Data: []byte("<div>login</div>")},
+		"templates/admin-panel-fragment.html": &fstest.MapFile{Data: []byte("<div>panel</div>")},
+		"templates/admin-vault-item.html":     &fstest.MapFile{Data: []byte("<div>vault</div>")},
 	}
 }
 

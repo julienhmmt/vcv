@@ -1,0 +1,16 @@
+<section class="vcv-table-wrapper admin-surface admin-login">
+  <h2 class="admin-card-title">Login</h2>
+  {{if .ErrorText}}
+    <div class="admin-alert admin-alert-error">{{.ErrorText}}</div>
+  {{end}}
+  <form class="admin-form" hx-post="/admin/login" hx-target="#admin-root" hx-swap="innerHTML">
+    <input type="hidden" id="admin-username" name="username" value="admin" />
+    <div class="admin-form-row">
+      <label class="admin-label" for="admin-password">Password</label>
+      <input class="vcv-input" id="admin-password" name="password" type="password" autocomplete="current-password" required />
+    </div>
+    <div class="admin-actions">
+      <button class="vcv-button vcv-button-primary" type="submit">Login</button>
+    </div>
+  </form>
+</section>

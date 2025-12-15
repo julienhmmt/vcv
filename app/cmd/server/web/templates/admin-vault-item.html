@@ -1,0 +1,74 @@
+<details class="admin-vault-accordion" id="admin-vault-{{.Key}}" {{if .Open}}open{{end}}>
+  <summary class="admin-vault-summary">
+    <span class="admin-vault-summary-title">
+      {{if .Vault.DisplayName}}{{.Vault.DisplayName}}{{else}}{{.Vault.ID}}{{end}}
+    </span>
+    <span class="admin-vault-summary-meta">
+      {{if .Vault.ID}}<span class="vcv-badge vcv-badge-neutral">{{.Vault.ID}}</span>{{end}}
+      {{if .Vault.Address}}<span class="admin-vault-summary-address">{{.Vault.Address}}</span>{{end}}
+    </span>
+  </summary>
+
+  <div class="admin-vault-card">
+    <div class="admin-vault-card-header">
+      <div class="admin-vault-card-title">
+        <div class="admin-form-row">
+          <label class="admin-label">ID</label>
+          <input class="vcv-input admin-input" name="vault_id_{{.Key}}" value="{{.Vault.ID}}" placeholder="id" required />
+        </div>
+        <div class="admin-form-row">
+          <label class="admin-label">Display name</label>
+          <input class="vcv-input admin-input" name="vault_display_{{.Key}}" value="{{.Vault.DisplayName}}" placeholder="display name" />
+        </div>
+      </div>
+      <div class="admin-vault-card-actions">
+        <button
+          class="vcv-button vcv-button-danger vcv-button-small"
+          type="button"
+          hx-post="/admin/vault/remove"
+          hx-vals='{"vaultId":"{{.Vault.ID}}"}'
+          hx-target="closest details"
+          hx-swap="delete"
+        >
+          Remove
+        </button>
+      </div>
+    </div>
+
+    <div class="admin-vault-card-grid">
+      <div class="admin-form-row admin-form-row-full">
+        <label class="admin-label">Address</label>
+        <input class="vcv-input admin-input" name="vault_address_{{.Key}}" value="{{.Vault.Address}}" required />
+      </div>
+
+      <div class="admin-form-row">
+        <label class="admin-label">PKI mounts (comma-separated)</label>
+        <input class="vcv-input admin-input" name="vault_mounts_{{.Key}}" value="{{.MountsText}}" />
+      </div>
+
+      <div class="admin-form-row">
+        <label class="admin-label">Token</label>
+        <div class="admin-token-row">
+          <input class="vcv-input admin-input" name="vault_token_{{.Key}}" type="password" value="{{.Vault.Token}}" required />
+          <button class="vcv-button vcv-button-secondary vcv-button-small" type="button" data-vault-key="{{.Key}}" onclick="toggleToken(this)">Reveal</button>
+        </div>
+      </div>
+
+      <div class="admin-form-row">
+        <label class="admin-label">TLS insecure</label>
+        <label class="admin-toggle">
+          <input name="vault_tls_{{.Key}}" type="checkbox" {{if .TLSInsecure}}checked{{end}} />
+          <span class="admin-toggle-label">Enable</span>
+        </label>
+      </div>
+
+      <div class="admin-form-row">
+        <label class="admin-label">Enabled</label>
+        <label class="admin-toggle">
+          <input name="vault_enabled_{{.Key}}" type="checkbox" {{if .Enabled}}checked{{end}} />
+          <span class="admin-toggle-label">Enable</span>
+        </label>
+      </div>
+    </div>
+  </div>
+</details>

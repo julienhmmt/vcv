@@ -1,36 +1,55 @@
 {
   "app": {
-    "env": "prod",
-    "port": 52000,
+    "env": "dev",
     "logging": {
-      "level": "info",
+      "level": "debug",
       "format": "json",
-      "output": "stdout",
+      "output": "both",
       "file_path": "/var/log/app/vcv.log"
-    }
-  },
-  "cors": {
-    "allowed_origins": [],
-    "allow_credentials": true
+    },
+    "port": 52000
   },
   "certificates": {
     "expiration_thresholds": {
-      "critical": 7,
-      "warning": 30
+      "critical": 2,
+      "warning": 10
     }
+  },
+  "cors": {
+    "allowed_origins": [
+      "http://localhost:4321",
+      "http://localhost:3000"
+    ],
+    "allow_credentials": true
   },
   "vaults": [
     {
-      "id": "prod",
-      "enabled": true,
-      "display_name": "Production",
-      "address": "https://vault-prod.example.com:8200",
-      "token": "your-vault-token-here",
-      "pki_mount": "pki",
+      "id": "vault-main",
+      "address": "http://vault:8200",
+      "token": "root",
       "pki_mounts": [
-        "pki"
+        "pki",
+        "pki_dev",
+        "pki_stage",
+        "pki_production"
       ],
-      "tls_insecure": false
+      "display_name": "Vault",
+      "tls_insecure": true,
+      "enabled": true
+    },
+    {
+      "id": "vault-dev",
+      "address": "http://vault-dev:8200",
+      "token": "root",
+      "pki_mounts": [
+        "pki",
+        "pki_corporate",
+        "pki_external",
+        "pki_partners"
+      ],
+      "display_name": "Vault dev",
+      "tls_insecure": true,
+      "enabled": true
     }
   ]
 }

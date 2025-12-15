@@ -13,6 +13,45 @@
   padding-top: 1.5rem;
 }
 
+.admin-surface .vcv-button:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(16 185 129 / 20%);
+}
+
+.admin-surface .vcv-button:active {
+  transform: translateY(1px);
+}
+
+.admin-surface .vcv-button-primary:hover:not(:disabled) {
+  background: #16a34a;
+}
+
+.admin-surface .vcv-button-primary:active:not(:disabled) {
+  background: #15803d;
+}
+
+.admin-surface .vcv-button-secondary:hover:not(:disabled) {
+  background: #4f46e5;
+}
+
+.admin-surface .vcv-button-secondary:active:not(:disabled) {
+  background: #4338ca;
+}
+
+.admin-surface .vcv-button-danger {
+  background: #ef4444;
+  border: none;
+  color: #fff;
+}
+
+.admin-surface .vcv-button-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.admin-surface .vcv-button-danger:active:not(:disabled) {
+  background: #b91c1c;
+}
+
 .admin-card-header {
   display: flex;
   align-items: center;
@@ -109,36 +148,6 @@
   resize: vertical;
 }
 
-.admin-vaults-table-wrapper {
-  overflow: auto;
-}
-
-.admin-vaults-table th,
-.admin-vaults-table td {
-  white-space: nowrap;
-}
-
-.admin-vaults-table td {
-  padding-top: 0.625rem;
-  padding-bottom: 0.625rem;
-}
-
-.admin-vaults-table th,
-.admin-vaults-table td {
-  padding-left: 0.75rem;
-  padding-right: 0.75rem;
-}
-
-.admin-vaults-table {
-  font-size: 0.75rem;
-}
-
-.admin-vaults-table .vcv-input {
-  height: 2rem;
-  padding: 0 0.5rem;
-  font-size: 0.75rem;
-}
-
 .admin-table-center {
   text-align: center;
 }
@@ -147,27 +156,142 @@
   min-width: 10rem;
 }
 
-.admin-vaults-table .admin-input {
-  min-width: 9rem;
-}
-
-.admin-vaults-table td:nth-child(5),
-.admin-vaults-table th:nth-child(5) {
-  white-space: normal;
-  min-width: 14rem;
-}
-
-.admin-vaults-table .admin-input[name="vault-mounts"] {
-  min-width: 14rem;
-}
-
-.admin-vaults-table input[type="checkbox"] {
-  accent-color: #10b981;
-}
-
 .admin-note {
   font-size: 0.75rem;
   color: #64748b;
+}
+
+.admin-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-section-hint {
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.admin-vaults-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-vault-accordion {
+  border-radius: 0.75rem;
+  border: 1px solid rgb(226 232 240 / 80%);
+  background: #fff;
+}
+
+.admin-vault-summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem;
+}
+
+.admin-vault-summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-vault-summary-title {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.admin-vault-summary-meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.admin-vault-summary-address {
+  font-size: 0.75rem;
+  color: #64748b;
+  max-width: 18rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-vault-card {
+  border-top: 1px solid rgb(226 232 240 / 80%);
+  padding: 0.75rem;
+  background: #f8fafc;
+}
+
+.admin-vault-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.admin-vault-card-title {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-vault-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-vault-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-toggle input[type="checkbox"] {
+  margin: 0;
+  accent-color: #10b981;
+}
+
+.admin-toggle-label {
+  font-size: 0.75rem;
+  color: #475569;
+}
+
+.admin-token-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-token-row .vcv-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-vault-card .vcv-input {
+  height: 2rem;
+  padding: 0 0.5rem;
+  font-size: 0.8125rem;
+}
+
+@media (900px >= width) {
+  .admin-vault-card-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (900px >= width) {
