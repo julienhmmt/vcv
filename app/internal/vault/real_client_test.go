@@ -16,6 +16,7 @@ import (
 
 	"vcv/config"
 	"vcv/internal/cache"
+	"vcv/internal/certs"
 
 	"github.com/hashicorp/vault/api"
 )
@@ -211,4 +212,132 @@ func TestRealClient_ListCertificates_And_Details(t *testing.T) {
 	}
 	client.InvalidateCache()
 	client.Shutdown()
+}
+
+func TestCheckConnection_NotInitialized(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/v1/sys/health" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": false, "sealed": false})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+	err := client.CheckConnection(context.Background())
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+}
+
+func TestCheckConnection_Sealed(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/v1/sys/health" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": true})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+	err := client.CheckConnection(context.Background())
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+}
+
+func TestListCertificatesFromMount_KeysWrongType(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"keys": "nope"}})
+			return
+		}
+		if r.URL.Path == "/v1/sys/health" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+	_, _, err := client.listCertificatesFromMount(context.Background(), "pki")
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+}
+
+func TestReadCertificateFromMount_MissingCertificateField(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet && r.URL.Path == "/v1/pki/cert/aa" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{}})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+	_, err := client.readCertificateFromMount("pki", "aa")
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+}
+
+func TestReadCertificateFromMount_InvalidPEM(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.Method == http.MethodGet && r.URL.Path == "/v1/pki/cert/aa" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"certificate": "not a pem"}})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+	_, err := client.readCertificateFromMount("pki", "aa")
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+}
+
+func TestGetCertificateDetails_CacheHit(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+	cacheKey := "details_pki:aa"
+	client.cache.Set(cacheKey, certs.DetailedCertificate{SerialNumber: "aa"})
+	result, err := client.GetCertificateDetails(context.Background(), "pki:aa")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if result.SerialNumber != "aa" {
+		t.Fatalf("expected cached details")
+	}
+}
+
+func TestRealClient_CacheSize(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+	if client.CacheSize() != 0 {
+		t.Fatalf("expected cache size 0")
+	}
+	client.cache.Set("k1", "v1")
+	client.cache.Set("k2", "v2")
+	if client.CacheSize() != 2 {
+		t.Fatalf("expected cache size 2")
+	}
 }

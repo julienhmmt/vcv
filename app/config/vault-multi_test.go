@@ -227,3 +227,24 @@ func setEnv(t *testing.T, key string, value string) {
 		_ = os.Unsetenv(key)
 	})
 }
+
+func TestDeriveVaultID_NormalizesAddress(t *testing.T) {
+	tests := []struct {
+		name     string
+		address  string
+		expected string
+	}{
+		{name: "https with port", address: "https://vault.example.com:8200/", expected: "vault-example-com-8200"},
+		{name: "http with path", address: "http://vault.example.com:8200/prefix", expected: "vault-example-com-8200-prefix"},
+		{name: "trim", address: "  https://vault.example.com:8200  ", expected: "vault-example-com-8200"},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			actual := deriveVaultID(tt.address)
+			if actual != tt.expected {
+				t.Fatalf("expected %q, got %q", tt.expected, actual)
+			}
+		})
+	}
+}

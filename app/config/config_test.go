@@ -212,3 +212,67 @@ func clearEnv(t *testing.T) {
 		_ = os.Unsetenv(key)
 	}
 }
+
+func TestConfig_IsDev_IsProd(t *testing.T) {
+	tests := []struct {
+		name       string
+		env        Environment
+		expectDev  bool
+		expectProd bool
+	}{
+		{name: "dev", env: EnvDev, expectDev: true, expectProd: false},
+		{name: "prod", env: EnvProd, expectDev: false, expectProd: true},
+		{name: "stage", env: EnvStage, expectDev: false, expectProd: false},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := Config{Env: tt.env}
+			if cfg.IsDev() != tt.expectDev {
+				t.Fatalf("unexpected IsDev result")
+			}
+			if cfg.IsProd() != tt.expectProd {
+				t.Fatalf("unexpected IsProd result")
+			}
+		})
+	}
+}
+
+func TestLoadSettingsFile_SettingsPathMissing(t *testing.T) {
+	clearEnv(t)
+	missingPath := filepath.Join(t.TempDir(), "missing.json")
+	if err := os.Setenv("SETTINGS_PATH", missingPath); err != nil {
+		t.Fatalf("failed to set SETTINGS_PATH: %v", err)
+	}
+	settings, settingsPath, err := loadSettingsFile()
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if settings != nil {
+		t.Fatalf("expected nil settings")
+	}
+	if settingsPath != missingPath {
+		t.Fatalf("expected settingsPath %q, got %q", missingPath, settingsPath)
+	}
+}
+
+func TestLoadSettingsFile_SettingsPathInvalidJSON(t *testing.T) {
+	clearEnv(t)
+	path := filepath.Join(t.TempDir(), "settings.json")
+	if err := os.WriteFile(path, []byte("{invalid"), 0o644); err != nil {
+		t.Fatalf("failed to write settings file: %v", err)
+	}
+	if err := os.Setenv("SETTINGS_PATH", path); err != nil {
+		t.Fatalf("failed to set SETTINGS_PATH: %v", err)
+	}
+	settings, settingsPath, err := loadSettingsFile()
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if settings != nil {
+		t.Fatalf("expected nil settings")
+	}
+	if settingsPath != path {
+		t.Fatalf("expected settingsPath %q, got %q", path, settingsPath)
+	}
+}

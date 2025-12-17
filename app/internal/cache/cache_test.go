@@ -96,3 +96,23 @@ func TestCache_Cleanup(t *testing.T) {
 		t.Error("expected fresh key to remain after cleanup")
 	}
 }
+
+func TestCache_Size(t *testing.T) {
+	c := cache.New(1 * time.Minute)
+	if c.Size() != 0 {
+		t.Fatalf("expected size 0")
+	}
+	c.Set("k1", "v1")
+	c.Set("k2", "v2")
+	if c.Size() != 2 {
+		t.Fatalf("expected size 2")
+	}
+	c.Invalidate("k1")
+	if c.Size() != 1 {
+		t.Fatalf("expected size 1")
+	}
+	c.Clear()
+	if c.Size() != 0 {
+		t.Fatalf("expected size 0")
+	}
+}
