@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"io/fs"
@@ -10,6 +11,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -23,6 +25,8 @@ import (
 	"vcv/middleware"
 )
 
+const footerVaultPreviewMaxCount int = 3
+
 type certDetailsTemplateData struct {
 	Certificate   certs.DetailedCertificate
 	Messages      i18n.Messages
@@ -35,9 +39,54 @@ type certDetailsTemplateData struct {
 
 type footerStatusTemplateData struct {
 	VersionText string
-	VaultText   string
-	VaultClass  string
-	VaultTitle  string
+	VaultPills  []footerVaultStatusTemplateData
+
+	VaultSummaryPill  *footerVaultStatusTemplateData
+	VaultPreviewPills []footerVaultStatusTemplateData
+	VaultAllPills     []footerVaultStatusTemplateData
+	VaultHiddenCount  int
+}
+
+type footerVaultStatusTemplateData struct {
+	Text  string
+	Class string
+	Title string
+}
+
+type footerVaultHealthCache struct {
+	ttl    time.Duration
+	mu     sync.Mutex
+	values map[string]footerVaultHealthCacheEntry
+}
+
+type footerVaultHealthCacheEntry struct {
+	checkedAt       time.Time
+	connected       bool
+	errText         string
+	isNotConfigured bool
+}
+
+func newFooterVaultHealthCache(ttl time.Duration) *footerVaultHealthCache {
+	return &footerVaultHealthCache{ttl: ttl, values: make(map[string]footerVaultHealthCacheEntry)}
+}
+
+func (c *footerVaultHealthCache) get(vaultID string) (footerVaultHealthCacheEntry, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	entry, ok := c.values[vaultID]
+	if !ok {
+		return footerVaultHealthCacheEntry{}, false
+	}
+	if time.Since(entry.checkedAt) > c.ttl {
+		return footerVaultHealthCacheEntry{}, false
+	}
+	return entry, true
+}
+
+func (c *footerVaultHealthCache) set(vaultID string, entry footerVaultHealthCacheEntry) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.values[vaultID] = entry
 }
 
 type themeToggleTemplateData struct {
@@ -48,6 +97,7 @@ type themeToggleTemplateData struct {
 type certsFragmentTemplateData struct {
 	Rows                  []certRowTemplateData
 	Messages              i18n.Messages
+	ShowVaultMount        bool
 	PageInfoText          string
 	PageCountText         string
 	PageCountHidden       bool
@@ -59,9 +109,13 @@ type certsFragmentTemplateData struct {
 	SortCommonActive      bool
 	SortCreatedActive     bool
 	SortExpiresActive     bool
+	SortVaultActive       bool
+	SortPkiActive         bool
 	SortCommonDir         string
 	SortCreatedDir        string
 	SortExpiresDir        string
+	SortVaultDir          string
+	SortPkiDir            string
 	PaginationPrevText    string
 	PaginationNextText    string
 	DashboardTotal        int
@@ -102,6 +156,9 @@ type expiryTimelineItemTemplateData struct {
 type certRowTemplateData struct {
 	ID                 string
 	CommonName         string
+	VaultName          string
+	MountName          string
+	ShowVaultMount     bool
 	Sans               string
 	CreatedAt          string
 	ExpiresAt          string
@@ -124,6 +181,8 @@ type certsQueryState struct {
 	SearchTerm     string
 	StatusFilter   string
 	ExpiryFilter   string
+	VaultFilter    string
+	PKIFilter      string
 	PageSize       string
 	PageIndex      int
 	SortKey        string
@@ -134,11 +193,12 @@ type certsQueryState struct {
 	TriggerID      string
 }
 
-func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, expirationThresholds config.ExpirationThresholds) {
+func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstances []config.VaultInstance, vaultStatusClients map[string]vault.Client, webFS fs.FS, expirationThresholds config.ExpirationThresholds) {
 	templates, err := template.ParseFS(webFS, "templates/*.html")
 	if err != nil {
 		panic(err)
 	}
+	vaultHealthCache := newFooterVaultHealthCache(5 * time.Second)
 	router.Post("/ui/theme/toggle", func(w http.ResponseWriter, r *http.Request) {
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -176,6 +236,8 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 		language := resolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
 		queryState := parseCertsQueryState(r)
+		vaultDisplayNames := buildVaultDisplayNames(vaultInstances)
+		showVaultMount := shouldShowVaultMount(vaultInstances)
 		certificates, listErr := vaultClient.ListCertificates(r.Context())
 		if listErr != nil {
 			requestID := middleware.GetRequestID(r.Context())
@@ -185,7 +247,7 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		if err := renderCertsFragment(w, templates, certificates, expirationThresholds, messages, queryState); err != nil {
+		if err := renderCertsFragment(w, templates, certificates, expirationThresholds, messages, queryState, vaultDisplayNames, showVaultMount); err != nil {
 			requestID := middleware.GetRequestID(r.Context())
 			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
@@ -202,6 +264,8 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 		language := resolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
 		queryState := parseCertsQueryState(r)
+		vaultDisplayNames := buildVaultDisplayNames(vaultInstances)
+		showVaultMount := shouldShowVaultMount(vaultInstances)
 		certificates, listErr := vaultClient.ListCertificates(r.Context())
 		if listErr != nil {
 			requestID := middleware.GetRequestID(r.Context())
@@ -211,7 +275,7 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		if err := renderCertsFragment(w, templates, certificates, expirationThresholds, messages, queryState); err != nil {
+		if err := renderCertsFragment(w, templates, certificates, expirationThresholds, messages, queryState, vaultDisplayNames, showVaultMount); err != nil {
 			requestID := middleware.GetRequestID(r.Context())
 			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
@@ -226,22 +290,73 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, webFS fs.FS, 
 	router.Get("/ui/status", func(w http.ResponseWriter, r *http.Request) {
 		language := resolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
-		vaultTitle := ""
-		var vaultClass string
-		var vaultText string
-		if vaultErr := vaultClient.CheckConnection(r.Context()); vaultErr != nil {
-			vaultClass = "vcv-footer-pill vcv-footer-pill-error"
-			vaultText = messages.FooterVaultDisconnected
-			vaultTitle = vaultErr.Error()
+		vaultPills := make([]footerVaultStatusTemplateData, 0, len(vaultInstances))
+		connectedCount := 0
+		totalCount := len(vaultInstances)
+		if len(vaultInstances) == 0 || len(vaultStatusClients) == 0 {
+			vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: messages.FooterVaultNotConfigured, Class: "vcv-footer-pill", Title: vault.ErrVaultNotConfigured.Error()})
 		} else {
-			vaultClass = "vcv-footer-pill vcv-footer-pill-ok"
-			vaultText = messages.FooterVaultConnected
+			for _, instance := range vaultInstances {
+				name := strings.TrimSpace(instance.DisplayName)
+				if name == "" {
+					name = strings.TrimSpace(instance.ID)
+				}
+				if name == "" {
+					name = "Vault"
+				}
+				client, ok := vaultStatusClients[instance.ID]
+				if !ok || client == nil {
+					vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: name, Class: "vcv-footer-pill vcv-footer-pill-error", Title: "missing vault status client"})
+					continue
+				}
+				title := ""
+				cssClass := "vcv-footer-pill"
+				entry, found := vaultHealthCache.get(instance.ID)
+				if !found {
+					vaultErr := client.CheckConnection(r.Context())
+					entry = footerVaultHealthCacheEntry{checkedAt: time.Now(), connected: vaultErr == nil}
+					if vaultErr != nil {
+						entry.errText = vaultErr.Error()
+						entry.isNotConfigured = errors.Is(vaultErr, vault.ErrVaultNotConfigured)
+					}
+					vaultHealthCache.set(instance.ID, entry)
+				}
+				if !entry.connected {
+					if entry.isNotConfigured {
+						title = messages.FooterVaultNotConfigured
+					} else {
+						cssClass = "vcv-footer-pill vcv-footer-pill-error"
+						title = entry.errText
+					}
+				} else {
+					cssClass = "vcv-footer-pill vcv-footer-pill-ok"
+					title = messages.FooterVaultConnected
+					connectedCount++
+				}
+				vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: name, Class: cssClass, Title: title})
+			}
 		}
-		data := footerStatusTemplateData{
-			VersionText: interpolatePlaceholder(messages.FooterVersion, "version", version.Version),
-			VaultText:   vaultText,
-			VaultClass:  vaultClass,
-			VaultTitle:  vaultTitle,
+		data := footerStatusTemplateData{VersionText: interpolatePlaceholder(messages.FooterVersion, "version", version.Version), VaultPills: vaultPills}
+		if totalCount > 1 {
+			summaryValue := interpolatePlaceholder(messages.FooterVaultSummary, "up", fmt.Sprintf("%d", connectedCount))
+			summaryText := interpolatePlaceholder(summaryValue, "total", fmt.Sprintf("%d", totalCount))
+			summaryClass := "vcv-footer-pill vcv-footer-pill-summary"
+			if connectedCount == totalCount {
+				summaryClass = summaryClass + " vcv-footer-pill-ok"
+			} else {
+				summaryClass = summaryClass + " vcv-footer-pill-error"
+			}
+			summary := footerVaultStatusTemplateData{Text: summaryText, Class: summaryClass, Title: summaryText}
+			previewEnd := footerVaultPreviewMaxCount
+			if previewEnd > len(vaultPills) {
+				previewEnd = len(vaultPills)
+			}
+			preview := make([]footerVaultStatusTemplateData, 0, previewEnd)
+			preview = append(preview, vaultPills[:previewEnd]...)
+			data.VaultSummaryPill = &summary
+			data.VaultPreviewPills = preview
+			data.VaultAllPills = vaultPills
+			data.VaultHiddenCount = len(vaultPills) - previewEnd
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -362,6 +477,8 @@ func parseCertsQueryState(r *http.Request) certsQueryState {
 		SearchTerm:     strings.TrimSpace(query.Get("search")),
 		StatusFilter:   strings.TrimSpace(query.Get("status")),
 		ExpiryFilter:   strings.TrimSpace(query.Get("expiry")),
+		VaultFilter:    strings.TrimSpace(query.Get("vault")),
+		PKIFilter:      strings.TrimSpace(query.Get("pki")),
 		PageSize:       strings.TrimSpace(query.Get("pageSize")),
 		PageIndex:      pageIndex,
 		SortKey:        strings.TrimSpace(query.Get("sortKey")),
@@ -376,6 +493,12 @@ func parseCertsQueryState(r *http.Request) certsQueryState {
 	}
 	if state.ExpiryFilter == "" {
 		state.ExpiryFilter = "all"
+	}
+	if state.VaultFilter == "" {
+		state.VaultFilter = "all"
+	}
+	if state.PKIFilter == "" {
+		state.PKIFilter = "all"
 	}
 	if state.PageSize == "" {
 		state.PageSize = "25"
@@ -425,7 +548,7 @@ func shouldResetPageIndex(triggerID string, pageAction string) bool {
 		return false
 	}
 	switch triggerID {
-	case "vcv-search", "vcv-status-filter", "vcv-expiry-filter", "vcv-page-size", "vcv-mounts", "mount-selector", "vcv-sort-commonName", "vcv-sort-createdAt", "vcv-sort-expiresAt":
+	case "vcv-search", "vcv-status-filter", "vcv-expiry-filter", "vcv-vault-filter", "vcv-pki-filter", "vcv-page-size", "vcv-mounts", "mount-selector", "vcv-sort-commonName", "vcv-sort-createdAt", "vcv-sort-expiresAt":
 		return true
 	default:
 		return false
@@ -481,6 +604,8 @@ func paginateCertificates(items []certs.Certificate, pageIndex int, pageSize str
 
 func applyCertificateFilters(items []certs.Certificate, state certsQueryState, sortKey string, sortDirection string) []certs.Certificate {
 	loweredTerm := strings.ToLower(strings.TrimSpace(state.SearchTerm))
+	vaultFilter := strings.ToLower(strings.TrimSpace(state.VaultFilter))
+	pkiFilter := strings.ToLower(strings.TrimSpace(state.PKIFilter))
 	now := time.Now().UTC()
 	maxDays := -1
 	if state.ExpiryFilter != "" && state.ExpiryFilter != "all" {
@@ -488,6 +613,17 @@ func applyCertificateFilters(items []certs.Certificate, state certsQueryState, s
 	}
 	filtered := make([]certs.Certificate, 0, len(items))
 	for _, certificate := range items {
+		vaultID, mountName := extractVaultIDAndMountName(certificate.ID)
+		if vaultFilter != "" && vaultFilter != "all" {
+			if strings.ToLower(vaultID) != vaultFilter {
+				continue
+			}
+		}
+		if pkiFilter != "" && pkiFilter != "all" {
+			if strings.ToLower(mountName) != pkiFilter {
+				continue
+			}
+		}
 		statuses := certificateStatuses(certificate, now)
 		if state.StatusFilter != "all" && !containsString(statuses, state.StatusFilter) {
 			continue
@@ -540,6 +676,38 @@ func sortCertificates(items []certs.Certificate, sortKey string, sortDirection s
 		leftCert := sorted[left]
 		rightCert := sorted[right]
 		ascending := sortDirection != "desc"
+		if sortKey == "vault" {
+			leftVault, leftMount := extractVaultIDAndMountName(leftCert.ID)
+			rightVault, rightMount := extractVaultIDAndMountName(rightCert.ID)
+			leftValue := strings.ToLower(leftVault)
+			rightValue := strings.ToLower(rightVault)
+			if leftValue == rightValue {
+				if ascending {
+					return strings.ToLower(leftMount) < strings.ToLower(rightMount)
+				}
+				return strings.ToLower(rightMount) < strings.ToLower(leftMount)
+			}
+			if ascending {
+				return leftValue < rightValue
+			}
+			return rightValue < leftValue
+		}
+		if sortKey == "pki" {
+			leftVault, leftMount := extractVaultIDAndMountName(leftCert.ID)
+			rightVault, rightMount := extractVaultIDAndMountName(rightCert.ID)
+			leftValue := strings.ToLower(leftMount)
+			rightValue := strings.ToLower(rightMount)
+			if leftValue == rightValue {
+				if ascending {
+					return strings.ToLower(leftVault) < strings.ToLower(rightVault)
+				}
+				return strings.ToLower(rightVault) < strings.ToLower(leftVault)
+			}
+			if ascending {
+				return leftValue < rightValue
+			}
+			return rightValue < leftValue
+		}
 		if sortKey == "createdAt" {
 			if ascending {
 				return leftCert.CreatedAt.Before(rightCert.CreatedAt)
@@ -562,6 +730,62 @@ func sortCertificates(items []certs.Certificate, sortKey string, sortDirection s
 	return sorted
 }
 
+func buildVaultDisplayNames(instances []config.VaultInstance) map[string]string {
+	values := make(map[string]string, len(instances))
+	for _, instance := range instances {
+		vaultID := strings.TrimSpace(instance.ID)
+		if vaultID == "" {
+			continue
+		}
+		displayName := strings.TrimSpace(instance.DisplayName)
+		if displayName == "" {
+			displayName = vaultID
+		}
+		values[vaultID] = displayName
+	}
+	return values
+}
+
+func countUniqueMounts(instances []config.VaultInstance) int {
+	uniqueMounts := make(map[string]struct{}, 4)
+	for _, instance := range instances {
+		for _, mount := range instance.PKIMounts {
+			trimmed := strings.TrimSpace(mount)
+			if trimmed == "" {
+				continue
+			}
+			uniqueMounts[trimmed] = struct{}{}
+		}
+	}
+	return len(uniqueMounts)
+}
+
+func shouldShowVaultMount(instances []config.VaultInstance) bool {
+	if len(instances) > 1 {
+		return true
+	}
+	return countUniqueMounts(instances) > 1
+}
+
+func extractVaultIDAndMountName(certificateID string) (string, string) {
+	trimmed := strings.TrimSpace(certificateID)
+	if trimmed == "" {
+		return "", ""
+	}
+	vaultID := ""
+	mountSerial := trimmed
+	if parts := strings.SplitN(trimmed, "|", 2); len(parts) == 2 {
+		vaultID = strings.TrimSpace(parts[0])
+		mountSerial = strings.TrimSpace(parts[1])
+	}
+	parts := strings.SplitN(mountSerial, ":", 2)
+	if len(parts) < 2 {
+		return vaultID, ""
+	}
+	mountName := strings.TrimSpace(parts[0])
+	return vaultID, mountName
+}
+
 func buildPaginationInfo(messages i18n.Messages, pageSize string, pageIndex int, totalPages int) string {
 	if pageSize == "all" {
 		return messages.PaginationAll
@@ -574,10 +798,17 @@ func buildPaginationInfo(messages i18n.Messages, pageSize string, pageIndex int,
 	return interpolatePlaceholder(value, "total", fmt.Sprintf("%d", totalPages))
 }
 
-func buildCertRows(items []certs.Certificate, messages i18n.Messages, thresholds config.ExpirationThresholds) []certRowTemplateData {
+func buildCertRows(items []certs.Certificate, messages i18n.Messages, thresholds config.ExpirationThresholds, vaultDisplayNames map[string]string, showVaultMount bool) []certRowTemplateData {
 	now := time.Now().UTC()
 	rows := make([]certRowTemplateData, 0, len(items))
 	for _, certificate := range items {
+		vaultID, mountName := extractVaultIDAndMountName(certificate.ID)
+		vaultName := vaultID
+		if vaultDisplayNames != nil {
+			if displayName, ok := vaultDisplayNames[vaultID]; ok {
+				vaultName = displayName
+			}
+		}
 		statuses := certificateStatuses(certificate, now)
 		badgeViews := make([]certStatusBadgeTemplateData, 0, len(statuses))
 		rowClasses := make([]string, 0, len(statuses))
@@ -588,21 +819,34 @@ func buildCertRows(items []certs.Certificate, messages i18n.Messages, thresholds
 		daysRemainingText := ""
 		daysRemainingClass := ""
 		daysRemaining := daysUntil(certificate.ExpiresAt.UTC(), now)
+		hasExpired := !certificate.ExpiresAt.IsZero() && !certificate.ExpiresAt.After(now)
+		if hasExpired {
+			expiredSince := interpolatePlaceholder(messages.ExpiredSince, "date", certificate.ExpiresAt.UTC().Format("2006-01-02"))
+			daysRemainingText = expiredSince
+			daysRemainingClass = "vcv-days-remaining vcv-days-critical"
+		}
 		if thresholds.Warning > 0 && daysRemaining >= 0 && daysRemaining <= thresholds.Warning {
+			if hasExpired {
+				goto appendRow
+			}
 			if thresholds.Critical > 0 && daysRemaining <= thresholds.Critical {
 				daysRemainingClass = "vcv-days-remaining vcv-days-critical"
 			} else {
 				daysRemainingClass = "vcv-days-remaining vcv-days-warning"
 			}
-			if daysRemaining == 1 {
-				daysRemainingText = interpolatePlaceholder(messages.DaysRemainingSingular, "days", "1")
+			if daysRemaining == 0 || daysRemaining == 1 {
+				daysRemainingText = interpolatePlaceholder(messages.DaysRemainingSingular, "days", fmt.Sprintf("%d", daysRemaining))
 			} else {
 				daysRemainingText = interpolatePlaceholder(messages.DaysRemaining, "days", fmt.Sprintf("%d", daysRemaining))
 			}
 		}
+	appendRow:
 		rows = append(rows, certRowTemplateData{
 			ID:                 certificate.ID,
 			CommonName:         certificate.CommonName,
+			VaultName:          vaultName,
+			MountName:          mountName,
+			ShowVaultMount:     showVaultMount,
 			Sans:               strings.Join(certificate.Sans, ", "),
 			CreatedAt:          formatTime(certificate.CreatedAt),
 			ExpiresAt:          formatTime(certificate.ExpiresAt),
@@ -646,7 +890,7 @@ func containsString(values []string, needle string) bool {
 	return false
 }
 
-func renderCertsFragment(w http.ResponseWriter, templates *template.Template, certificates []certs.Certificate, expirationThresholds config.ExpirationThresholds, messages i18n.Messages, queryState certsQueryState) error {
+func renderCertsFragment(w http.ResponseWriter, templates *template.Template, certificates []certs.Certificate, expirationThresholds config.ExpirationThresholds, messages i18n.Messages, queryState certsQueryState, vaultDisplayNames map[string]string, showVaultMount bool) error {
 	filteredByMount := filterCertificatesByMounts(certificates, queryState.SelectedMounts)
 	dashboardStats := computeDashboardStats(filteredByMount, expirationThresholds)
 	chartData := computeStatusChartData(filteredByMount, messages)
@@ -687,6 +931,7 @@ func renderCertsFragment(w http.ResponseWriter, templates *template.Template, ce
 		DualStatusCount:       chartData.DualStatusCount,
 		DualStatusNoteText:    chartData.DualStatusNoteText,
 		Messages:              messages,
+		ShowVaultMount:        showVaultMount,
 		PageCountHidden:       len(visible) == 0,
 		PageCountText:         fmt.Sprintf("%d", len(visible)),
 		PageIndex:             pageIndex,
@@ -695,7 +940,7 @@ func renderCertsFragment(w http.ResponseWriter, templates *template.Template, ce
 		PagePrevDisabled:      queryState.PageSize == "all" || pageIndex <= 0,
 		PaginationNextText:    messages.PaginationNext,
 		PaginationPrevText:    messages.PaginationPrev,
-		Rows:                  buildCertRows(pageVisible, messages, expirationThresholds),
+		Rows:                  buildCertRows(pageVisible, messages, expirationThresholds, vaultDisplayNames, showVaultMount),
 		SortCommonActive:      sortKey == "commonName",
 		SortCommonDir:         resolveSortDirAttribute(sortKey, sortDirection, "commonName"),
 		SortCreatedActive:     sortKey == "createdAt",
@@ -703,6 +948,10 @@ func renderCertsFragment(w http.ResponseWriter, templates *template.Template, ce
 		SortDirection:         sortDirection,
 		SortExpiresActive:     sortKey == "expiresAt",
 		SortExpiresDir:        resolveSortDirAttribute(sortKey, sortDirection, "expiresAt"),
+		SortVaultActive:       sortKey == "vault",
+		SortVaultDir:          resolveSortDirAttribute(sortKey, sortDirection, "vault"),
+		SortPkiActive:         sortKey == "pki",
+		SortPkiDir:            resolveSortDirAttribute(sortKey, sortDirection, "pki"),
 		SortKey:               sortKey,
 		TimelineItems:         timelineItems,
 	}

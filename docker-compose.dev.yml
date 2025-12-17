@@ -15,7 +15,7 @@ services:
     cap_add:
       - IPC_LOCK
     # command: "server -dev -dev-root-token-id=root -dev-listen-address=0.0.0.0:8200"
-    command: "/vault-dev-init.sh"
+    command: "sh /vault-dev-init.sh"
     networks:
       - vcv-network
     volumes:
@@ -31,7 +31,7 @@ services:
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     cap_add:
       - IPC_LOCK
-    command: "/vault-dev-init-2.sh"
+    command: "sh /vault-dev-init-2.sh"
     networks:
       - vcv-network
     volumes:
@@ -47,11 +47,43 @@ services:
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     cap_add:
       - IPC_LOCK
-    command: "/vault-dev-init-3.sh"
+    command: "sh /vault-dev-init-3.sh"
     networks:
       - vcv-network
     volumes:
       - ./vault-dev-init-3.sh:/vault-dev-init-3.sh:ro
+
+  vault-dev-4:
+    image: hashicorp/vault:1.21.1
+    container_name: vault-dev-4
+    ports:
+      - "8203:8200/tcp"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: "sh /vault-dev-init-4.sh"
+    networks:
+      - vcv-network
+    volumes:
+      - ./vault-dev-init-4.sh:/vault-dev-init-4.sh:ro
+
+  vault-dev-5:
+    image: hashicorp/vault:1.21.1
+    container_name: vault-dev-5
+    ports:
+      - "8204:8200/tcp"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: "sh /vault-dev-init-5.sh"
+    networks:
+      - vcv-network
+    volumes:
+      - ./vault-dev-init-5.sh:/vault-dev-init-5.sh:ro
 
   app:
     # build:
@@ -64,27 +96,20 @@ services:
     networks:
       - vcv-network
     environment:
-      - APP_ENV=dev
-      - LOG_LEVEL=debug
-      - LOG_FORMAT=json
-      # Log file path (required if LOG_OUTPUT is 'file' or 'both')
-      - LOG_FILE_PATH=/var/log/app/vcv.log
-      - LOG_OUTPUT=both # 'file', 'stdout' or 'both'
-      - PORT=52000
-      - VAULT_ADDR=http://vault:8200
-      - VAULT_PKI_MOUNTS=pki,pki_dev,pki_stage,pki_production
-      - VAULT_READ_TOKEN=root
-      - VAULT_TLS_INSECURE=true
-      # Certificate expiration thresholds (in days)
-      - VCV_EXPIRE_CRITICAL=2
-      - VCV_EXPIRE_WARNING=10
+      - VCV_ADMIN_PASSWORD=$$2y$$10$$.SWJT4Amz9tyq4qq2vqQyOZm/KZAf38YVVNxj/6EvYLk4I0C6Q9A2
+      - SETTINGS_PATH=/app/settings.dev.json
     depends_on:
       - vault
+      - vault-dev-2
+      - vault-dev-3
+      - vault-dev-4
+      - vault-dev-5
     read_only: true
     security_opt:
       - no-new-privileges:true
     volumes:
       - ./vcv.log:/var/log/app/vcv.log
+      - ./settings.dev.json:/app/settings.dev.json
     deploy:
       resources:
         limits:

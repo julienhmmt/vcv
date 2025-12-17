@@ -110,3 +110,45 @@ func TestGetConfig_EncodingError(t *testing.T) {
 	// This should not panic
 	handler(w, req)
 }
+
+func TestGetConfig_NilSlicesAndVaultFiltering(t *testing.T) {
+	cfg := config.Config{
+		ExpirationThresholds: config.ExpirationThresholds{Critical: 1, Warning: 2},
+		Vault:                config.VaultConfig{PKIMounts: nil},
+		Vaults: []config.VaultInstance{
+			{ID: "", DisplayName: "ignored", PKIMounts: []string{"pki"}},
+			{ID: "v1", DisplayName: "", PKIMounts: nil},
+			{ID: "v2", DisplayName: "Vault 2", PKIMounts: []string{"pki", "pki_dev"}},
+		},
+	}
+
+	h := GetConfig(cfg)
+	req := httptest.NewRequest(http.MethodGet, "/api/config", nil)
+	res := httptest.NewRecorder()
+	h(res, req)
+	if res.Code != http.StatusOK {
+		t.Fatalf("expected status %d, got %d", http.StatusOK, res.Code)
+	}
+	var resp ConfigResponse
+	if err := json.NewDecoder(res.Body).Decode(&resp); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if resp.PKIMounts == nil {
+		t.Fatalf("expected PKIMounts not nil")
+	}
+	if len(resp.PKIMounts) != 0 {
+		t.Fatalf("expected empty PKIMounts")
+	}
+	if len(resp.Vaults) != 2 {
+		t.Fatalf("expected 2 vaults, got %d", len(resp.Vaults))
+	}
+	if resp.Vaults[0].ID != "v1" {
+		t.Fatalf("expected first vault v1")
+	}
+	if resp.Vaults[0].DisplayName != "v1" {
+		t.Fatalf("expected displayName fallback to id")
+	}
+	if resp.Vaults[0].PKIMounts == nil || len(resp.Vaults[0].PKIMounts) != 0 {
+		t.Fatalf("expected empty pki mounts")
+	}
+}

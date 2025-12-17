@@ -692,8 +692,8 @@ body {
 /* Loading indicator */
 .vcv-loading-indicator {
   position: fixed;
-  inset: 0;
-  margin: auto;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
@@ -1328,6 +1328,46 @@ body {
   box-shadow: 0 0 0 4px rgb(239 68 68 / 20%);
 }
 
+.vcv-footer-vaults-details {
+  display: inline-block;
+  position: relative;
+}
+
+.vcv-footer-vaults-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.vcv-footer-vaults-details > summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.vcv-footer-pill-more {
+  background: rgb(148 163 184 / 14%);
+  border-color: rgb(148 163 184 / 35%);
+}
+
+.vcv-footer-vaults-panel {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.6rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.75rem;
+  background: #0b1220;
+  border: 1px solid rgb(148 163 184 / 25%);
+  box-shadow:
+    0 12px 35px rgb(0 0 0 / 35%),
+    0 2px 8px rgb(0 0 0 / 18%);
+  min-width: 16rem;
+  max-width: min(24rem, 85vw);
+  max-height: min(52vh, 26rem);
+  overflow: auto;
+  z-index: 50;
+}
+
 /* ============================================
    Dark Mode
    ============================================ */
@@ -1392,7 +1432,7 @@ body {
 [data-theme="dark"] .vcv-table-footer {
   background: #0f172a;
   border-color: #334155;
-  box-shadow: 0 10px 28px rgb(0 0 0 / 55%);
+  box-shadow: 0 10px 28px -22px rgb(0 0 0 / 55%);
 }
 
 [data-theme="dark"] .vcv-page-info {
@@ -1542,6 +1582,16 @@ body {
   box-shadow: 0 0 0 4px rgb(239 68 68 / 25%);
 }
 
+[data-theme="dark"] .vcv-footer-pill-more {
+  background: rgb(148 163 184 / 18%);
+  border-color: rgb(148 163 184 / 35%);
+}
+
+[data-theme="dark"] .vcv-footer-vaults-panel {
+  background: #0f172a;
+  border-color: rgb(148 163 184 / 28%);
+}
+
 [data-theme="dark"] .vcv-modal-backdrop {
   background: rgb(0 0 0 / 70%);
 }
@@ -1656,4 +1706,24 @@ body {
 
 .vcv-table td:last-child .vcv-button:last-child {
   margin-right: 0;
+}
+
+.vcv-cert-meta {
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.1;
+  color: #64748b;
+}
+
+.vcv-cert-meta-item {
+  font-weight: 500;
+}
+
+.vcv-cert-meta-sep {
+  margin: 0 0.375rem;
+  opacity: 0.7;
+}
+
+[data-theme="dark"] .vcv-cert-meta {
+  color: #94a3b8;
 }

@@ -42,6 +42,7 @@ type Messages struct {
 	DaysRemaining               string `json:"daysRemaining"`
 	DaysRemainingShort          string `json:"daysRemainingShort"`
 	DaysRemainingSingular       string `json:"daysRemainingSingular"`
+	ExpiredSince                string `json:"expiredSince"`
 	DeselectAll                 string `json:"deselectAll"`
 	DownloadPEMFailed           string `json:"downloadPEMFailed"`
 	DownloadPEMNetworkError     string `json:"downloadPEMNetworkError"`
@@ -54,6 +55,8 @@ type Messages struct {
 	FooterVaultConnected        string `json:"footerVaultConnected"`
 	FooterVaultDisconnected     string `json:"footerVaultDisconnected"`
 	FooterVaultLoading          string `json:"footerVaultLoading"`
+	FooterVaultNotConfigured    string `json:"footerVaultNotConfigured"`
+	FooterVaultSummary          string `json:"footerVaultSummary"`
 	FooterVersion               string `json:"footerVersion"`
 	LabelFingerprintSHA1        string `json:"labelFingerprintSHA1"`
 	LabelFingerprintSHA256      string `json:"labelFingerprintSHA256"`
@@ -139,6 +142,7 @@ var englishMessages = Messages{
 	DaysRemaining:               "{{days}} days remaining",
 	DaysRemainingShort:          "{{days}}d",
 	DaysRemainingSingular:       "{{days}} day remaining",
+	ExpiredSince:                "Expired since the {{date}}",
 	DeselectAll:                 "Deselect all",
 	DownloadPEMFailed:           "Failed to download certificate PEM ({{status}})",
 	DownloadPEMNetworkError:     "Network error downloading certificate PEM. Please try again.",
@@ -151,6 +155,8 @@ var englishMessages = Messages{
 	FooterVaultConnected:        "Vault: connected",
 	FooterVaultDisconnected:     "Vault: disconnected",
 	FooterVaultLoading:          "Vault: …",
+	FooterVaultNotConfigured:    "Vault: not configured",
+	FooterVaultSummary:          "Vaults: {{up}}/{{total}} up",
 	FooterVersion:               "VCV v{{version}}",
 	LabelFingerprintSHA1:        "SHA-1 Fingerprint",
 	LabelFingerprintSHA256:      "SHA-256 Fingerprint",
@@ -230,6 +236,7 @@ var frenchMessages = Messages{
 	DaysRemaining:               "{{days}} jours restants",
 	DaysRemainingShort:          "{{days}}j",
 	DaysRemainingSingular:       "{{days}} jour restant",
+	ExpiredSince:                "Expiré depuis le {{date}}",
 	DeselectAll:                 "Tout désélectionner",
 	DownloadPEMFailed:           "Échec du téléchargement du certificat PEM ({{status}})",
 	DownloadPEMNetworkError:     "Erreur réseau lors du téléchargement du certificat PEM. Veuillez réessayer.",
@@ -242,6 +249,8 @@ var frenchMessages = Messages{
 	FooterVaultConnected:        "Vault : connecté",
 	FooterVaultDisconnected:     "Vault : déconnecté",
 	FooterVaultLoading:          "Vault : …",
+	FooterVaultNotConfigured:    "Vault : non configuré",
+	FooterVaultSummary:          "Vaults : {{up}}/{{total}} OK",
 	FooterVersion:               "VCV v{{version}}",
 	LabelFingerprintSHA1:        "Empreinte SHA-1",
 	LabelFingerprintSHA256:      "Empreinte SHA-256",
@@ -321,6 +330,7 @@ var spanishMessages = Messages{
 	DaysRemaining:               "{{days}} días restantes",
 	DaysRemainingShort:          "{{days}}d",
 	DaysRemainingSingular:       "{{days}} día restante",
+	ExpiredSince:                "Vencido desde el {{date}}",
 	DeselectAll:                 "Deseleccionar todo",
 	DownloadPEMFailed:           "Error al descargar el certificado PEM ({{status}})",
 	DownloadPEMNetworkError:     "Error de red al descargar el certificado PEM. Por favor intente nuevamente.",
@@ -333,6 +343,8 @@ var spanishMessages = Messages{
 	FooterVaultConnected:        "Vault: conectado",
 	FooterVaultDisconnected:     "Vault: desconectado",
 	FooterVaultLoading:          "Vault: …",
+	FooterVaultNotConfigured:    "Vault: no configurado",
+	FooterVaultSummary:          "Vaults: {{up}}/{{total}} OK",
 	FooterVersion:               "VCV v{{version}}",
 	LabelFingerprintSHA1:        "Huella SHA-1",
 	LabelFingerprintSHA256:      "Huella SHA-256",
@@ -412,6 +424,7 @@ var germanMessages = Messages{
 	DaysRemaining:               "{{days}} verbleibende Tage",
 	DaysRemainingShort:          "{{days}}T",
 	DaysRemainingSingular:       "{{days}} verbleibender Tag",
+	ExpiredSince:                "Abgelaufen seit dem {{date}}",
 	DeselectAll:                 "Alle abwählen",
 	DownloadPEMFailed:           "Zertifikat-PEM konnte nicht heruntergeladen werden ({{status}})",
 	DownloadPEMNetworkError:     "Netzwerkfehler beim Herunterladen des Zertifikat-PEM. Bitte versuchen Sie es erneut.",
@@ -424,6 +437,8 @@ var germanMessages = Messages{
 	FooterVaultConnected:        "Vault: verbunden",
 	FooterVaultDisconnected:     "Vault: getrennt",
 	FooterVaultLoading:          "Vault: …",
+	FooterVaultNotConfigured:    "Vault: nicht konfiguriert",
+	FooterVaultSummary:          "Vaults: {{up}}/{{total}} OK",
 	FooterVersion:               "VCV v{{version}}",
 	LabelFingerprintSHA1:        "SHA-1-Fingerabdruck",
 	LabelFingerprintSHA256:      "SHA-256-Fingerabdruck",
@@ -503,10 +518,11 @@ var italianMessages = Messages{
 	DaysRemaining:               "{{days}} giorni rimanenti",
 	DaysRemainingShort:          "{{days}}g",
 	DaysRemainingSingular:       "{{days}} giorno rimanente",
+	ExpiredSince:                "Scaduto dal {{date}}",
 	DeselectAll:                 "Deseleziona tutto",
 	DownloadPEMFailed:           "Impossibile scaricare il certificato PEM ({{status}})",
 	DownloadPEMNetworkError:     "Errore di rete durante il download del certificato PEM. Riprova.",
-	DownloadPEMSuccess:          "Certificato PEM scaricato correttamente",
+	DownloadPEMSuccess:          "Certificato PEM scaricato con successo",
 	DualStatusNote:              "{{count}} certificato(i) sono sia scaduti che revocati",
 	ExpiryFilter30Days:          "≤ 30 giorni",
 	ExpiryFilter7Days:           "≤ 7 giorni",
@@ -515,6 +531,8 @@ var italianMessages = Messages{
 	FooterVaultConnected:        "Vault: connesso",
 	FooterVaultDisconnected:     "Vault: disconnesso",
 	FooterVaultLoading:          "Vault: …",
+	FooterVaultNotConfigured:    "Vault: non configurato",
+	FooterVaultSummary:          "Vaults: {{up}}/{{total}} OK",
 	FooterVersion:               "VCV v{{version}}",
 	LabelFingerprintSHA1:        "Impronta SHA-1",
 	LabelFingerprintSHA256:      "Impronta SHA-256",

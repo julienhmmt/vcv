@@ -6,6 +6,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -155,5 +156,111 @@ func TestInvalidateCache(t *testing.T) {
 	router.ServeHTTP(rec, req)
 
 	assert.Equal(t, http.StatusNoContent, rec.Code)
+	mockVault.AssertExpectations(t)
+}
+
+type failingResponseWriter struct {
+	header http.Header
+}
+
+func (w *failingResponseWriter) Header() http.Header {
+	if w.header == nil {
+		w.header = make(http.Header)
+	}
+	return w.header
+}
+
+func (w *failingResponseWriter) Write([]byte) (int, error) {
+	return 0, errors.New("write failed")
+}
+
+func (w *failingResponseWriter) WriteHeader(statusCode int) {
+}
+
+func TestListCertificates_MountsQuery_AllSentinelReturnsAll(t *testing.T) {
+	mockVault := new(vault.MockClient)
+	certsList := []certs.Certificate{{ID: "pki:a", CommonName: "a", ExpiresAt: time.Now()}, {ID: "pki:b", CommonName: "b", ExpiresAt: time.Now()}}
+	mockVault.On("ListCertificates", mock.Anything).Return(certsList, nil)
+	router := setupRouter(mockVault)
+	req := httptest.NewRequest(http.MethodGet, "/api/certs?mounts=__all__", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var got []certs.Certificate
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	assert.Len(t, got, 2)
+	mockVault.AssertExpectations(t)
+}
+
+func TestListCertificates_MountsQuery_EmptyReturnsEmpty(t *testing.T) {
+	mockVault := new(vault.MockClient)
+	certsList := []certs.Certificate{{ID: "pki:a", CommonName: "a", ExpiresAt: time.Now()}}
+	mockVault.On("ListCertificates", mock.Anything).Return(certsList, nil)
+	router := setupRouter(mockVault)
+	req := httptest.NewRequest(http.MethodGet, "/api/certs?mounts=", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var got []certs.Certificate
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	assert.Len(t, got, 0)
+	mockVault.AssertExpectations(t)
+}
+
+func TestListCertificates_EncodingError_DoesNotPanic(t *testing.T) {
+	mockVault := new(vault.MockClient)
+	mockVault.On("ListCertificates", mock.Anything).Return([]certs.Certificate{}, nil)
+	router := setupRouter(mockVault)
+	req := httptest.NewRequest(http.MethodGet, "/api/certs", nil)
+	w := &failingResponseWriter{}
+	router.ServeHTTP(w, req)
+	mockVault.AssertExpectations(t)
+}
+
+func TestGetCertificateDetails_EncodingError_DoesNotPanic(t *testing.T) {
+	mockVault := new(vault.MockClient)
+	expected := certs.DetailedCertificate{Certificate: certs.Certificate{ID: "serial", CommonName: "cn", ExpiresAt: time.Now()}, SerialNumber: "serial"}
+	mockVault.On("GetCertificateDetails", mock.Anything, "serial").Return(expected, nil)
+	router := setupRouter(mockVault)
+	req := httptest.NewRequest(http.MethodGet, "/api/certs/serial/details", nil)
+	w := &failingResponseWriter{}
+	router.ServeHTTP(w, req)
+	mockVault.AssertExpectations(t)
+}
+
+func TestGetCertificatePEM_EncodingError_DoesNotPanic(t *testing.T) {
+	mockVault := new(vault.MockClient)
+	pemResp := certs.PEMResponse{SerialNumber: "serial", PEM: "pem-data"}
+	mockVault.On("GetCertificatePEM", mock.Anything, "serial").Return(pemResp, nil)
+	router := setupRouter(mockVault)
+	req := httptest.NewRequest(http.MethodGet, "/api/certs/serial/pem", nil)
+	w := &failingResponseWriter{}
+	router.ServeHTTP(w, req)
+	mockVault.AssertExpectations(t)
+}
+
+func TestDownloadCertificatePEM_Success(t *testing.T) {
+	mockVault := new(vault.MockClient)
+	pemResp := certs.PEMResponse{SerialNumber: "serial", PEM: "pem-data"}
+	mockVault.On("GetCertificatePEM", mock.Anything, "serial").Return(pemResp, nil)
+	router := setupRouter(mockVault)
+	req := httptest.NewRequest(http.MethodGet, "/api/certs/serial/pem/download", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.Equal(t, "application/x-pem-file", rec.Header().Get("Content-Type"))
+	assert.Contains(t, rec.Header().Get("Content-Disposition"), "attachment;")
+	assert.Equal(t, "pem-data", strings.TrimSpace(rec.Body.String()))
+	mockVault.AssertExpectations(t)
+}
+
+func TestDownloadCertificatePEM_WriteError_DoesNotPanic(t *testing.T) {
+	mockVault := new(vault.MockClient)
+	pemResp := certs.PEMResponse{SerialNumber: "serial", PEM: "pem-data"}
+	mockVault.On("GetCertificatePEM", mock.Anything, "serial").Return(pemResp, nil)
+	router := setupRouter(mockVault)
+	req := httptest.NewRequest(http.MethodGet, "/api/certs/serial/pem/download", nil)
+	w := &failingResponseWriter{}
+	router.ServeHTTP(w, req)
 	mockVault.AssertExpectations(t)
 }

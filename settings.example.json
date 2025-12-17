@@ -1,0 +1,55 @@
+{
+  "app": {
+    "env": "dev",
+    "logging": {
+      "level": "debug",
+      "format": "json",
+      "output": "both",
+      "file_path": "/var/log/app/vcv.log"
+    },
+    "port": 52000
+  },
+  "certificates": {
+    "expiration_thresholds": {
+      "critical": 2,
+      "warning": 10
+    }
+  },
+  "cors": {
+    "allowed_origins": [
+      "http://localhost:4321",
+      "http://localhost:3000"
+    ],
+    "allow_credentials": true
+  },
+  "vaults": [
+    {
+      "id": "vault-main",
+      "address": "http://vault:8200",
+      "token": "root",
+      "pki_mounts": [
+        "pki",
+        "pki_dev",
+        "pki_stage",
+        "pki_production"
+      ],
+      "display_name": "Vault",
+      "tls_insecure": true,
+      "enabled": true
+    },
+    {
+      "id": "vault-dev",
+      "address": "http://vault-dev:8200",
+      "token": "root",
+      "pki_mounts": [
+        "pki",
+        "pki_corporate",
+        "pki_external",
+        "pki_partners"
+      ],
+      "display_name": "Vault dev",
+      "tls_insecure": true,
+      "enabled": true
+    }
+  ]
+}

@@ -75,3 +75,9 @@ func (c *Cache) Cleanup() {
 		}
 	}
 }
+
+func (c *Cache) Size() int {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+	return len(c.data)
+}

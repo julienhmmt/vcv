@@ -137,6 +137,15 @@ vault write pki_vault3/issue/vcv common_name="cluster.vault3.local" alt_names="n
 vault write pki_vault3/issue/vcv common_name="monitor.vault3.local" alt_names="prom.monitor.vault3.local,grafana.monitor.vault3.local" >/dev/null 2>&1 || true
 vault write pki_vault3/issue/vcv common_name="backup.vault3.local" alt_names="primary.backup.vault3.local,secondary.backup.vault3.local" >/dev/null 2>&1 || true
 
+# Short-lived certificates (minutes)
+vault write pki_vault3/issue/vcv common_name="short-1.vault3.local" ttl="120s" >/dev/null 2>&1 || true
+vault write pki_vault3/issue/vcv common_name="short-2.vault3.local" ttl="180s" >/dev/null 2>&1 || true
+vault write pki_vault3/issue/vcv common_name="short-3.vault3.local" ttl="300s" >/dev/null 2>&1 || true
+
+# Long-lived certificates (years)
+vault write pki_vault3/issue/vcv common_name="long-1.vault3.local" ttl="8760h" >/dev/null 2>&1 || true
+vault write pki_vault3/issue/vcv common_name="long-2.vault3.local" ttl="8760h" >/dev/null 2>&1 || true
+
 # Certificates expiring soon (24h-72h)
 vault write pki_vault3/issue/vcv common_name="urgent-expiring-1.vault3.local" ttl="48h" >/dev/null 2>&1 || true
 vault write pki_vault3/issue/vcv common_name="urgent-expiring-2.vault3.local" ttl="72h" >/dev/null 2>&1 || true
@@ -163,6 +172,9 @@ vault write pki_cloud/issue/vcv common_name="container.cloud.local" alt_names="a
 # Cloud certificates expiring soon
 vault write pki_cloud/issue/vcv common_name="cloud-expiring-1.local" ttl="36h" >/dev/null 2>&1 || true
 vault write pki_cloud/issue/vcv common_name="cloud-expiring-2.local" ttl="60h" >/dev/null 2>&1 || true
+
+# Cloud long-lived certificate
+vault write pki_cloud/issue/vcv common_name="cloud-long-1.local" ttl="8760h" >/dev/null 2>&1 || true
 
 # Issue certificates for PKI EDGE engine
 echo "Creating certificates for pki_edge engine..."

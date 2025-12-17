@@ -24,8 +24,43 @@ import (
 func setupUIRouter(mockVault *vault.MockClient, webFS fs.FS) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
-	handlers.RegisterUIRoutes(router, mockVault, webFS, config.ExpirationThresholds{Critical: 7, Warning: 30})
+	handlers.RegisterUIRoutes(router, mockVault, []config.VaultInstance{}, map[string]vault.Client{}, webFS, config.ExpirationThresholds{Critical: 7, Warning: 30})
 	return router
+}
+
+func TestStatusFragment_MultiVaultAddsSummaryPill(t *testing.T) {
+	webFS := fstest.MapFS{
+		"templates/footer-status.html":         &fstest.MapFile{Data: []byte("{{if .VaultSummaryPill}}<span class=\"{{.VaultSummaryPill.Class}}\">{{.VaultSummaryPill.Text}}</span>{{end}}{{range .VaultAllPills}}<span class=\"{{.Class}}\">{{.Text}}</span>{{end}}")},
+		"templates/theme-toggle-fragment.html": &fstest.MapFile{Data: []byte("<div></div>")},
+		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div></div>")},
+		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{define \"certs-fragment\"}}{{end}}")},
+		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{end}}")},
+		"templates/certs-state.html":           &fstest.MapFile{Data: []byte("{{define \"certs-state\"}}{{end}}")},
+		"templates/certs-pagination.html":      &fstest.MapFile{Data: []byte("{{define \"certs-pagination\"}}{{end}}")},
+		"templates/certs-sort.html":            &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
+		"templates/dashboard-fragment.html":    &fstest.MapFile{Data: []byte("{{define \"dashboard-fragment\"}}{{end}}")},
+	}
+	vaultInstances := []config.VaultInstance{{ID: "vault-1", DisplayName: "Vault 1"}, {ID: "vault-2", DisplayName: "Vault 2"}}
+	statusClient1 := &vault.MockClient{}
+	statusClient1.On("CheckConnection", mock.Anything).Return(nil)
+	statusClient2 := &vault.MockClient{}
+	statusClient2.On("CheckConnection", mock.Anything).Return(errors.New("boom"))
+	vaultStatusClients := map[string]vault.Client{"vault-1": statusClient1, "vault-2": statusClient2}
+	primaryClient := &vault.MockClient{}
+	router := chi.NewRouter()
+	router.Use(middleware.RequestID)
+	handlers.RegisterUIRoutes(router, primaryClient, vaultInstances, vaultStatusClients, webFS, config.ExpirationThresholds{Critical: 7, Warning: 30})
+	req := httptest.NewRequest(http.MethodGet, "/ui/status?lang=en", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+	body := rec.Body.String()
+	assert.Contains(t, body, "Vaults: 1/2 up")
+	assert.Contains(t, body, "Vault 1")
+	assert.Contains(t, body, "Vault 2")
+	assert.Contains(t, body, "vcv-footer-pill-summary")
+	statusClient1.AssertExpectations(t)
+	statusClient2.AssertExpectations(t)
 }
 
 func TestToggleThemeFragment(t *testing.T) {

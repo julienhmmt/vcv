@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -52,14 +53,226 @@ func TestLoadFromEnv(t *testing.T) {
 	}
 }
 
+func TestLoadFromVaultAddrsEnv(t *testing.T) {
+	clearEnv(t)
+	_ = os.Setenv("VAULT_ADDR", "http://legacy")
+	_ = os.Setenv("VAULT_READ_TOKEN", "legacy-token")
+	_ = os.Setenv("VAULT_ADDRS", "prod@http://vault-1:8200#token1#pki,stg@http://vault-2:8200#token2#pki2")
+	_ = os.Setenv("VAULT_TLS_INSECURE", "true")
+
+	cfg := Load()
+
+	if len(cfg.Vaults) != 2 {
+		t.Fatalf("expected 2 vaults, got %d", len(cfg.Vaults))
+	}
+	if cfg.Vault.Addr != "http://vault-1:8200" {
+		t.Fatalf("expected primary vault addr to be set from VAULT_ADDRS, got %s", cfg.Vault.Addr)
+	}
+}
+
+func TestLoadFromSettingsFile(t *testing.T) {
+	clearEnv(t)
+	tempDir := t.TempDir()
+	changeWorkingDirectory(t, tempDir)
+	_ = os.Setenv("APP_ENV", "dev")
+
+	settings := `{
+  "app": {
+    "env": "dev",
+    "port": 52000,
+    "logging": {
+      "level": "debug",
+      "format": "json",
+      "output": "both",
+      "file_path": "/var/log/app/vcv.log"
+    }
+  },
+  "cors": {
+    "allowed_origins": ["http://localhost:4321", "http://localhost:3000"],
+    "allow_credentials": true
+  },
+  "certificates": {
+    "expiration_thresholds": {
+      "critical": 2,
+      "warning": 10
+    }
+  },
+  "vaults": [
+    {
+      "id": "dev",
+      "enabled": true,
+      "address": "http://vault:8200",
+      "token": "root",
+      "pki_mount": "pki",
+      "pki_mounts": ["pki", "pki_dev"],
+      "tls_insecure": true
+    }
+  ]
+}`
+	if err := os.WriteFile(filepath.Join(tempDir, "settings.dev.json"), []byte(settings), 0o644); err != nil {
+		t.Fatalf("failed to write settings.dev.json: %v", err)
+	}
+
+	cfg := Load()
+
+	if cfg.Env != EnvDev {
+		t.Fatalf("expected env to be dev, got %s", cfg.Env)
+	}
+	if cfg.Port != "52000" {
+		t.Fatalf("expected port 52000, got %s", cfg.Port)
+	}
+	if cfg.LogLevel != "debug" || cfg.LogFormat != "json" || cfg.LogOutput != "both" {
+		t.Fatalf("expected logging settings from file, got level=%s format=%s output=%s", cfg.LogLevel, cfg.LogFormat, cfg.LogOutput)
+	}
+	if cfg.LogFilePath != "/var/log/app/vcv.log" {
+		t.Fatalf("expected log file path from file, got %s", cfg.LogFilePath)
+	}
+	if os.Getenv("LOG_OUTPUT") != "both" || os.Getenv("LOG_FORMAT") != "json" || os.Getenv("LOG_FILE_PATH") != "/var/log/app/vcv.log" {
+		t.Fatalf("expected logging env vars to be applied from file")
+	}
+	if cfg.ExpirationThresholds.Critical != 2 || cfg.ExpirationThresholds.Warning != 10 {
+		t.Fatalf("expected expiration thresholds from file")
+	}
+	if len(cfg.Vaults) != 1 {
+		t.Fatalf("expected 1 vault from file, got %d", len(cfg.Vaults))
+	}
+	if cfg.Vault.Addr != "http://vault:8200" {
+		t.Fatalf("expected primary vault addr from file, got %s", cfg.Vault.Addr)
+	}
+	if len(cfg.Vault.PKIMounts) != 2 {
+		t.Fatalf("expected PKI mounts from file, got %d", len(cfg.Vault.PKIMounts))
+	}
+}
+
+func TestLoadFromSettingsFile_PrimarySkipsDisabledVaults(t *testing.T) {
+	clearEnv(t)
+	tempDir := t.TempDir()
+	changeWorkingDirectory(t, tempDir)
+	_ = os.Setenv("APP_ENV", "dev")
+
+	settings := `{
+  "app": {"env": "dev", "port": 52000, "logging": {"level": "debug", "format": "json", "output": "stdout", "file_path": ""}},
+  "cors": {"allowed_origins": [], "allow_credentials": true},
+  "certificates": {"expiration_thresholds": {"critical": 2, "warning": 10}},
+  "vaults": [
+    {"id": "disabled", "enabled": false, "address": "://bad", "token": "tok"},
+    {"id": "enabled", "enabled": true, "address": "http://vault:8200", "token": "root", "pki_mount": "pki", "tls_insecure": true}
+  ]
+}`
+	if err := os.WriteFile(filepath.Join(tempDir, "settings.dev.json"), []byte(settings), 0o644); err != nil {
+		t.Fatalf("failed to write settings.dev.json: %v", err)
+	}
+
+	cfg := Load()
+	if len(cfg.Vaults) != 1 {
+		t.Fatalf("expected 1 enabled vault after filtering, got %d", len(cfg.Vaults))
+	}
+	if cfg.Vault.Addr != "http://vault:8200" {
+		t.Fatalf("expected primary vault to be first enabled, got %s", cfg.Vault.Addr)
+	}
+}
+
+func TestLoadFromSettingsFile_AllDisabledDoesNotPanic(t *testing.T) {
+	clearEnv(t)
+	tempDir := t.TempDir()
+	changeWorkingDirectory(t, tempDir)
+	_ = os.Setenv("APP_ENV", "dev")
+
+	settings := `{
+  "app": {"env": "dev", "port": 52000, "logging": {"level": "debug", "format": "json", "output": "stdout", "file_path": ""}},
+  "cors": {"allowed_origins": [], "allow_credentials": true},
+  "certificates": {"expiration_thresholds": {"critical": 2, "warning": 10}},
+  "vaults": [
+    {"id": "disabled", "enabled": false, "address": "http://vault:8200", "token": "root", "pki_mount": "pki", "tls_insecure": true}
+  ]
+}`
+	if err := os.WriteFile(filepath.Join(tempDir, "settings.dev.json"), []byte(settings), 0o644); err != nil {
+		t.Fatalf("failed to write settings.dev.json: %v", err)
+	}
+
+	cfg := Load()
+	if len(cfg.Vaults) != 0 {
+		t.Fatalf("expected 0 enabled vaults, got %d", len(cfg.Vaults))
+	}
+	if cfg.Vault.Addr != "" {
+		t.Fatalf("expected empty primary vault when all vaults are disabled")
+	}
+}
+
 func clearEnv(t *testing.T) {
 	t.Helper()
 	envs := []string{
 		"APP_ENV", "PORT", "LOG_LEVEL", "LOG_FORMAT", "LOG_OUTPUT",
-		"VAULT_ADDR", "VAULT_PKI_MOUNT", "VAULT_READ_TOKEN", "VAULT_TLS_INSECURE",
+		"SETTINGS_PATH",
+		"LOG_FILE_PATH",
+		"VAULT_ADDR", "VAULT_ADDRS", "VAULT_PKI_MOUNT", "VAULT_PKI_MOUNTS", "VAULT_READ_TOKEN", "VAULT_TLS_INSECURE",
 		"CORS_ALLOWED_ORIGINS", "CORS_ALLOW_CREDENTIALS",
 	}
 	for _, key := range envs {
 		_ = os.Unsetenv(key)
+	}
+}
+
+func TestConfig_IsDev_IsProd(t *testing.T) {
+	tests := []struct {
+		name       string
+		env        Environment
+		expectDev  bool
+		expectProd bool
+	}{
+		{name: "dev", env: EnvDev, expectDev: true, expectProd: false},
+		{name: "prod", env: EnvProd, expectDev: false, expectProd: true},
+		{name: "stage", env: EnvStage, expectDev: false, expectProd: false},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			cfg := Config{Env: tt.env}
+			if cfg.IsDev() != tt.expectDev {
+				t.Fatalf("unexpected IsDev result")
+			}
+			if cfg.IsProd() != tt.expectProd {
+				t.Fatalf("unexpected IsProd result")
+			}
+		})
+	}
+}
+
+func TestLoadSettingsFile_SettingsPathMissing(t *testing.T) {
+	clearEnv(t)
+	missingPath := filepath.Join(t.TempDir(), "missing.json")
+	if err := os.Setenv("SETTINGS_PATH", missingPath); err != nil {
+		t.Fatalf("failed to set SETTINGS_PATH: %v", err)
+	}
+	settings, settingsPath, err := loadSettingsFile()
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if settings != nil {
+		t.Fatalf("expected nil settings")
+	}
+	if settingsPath != missingPath {
+		t.Fatalf("expected settingsPath %q, got %q", missingPath, settingsPath)
+	}
+}
+
+func TestLoadSettingsFile_SettingsPathInvalidJSON(t *testing.T) {
+	clearEnv(t)
+	path := filepath.Join(t.TempDir(), "settings.json")
+	if err := os.WriteFile(path, []byte("{invalid"), 0o644); err != nil {
+		t.Fatalf("failed to write settings file: %v", err)
+	}
+	if err := os.Setenv("SETTINGS_PATH", path); err != nil {
+		t.Fatalf("failed to set SETTINGS_PATH: %v", err)
+	}
+	settings, settingsPath, err := loadSettingsFile()
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if settings != nil {
+		t.Fatalf("expected nil settings")
+	}
+	if settingsPath != path {
+		t.Fatalf("expected settingsPath %q, got %q", path, settingsPath)
 	}
 }

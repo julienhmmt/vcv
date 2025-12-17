@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>VaultCertsViewer Admin</title>
+    <style>
+      .vcv-hidden { display: none; }
+    </style>
+    <link rel="stylesheet" href="/assets/styles.css" />
+    <link rel="stylesheet" href="/assets/style-admin.css" />
+    <link rel="icon" href="/assets/favicon.ico" type="image/x-icon" />
+  </head>
+  <body>
+    <div class="vcv-layout">
+      <header class="vcv-header">
+        <div class="vcv-header-bar">
+          <div class="vcv-header-left">
+            <h1 class="vcv-title">VaultCertsViewer Admin</h1>
+          </div>
+          <div class="vcv-header-actions">
+            <a class="vcv-button" href="/">Back to VCV</a>
+          </div>
+        </div>
+      </header>
+
+      <div id="admin-root" hx-get="/admin/panel" hx-trigger="load" hx-swap="innerHTML"></div>
+    </div>
+
+    <script src="/assets/htmx.min.js"></script>
+    <script>
+      function focusVault(key) {
+        const root = document.getElementById(`admin-vault-${key}`);
+        if (!root) return;
+        root.open = true;
+        root.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const idInput = root.querySelector('input[name^="vault_id_"]');
+        if (idInput) idInput.focus();
+      }
+
+      function toggleToken(button) {
+        const key = button.getAttribute('data-vault-key');
+        if (!key) return;
+        const input = document.querySelector(`input[name="vault_token_${key}"]`);
+        if (!input) return;
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        button.textContent = isHidden ? 'Hide' : 'Reveal';
+      }
+
+      document.body.addEventListener('adminVaultAdded', (event) => {
+        const detail = event.detail;
+        if (!detail || !detail.key) return;
+        focusVault(detail.key);
+      });
+    </script>
+  </body>
+</html>

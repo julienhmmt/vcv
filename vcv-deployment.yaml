@@ -33,38 +33,17 @@ spec:
         fsGroup: 1000
       containers:
         - name: vcv
-          image: jhmmt/vcv:1.3
+          image: jhmmt/vcv:1.4
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 52000
               protocol: TCP
-          env:
-            - name: APP_ENV
-              value: "prod"
-            - name: LOG_LEVEL
-              value: "info"
-            - name: LOG_FORMAT
-              value: "json"
-            - name: LOG_OUTPUT
-              value: "stdout"
-            - name: PORT
-              value: "52000"
-            - name: VAULT_ADDR
-              value: "http://vault:8200"
-            - name: VAULT_PKI_MOUNTS
-              value: "pki,pki2"
-            - name: VAULT_READ_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: vcv-vault-token
-                  key: VAULT_READ_TOKEN
-            - name: VAULT_TLS_INSECURE
-              value: "false"
-            - name: VCV_EXPIRE_CRITICAL
-              value: "7"
-            - name: VCV_EXPIRE_WARNING
-              value: "30"
+          volumeMounts:
+            - name: vcv-settings
+              mountPath: /app/settings.json
+              subPath: settings.json
+              readOnly: true
           resources:
             requests:
               cpu: "100m"
@@ -87,15 +66,56 @@ spec:
           securityContext:
             readOnlyRootFilesystem: true
             allowPrivilegeEscalation: false
+      volumes:
+        - name: vcv-settings
+          secret:
+            secretName: vcv-settings
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: vcv-vault-token
+  name: vcv-settings
   namespace: vcv
 type: Opaque
 stringData:
-  VAULT_READ_TOKEN: "root"
+  settings.json: |
+    {
+      "app": {
+        "env": "prod",
+        "port": 52000,
+        "logging": {
+          "level": "info",
+          "format": "json",
+          "output": "stdout",
+          "file_path": "/var/log/app/vcv.log"
+        }
+      },
+      "cors": {
+        "allowed_origins": [],
+        "allow_credentials": true
+      },
+      "certificates": {
+        "expiration_thresholds": {
+          "critical": 7,
+          "warning": 30
+        }
+      },
+      "vaults": [
+        {
+          "id": "prod",
+          "enabled": true,
+          "display_name": "Production",
+          "address": "https://vault-prod.example.com:8200",
+          "token": "change-me",
+          "pki_mount": "pki",
+          "pki_mounts": [
+            "pki",
+            "pki2"
+          ],
+          "tls_insecure": false
+        }
+      ]
+    }
 ---
 apiVersion: v1
 kind: Service

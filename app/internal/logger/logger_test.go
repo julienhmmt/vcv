@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -201,4 +202,64 @@ func TestPanicEvent(t *testing.T) {
 	if !strings.Contains(output, `"stack":"stack trace"`) {
 		t.Errorf("Expected log to contain stack trace, got: %s", output)
 	}
+}
+
+func TestInit_FileOutput_WritesToFile(t *testing.T) {
+	setEnvHelper(t, "LOG_OUTPUT", "file")
+	setEnvHelper(t, "LOG_FORMAT", "json")
+	logFilePath := filepath.Join(t.TempDir(), "app.log")
+	setEnvHelper(t, "LOG_FILE_PATH", logFilePath)
+	t.Cleanup(func() {
+		unsetEnvHelper(t, "LOG_OUTPUT")
+		unsetEnvHelper(t, "LOG_FORMAT")
+		unsetEnvHelper(t, "LOG_FILE_PATH")
+	})
+	logger.Init("info")
+	logger.Get().Info().Msg("file output test")
+	content, err := os.ReadFile(logFilePath)
+	if err != nil {
+		t.Fatalf("expected log file to exist: %v", err)
+	}
+	if !strings.Contains(string(content), "file output test") {
+		t.Fatalf("expected log file to contain message")
+	}
+}
+
+func TestInit_FileOutput_MissingPath_DoesNotPanic(t *testing.T) {
+	setEnvHelper(t, "LOG_OUTPUT", "file")
+	unsetEnvHelper(t, "LOG_FILE_PATH")
+	unsetEnvHelper(t, "LOG_FORMAT")
+	t.Cleanup(func() {
+		unsetEnvHelper(t, "LOG_OUTPUT")
+		unsetEnvHelper(t, "LOG_FILE_PATH")
+		unsetEnvHelper(t, "LOG_FORMAT")
+	})
+	logger.Init("info")
+	logger.Get().Info().Msg("fallback output test")
+}
+
+func TestInit_InvalidOutput_FallsBackToStdout(t *testing.T) {
+	setEnvHelper(t, "LOG_OUTPUT", "nope")
+	unsetEnvHelper(t, "LOG_FILE_PATH")
+	setEnvHelper(t, "LOG_FORMAT", "console")
+	t.Cleanup(func() {
+		unsetEnvHelper(t, "LOG_OUTPUT")
+		unsetEnvHelper(t, "LOG_FILE_PATH")
+		unsetEnvHelper(t, "LOG_FORMAT")
+	})
+	logger.Init("info")
+	logger.Get().Info().Msg("invalid output fallback")
+}
+
+func TestInit_BothOutput_InvalidFilePath_DoesNotPanic(t *testing.T) {
+	setEnvHelper(t, "LOG_OUTPUT", "both")
+	setEnvHelper(t, "LOG_FORMAT", "json")
+	setEnvHelper(t, "LOG_FILE_PATH", t.TempDir())
+	t.Cleanup(func() {
+		unsetEnvHelper(t, "LOG_OUTPUT")
+		unsetEnvHelper(t, "LOG_FORMAT")
+		unsetEnvHelper(t, "LOG_FILE_PATH")
+	})
+	logger.Init("info")
+	logger.Get().Info().Msg("both output fallback")
 }

@@ -1,0 +1,115 @@
+{
+  "app": {
+    "env": "dev",
+    "logging": {
+      "level": "debug",
+      "format": "json",
+      "output": "both",
+      "file_path": "/var/log/app/vcv.log"
+    },
+    "port": 52000
+  },
+  "certificates": {
+    "expiration_thresholds": {
+      "critical": 2,
+      "warning": 10
+    }
+  },
+  "cors": {
+    "allowed_origins": [
+      "http://localhost:4321",
+      "http://localhost:3000"
+    ],
+    "allow_credentials": true
+  },
+  "vaults": [
+    {
+      "id": "vault-main",
+      "address": "http://vault:8200",
+      "token": "root",
+      "pki_mount": "pki",
+      "pki_mounts": [
+        "pki",
+        "pki_dev",
+        "pki_stage",
+        "pki_production"
+      ],
+      "display_name": "Vault",
+      "tls_insecure": true,
+      "enabled": true
+    },
+    {
+      "id": "vault-dev-2",
+      "address": "http://vault-dev-2:8200",
+      "token": "root",
+      "pki_mount": "pki_vault2",
+      "pki_mounts": [
+        "pki_vault2",
+        "pki_corporate",
+        "pki_external",
+        "pki_partners"
+      ],
+      "display_name": "Vault dev-2",
+      "tls_insecure": true,
+      "enabled": true
+    },
+    {
+      "id": "vault-dev-3",
+      "address": "http://vault-dev-3:8200",
+      "token": "root",
+      "pki_mount": "pki_vault3",
+      "pki_mounts": [
+        "pki_vault3",
+        "pki_cloud",
+        "pki_edge",
+        "pki_iot",
+        "pki_blockchain"
+      ],
+      "display_name": "Vault dev-3",
+      "tls_insecure": true,
+      "enabled": true
+    },
+    {
+      "id": "vault-dev-4",
+      "address": "http://vault-dev-4:8200",
+      "token": "root",
+      "pki_mount": "pki_vault4",
+      "pki_mounts": [
+        "pki_vault4",
+        "pki_lab",
+        "pki_qa",
+        "pki_perf"
+      ],
+      "display_name": "Vault dev-4",
+      "tls_insecure": true,
+      "enabled": true
+    },
+    {
+      "id": "vault-dev-5",
+      "address": "http://vault-dev-5:8200",
+      "token": "root",
+      "pki_mount": "pki_vault5",
+      "pki_mounts": [
+        "pki_vault5",
+        "pki_internal",
+        "pki_dmz",
+        "pki_shared"
+      ],
+      "display_name": "Vault dev-5",
+      "tls_insecure": true,
+      "enabled": true
+    },
+    {
+      "id": "vault-dev-6",
+      "address": "http://127.0.0.1:1",
+      "token": "root",
+      "pki_mount": "pki_fake",
+      "pki_mounts": [
+        "pki_fake"
+      ],
+      "display_name": "Vault dev-6 (fake)",
+      "tls_insecure": true,
+      "enabled": true
+    }
+  ]
+}

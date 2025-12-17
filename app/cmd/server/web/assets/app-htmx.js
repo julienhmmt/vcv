@@ -11,7 +11,22 @@ const state = {
   selectedMounts: [],
   suppressUrlUpdateUntilNextSuccess: false,
   vaultConnected: null,
+  vaultMountGroups: [],
 };
+
+function buildVaultMountKey(vaultId, mount) {
+  return `${vaultId}|${mount}`;
+}
+
+function formatMountGroupTitle(group) {
+  if (group && typeof group.displayName === "string" && group.displayName !== "") {
+    return group.displayName;
+  }
+  if (group && typeof group.id === "string" && group.id !== "") {
+    return group.id;
+  }
+  return "Vault";
+}
 
 function getRequestTargetId(detail) {
   const target = detail && detail.target;
@@ -70,12 +85,14 @@ function buildCertsPageUrl() {
   }
   params.set("expiry", values.expiry);
   params.set("mounts", values.mounts);
+  params.set("pki", values.pki);
   params.set("page", values.page);
   params.set("pageSize", values.pageSize);
   params.set("search", values.search);
   params.set("sortDir", values.sortDir);
   params.set("sortKey", values.sortKey);
   params.set("status", values.status);
+  params.set("vault", values.vault);
   return `/?${params.toString()}`;
 }
 
@@ -109,6 +126,14 @@ function applyCertsStateFromUrl() {
   if (sortDirInput && params.has("sortDir")) {
     sortDirInput.value = params.get("sortDir") || "asc";
   }
+  const vaultFilter = document.getElementById("vcv-vault-filter");
+  if (vaultFilter && params.has("vault")) {
+    vaultFilter.value = params.get("vault") || "all";
+  }
+  const pkiFilter = document.getElementById("vcv-pki-filter");
+  if (pkiFilter && params.has("pki")) {
+    pkiFilter.value = params.get("pki") || "all";
+  }
   const mountsValue = params.get("mounts");
   if (typeof mountsValue === "string") {
     if (mountsValue === mountsAllSentinel) {
@@ -119,6 +144,36 @@ function applyCertsStateFromUrl() {
       const requested = mountsValue.split(",").map((value) => value.trim()).filter((value) => value !== "");
       state.selectedMounts = requested.filter((value) => state.availableMounts.includes(value));
     }
+  }
+}
+
+function updateSelectOptions(select, options) {
+  if (!select) {
+    return;
+  }
+  const current = typeof select.value === "string" && select.value !== "" ? select.value : "all";
+  select.innerHTML = "";
+  const allOption = document.createElement("option");
+  allOption.value = "all";
+  allOption.textContent = "All";
+  select.appendChild(allOption);
+  options.forEach((value) => {
+    const option = document.createElement("option");
+    option.value = value;
+    option.textContent = value;
+    select.appendChild(option);
+  });
+  select.value = current;
+}
+
+function updateVaultPkiFiltersVisibility(vaultOptions, pkiOptions) {
+  const vaultGroup = document.getElementById("vcv-vault-filter-group");
+  const pkiGroup = document.getElementById("vcv-pki-filter-group");
+  if (vaultGroup) {
+    vaultGroup.classList.toggle("vcv-hidden", !(Array.isArray(vaultOptions) && vaultOptions.length > 1));
+  }
+  if (pkiGroup) {
+    pkiGroup.classList.toggle("vcv-hidden", !(Array.isArray(pkiOptions) && pkiOptions.length > 1));
   }
 }
 
@@ -340,16 +395,42 @@ function initVaultConnectionNotifications() {
 			return;
 		}
 		setTimeout(() => {
-			const pill = document.getElementById('vcv-footer-vault');
-			if (!pill) {
+			const container = document.getElementById('vcv-footer-vaults');
+			if (!container) {
 				return;
 			}
-			const isConnected = pill.classList.contains('vcv-footer-pill-ok');
-			const isDisconnected = pill.classList.contains('vcv-footer-pill-error');
-			if (!isConnected && !isDisconnected) {
+			const summaryPill = container.querySelector('.vcv-footer-pill-summary');
+			if (summaryPill) {
+				const isOk = summaryPill.classList.contains('vcv-footer-pill-ok');
+				const isError = summaryPill.classList.contains('vcv-footer-pill-error');
+				if (!isOk && !isError) {
+					return;
+				}
+				const nextState = isOk;
+				if (state.vaultConnected === null) {
+					state.vaultConnected = nextState;
+					return;
+				}
+				if (state.vaultConnected === nextState) {
+					return;
+				}
+				state.vaultConnected = nextState;
+				const messages = state.messages || {};
+				if (nextState) {
+					const restored = messages.vaultConnectionRestored || "Vault connection restored";
+					showSuccessToast(restored);
+					return;
+				}
+				const lost = messages.vaultConnectionLost || "Vault connection lost";
+				showErrorToast(lost);
 				return;
 			}
-			const nextState = isConnected;
+			const connectedCount = container.querySelectorAll('.vcv-footer-pill-ok').length;
+			const disconnectedCount = container.querySelectorAll('.vcv-footer-pill-error').length;
+			if (connectedCount === 0 && disconnectedCount === 0) {
+				return;
+			}
+			const nextState = disconnectedCount === 0;
 			if (state.vaultConnected === null) {
 				state.vaultConnected = nextState;
 				return;
@@ -546,20 +627,22 @@ function applyTranslations() {
   if (!messages) {
     return;
   }
-  setText(document.getElementById("mount-modal-title"), messages.mountSelectorTitle);
-  setText(document.getElementById("mount-deselect-all"), messages.deselectAll);
-  setText(document.getElementById("mount-select-all"), messages.selectAll);
-  setText(document.getElementById("mount-close"), messages.buttonClose);
+  setText(document.getElementById("certificate-modal-close"), messages.buttonClose);
+  setText(document.getElementById("chart-expiry-title"), messages.chartExpiryTimeline);
+  setText(document.getElementById("chart-status-title"), messages.chartStatusDistribution);
+  setText(document.getElementById("dashboard-expired-label"), messages.dashboardExpired);
+  setText(document.getElementById("dashboard-expiring-label"), messages.dashboardExpiring);
   setText(document.getElementById("dashboard-total-label"), messages.dashboardTotal);
   setText(document.getElementById("dashboard-valid-label"), messages.dashboardValid);
-  setText(document.getElementById("dashboard-expiring-label"), messages.dashboardExpiring);
-  setText(document.getElementById("dashboard-expired-label"), messages.dashboardExpired);
-  setText(document.getElementById("chart-status-title"), messages.chartStatusDistribution);
-  setText(document.getElementById("chart-expiry-title"), messages.chartExpiryTimeline);
-  setText(document.getElementById("vcv-status-filter-label"), messages.statusFilterTitle);
+  setText(document.getElementById("mount-close"), messages.buttonClose);
+  setText(document.getElementById("mount-deselect-all"), messages.deselectAll);
+  setText(document.getElementById("mount-modal-title"), messages.mountSelectorTitle);
+  setText(document.getElementById("mount-select-all"), messages.selectAll);
   setText(document.getElementById("vcv-page-size-label"), messages.paginationPageSizeLabel);
+  setText(document.getElementById("vcv-pki-filter-label"), "PKI");
+  setText(document.getElementById("vcv-status-filter-label"), messages.statusFilterTitle);
+  setText(document.getElementById("vcv-vault-filter-label"), "Vault");
   setText(document.querySelector("#certificate-modal .vcv-modal-title"), messages.modalDetailsTitle);
-  setText(document.getElementById("certificate-modal-close"), messages.buttonClose);
   const searchInput = document.getElementById("vcv-search");
   if (searchInput && typeof messages.searchPlaceholder === "string" && messages.searchPlaceholder !== "") {
     searchInput.setAttribute("placeholder", messages.searchPlaceholder);
@@ -567,9 +650,9 @@ function applyTranslations() {
   const statusSelect = document.getElementById("vcv-status-filter");
   if (statusSelect) {
     setText(statusSelect.querySelector("option[value='all']"), messages.statusFilterAll);
-    setText(statusSelect.querySelector("option[value='valid']"), messages.statusFilterValid);
     setText(statusSelect.querySelector("option[value='expired']"), messages.statusFilterExpired);
     setText(statusSelect.querySelector("option[value='revoked']"), messages.statusFilterRevoked);
+    setText(statusSelect.querySelector("option[value='valid']"), messages.statusFilterValid);
   }
   const expirySelect = document.getElementById("vcv-expiry-filter");
   if (expirySelect) {
@@ -628,24 +711,57 @@ function setMountsHiddenField() {
 }
 
 function getCertsHtmxValues() {
-  const searchInput = document.getElementById("vcv-search");
-  const statusFilter = document.getElementById("vcv-status-filter");
   const expiryFilter = document.getElementById("vcv-expiry-filter");
-  const pageSizeSelect = document.getElementById("vcv-page-size");
-  const pageInput = document.getElementById("vcv-page");
-  const sortKeyInput = document.getElementById("vcv-sort-key");
-  const sortDirInput = document.getElementById("vcv-sort-dir");
   const mountsInput = document.getElementById("vcv-mounts");
+  const pageInput = document.getElementById("vcv-page");
+  const pageSizeSelect = document.getElementById("vcv-page-size");
+  const pkiFilter = document.getElementById("vcv-pki-filter");
+  const searchInput = document.getElementById("vcv-search");
+  const sortDirInput = document.getElementById("vcv-sort-dir");
+  const sortKeyInput = document.getElementById("vcv-sort-key");
+  const statusFilter = document.getElementById("vcv-status-filter");
+  const vaultFilter = document.getElementById("vcv-vault-filter");
   return {
-    search: searchInput ? searchInput.value : "",
-    status: statusFilter ? statusFilter.value : "all",
     expiry: expiryFilter ? expiryFilter.value : "all",
-    pageSize: pageSizeSelect ? pageSizeSelect.value : "25",
-    page: pageInput ? pageInput.value : "0",
-    sortKey: sortKeyInput ? sortKeyInput.value : "commonName",
-    sortDir: sortDirInput ? sortDirInput.value : "asc",
     mounts: mountsInput ? mountsInput.value : "",
+    page: pageInput ? pageInput.value : "0",
+    pageSize: pageSizeSelect ? pageSizeSelect.value : "25",
+    pki: pkiFilter ? pkiFilter.value : "all",
+    search: searchInput ? searchInput.value : "",
+    sortDir: sortDirInput ? sortDirInput.value : "asc",
+    sortKey: sortKeyInput ? sortKeyInput.value : "commonName",
+    status: statusFilter ? statusFilter.value : "all",
+    vault: vaultFilter ? vaultFilter.value : "all",
   };
+}
+
+function handleSortClick(event) {
+  const button = event.target && event.target.closest ? event.target.closest(".vcv-sort") : null;
+  if (!button) {
+    return;
+  }
+  const sortKey = button.getAttribute("data-sort-key") || "";
+  if (sortKey === "") {
+    return;
+  }
+  const activeKeyInput = document.getElementById("vcv-sort-key");
+  const activeDirInput = document.getElementById("vcv-sort-dir");
+  if (!activeKeyInput || !activeDirInput) {
+    return;
+  }
+  const currentKey = activeKeyInput.value || "commonName";
+  const currentDir = activeDirInput.value || "asc";
+  if (sortKey === currentKey) {
+    activeDirInput.value = currentDir === "asc" ? "desc" : "asc";
+  } else {
+    activeKeyInput.value = sortKey;
+    activeDirInput.value = "asc";
+  }
+  const pageInput = document.getElementById("vcv-page");
+  if (pageInput) {
+    pageInput.value = "0";
+  }
+  refreshHtmxCertsTable();
 }
 
 function refreshHtmxCertsTable() {
@@ -683,18 +799,38 @@ function renderMountModalList() {
   if (!listContainer) {
     return;
   }
+  const deselectAllLabel = typeof messages.deselectAll === "string" && messages.deselectAll !== "" ? messages.deselectAll : "None";
+  const groups = Array.isArray(state.vaultMountGroups) ? state.vaultMountGroups : [];
+  const messages = state.messages || {};
+  const selectAllLabel = typeof messages.selectAll === "string" && messages.selectAll !== "" ? messages.selectAll : "All";
+  const selectedSet = new Set(state.selectedMounts);
+  if (groups.length > 0) {
+    const content = groups
+      .map((group) => {
+        const title = formatMountGroupTitle(group);
+        const mounts = Array.isArray(group.mounts) ? group.mounts : [];
+        const options = mounts
+          .map((mountName) => {
+            const key = buildVaultMountKey(group.id, mountName);
+            const checkedAttr = selectedSet.has(key) ? "checked" : "";
+            const selectedClass = selectedSet.has(key) ? " vcv-mount-option-selected" : "";
+            return `<label class="vcv-mount-option${selectedClass}"><input type="checkbox" ${checkedAttr} onchange="toggleMount('${key}')" /><span class="vcv-mount-name">${mountName}</span></label>`;
+          })
+          .join("");
+        const headerActions = `<div class="vcv-mount-modal-section-actions"><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="selectAllVaultMounts('${group.id}')">${selectAllLabel}</button><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="deselectAllVaultMounts('${group.id}')">${deselectAllLabel}</button></div>`;
+        return `<div class="vcv-mount-modal-section"><div class="vcv-mount-modal-section-header"><div class="vcv-mount-modal-section-title">${title}</div>${headerActions}</div><div class="vcv-mount-modal-section-options">${options}</div></div>`;
+      })
+      .join("");
+    listContainer.innerHTML = content;
+    return;
+  }
   const items = state.availableMounts.map((mount) => {
-    const isSelected = state.selectedMounts.includes(mount);
     const checkedAttr = isSelected ? "checked" : "";
+    const isSelected = selectedSet.has(mount);
     const selectedClass = isSelected ? "selected" : "";
-    return `
-      <label class="vcv-mount-modal-option ${selectedClass}">
-        <input type="checkbox" ${checkedAttr} onchange="toggleMount('${mount}')">
-        <span class="vcv-mount-modal-name">${mount}</span>
-      </label>
-    `;
+    return `<label class="vcv-mount-modal-option ${selectedClass}"><input type="checkbox" ${checkedAttr} onchange="toggleMount('${mount}')"><span class="vcv-mount-modal-name">${mount}</span></label>`;
   });
-  const emptyText = typeof state.messages.noData === "string" && state.messages.noData !== "" ? state.messages.noData : "No data";
+  const emptyText = typeof messages.noData === "string" && messages.noData !== "" ? messages.noData : "No data";
   listContainer.innerHTML = items.join("") || `<p class="vcv-empty">${emptyText}</p>`;
 }
 
@@ -736,6 +872,29 @@ function selectAllMounts() {
 
 function deselectAllMounts() {
   state.selectedMounts = [];
+  renderMountSelector();
+  renderMountModalList();
+  refreshHtmxCertsTable();
+}
+
+function selectAllVaultMounts(vaultId) {
+  const groups = Array.isArray(state.vaultMountGroups) ? state.vaultMountGroups : [];
+  const group = groups.find((item) => item.id === vaultId);
+  if (!group || !Array.isArray(group.mounts)) {
+    return;
+  }
+  const keysToAdd = group.mounts.map((mount) => buildVaultMountKey(vaultId, mount));
+  const selectedSet = new Set(state.selectedMounts);
+  keysToAdd.forEach((key) => selectedSet.add(key));
+  state.selectedMounts = Array.from(selectedSet);
+  renderMountSelector();
+  renderMountModalList();
+  refreshHtmxCertsTable();
+}
+
+function deselectAllVaultMounts(vaultId) {
+  const prefix = `${vaultId}|`;
+  state.selectedMounts = state.selectedMounts.filter((key) => !key.startsWith(prefix));
   renderMountSelector();
   renderMountModalList();
   refreshHtmxCertsTable();
@@ -786,11 +945,52 @@ async function loadConfig() {
       return;
     }
     const data = await response.json();
-    if (!data || !Array.isArray(data.pkiMounts)) {
+    if (!data) {
+      return;
+    }
+    const vaults = Array.isArray(data.vaults) ? data.vaults : [];
+    if (vaults.length > 0) {
+      state.vaultMountGroups = vaults
+        .map((vault) => {
+          const id = (vault && typeof vault.id === "string") ? vault.id : "";
+          const displayName = (vault && typeof vault.displayName === "string") ? vault.displayName : "";
+          const mounts = Array.isArray(vault && vault.pkiMounts) ? vault.pkiMounts : [];
+          const normalizedMounts = mounts.map((mount) => String(mount)).map((mount) => mount.trim()).filter((mount) => mount !== "");
+          return { id, displayName, mounts: normalizedMounts };
+        })
+        .filter((vault) => vault.id !== "" && vault.mounts.length > 0);
+      state.availableMounts = state.vaultMountGroups
+        .map((vault) => vault.mounts.map((mount) => buildVaultMountKey(vault.id, mount)))
+        .reduce((acc, keys) => acc.concat(keys), []);
+      state.selectedMounts = [...state.availableMounts];
+
+      const vaultFilter = document.getElementById("vcv-vault-filter");
+      const pkiFilter = document.getElementById("vcv-pki-filter");
+      const vaultOptions = state.vaultMountGroups.map((group) => group.id);
+      const uniquePki = state.vaultMountGroups
+        .map((group) => group.mounts)
+        .reduce((acc, mounts) => acc.concat(mounts), [])
+        .map((value) => String(value).trim())
+        .filter((value) => value !== "");
+      const pkiOptions = Array.from(new Set(uniquePki)).sort();
+      updateSelectOptions(vaultFilter, vaultOptions);
+      updateSelectOptions(pkiFilter, pkiOptions);
+      updateVaultPkiFiltersVisibility(vaultOptions, pkiOptions);
+      applyTranslations();
+      return;
+    }
+    if (!Array.isArray(data.pkiMounts)) {
       return;
     }
     state.availableMounts = data.pkiMounts;
     state.selectedMounts = [...data.pkiMounts];
+
+    const vaultFilter = document.getElementById("vcv-vault-filter");
+    const pkiFilter = document.getElementById("vcv-pki-filter");
+    updateSelectOptions(vaultFilter, []);
+    updateSelectOptions(pkiFilter, state.availableMounts);
+    updateVaultPkiFiltersVisibility([], state.availableMounts);
+    applyTranslations();
   } catch {
   }
 }
@@ -812,6 +1012,10 @@ function initEventHandlers() {
       }
     });
   }
+
+  document.querySelectorAll(".vcv-sort").forEach((button) => {
+    button.addEventListener("click", handleSortClick);
+  });
 }
 
 function dismissNotifications() {
@@ -824,14 +1028,8 @@ function dismissNotifications() {
 async function main() {
   applyThemeFromStorage();
   initLanguageFromURL();
-  await loadMessages();
-  applyTranslations();
   initEventHandlers();
-  await loadConfig();
-  applyCertsStateFromUrl();
-  renderMountSelector();
-  setMountsHiddenField();
-  
+
   // Initialize HTMX enhancements
   initHtmxErrorHandler();
   initLoadingIndicators();
@@ -839,8 +1037,16 @@ async function main() {
   initCacheManagement();
   initUrlSync();
   initVaultConnectionNotifications();
-  
+
+  // Apply URL state and trigger first table load ASAP.
+  applyCertsStateFromUrl();
   refreshHtmxCertsTable();
+
+  // Load non-critical startup data in parallel.
+  await Promise.all([loadMessages(), loadConfig()]);
+  applyTranslations();
+  renderMountSelector();
+  setMountsHiddenField();
 }
 
 main();
@@ -850,6 +1056,8 @@ window.closeMountModal = closeMountModal;
 window.toggleMount = toggleMount;
 window.selectAllMounts = selectAllMounts;
 window.deselectAllMounts = deselectAllMounts;
+window.selectAllVaultMounts = selectAllVaultMounts;
+window.deselectAllVaultMounts = deselectAllVaultMounts;
 window.openCertificateModal = openCertificateModal;
 window.closeCertificateModal = closeCertificateModal;
 window.dismissNotifications = dismissNotifications;

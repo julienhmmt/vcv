@@ -3,10 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 	"vcv/internal/metrics"
@@ -24,6 +27,98 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, statusClients map[string]vault.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		ctx := req.Context()
+		type vaultStatusEntry struct {
+			ID          string `json:"id"`
+			DisplayName string `json:"display_name"`
+			Connected   bool   `json:"connected"`
+			Error       string `json:"error,omitempty"`
+		}
+		type statusResponse struct {
+			Version        string             `json:"version"`
+			VaultConnected bool               `json:"vault_connected"`
+			VaultError     string             `json:"vault_error,omitempty"`
+			Vaults         []vaultStatusEntry `json:"vaults"`
+		}
+		response := statusResponse{Version: version.Version, Vaults: make([]vaultStatusEntry, 0, len(cfg.Vaults))}
+		if err := primaryVaultClient.CheckConnection(ctx); err != nil {
+			response.VaultConnected = false
+			response.VaultError = err.Error()
+		} else {
+			response.VaultConnected = true
+		}
+		for _, instance := range cfg.Vaults {
+			name := instance.DisplayName
+			client := statusClients[instance.ID]
+			entry := vaultStatusEntry{ID: instance.ID, DisplayName: name}
+			if client == nil {
+				entry.Connected = false
+				entry.Error = "missing vault status client"
+				response.Vaults = append(response.Vaults, entry)
+				continue
+			}
+			if err := client.CheckConnection(ctx); err != nil {
+				entry.Connected = false
+				entry.Error = err.Error()
+			} else {
+				entry.Connected = true
+			}
+			response.Vaults = append(response.Vaults, entry)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(response)
+	}
+}
+
+func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClients map[string]vault.Client, multiVaultClient vault.Client, registry *prometheus.Registry, webFS fs.FS, settingsPath string) (*chi.Mux, error) {
+	r := chi.NewRouter()
+	assetsFS, assetsError := fs.Sub(webFS, "assets")
+	if assetsError != nil {
+		return nil, assetsError
+	}
+
+	// Middleware must be registered before any routes
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+	r.Use(middleware.SecurityHeaders)
+
+	// Static frontend from embedded filesystem
+	r.Get("/", func(w http.ResponseWriter, req *http.Request) {
+		data, readError := fs.ReadFile(webFS, "index.html")
+		if readError != nil {
+			logger.Get().Error().Err(readError).
+				Str("path", "/").
+				Msg("Failed to read embedded index.html")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write(data)
+	})
+	staticHandler := http.StripPrefix("/assets/", http.FileServer(http.FS(assetsFS)))
+	r.Handle("/assets/*", staticHandler)
+
+	// Health and readiness probes
+	r.Get("/api/health", handlers.HealthCheck)
+	r.Get("/api/ready", handlers.ReadinessCheck)
+	r.Get("/api/status", newStatusHandler(cfg, primaryVaultClient, statusClients))
+	r.Get("/api/version", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(version.Info())
+	})
+	r.Get("/api/config", handlers.GetConfig(cfg))
+	r.Get("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP)
+	handlers.RegisterI18nRoutes(r)
+	handlers.RegisterCertRoutes(r, multiVaultClient)
+	handlers.RegisterUIRoutes(r, multiVaultClient, cfg.Vaults, statusClients, webFS, cfg.ExpirationThresholds)
+	handlers.RegisterAdminRoutes(r, webFS, settingsPath, cfg.Env)
+
+	return r, nil
+}
+
 func main() {
 	cfg := config.Load()
 
@@ -40,13 +135,36 @@ func main() {
 		Str("log_level", cfg.LogLevel).
 		Str("log_format", cfg.LogFormat).
 		Msg("Configuration loaded")
-
-	r := chi.NewRouter()
-	vaultClient, vaultError := vault.NewClientFromConfig(cfg.Vault)
+	primaryVaultClient, vaultError := vault.NewClientFromConfig(cfg.Vault)
 	if vaultError != nil {
 		log.Fatal().Err(vaultError).
 			Msg("Failed to initialize Vault client")
 	}
+
+	statusClients := make(map[string]vault.Client, len(cfg.Vaults))
+	primaryID := ""
+	if len(cfg.Vaults) > 0 {
+		primaryID = cfg.Vaults[0].ID
+	}
+	for _, instance := range cfg.Vaults {
+		if instance.ID == "" {
+			continue
+		}
+		if primaryID != "" && instance.ID == primaryID {
+			statusClients[instance.ID] = primaryVaultClient
+			continue
+		}
+		statusCfg := config.VaultConfig{Addr: instance.Address, PKIMounts: instance.PKIMounts, ReadToken: instance.Token, TLSInsecure: instance.TLSInsecure}
+		client, err := vault.NewClientFromConfig(statusCfg)
+		if err != nil {
+			log.Fatal().Err(err).
+				Str("vault_id", instance.ID).
+				Msg("Failed to initialize Vault status client")
+		}
+		statusClients[instance.ID] = client
+	}
+
+	multiVaultClient := vault.NewMultiClient(cfg.Vaults, statusClients)
 
 	log.Info().
 		Str("vault_addr", cfg.Vault.Addr).
@@ -55,71 +173,42 @@ func main() {
 
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(collectors.NewGoCollector())
-	registry.MustRegister(metrics.NewCertificateCollector(vaultClient))
+	registry.MustRegister(metrics.NewCertificateCollectorWithVaults(multiVaultClient, statusClients, cfg.ExpirationThresholds, cfg.Vaults))
 
 	webFS, fsError := fs.Sub(embeddedWeb, "web")
 	if fsError != nil {
 		log.Fatal().Err(fsError).
 			Msg("Failed to initialize embedded web filesystem")
 	}
-	assetsFS, assetsError := fs.Sub(webFS, "assets")
-	if assetsError != nil {
-		log.Fatal().Err(assetsError).
-			Msg("Failed to initialize embedded assets filesystem")
+
+	settingsPath := strings.TrimSpace(os.Getenv("SETTINGS_PATH"))
+	if settingsPath == "" {
+		candidates := []string{fmt.Sprintf("settings.%s.json", string(cfg.Env)), "settings.json", "./settings.json", "/etc/vcv/settings.json"}
+		for _, candidate := range candidates {
+			absPath, absErr := filepath.Abs(candidate)
+			if absErr != nil {
+				continue
+			}
+			if _, statErr := os.Stat(absPath); statErr != nil {
+				continue
+			}
+			settingsPath = absPath
+			break
+		}
+		if settingsPath == "" {
+			settingsPath = filepath.Join(".", fmt.Sprintf("settings.%s.json", string(cfg.Env)))
+		}
 	}
 
-	// Middleware must be registered before any routes
-	r.Use(middleware.RequestID)
-	r.Use(middleware.Logger)
-	r.Use(middleware.Recoverer)
-	r.Use(middleware.SecurityHeaders)
-
-	// Static frontend from embedded filesystem
-	r.Get("/", func(w http.ResponseWriter, req *http.Request) {
-		data, readError := fs.ReadFile(webFS, "index.html")
-		if readError != nil {
-			log.Error().Err(readError).
-				Str("path", "/").
-				Msg("Failed to read embedded index.html")
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write(data)
-	})
-	staticHandler := http.StripPrefix("/assets/", http.FileServer(http.FS(assetsFS)))
-	r.Handle("/assets/*", staticHandler)
-
-	// Health and readiness probes
-	r.Get("/api/health", handlers.HealthCheck)
-	r.Get("/api/ready", handlers.ReadinessCheck)
-	r.Get("/api/status", func(w http.ResponseWriter, req *http.Request) {
-		ctx := req.Context()
-		status := map[string]interface{}{
-			"version": version.Version,
-		}
-		if err := vaultClient.CheckConnection(ctx); err != nil {
-			status["vault_connected"] = false
-			status["vault_error"] = err.Error()
-		} else {
-			status["vault_connected"] = true
-		}
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(status)
-	})
-	r.Get("/api/version", func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		_ = json.NewEncoder(w).Encode(version.Info())
-	})
-	r.Get("/api/config", handlers.GetConfig(cfg))
-	r.Get("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP)
-	handlers.RegisterI18nRoutes(r)
-	handlers.RegisterCertRoutes(r, vaultClient)
-	handlers.RegisterUIRoutes(r, vaultClient, webFS, cfg.ExpirationThresholds)
+	router, buildErr := buildRouter(cfg, primaryVaultClient, statusClients, multiVaultClient, registry, webFS, settingsPath)
+	if buildErr != nil {
+		log.Fatal().Err(buildErr).
+			Msg("Failed to initialize router")
+	}
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Port,
-		Handler:      r,
+		Handler:      router,
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -144,8 +233,16 @@ func main() {
 		log.Fatal().Err(err).Msg("Server forced to shutdown")
 	}
 
-	// Shutdown Vault client (stops background goroutines)
-	vaultClient.Shutdown()
+	uniqueClients := make(map[vault.Client]struct{})
+	for _, client := range statusClients {
+		if client == nil {
+			continue
+		}
+		uniqueClients[client] = struct{}{}
+	}
+	for client := range uniqueClients {
+		client.Shutdown()
+	}
 
 	log.Info().Msg("Server stopped")
 }

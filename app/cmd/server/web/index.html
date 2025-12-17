@@ -4,6 +4,9 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>VaultCertsViewer</title>
+    <style>
+      .vcv-hidden { display: none; }
+    </style>
     <link rel="stylesheet" href="/assets/styles.css" />
     <link rel="icon" href="assets/favicon.ico" type="image/x-icon" />
   </head>
@@ -56,6 +59,38 @@
               <div id="mount-selector" class="vcv-mount-filter"></div>
               <input id="vcv-mounts" name="mounts" type="hidden" value="__all__" />
             </div>
+            <div class="vcv-filter-group" id="vcv-vault-filter-group">
+              <label id="vcv-vault-filter-label" class="vcv-filter-label" for="vcv-vault-filter">Vault</label>
+              <select
+                id="vcv-vault-filter"
+                class="vcv-select"
+                name="vault"
+                hx-get="/ui/certs"
+                hx-trigger="change"
+                hx-target="#vcv-certs-body"
+                hx-swap="innerHTML"
+                hx-sync="#vcv-certs-body:replace"
+                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+              >
+                <option value="all">All</option>
+              </select>
+            </div>
+            <div class="vcv-filter-group" id="vcv-pki-filter-group">
+              <label id="vcv-pki-filter-label" class="vcv-filter-label" for="vcv-pki-filter">PKI</label>
+              <select
+                id="vcv-pki-filter"
+                class="vcv-select"
+                name="pki"
+                hx-get="/ui/certs"
+                hx-trigger="change"
+                hx-target="#vcv-certs-body"
+                hx-swap="innerHTML"
+                hx-sync="#vcv-certs-body:replace"
+                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+              >
+                <option value="all">All</option>
+              </select>
+            </div>
             <div class="vcv-filter-group vcv-filter-group-search">
               <input
                 id="vcv-search"
@@ -68,7 +103,7 @@
                 hx-target="#vcv-certs-body"
                 hx-swap="innerHTML"
                 hx-sync="#vcv-certs-body:replace"
-                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
               />
             </div>
             <div class="vcv-filter-group">
@@ -82,7 +117,7 @@
                 hx-target="#vcv-certs-body"
                 hx-swap="innerHTML"
                 hx-sync="#vcv-certs-body:replace"
-                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
               >
                 <option value="all">All</option>
                 <option value="valid">Valid</option>
@@ -100,7 +135,7 @@
                 hx-target="#vcv-certs-body"
                 hx-swap="innerHTML"
                 hx-sync="#vcv-certs-body:replace"
-                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
               >
                 <option value="all">All dates</option>
                 <option value="7">≤ 7 days</option>
@@ -119,7 +154,7 @@
               hx-target="#vcv-certs-body"
               hx-swap="innerHTML"
               hx-sync="#vcv-certs-body:replace"
-              hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+              hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             >
               <span class="vcv-refresh-icon">↻</span>
             </button>
@@ -213,7 +248,7 @@
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
           >
             <option value="25">25</option>
             <option value="50">50</option>
@@ -230,7 +265,7 @@
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             hx-vals='{"pageAction":"prev"}'
           >
             Previous
@@ -245,7 +280,7 @@
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             hx-vals='{"pageAction":"next"}'
           >
             Next
@@ -262,6 +297,16 @@
                   <span class="vcv-sort-label">Common name</span>
                   <span class="vcv-sort-indicator" aria-hidden="true"></span>
                 </button>
+                <div id="vcv-sort-meta" class="vcv-sort-meta">
+                  <button type="button" id="vcv-sort-vault" class="vcv-sort" data-sort-key="vault" data-direction="asc">
+                    <span class="vcv-sort-label">Vault</span>
+                    <span class="vcv-sort-indicator" aria-hidden="true"></span>
+                  </button>
+                  <button type="button" id="vcv-sort-pki" class="vcv-sort" data-sort-key="pki" data-direction="asc">
+                    <span class="vcv-sort-label">PKI</span>
+                    <span class="vcv-sort-indicator" aria-hidden="true"></span>
+                  </button>
+                </div>
               </th>
               <th>SAN</th>
               <th>
@@ -283,10 +328,13 @@
           <tbody
             id="vcv-certs-body"
             hx-get="/ui/certs"
-            hx-trigger="load"
             hx-swap="innerHTML"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
-          ></tbody>
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+          >
+            <tr>
+              <td colspan="6">Loading...</td>
+            </tr>
+          </tbody>
         </table>
       </div>
       <div class="vcv-legend">
@@ -336,8 +384,8 @@
       <div class="vcv-footer-left">
         <span id="vcv-footer-version" class="vcv-footer-version">—</span>
       </div>
-      <div class="vcv-footer-right">
-        <span id="vcv-footer-vault" class="vcv-footer-pill">Vault: …</span>
+      <div id="vcv-footer-vaults" class="vcv-footer-right">
+        <span class="vcv-footer-pill">Vault: …</span>
       </div>
     </footer>
     <div id="vcv-footer-sink" class="vcv-hidden"></div>

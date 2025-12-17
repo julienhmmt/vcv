@@ -1,38 +1,21 @@
 ---
 services:
   vcv:
-    image: jhmmt/vcv:1.3
+    image: jhmmt/vcv:1.4
     container_name: vcv
     restart: unless-stopped
     ports:
       - "52000:52000/tcp"
-    # Choose one of the following:
-    # - Use .env file
-    # env_file:
-      # - .env
-    # - Use environment variables
-    environment:
-      - APP_ENV=prod
-      - LOG_LEVEL=info
-      - LOG_FORMAT=json
-      # Log file path (required if LOG_OUTPUT is 'file' or 'both')
-      # - LOG_FILE_PATH=/var/log/app/vcv.log
-      - LOG_OUTPUT=stdout # 'file', 'stdout' or 'both'
-      - PORT=52000
-      - VAULT_ADDR=${VAULT_ADDR:?VAULT_ADDR is required}
-      - VAULT_PKI_MOUNTS=${VAULT_PKI_MOUNTS:-pki,pki2}
-      - VAULT_READ_TOKEN=${VAULT_READ_TOKEN:?VAULT_READ_TOKEN is required}
-      - VAULT_TLS_INSECURE=${VAULT_TLS_INSECURE:-false}
-      # Certificate expiration thresholds (in days)
-      - VCV_EXPIRE_CRITICAL=${VCV_EXPIRE_CRITICAL:-7}
-      - VCV_EXPIRE_WARNING=${VCV_EXPIRE_WARNING:-30}
     cap_drop:
       - ALL
     read_only: true
     security_opt:
       - no-new-privileges:true
-    # volumes: # only if you have the env var LOG_OUTPUT=file 
-      # - ./vcv.log:/var/log/app/vcv.log
+    environment:
+      - VCV_ADMIN_PASSWORD=$$2y$$10$$.SWJT4Amz9tyq4qq2vqQyOZm/KZAf38YVVNxj/6EvYLk4I0C6Q9A2
+      - SETTINGS_PATH=/app/settings.json
+    volumes:
+      - ./settings.json:/app/settings.json
     deploy:
       resources:
         limits:

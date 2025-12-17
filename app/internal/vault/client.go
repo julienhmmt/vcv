@@ -2,6 +2,7 @@ package vault
 
 import (
 	"context"
+	"time"
 
 	"vcv/internal/certs"
 )
@@ -14,4 +15,19 @@ type Client interface {
 	InvalidateCache()
 	ListCertificates(ctx context.Context) ([]certs.Certificate, error)
 	Shutdown()
+}
+
+type CacheSizer interface {
+	CacheSize() int
+}
+
+type ListCertificatesByVaultResult struct {
+	VaultID      string
+	Certificates []certs.Certificate
+	Duration     time.Duration
+	ListError    error
+}
+
+type CertificatesByVaultLister interface {
+	ListCertificatesByVault(ctx context.Context) []ListCertificatesByVaultResult
 }

@@ -28,6 +28,9 @@ type realClient struct {
 }
 
 func NewClientFromConfig(cfg config.VaultConfig) (Client, error) {
+	if cfg.Addr == "" && cfg.ReadToken == "" {
+		return &disabledClient{}, nil
+	}
 	if cfg.Addr == "" {
 		return nil, fmt.Errorf("vault address is empty")
 	}
@@ -383,4 +386,11 @@ func (c *realClient) GetCertificatePEM(ctx context.Context, serialNumber string)
 
 func (c *realClient) InvalidateCache() {
 	c.cache.Clear()
+}
+
+func (c *realClient) CacheSize() int {
+	if c.cache == nil {
+		return 0
+	}
+	return c.cache.Size()
 }
