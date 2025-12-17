@@ -98,7 +98,7 @@ docker run -d \
   -v "$(pwd)/settings.json:/app/settings.json:rw" \
   -v "$(pwd)/logs:/var/log/app:rw" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
-  -p 52000:52000 jhmmt/vcv:1.3
+  -p 52000:52000 jhmmt/vcv:1.4
 ```
 
 ## ⏱️ Certificate expiration thresholds
@@ -407,8 +407,8 @@ The administration panel is a list of every Vault connected and their PKI engine
 
 ## 🖼️ Picture of the app
 
-![VaultCertsViewer v1.3](img/VaultCertsViewer-v1.3.png)
+![VaultCertsViewer v1.4](img/VaultCertsViewer-v1.4.png)
 
-![VaultCertsViewer v1.3 - Light Mode](img/VaultCertsViewer-v1.3-light.png)
+![VaultCertsViewer v1.4 - Light Mode](img/VaultCertsViewer-v1.4-light.png)
 
-![VaultCertsViewer v1.3 - Dark Mode](img/VaultCertsViewer-v1.3-dark.png)
+![VaultCertsViewer v1.4 - Dark Mode](img/VaultCertsViewer-v1.4-dark.png)
