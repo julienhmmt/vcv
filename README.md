@@ -135,7 +135,6 @@ Metrics are exposed at `/metrics` endpoint.
 - vcv_certificate_expiry_timestamp_seconds{serial_number, common_name, status}
 - vcv_certificate_exporter_last_scrape_success
 - vcv_certificates_expired_count
-- vcv_certificates_expires_soon_count Number of certificates expiring soon within threshold window
 - vcv_certificates_last_fetch_timestamp_seconds
 - vcv_certificates_total{status}
 - vcv_vault_connected
@@ -205,6 +204,15 @@ If you are using AlertManager, you can create alerts based on these metrics. For
 ```
 
 You can adjust the "soon" window (here 14 days) directly in PromQL without changing the exporter.
+
+## 🔐 Admin
+
+If you set `VCV_ADMIN_PASSWORD`, an admin panel is enabled at `/admin`.
+
+- The password can be provided as plaintext or as a **bcrypt hash**.
+- The admin panel edits the configured settings file, so the mounted `settings.json` must be writable.
+
+The administration panel is a list of every Vault connected and their PKI engines. You will be able to update, add or delete vaults and pki engines.
 
 ## 🔎 More details
 

@@ -7,15 +7,16 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 - **Backend**: Go + chi router, Vault client (`github.com/hashicorp/vault/api`), zerolog-based logging.
 - **Frontend**: Plain `index.html`, `styles.css`, `app-htmx.js` served from the embedded filesystem (no Node/bundler).
 - **Binary layout**: `app/cmd/server` embeds `/web` assets via Go `embed`; a single executable serves both API and UI.
-- **HTMX Integration**: Reactive UI with seamless updates, request management, and error handling.
+- **HTMX Integration**: Certificate UI fragments under `/ui/*` and optional Admin panel under `/admin/*`.
 
 ## Directory layout (app/)
 
 - `cmd/server/main.go` — entrypoint, router, middleware, static file serving, graceful shutdown.
-- `cmd/server/web/` — `index.html`, `assets/app-htmx.js`, `assets/styles.css`, `templates/` (HTMX partials).
+- `cmd/server/web/` — `index.html`, `assets/app-htmx.js`, `assets/styles.css`, `templates/` (UI fragments + Admin templates).
 - `config/` — environment-backed configuration loading with expiration threshold support.
 - `internal/cache/` — simple in-memory TTL cache (used by Vault client).
 - `internal/handlers/` — HTTP handlers (`certs`, `i18n`, `health`, `ready`, `ui` routes).
+- `internal/metrics/` — Prometheus collectors.
 - `internal/logger/` — zerolog initialization and structured helpers (HTTP events, panic).
 - `internal/vault/` — Vault client implementations with graceful shutdown support.
 - `internal/version/` — build version info (injected via ldflags).
@@ -29,15 +30,27 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 | `/api/cache/invalidate` | POST | Clear Vault cache |
 | `/api/certs/{id}/details` | GET | Detailed certificate view |
 | `/api/certs/{id}/pem` | GET | PEM content |
+| `/api/certs/{id}/pem/download` | GET | Download PEM content |
 | `/api/certs` | GET | List certificates |
 | `/api/config` | GET | Application configuration (thresholds) |
 | `/api/health` | GET | Liveness probe |
 | `/api/i18n` | GET | UI translations (lang via query param) |
 | `/api/ready` | GET | Readiness probe |
+| `/api/status` | GET | Vault connection status (per vault) |
 | `/api/version` | GET | Application version info |
-| `/ui/*` | GET | HTMX partial templates for reactive UI |
+| `/metrics` | GET | Prometheus metrics |
+| `/ui/certs` | GET | HTMX fragment: certificates table + dashboard |
+| `/ui/certs/refresh` | POST | HTMX fragment: refresh certificates |
+| `/ui/certs/{id}/details` | GET | HTMX fragment: certificate details |
 | `/ui/theme/toggle` | POST | Toggle dark/light theme |
 | `/ui/status` | GET | Real-time Vault connection status |
+| `/admin` | GET | Admin page (enabled only if `VCV_ADMIN_PASSWORD` is set) |
+| `/admin/panel` | GET | Admin panel fragment (HTMX) |
+| `/admin/login` | POST | Admin login (HTMX) |
+| `/admin/logout` | POST | Admin logout (HTMX) |
+| `/api/admin/login` | POST | Admin login (JSON) |
+| `/api/admin/logout` | POST | Admin logout (JSON) |
+| `/api/admin/settings` | GET/PUT | Admin settings (JSON, requires auth) |
 
 ## Configuration (settings.json)
 
@@ -47,6 +60,8 @@ Recommended deployment pattern:
 
 - Mount a `settings.json` file into the container under `/app/settings.json` (the image `WORKDIR` is `/app`).
 - The application will automatically discover the settings file without requiring `SETTINGS_PATH`.
+
+If you enable the Admin panel, the settings file must be writable so changes can be persisted.
 
 ### Resolution order
 
@@ -105,14 +120,6 @@ Key legacy variables include `VAULT_ADDR`, `VAULT_READ_TOKEN`, `VAULT_PKI_MOUNTS
 - Toast notifications for Vault connection status are fully translated.
 
 ## Frontend Features
-
-### HTMX Integration
-
-- Reactive UI with partial template updates
-- Request synchronization and automatic cancellation
-- Intelligent retry with exponential backoff
-- URL state management for deep-linking
-- Loading states and skeleton screens
 
 ### User Experience
 
