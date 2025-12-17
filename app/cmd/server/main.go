@@ -83,7 +83,7 @@ func main() {
 
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(collectors.NewGoCollector())
-	registry.MustRegister(metrics.NewCertificateCollector(multiVaultClient))
+	registry.MustRegister(metrics.NewCertificateCollectorWithVaults(multiVaultClient, statusClients, cfg.ExpirationThresholds, cfg.Vaults))
 
 	webFS, fsError := fs.Sub(embeddedWeb, "web")
 	if fsError != nil {

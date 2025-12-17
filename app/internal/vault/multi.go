@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"vcv/config"
 	"vcv/internal/certs"
@@ -128,6 +129,49 @@ func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate
 		return left.ID < right.ID
 	})
 	return all, nil
+}
+
+func (c *multiClient) ListCertificatesByVault(ctx context.Context) []ListCertificatesByVaultResult {
+	results := make([]ListCertificatesByVaultResult, 0, len(c.orderedVaultIDs))
+	for _, vaultID := range c.orderedVaultIDs {
+		client := c.clientsByVault[vaultID]
+		if client == nil {
+			results = append(results, ListCertificatesByVaultResult{VaultID: vaultID, Certificates: []certs.Certificate{}, Duration: 0, ListError: fmt.Errorf("missing vault client for %s", vaultID)})
+			continue
+		}
+		start := time.Now()
+		certificates, err := client.ListCertificates(ctx)
+		duration := time.Since(start)
+		if err != nil {
+			results = append(results, ListCertificatesByVaultResult{VaultID: vaultID, Certificates: []certs.Certificate{}, Duration: duration, ListError: err})
+			continue
+		}
+		prefixed := make([]certs.Certificate, 0, len(certificates))
+		for _, certificate := range certificates {
+			value := certificate
+			value.ID = fmt.Sprintf("%s|%s", vaultID, certificate.ID)
+			prefixed = append(prefixed, value)
+		}
+		results = append(results, ListCertificatesByVaultResult{VaultID: vaultID, Certificates: prefixed, Duration: duration, ListError: nil})
+	}
+	return results
+}
+
+func (c *multiClient) CacheSize() int {
+	unique := make(map[Client]struct{})
+	for _, client := range c.clientsByVault {
+		if client == nil {
+			continue
+		}
+		unique[client] = struct{}{}
+	}
+	total := 0
+	for client := range unique {
+		if sizer, ok := client.(CacheSizer); ok {
+			total += sizer.CacheSize()
+		}
+	}
+	return total
 }
 
 func (c *multiClient) Shutdown() {

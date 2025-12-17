@@ -387,3 +387,10 @@ func (c *realClient) GetCertificatePEM(ctx context.Context, serialNumber string)
 func (c *realClient) InvalidateCache() {
 	c.cache.Clear()
 }
+
+func (c *realClient) CacheSize() int {
+	if c.cache == nil {
+		return 0
+	}
+	return c.cache.Size()
+}
