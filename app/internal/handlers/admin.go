@@ -2,12 +2,14 @@ package handlers
 
 import (
 	"crypto/rand"
+	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
 	"io/fs"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -29,6 +31,8 @@ import (
 
 const adminCookieName string = "vcv_admin_session"
 const adminUsername string = "admin"
+
+const adminMaxSessions int = 1024
 
 type adminLoginRequest struct {
 	Username string `json:"username"`
@@ -62,10 +66,100 @@ type adminSessionStore struct {
 	sessions      map[string]time.Time
 	sessionTTL    time.Duration
 	secureCookies bool
+	limiter       *adminLoginLimiter
 }
 
 func newAdminSessionStore(password string, secureCookies bool) *adminSessionStore {
-	return &adminSessionStore{password: password, sessions: make(map[string]time.Time), sessionTTL: 12 * time.Hour, secureCookies: secureCookies}
+	store := &adminSessionStore{password: password, sessions: make(map[string]time.Time), sessionTTL: 12 * time.Hour, secureCookies: secureCookies}
+	if secureCookies {
+		store.limiter = newAdminLoginLimiter(10, 5*time.Minute)
+	}
+	return store
+}
+
+type adminLoginLimiter struct {
+	mu          sync.Mutex
+	maxAttempts int
+	window      time.Duration
+	entries     map[string]adminLoginLimiterEntry
+}
+
+type adminLoginLimiterEntry struct {
+	count   int
+	resetAt time.Time
+}
+
+func newAdminLoginLimiter(maxAttempts int, window time.Duration) *adminLoginLimiter {
+	return &adminLoginLimiter{maxAttempts: maxAttempts, window: window, entries: make(map[string]adminLoginLimiterEntry)}
+}
+
+func (l *adminLoginLimiter) allow(now time.Time, key string) bool {
+	if key == "" {
+		return true
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	entry := l.entries[key]
+	if entry.resetAt.IsZero() || now.After(entry.resetAt) {
+		entry = adminLoginLimiterEntry{count: 0, resetAt: now.Add(l.window)}
+	}
+	entry.count++
+	l.entries[key] = entry
+	return entry.count <= l.maxAttempts
+}
+
+func clientIP(r *http.Request) string {
+	forwarded := strings.TrimSpace(r.Header.Get("X-Forwarded-For"))
+	if forwarded != "" {
+		parts := strings.Split(forwarded, ",")
+		if len(parts) > 0 {
+			value := strings.TrimSpace(parts[0])
+			if value != "" {
+				return value
+			}
+		}
+	}
+	realIP := strings.TrimSpace(r.Header.Get("X-Real-IP"))
+	if realIP != "" {
+		return realIP
+	}
+	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
+	if err == nil {
+		return host
+	}
+	return strings.TrimSpace(r.RemoteAddr)
+}
+
+func (s *adminSessionStore) allowLoginAttempt(r *http.Request) bool {
+	if s.limiter == nil {
+		return true
+	}
+	return s.limiter.allow(time.Now(), clientIP(r))
+}
+
+func (s *adminSessionStore) pruneSessions(now time.Time) {
+	for token, expiresAt := range s.sessions {
+		if now.After(expiresAt) {
+			delete(s.sessions, token)
+		}
+	}
+	if len(s.sessions) <= adminMaxSessions {
+		return
+	}
+	for len(s.sessions) > adminMaxSessions {
+		var oldestToken string
+		oldestExpiry := now.Add(365 * 24 * time.Hour)
+		for token, expiresAt := range s.sessions {
+			if expiresAt.Before(oldestExpiry) {
+				oldestToken = token
+				oldestExpiry = expiresAt
+			}
+		}
+		if oldestToken == "" {
+			break
+		}
+		delete(s.sessions, oldestToken)
+	}
 }
 
 func (s *adminSessionStore) createToken() (string, error) {
@@ -96,16 +190,18 @@ func subtleConstantTimeEquals(left string, right string) bool {
 	if len(leftBytes) != len(rightBytes) {
 		return false
 	}
-	result := byte(0)
-	for i := 0; i < len(leftBytes); i++ {
-		result |= leftBytes[i] ^ rightBytes[i]
-	}
-	return result == 0
+	return subtle.ConstantTimeCompare(leftBytes, rightBytes) == 1
 }
 
 func (s *adminSessionStore) login(w http.ResponseWriter, r *http.Request) {
 	var payload adminLoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+	if !s.allowLoginAttempt(r) {
+		http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+		return
+	}
+	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&payload); err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
@@ -120,35 +216,40 @@ func (s *adminSessionStore) login(w http.ResponseWriter, r *http.Request) {
 	}
 	expiresAt := time.Now().Add(s.sessionTTL)
 	s.mu.Lock()
+	s.pruneSessions(time.Now())
 	s.sessions[token] = expiresAt
 	s.mu.Unlock()
-	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: token, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: s.secureCookies, Expires: expiresAt})
+	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: token, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: s.secureCookies, Expires: expiresAt})
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *adminSessionStore) loginFromForm(w http.ResponseWriter, r *http.Request) bool {
+func (s *adminSessionStore) loginFromForm(w http.ResponseWriter, r *http.Request) (bool, string) {
+	if !s.allowLoginAttempt(r) {
+		return false, "Too many attempts"
+	}
 	if err := r.ParseForm(); err != nil {
-		return false
+		return false, "Invalid credentials"
 	}
 	username := strings.TrimSpace(r.PostForm.Get("username"))
 	password := r.PostForm.Get("password")
 	if !s.verify(username, password) {
-		return false
+		return false, "Invalid credentials"
 	}
 	token, err := s.createToken()
 	if err != nil {
-		return false
+		return false, "Invalid credentials"
 	}
 	expiresAt := time.Now().Add(s.sessionTTL)
 	s.mu.Lock()
+	s.pruneSessions(time.Now())
 	s.sessions[token] = expiresAt
 	s.mu.Unlock()
-	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: token, Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: s.secureCookies, Expires: expiresAt})
-	return true
+	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: token, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: s.secureCookies, Expires: expiresAt})
+	return true, ""
 }
 
 func (s *adminSessionStore) clearCookie(w http.ResponseWriter) {
-	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: "", Path: "/", HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: s.secureCookies, Expires: time.Unix(0, 0), MaxAge: -1})
+	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: "", Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: s.secureCookies, Expires: time.Unix(0, 0), MaxAge: -1})
 }
 
 func (s *adminSessionStore) logoutJSON(w http.ResponseWriter, _ *http.Request) {
@@ -169,6 +270,7 @@ func (s *adminSessionStore) requireAuth(next http.Handler) http.Handler {
 			return
 		}
 		s.mu.Lock()
+		s.pruneSessions(time.Now())
 		expiresAt, ok := s.sessions[token]
 		if !ok || time.Now().After(expiresAt) {
 			delete(s.sessions, token)
@@ -531,7 +633,8 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 		}
 	})
 	router.Post("/admin/login", func(w http.ResponseWriter, r *http.Request) {
-		if sessions.loginFromForm(w, r) {
+		ok, errorText := sessions.loginFromForm(w, r)
+		if ok {
 			settings, err := store.load()
 			if err != nil {
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -541,7 +644,7 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 			_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
 			return
 		}
-		_ = renderAdminTemplate(w, templates, "admin-login-fragment.html", adminLoginTemplateData{ErrorText: "Invalid credentials"})
+		_ = renderAdminTemplate(w, templates, "admin-login-fragment.html", adminLoginTemplateData{ErrorText: errorText})
 	})
 	router.Post("/admin/logout", func(w http.ResponseWriter, r *http.Request) {
 		sessions.clearCookie(w)

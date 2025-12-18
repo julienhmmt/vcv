@@ -29,6 +29,7 @@ import (
 
 const serverReadHeaderTimeout time.Duration = 5 * time.Second
 const serverMaxHeaderBytes int = 1 << 20
+const routerMaxBodyBytes int64 = 1 << 20
 
 func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, statusClients map[string]vault.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -82,12 +83,17 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 		return nil, assetsError
 	}
 	indexHTML, indexHTMLError := fs.ReadFile(webFS, "index.html")
+	corsConfig := middleware.DefaultCORSConfig()
+	corsConfig.AllowedOrigins = cfg.CORS.AllowedOrigins
+	corsConfig.AllowCredentials = cfg.CORS.AllowCredentials
 
 	// Middleware must be registered before any routes
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.SecurityHeaders)
+	r.Use(middleware.CORS(corsConfig))
+	r.Use(middleware.BodyLimit(routerMaxBodyBytes))
 	r.Use(middleware.CSRFProtection)
 
 	// Static frontend from embedded filesystem

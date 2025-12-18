@@ -123,7 +123,7 @@ func TestAdminSessionStore_LoginFromForm_SetsCookie(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
-	ok := store.loginFromForm(rec, req)
+	ok, _ := store.loginFromForm(rec, req)
 	assert.True(t, ok)
 	result := rec.Result()
 	cookies := result.Cookies()

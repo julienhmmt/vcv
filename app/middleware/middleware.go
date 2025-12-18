@@ -263,6 +263,23 @@ func sameOrigin(left string, right string) bool {
 	return strings.EqualFold(strings.TrimSuffix(left, "/"), strings.TrimSuffix(right, "/"))
 }
 
+func BodyLimit(maxBytes int64) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Body == nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+			if r.ContentLength > maxBytes {
+				http.Error(w, http.StatusText(http.StatusRequestEntityTooLarge), http.StatusRequestEntityTooLarge)
+				return
+			}
+			r.Body = http.MaxBytesReader(w, r.Body, maxBytes)
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // SecurityHeaders adds security-related HTTP headers to all responses.
 func SecurityHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
