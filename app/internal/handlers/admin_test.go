@@ -19,6 +19,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/bcrypt"
 
 	"vcv/config"
 )
@@ -32,6 +33,13 @@ func newAdminWebFS() fstest.MapFS {
 	}
 }
 
+func mustBcryptPasswordHash(t *testing.T, value string) string {
+	t.Helper()
+	hash, err := bcrypt.GenerateFromPassword([]byte(value), bcrypt.DefaultCost)
+	require.NoError(t, err)
+	return string(hash)
+}
+
 func TestRegisterAdminRoutes_DisabledWithoutPassword(t *testing.T) {
 	router := chi.NewRouter()
 	t.Setenv("VCV_ADMIN_PASSWORD", "")
@@ -42,10 +50,20 @@ func TestRegisterAdminRoutes_DisabledWithoutPassword(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, rec.Code)
 }
 
+func TestRegisterAdminRoutes_DisabledWithPlaintextPassword(t *testing.T) {
+	router := chi.NewRouter()
+	t.Setenv("VCV_ADMIN_PASSWORD", "secret")
+	RegisterAdminRoutes(router, newAdminWebFS(), t.TempDir()+"/settings.json", config.EnvDev)
+	req := httptest.NewRequest(http.MethodGet, "/admin", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+}
+
 func TestAdminLoginAndSettingsRoundtrip(t *testing.T) {
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	router := chi.NewRouter()
-	t.Setenv("VCV_ADMIN_PASSWORD", "secret")
+	t.Setenv("VCV_ADMIN_PASSWORD", mustBcryptPasswordHash(t, "secret"))
 	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
 	loginPayload, err := json.Marshal(map[string]string{"username": "admin", "password": "secret"})
 	require.NoError(t, err)
@@ -119,7 +137,7 @@ func TestAdminLoginAndSettingsRoundtrip(t *testing.T) {
 }
 
 func TestAdminSessionStore_LoginFromForm_SetsCookie(t *testing.T) {
-	store := newAdminSessionStore("secret", false)
+	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
 	req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
@@ -133,7 +151,7 @@ func TestAdminSessionStore_LoginFromForm_SetsCookie(t *testing.T) {
 }
 
 func TestAdminSessionStore_LogoutJSON_ClearsCookie(t *testing.T) {
-	store := newAdminSessionStore("secret", false)
+	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
 	req := httptest.NewRequest(http.MethodPost, "/api/admin/logout", nil)
 	rec := httptest.NewRecorder()
 	store.logoutJSON(rec, req)
@@ -146,7 +164,7 @@ func TestAdminSessionStore_LogoutJSON_ClearsCookie(t *testing.T) {
 }
 
 func TestAdminSessionStore_RequireAuth_Unauthorized_WhenMissingCookie(t *testing.T) {
-	store := newAdminSessionStore("secret", false)
+	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
 	h := store.requireAuth(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
@@ -157,7 +175,7 @@ func TestAdminSessionStore_RequireAuth_Unauthorized_WhenMissingCookie(t *testing
 }
 
 func TestAdminSessionStore_IsAuthed_ExpiredSession(t *testing.T) {
-	store := newAdminSessionStore("secret", false)
+	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
 	token := "tok"
 	store.sessions[token] = time.Now().Add(-1 * time.Minute)
 	req := httptest.NewRequest(http.MethodGet, "/admin/panel", nil)

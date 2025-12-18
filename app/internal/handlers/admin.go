@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"crypto/rand"
-	"crypto/subtle"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
@@ -181,16 +180,7 @@ func (s *adminSessionStore) verify(username string, password string) bool {
 	if strings.HasPrefix(stored, "$2a$") || strings.HasPrefix(stored, "$2b$") || strings.HasPrefix(stored, "$2y$") {
 		return bcrypt.CompareHashAndPassword([]byte(stored), []byte(password)) == nil
 	}
-	return subtleConstantTimeEquals(stored, password)
-}
-
-func subtleConstantTimeEquals(left string, right string) bool {
-	leftBytes := []byte(left)
-	rightBytes := []byte(right)
-	if len(leftBytes) != len(rightBytes) {
-		return false
-	}
-	return subtle.ConstantTimeCompare(leftBytes, rightBytes) == 1
+	return false
 }
 
 func (s *adminSessionStore) login(w http.ResponseWriter, r *http.Request) {
@@ -589,6 +579,9 @@ func newVaultKey() (string, error) {
 func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, env config.Environment) {
 	password := strings.TrimSpace(os.Getenv("VCV_ADMIN_PASSWORD"))
 	if password == "" {
+		return
+	}
+	if !strings.HasPrefix(password, "$2a$") && !strings.HasPrefix(password, "$2b$") && !strings.HasPrefix(password, "$2y$") {
 		return
 	}
 	secureCookies := env == config.EnvProd
