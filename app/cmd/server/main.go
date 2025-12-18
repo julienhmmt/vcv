@@ -154,7 +154,7 @@ func main() {
 			statusClients[instance.ID] = primaryVaultClient
 			continue
 		}
-		statusCfg := config.VaultConfig{Addr: instance.Address, PKIMounts: instance.PKIMounts, ReadToken: instance.Token, TLSInsecure: instance.TLSInsecure}
+		statusCfg := config.VaultConfig{Addr: instance.Address, PKIMounts: instance.PKIMounts, ReadToken: instance.Token, TLSCACertBase64: instance.TLSCACertBase64, TLSCACert: instance.TLSCACert, TLSCAPath: instance.TLSCAPath, TLSServerName: instance.TLSServerName, TLSInsecure: instance.TLSInsecure}
 		client, err := vault.NewClientFromConfig(statusCfg)
 		if err != nil {
 			log.Fatal().Err(err).

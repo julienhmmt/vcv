@@ -13,14 +13,18 @@ import (
 const defaultPKIMount = "pki"
 
 type VaultInstance struct {
-	ID          string   `json:"id"`
-	Address     string   `json:"address"`
-	Token       string   `json:"token"`
-	PKIMount    string   `json:"pki_mount"`
-	PKIMounts   []string `json:"pki_mounts,omitempty"`
-	DisplayName string   `json:"display_name"`
-	TLSInsecure bool     `json:"tls_insecure"`
-	Enabled     *bool    `json:"enabled,omitempty"`
+	ID              string   `json:"id"`
+	Address         string   `json:"address"`
+	Token           string   `json:"token"`
+	PKIMount        string   `json:"pki_mount"`
+	PKIMounts       []string `json:"pki_mounts,omitempty"`
+	DisplayName     string   `json:"display_name"`
+	TLSInsecure     bool     `json:"tls_insecure"`
+	TLSCACertBase64 string   `json:"tls_ca_cert_base64,omitempty"`
+	TLSCACert       string   `json:"tls_ca_cert,omitempty"`
+	TLSCAPath       string   `json:"tls_ca_path,omitempty"`
+	TLSServerName   string   `json:"tls_server_name,omitempty"`
+	Enabled         *bool    `json:"enabled,omitempty"`
 }
 
 type MultiVaultConfig struct {
@@ -137,14 +141,31 @@ func parseVaultAddrsEntry(entry string, index int) *VaultInstance {
 		return nil
 	}
 	tlsInsecure := strings.ToLower(os.Getenv("VAULT_TLS_INSECURE")) == "true"
+	tlsCACertBase64 := strings.TrimSpace(os.Getenv("VAULT_TLS_CA_CERT_BASE64"))
+	if tlsCACertBase64 == "" {
+		tlsCACertBase64 = strings.TrimSpace(os.Getenv("VAULT_CACERT_BYTES"))
+	}
+	tlsCACert := strings.TrimSpace(os.Getenv("VAULT_TLS_CA_CERT"))
+	if tlsCACert == "" {
+		tlsCACert = strings.TrimSpace(os.Getenv("VAULT_CACERT"))
+	}
+	tlsCAPath := strings.TrimSpace(os.Getenv("VAULT_TLS_CA_PATH"))
+	if tlsCAPath == "" {
+		tlsCAPath = strings.TrimSpace(os.Getenv("VAULT_CAPATH"))
+	}
+	tlsServerName := strings.TrimSpace(os.Getenv("VAULT_TLS_SERVER_NAME"))
 	return &VaultInstance{
-		ID:          id,
-		Address:     address,
-		Token:       token,
-		PKIMount:    pkiMount,
-		PKIMounts:   []string{pkiMount},
-		DisplayName: "",
-		TLSInsecure: tlsInsecure,
+		ID:              id,
+		Address:         address,
+		Token:           token,
+		PKIMount:        pkiMount,
+		PKIMounts:       []string{pkiMount},
+		DisplayName:     "",
+		TLSInsecure:     tlsInsecure,
+		TLSCACertBase64: tlsCACertBase64,
+		TLSCACert:       tlsCACert,
+		TLSCAPath:       tlsCAPath,
+		TLSServerName:   tlsServerName,
 	}
 }
 
@@ -180,13 +201,17 @@ func fallbackInstanceFromEnv() *VaultInstance {
 		pkiMount = strings.TrimSpace(single.PKIMounts[0])
 	}
 	return &VaultInstance{
-		ID:          "default",
-		Address:     single.Addr,
-		Token:       single.ReadToken,
-		PKIMount:    pkiMount,
-		PKIMounts:   single.PKIMounts,
-		DisplayName: "default",
-		TLSInsecure: single.TLSInsecure,
+		ID:              "default",
+		Address:         single.Addr,
+		Token:           single.ReadToken,
+		PKIMount:        pkiMount,
+		PKIMounts:       single.PKIMounts,
+		DisplayName:     "default",
+		TLSInsecure:     single.TLSInsecure,
+		TLSCACertBase64: single.TLSCACertBase64,
+		TLSCACert:       single.TLSCACert,
+		TLSCAPath:       single.TLSCAPath,
+		TLSServerName:   single.TLSServerName,
 	}
 }
 
@@ -217,6 +242,10 @@ func normalizeVaultInstance(instance VaultInstance) (VaultInstance, error) {
 	pkiMount := strings.TrimSpace(instance.PKIMount)
 	pkiMounts := instance.PKIMounts
 	displayName := strings.TrimSpace(instance.DisplayName)
+	tlsCACertBase64 := strings.TrimSpace(instance.TLSCACertBase64)
+	tlsCACert := strings.TrimSpace(instance.TLSCACert)
+	tlsCAPath := strings.TrimSpace(instance.TLSCAPath)
+	tlsServerName := strings.TrimSpace(instance.TLSServerName)
 	if instance.Enabled == nil {
 		value := true
 		instance.Enabled = &value
@@ -254,14 +283,18 @@ func normalizeVaultInstance(instance VaultInstance) (VaultInstance, error) {
 		displayName = id
 	}
 	return VaultInstance{
-		ID:          id,
-		Address:     address,
-		Token:       token,
-		PKIMount:    pkiMount,
-		PKIMounts:   pkiMounts,
-		DisplayName: displayName,
-		TLSInsecure: instance.TLSInsecure,
-		Enabled:     instance.Enabled,
+		ID:              id,
+		Address:         address,
+		Token:           token,
+		PKIMount:        pkiMount,
+		PKIMounts:       pkiMounts,
+		DisplayName:     displayName,
+		TLSInsecure:     instance.TLSInsecure,
+		TLSCACertBase64: tlsCACertBase64,
+		TLSCACert:       tlsCACert,
+		TLSCAPath:       tlsCAPath,
+		TLSServerName:   tlsServerName,
+		Enabled:         instance.Enabled,
 	}, nil
 }
 

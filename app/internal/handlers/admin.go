@@ -439,6 +439,10 @@ func parseVaultsFromForm(form url.Values) []config.VaultInstance {
 		address := strings.TrimSpace(form.Get("vault_address_" + key))
 		token := form.Get("vault_token_" + key)
 		mounts := splitAndTrim(form.Get("vault_mounts_" + key))
+		tlsCACertBase64 := strings.TrimSpace(form.Get("vault_tls_ca_cert_base64_" + key))
+		tlsCACert := strings.TrimSpace(form.Get("vault_tls_ca_cert_" + key))
+		tlsCAPath := strings.TrimSpace(form.Get("vault_tls_ca_path_" + key))
+		tlsServerName := strings.TrimSpace(form.Get("vault_tls_server_name_" + key))
 		pkiMount := "pki"
 		if len(mounts) > 0 {
 			pkiMount = mounts[0]
@@ -446,7 +450,7 @@ func parseVaultsFromForm(form url.Values) []config.VaultInstance {
 		tlsInsecure := form.Get("vault_tls_"+key) != ""
 		enabledValue := form.Get("vault_enabled_"+key) != ""
 		enabled := enabledValue
-		vault := config.VaultInstance{ID: id, Address: address, Token: token, PKIMount: pkiMount, PKIMounts: mounts, DisplayName: displayName, TLSInsecure: tlsInsecure, Enabled: &enabled}
+		vault := config.VaultInstance{ID: id, Address: address, Token: token, PKIMount: pkiMount, PKIMounts: mounts, DisplayName: displayName, TLSInsecure: tlsInsecure, TLSCACertBase64: tlsCACertBase64, TLSCACert: tlsCACert, TLSCAPath: tlsCAPath, TLSServerName: tlsServerName, Enabled: &enabled}
 		vaults = append(vaults, vault)
 	}
 	return vaults

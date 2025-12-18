@@ -6,11 +6,15 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
+	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -123,6 +127,130 @@ func TestNewClientFromConfig_Validation(t *testing.T) {
 				t.Fatalf("expected client")
 			}
 		})
+	}
+}
+
+func TestNewClientFromConfig_TLSInsecure_AllowsTLSWithoutCA(t *testing.T) {
+	certificatePEM := newVaultTestCertificatePEM(t)
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/v1/sys/health" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
+			return
+		}
+		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"keys": []string{"aa", "bb"}}})
+			return
+		}
+		if r.Method == http.MethodGet && (r.URL.Path == "/v1/pki/cert/aa" || r.URL.Path == "/v1/pki/cert/bb") {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"certificate": certificatePEM}})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	c, err := NewClientFromConfig(config.VaultConfig{Addr: server.URL, ReadToken: "token", PKIMounts: []string{"pki"}, TLSInsecure: true})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if err := c.CheckConnection(context.Background()); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestNewClientFromConfig_TLSCACert_AllowsTLSWithCA(t *testing.T) {
+	certificatePEM := newVaultTestCertificatePEM(t)
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/v1/sys/health" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
+			return
+		}
+		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"keys": []string{"aa"}}})
+			return
+		}
+		if r.Method == http.MethodGet && r.URL.Path == "/v1/pki/cert/aa" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"certificate": certificatePEM}})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	serverURL, parseErr := url.Parse(server.URL)
+	if parseErr != nil {
+		t.Fatalf("failed to parse server url: %v", parseErr)
+	}
+	hostname := serverURL.Hostname()
+	dir := t.TempDir()
+	caPath := filepath.Join(dir, "ca.pem")
+	if writeErr := os.WriteFile(caPath, pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: server.TLS.Certificates[0].Certificate[0]}), 0o600); writeErr != nil {
+		t.Fatalf("failed to write ca cert: %v", writeErr)
+	}
+	c, err := NewClientFromConfig(config.VaultConfig{Addr: server.URL, ReadToken: "token", PKIMounts: []string{"pki"}, TLSCACert: caPath, TLSServerName: hostname})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if err := c.CheckConnection(context.Background()); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestNewClientFromConfig_TLSCACert_BadPathReturnsError(t *testing.T) {
+	_, err := NewClientFromConfig(config.VaultConfig{Addr: "https://vault.example", ReadToken: "token", PKIMounts: []string{"pki"}, TLSCACert: "/path/does/not/exist.pem"})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+}
+
+func TestNewClientFromConfig_TLSCACertBase64_AllowsTLSWithCA(t *testing.T) {
+	certificatePEM := newVaultTestCertificatePEM(t)
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path == "/v1/sys/health" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
+			return
+		}
+		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"keys": []string{"aa"}}})
+			return
+		}
+		if r.Method == http.MethodGet && r.URL.Path == "/v1/pki/cert/aa" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"certificate": certificatePEM}})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	serverURL, parseErr := url.Parse(server.URL)
+	if parseErr != nil {
+		t.Fatalf("failed to parse server url: %v", parseErr)
+	}
+	hostname := serverURL.Hostname()
+	pemBytes := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: server.TLS.Certificates[0].Certificate[0]})
+	encoded := base64.RawStdEncoding.EncodeToString(pemBytes)
+	c, err := NewClientFromConfig(config.VaultConfig{Addr: server.URL, ReadToken: "token", PKIMounts: []string{"pki"}, TLSCACertBase64: encoded, TLSServerName: hostname})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if err := c.CheckConnection(context.Background()); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+}
+
+func TestNewClientFromConfig_TLSCACertBase64_InvalidBase64ReturnsError(t *testing.T) {
+	_, err := NewClientFromConfig(config.VaultConfig{Addr: "https://vault.example", ReadToken: "token", PKIMounts: []string{"pki"}, TLSCACertBase64: "not base64"})
+	if err == nil {
+		t.Fatalf("expected error")
 	}
 }
 

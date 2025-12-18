@@ -72,14 +72,18 @@ func TestAdminLoginAndSettingsRoundtrip(t *testing.T) {
 	updated.Certificates.ExpirationThresholds.Warning = 25
 	enabled := true
 	updated.Vaults = []config.VaultInstance{{
-		ID:          "v1",
-		Address:     "https://vault.example.com:8200",
-		Token:       "token",
-		PKIMount:    "pki",
-		PKIMounts:   []string{"pki"},
-		DisplayName: "vault",
-		TLSInsecure: false,
-		Enabled:     &enabled,
+		ID:              "v1",
+		Address:         "https://vault.example.com:8200",
+		Token:           "token",
+		PKIMount:        "pki",
+		PKIMounts:       []string{"pki"},
+		DisplayName:     "vault",
+		TLSCACertBase64: "ZHVtbXk",
+		TLSCACert:       "/etc/vcv/tls/vault-ca.pem",
+		TLSCAPath:       "/etc/vcv/tls/ca",
+		TLSServerName:   "vault.service.consul",
+		TLSInsecure:     false,
+		Enabled:         &enabled,
 	}}
 	payload, err := json.Marshal(updated)
 	require.NoError(t, err)
@@ -102,10 +106,16 @@ func TestAdminLoginAndSettingsRoundtrip(t *testing.T) {
 	assert.Equal(t, 25, after.Certificates.ExpirationThresholds.Warning)
 	require.Len(t, after.Vaults, 1)
 	assert.Equal(t, "v1", after.Vaults[0].ID)
+	assert.Equal(t, "ZHVtbXk", after.Vaults[0].TLSCACertBase64)
+	assert.Equal(t, "/etc/vcv/tls/vault-ca.pem", after.Vaults[0].TLSCACert)
+	assert.Equal(t, "/etc/vcv/tls/ca", after.Vaults[0].TLSCAPath)
+	assert.Equal(t, "vault.service.consul", after.Vaults[0].TLSServerName)
 
 	fileBytes, readErr := os.ReadFile(settingsPath)
 	require.NoError(t, readErr)
 	assert.Contains(t, string(fileBytes), "\"vaults\"")
+	assert.Contains(t, string(fileBytes), "\"tls_ca_cert_base64\": \"ZHVtbXk\"")
+	assert.Contains(t, string(fileBytes), "\"tls_ca_cert\": \"/etc/vcv/tls/vault-ca.pem\"")
 }
 
 func TestAdminSessionStore_LoginFromForm_SetsCookie(t *testing.T) {
@@ -353,7 +363,7 @@ func TestAdminRoutes_SettingsPost_ErrorsAndSuccess(t *testing.T) {
 	assert.Equal(t, http.StatusOK, invalidVaultRec.Code)
 	assert.Contains(t, invalidVaultRec.Body.String(), "vault id is empty")
 
-	goodReq := httptest.NewRequest(http.MethodPost, "/admin/settings", strings.NewReader("expire_critical=1&expire_warning=2&cors_origins=http://a,http://b&vault_id_1=v1&vault_address_1=https://vault.example.com&vault_token_1=tok&vault_mounts_1=pki&vault_enabled_1=on"))
+	goodReq := httptest.NewRequest(http.MethodPost, "/admin/settings", strings.NewReader("expire_critical=1&expire_warning=2&cors_origins=http://a,http://b&vault_id_1=v1&vault_address_1=https://vault.example.com&vault_token_1=tok&vault_mounts_1=pki&vault_tls_ca_cert_base64_1=ZHVtbXk&vault_tls_ca_cert_1=/etc/vcv/tls/vault-ca.pem&vault_tls_ca_path_1=/etc/vcv/tls/ca&vault_tls_server_name_1=vault.service.consul&vault_enabled_1=on"))
 	goodReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	goodReq.AddCookie(cookies[0])
 	goodRec := httptest.NewRecorder()
@@ -364,6 +374,10 @@ func TestAdminRoutes_SettingsPost_ErrorsAndSuccess(t *testing.T) {
 	fileBytes, err := os.ReadFile(settingsPath)
 	require.NoError(t, err)
 	assert.Contains(t, string(fileBytes), "\"id\": \"v1\"")
+	assert.Contains(t, string(fileBytes), "\"tls_ca_cert_base64\": \"ZHVtbXk\"")
+	assert.Contains(t, string(fileBytes), "\"tls_ca_cert\": \"/etc/vcv/tls/vault-ca.pem\"")
+	assert.Contains(t, string(fileBytes), "\"tls_ca_path\": \"/etc/vcv/tls/ca\"")
+	assert.Contains(t, string(fileBytes), "\"tls_server_name\": \"vault.service.consul\"")
 }
 
 func TestAdminRoutes_VaultRemove_PersistsToSettings(t *testing.T) {
