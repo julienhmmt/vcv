@@ -102,17 +102,40 @@ stringData:
       },
       "vaults": [
         {
-          "id": "prod",
-          "enabled": true,
-          "display_name": "Production",
+          "id": "vault-main",
           "address": "https://vault-prod.example.com:8200",
           "token": "change-me",
-          "pki_mount": "pki",
           "pki_mounts": [
             "pki",
-            "pki2"
+            "pki_dev",
+            "pki_stage",
+            "pki_production"
           ],
-          "tls_insecure": false
+          "display_name": "Vault",
+          "tls_ca_cert_base64": "BASE64_PEM_CA_BUNDLE",
+          "tls_ca_cert": "",
+          "tls_ca_path": "",
+          "tls_server_name": "vault.service.consul",
+          "tls_insecure": false,
+          "enabled": true
+        },
+        {
+          "id": "vault-dev",
+          "address": "https://vault-dev.example.com:8200",
+          "token": "change-me",
+          "pki_mounts": [
+            "pki",
+            "pki_corporate",
+            "pki_external",
+            "pki_partners"
+          ],
+          "display_name": "Vault dev",
+          "tls_ca_cert_base64": "BASE64_PEM_CA_BUNDLE",
+          "tls_ca_cert": "",
+          "tls_ca_path": "",
+          "tls_server_name": "vault-dev.service.consul",
+          "tls_insecure": false,
+          "enabled": true
         }
       ]
     }
