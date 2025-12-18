@@ -83,6 +83,10 @@ Configuration is loaded in this order:
   - `address`, `token`, `tls_insecure`
   - `pki_mounts` (recommended)
   - `pki_mount` (backward-compatible alias)
+  - `tls_ca_cert_base64` (preferred; base64-encoded PEM CA bundle)
+  - `tls_ca_cert` (file path to a PEM CA bundle)
+  - `tls_ca_path` (directory containing CA certs)
+  - `tls_server_name` (SNI override)
 
 ### Multi-Vault model
 
@@ -95,6 +99,13 @@ The configuration supports defining multiple Vault instances (`vaults[]`).
 For backward compatibility, configuration can still be provided via environment variables if no settings file is found.
 
 Key legacy variables include `VAULT_ADDR`, `VAULT_READ_TOKEN`, `VAULT_PKI_MOUNTS`, `VCV_EXPIRE_CRITICAL`, `VCV_EXPIRE_WARNING`.
+
+TLS-related env variables include `VAULT_TLS_INSECURE` (or `VAULT_SKIP_VERIFY`), `VAULT_TLS_CA_CERT_BASE64` (or `VAULT_CACERT_BYTES`), `VAULT_TLS_CA_CERT` (or `VAULT_CACERT`), `VAULT_TLS_CA_PATH` (or `VAULT_CAPATH`), and `VAULT_TLS_SERVER_NAME`.
+
+Precedence rules:
+
+- If `tls_ca_cert_base64` is set, it is used and `tls_ca_cert` / `tls_ca_path` are ignored.
+- Otherwise, `tls_ca_cert` / `tls_ca_path` are used (if set).
 
 ### Logging initialization note
 

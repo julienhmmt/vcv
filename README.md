@@ -101,6 +101,31 @@ docker run -d \
   -p 52000:52000 jhmmt/vcv:1.4
 ```
 
+## 🔐 Vault TLS configuration
+
+VCV supports configuring Vault TLS verification and custom CA bundles either through `settings.json` (recommended) or environment variables (legacy fallback).
+
+Per Vault instance (`vaults[]`), you can configure:
+
+- **`tls_ca_cert_base64`**: base64-encoded PEM CA bundle (preferred)
+- **`tls_ca_cert`**: file path to a PEM CA bundle
+- **`tls_ca_path`**: directory containing CA certs
+- **`tls_server_name`**: TLS SNI server name override
+- **`tls_insecure`**: disables TLS verification (development only)
+
+Precedence rules:
+
+- If `tls_ca_cert_base64` is set, it is used and `tls_ca_cert` / `tls_ca_path` are ignored.
+- Otherwise, `tls_ca_cert` / `tls_ca_path` are used (if set).
+
+Notes:
+
+- Base64 is not encryption. Treat your `settings.json` as sensitive.
+- The base64 value must encode the PEM bytes (one or multiple `-----BEGIN CERTIFICATE-----` blocks). Both standard and raw base64 encodings are accepted.
+- To encode a certificate with base64, do this: `cat path-to-cert.pem |base64 -w0`, get the result and type it into the field.
+
+The administration panel (`/admin`, enabled by `VCV_ADMIN_PASSWORD`) lets you set these TLS fields per Vault.
+
 ## ⏱️ Certificate expiration thresholds
 
 By default, VaultCertsViewer alerts on certificates expiring within **7 days** (critical) and **30 days** (warning). You can customize these thresholds in `settings.json` under `certificates.expiration_thresholds`.
