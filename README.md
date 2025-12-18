@@ -122,7 +122,7 @@ Notes:
 
 - Base64 is not encryption. Treat your `settings.json` as sensitive.
 - The base64 value must encode the PEM bytes (one or multiple `-----BEGIN CERTIFICATE-----` blocks). Both standard and raw base64 encodings are accepted.
-- To encode a certificate with base64, do this: `cat path-to-cert.pem |base64 -w0`, get the result and type it into the field.
+- To encode a certificate with base64, do this: `cat path-to-cert.pem | base64 | tr -d '\n'`, get the result and type it into the field.
 
 The administration panel (`/admin`, enabled by `VCV_ADMIN_PASSWORD`) lets you set these TLS fields per Vault.
 

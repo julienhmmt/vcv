@@ -29,11 +29,12 @@ type realClient struct {
 }
 
 func decodeBase64String(value string) ([]byte, error) {
-	decoded, err := base64.StdEncoding.DecodeString(value)
+	normalized := strings.Join(strings.Fields(value), "")
+	decoded, err := base64.StdEncoding.DecodeString(normalized)
 	if err == nil {
 		return decoded, nil
 	}
-	decoded, rawErr := base64.RawStdEncoding.DecodeString(value)
+	decoded, rawErr := base64.RawStdEncoding.DecodeString(normalized)
 	if rawErr == nil {
 		return decoded, nil
 	}
