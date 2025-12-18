@@ -1,6 +1,6 @@
 {
   "app": {
-    "env": "dev",
+    "env": "prod",
     "logging": {
       "level": "debug",
       "format": "json",

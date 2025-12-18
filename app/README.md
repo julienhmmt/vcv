@@ -44,7 +44,7 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 | `/ui/certs/{id}/details` | GET | HTMX fragment: certificate details |
 | `/ui/theme/toggle` | POST | Toggle dark/light theme |
 | `/ui/status` | GET | Real-time Vault connection status |
-| `/admin` | GET | Admin page (enabled only if `VCV_ADMIN_PASSWORD` is set) |
+| `/admin` | GET | Admin page (enabled only if `VCV_ADMIN_PASSWORD` is set to a bcrypt hash) |
 | `/admin/panel` | GET | Admin panel fragment (HTMX) |
 | `/admin/login` | POST | Admin login (HTMX) |
 | `/admin/logout` | POST | Admin logout (HTMX) |

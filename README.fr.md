@@ -128,6 +128,8 @@ Notes :
 
 Le panneau d'administration (`/admin`, activé via `VCV_ADMIN_PASSWORD`) permet de définir ces champs TLS par Vault.
 
+`VCV_ADMIN_PASSWORD` doit être un **hash bcrypt** (préfixe `$2a$`, `$2b$` ou `$2y$`). Si la variable est absente ou n'est pas un hash bcrypt, les routes admin sont désactivées.
+
 ## ⏱️ Seuils d'expiration des certificats
 
 Par défaut, VaultCertsViewer alerte sur les certificats expirant dans **7 jours** (critique) et **30 jours** (avertissement). Vous pouvez personnaliser ces seuils dans `settings.json` sous `certificates.expiration_thresholds`.
