@@ -2,8 +2,12 @@ package middleware
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"net/http"
+	"net/url"
 	"runtime/debug"
+	"strings"
 	"time"
 
 	"vcv/internal/logger"
@@ -122,7 +126,7 @@ func CORS(config CORSConfig) func(http.Handler) http.Handler {
 // RequestID adds a unique request ID to each request and stores it in context.
 func RequestID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requestID := r.Header.Get("X-Request-ID")
+		requestID := sanitizeRequestID(r.Header.Get("X-Request-ID"))
 		if requestID == "" {
 			requestID = generateRequestID()
 		}
@@ -165,9 +169,98 @@ func itoa(n int) string {
 	return string(digits)
 }
 
-// generateRequestID generates a simple request ID based on timestamp.
 func generateRequestID() string {
-	return itoa(int(time.Now().UnixNano() % 1000000000))
+	buf := make([]byte, 16)
+	if _, err := rand.Read(buf); err != nil {
+		return itoa(int(time.Now().UnixNano() % 1000000000))
+	}
+	return base64.RawURLEncoding.EncodeToString(buf)
+}
+
+func sanitizeRequestID(value string) string {
+	trimmed := strings.TrimSpace(value)
+	if trimmed == "" {
+		return ""
+	}
+	if len(trimmed) > 128 {
+		return ""
+	}
+	for _, r := range trimmed {
+		if r >= 'a' && r <= 'z' {
+			continue
+		}
+		if r >= 'A' && r <= 'Z' {
+			continue
+		}
+		if r >= '0' && r <= '9' {
+			continue
+		}
+		switch r {
+		case '-', '_', '.', ':':
+			continue
+		default:
+			return ""
+		}
+	}
+	return trimmed
+}
+
+func CSRFProtection(next http.Handler) http.Handler {
+	safeMethods := map[string]struct{}{http.MethodGet: {}, http.MethodHead: {}, http.MethodOptions: {}}
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if _, ok := safeMethods[r.Method]; ok {
+			next.ServeHTTP(w, r)
+			return
+		}
+		fetchSite := strings.ToLower(strings.TrimSpace(r.Header.Get("Sec-Fetch-Site")))
+		if fetchSite == "cross-site" || fetchSite == "same-site" {
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+			return
+		}
+		origin := strings.TrimSpace(r.Header.Get("Origin"))
+		if origin != "" {
+			if sameOrigin(origin, targetOrigin(r)) {
+				next.ServeHTTP(w, r)
+				return
+			}
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+			return
+		}
+		referer := strings.TrimSpace(r.Header.Get("Referer"))
+		if referer != "" {
+			parsed, err := url.Parse(referer)
+			if err == nil {
+				refererOrigin := parsed.Scheme + "://" + parsed.Host
+				if sameOrigin(refererOrigin, targetOrigin(r)) {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func targetOrigin(r *http.Request) string {
+	proto := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto"))
+	if proto == "" {
+		if r.TLS != nil {
+			proto = "https"
+		} else {
+			proto = "http"
+		}
+	}
+	host := strings.TrimSpace(r.Header.Get("X-Forwarded-Host"))
+	if host == "" {
+		host = strings.TrimSpace(r.Host)
+	}
+	return proto + "://" + host
+}
+
+func sameOrigin(left string, right string) bool {
+	return strings.EqualFold(strings.TrimSuffix(left, "/"), strings.TrimSuffix(right, "/"))
 }
 
 // SecurityHeaders adds security-related HTTP headers to all responses.
@@ -177,7 +270,14 @@ func SecurityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("X-Frame-Options", "DENY")
 		w.Header().Set("X-XSS-Protection", "1; mode=block")
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
-		w.Header().Set("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'")
+		w.Header().Set("X-Permitted-Cross-Domain-Policies", "none")
+		w.Header().Set("Permissions-Policy", "geolocation=(), microphone=(), camera=(), payment=(), usb=()")
+		w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
+		w.Header().Set("Cross-Origin-Resource-Policy", "same-origin")
+		if r.TLS != nil || strings.EqualFold(strings.TrimSpace(r.Header.Get("X-Forwarded-Proto")), "https") {
+			w.Header().Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		}
+		w.Header().Set("Content-Security-Policy", "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'")
 		next.ServeHTTP(w, r)
 	})
 }

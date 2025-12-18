@@ -3,6 +3,7 @@ package middleware_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"vcv/middleware"
@@ -80,6 +81,57 @@ func TestRequestID_UsesProvidedID(t *testing.T) {
 
 	if rec.Header().Get("X-Request-ID") != providedID {
 		t.Errorf("expected X-Request-ID header %q, got %q", providedID, rec.Header().Get("X-Request-ID"))
+	}
+}
+
+func TestCSRFProtection_AllowsSameOriginWithOriginHeader(t *testing.T) {
+	h := middleware.CSRFProtection(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	req := httptest.NewRequest(http.MethodPost, "http://example.com/admin/login", strings.NewReader(""))
+	req.Header.Set("Origin", "http://example.com")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Errorf("expected status %d, got %d", http.StatusNoContent, rec.Code)
+	}
+}
+
+func TestCSRFProtection_BlocksCrossOriginWithOriginHeader(t *testing.T) {
+	h := middleware.CSRFProtection(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	req := httptest.NewRequest(http.MethodPost, "http://example.com/admin/login", strings.NewReader(""))
+	req.Header.Set("Origin", "http://evil.example")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("expected status %d, got %d", http.StatusForbidden, rec.Code)
+	}
+}
+
+func TestCSRFProtection_BlocksCrossSiteFetchMetadata(t *testing.T) {
+	h := middleware.CSRFProtection(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	req := httptest.NewRequest(http.MethodPost, "http://example.com/api/cache/invalidate", strings.NewReader(""))
+	req.Header.Set("Sec-Fetch-Site", "cross-site")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("expected status %d, got %d", http.StatusForbidden, rec.Code)
+	}
+}
+
+func TestCSRFProtection_AllowsNonBrowserRequest(t *testing.T) {
+	h := middleware.CSRFProtection(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	req := httptest.NewRequest(http.MethodPost, "http://example.com/api/cache/invalidate", strings.NewReader(""))
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Errorf("expected status %d, got %d", http.StatusNoContent, rec.Code)
 	}
 }
 

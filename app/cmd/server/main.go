@@ -27,6 +27,9 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
+const serverReadHeaderTimeout time.Duration = 5 * time.Second
+const serverMaxHeaderBytes int = 1 << 20
+
 func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, statusClients map[string]vault.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
@@ -85,6 +88,7 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.SecurityHeaders)
+	r.Use(middleware.CSRFProtection)
 
 	// Static frontend from embedded filesystem
 	r.Get("/", func(w http.ResponseWriter, req *http.Request) {
@@ -207,11 +211,13 @@ func main() {
 	}
 
 	srv := &http.Server{
-		Addr:         ":" + cfg.Port,
-		Handler:      router,
-		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
-		IdleTimeout:  60 * time.Second,
+		Addr:              ":" + cfg.Port,
+		Handler:           router,
+		ReadTimeout:       15 * time.Second,
+		ReadHeaderTimeout: serverReadHeaderTimeout,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    serverMaxHeaderBytes,
 	}
 
 	go func() {
