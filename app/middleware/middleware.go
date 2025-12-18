@@ -4,10 +4,12 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"net"
 	"net/http"
 	"net/url"
 	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 
 	"vcv/internal/logger"
@@ -278,6 +280,142 @@ func BodyLimit(maxBytes int64) func(http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+type RateLimitConfig struct {
+	MaxRequests        int
+	Window             time.Duration
+	MaxEntries         int
+	ExemptPaths        []string
+	ExemptPathPrefixes []string
+}
+
+type rateLimiterEntry struct {
+	count   int
+	resetAt time.Time
+}
+
+type rateLimiter struct {
+	mu      sync.Mutex
+	config  RateLimitConfig
+	entries map[string]rateLimiterEntry
+}
+
+func DefaultRateLimitConfig() RateLimitConfig {
+	return RateLimitConfig{MaxRequests: 300, Window: 1 * time.Minute, MaxEntries: 10_000}
+}
+
+func RateLimit(config RateLimitConfig) func(http.Handler) http.Handler {
+	limiter := &rateLimiter{config: config, entries: make(map[string]rateLimiterEntry)}
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Method == http.MethodOptions {
+				next.ServeHTTP(w, r)
+				return
+			}
+			if shouldSkipRateLimit(r, config) {
+				next.ServeHTTP(w, r)
+				return
+			}
+			allowed, retryAfter := limiter.allow(time.Now(), clientIP(r))
+			if !allowed {
+				if retryAfter > 0 {
+					w.Header().Set("Retry-After", itoa(retryAfter))
+				}
+				http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func shouldSkipRateLimit(r *http.Request, config RateLimitConfig) bool {
+	path := r.URL.Path
+	for _, exempt := range config.ExemptPaths {
+		if path == exempt {
+			return true
+		}
+	}
+	for _, prefix := range config.ExemptPathPrefixes {
+		if strings.HasPrefix(path, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+func (l *rateLimiter) allow(now time.Time, key string) (bool, int) {
+	if key == "" {
+		return true, 0
+	}
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.prune(now)
+	entry := l.entries[key]
+	if entry.resetAt.IsZero() || now.After(entry.resetAt) {
+		entry = rateLimiterEntry{count: 0, resetAt: now.Add(l.config.Window)}
+	}
+	entry.count++
+	l.entries[key] = entry
+	if entry.count <= l.config.MaxRequests {
+		return true, 0
+	}
+	retryAfterSeconds := int(time.Until(entry.resetAt).Seconds())
+	if retryAfterSeconds < 0 {
+		retryAfterSeconds = 0
+	}
+	return false, retryAfterSeconds
+}
+
+func (l *rateLimiter) prune(now time.Time) {
+	for key, entry := range l.entries {
+		if now.After(entry.resetAt) {
+			delete(l.entries, key)
+		}
+	}
+	if l.config.MaxEntries <= 0 {
+		return
+	}
+	if len(l.entries) <= l.config.MaxEntries {
+		return
+	}
+	for len(l.entries) > l.config.MaxEntries {
+		var oldestKey string
+		oldestResetAt := now.Add(365 * 24 * time.Hour)
+		for key, entry := range l.entries {
+			if entry.resetAt.Before(oldestResetAt) {
+				oldestKey = key
+				oldestResetAt = entry.resetAt
+			}
+		}
+		if oldestKey == "" {
+			break
+		}
+		delete(l.entries, oldestKey)
+	}
+}
+
+func clientIP(r *http.Request) string {
+	forwarded := strings.TrimSpace(r.Header.Get("X-Forwarded-For"))
+	if forwarded != "" {
+		parts := strings.Split(forwarded, ",")
+		if len(parts) > 0 {
+			value := strings.TrimSpace(parts[0])
+			if value != "" {
+				return value
+			}
+		}
+	}
+	realIP := strings.TrimSpace(r.Header.Get("X-Real-IP"))
+	if realIP != "" {
+		return realIP
+	}
+	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
+	if err == nil {
+		return host
+	}
+	return strings.TrimSpace(r.RemoteAddr)
 }
 
 // SecurityHeaders adds security-related HTTP headers to all responses.

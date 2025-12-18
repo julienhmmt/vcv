@@ -30,6 +30,8 @@ import (
 const serverReadHeaderTimeout time.Duration = 5 * time.Second
 const serverMaxHeaderBytes int = 1 << 20
 const routerMaxBodyBytes int64 = 1 << 20
+const routerRateLimitMaxRequests int = 300
+const routerRateLimitWindow time.Duration = 1 * time.Minute
 
 func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, statusClients map[string]vault.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
@@ -93,6 +95,14 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.SecurityHeaders)
 	r.Use(middleware.CORS(corsConfig))
+	if cfg.Env == config.EnvProd {
+		rateLimitConfig := middleware.DefaultRateLimitConfig()
+		rateLimitConfig.MaxRequests = routerRateLimitMaxRequests
+		rateLimitConfig.Window = routerRateLimitWindow
+		rateLimitConfig.ExemptPaths = []string{"/api/health", "/api/ready", "/metrics"}
+		rateLimitConfig.ExemptPathPrefixes = []string{"/assets/"}
+		r.Use(middleware.RateLimit(rateLimitConfig))
+	}
 	r.Use(middleware.BodyLimit(routerMaxBodyBytes))
 	r.Use(middleware.CSRFProtection)
 

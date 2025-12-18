@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"vcv/middleware"
 )
@@ -215,6 +216,81 @@ func TestCORS_Preflight(t *testing.T) {
 	}
 	if rec.Header().Get("Access-Control-Allow-Methods") == "" {
 		t.Error("expected Access-Control-Allow-Methods header for preflight")
+	}
+}
+
+func TestRateLimit_BlocksAfterThreshold_PerIP(t *testing.T) {
+	config := middleware.DefaultRateLimitConfig()
+	config.MaxRequests = 2
+	config.Window = 10 * time.Second
+	h := middleware.RateLimit(config)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	for i := 0; i < 3; i++ {
+		req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
+		req.RemoteAddr = "1.2.3.4:1234"
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if i < 2 {
+			if rec.Code != http.StatusNoContent {
+				t.Fatalf("expected status %d, got %d", http.StatusNoContent, rec.Code)
+			}
+			continue
+		}
+		if rec.Code != http.StatusTooManyRequests {
+			t.Fatalf("expected status %d, got %d", http.StatusTooManyRequests, rec.Code)
+		}
+	}
+}
+
+func TestRateLimit_AllowsDifferentIP(t *testing.T) {
+	config := middleware.DefaultRateLimitConfig()
+	config.MaxRequests = 1
+	config.Window = 10 * time.Second
+	h := middleware.RateLimit(config)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	req1 := httptest.NewRequest(http.MethodGet, "/api/status", nil)
+	req1.RemoteAddr = "1.2.3.4:1234"
+	rec1 := httptest.NewRecorder()
+	h.ServeHTTP(rec1, req1)
+	if rec1.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d", http.StatusNoContent, rec1.Code)
+	}
+
+	req2 := httptest.NewRequest(http.MethodGet, "/api/status", nil)
+	req2.RemoteAddr = "1.2.3.4:1234"
+	rec2 := httptest.NewRecorder()
+	h.ServeHTTP(rec2, req2)
+	if rec2.Code != http.StatusTooManyRequests {
+		t.Fatalf("expected status %d, got %d", http.StatusTooManyRequests, rec2.Code)
+	}
+
+	req3 := httptest.NewRequest(http.MethodGet, "/api/status", nil)
+	req3.RemoteAddr = "5.6.7.8:1234"
+	rec3 := httptest.NewRecorder()
+	h.ServeHTTP(rec3, req3)
+	if rec3.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d", http.StatusNoContent, rec3.Code)
+	}
+}
+
+func TestRateLimit_SkipsOptions(t *testing.T) {
+	config := middleware.DefaultRateLimitConfig()
+	config.MaxRequests = 0
+	config.Window = 10 * time.Second
+	h := middleware.RateLimit(config)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	req := httptest.NewRequest(http.MethodOptions, "/api/status", nil)
+	req.RemoteAddr = "1.2.3.4:1234"
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d", http.StatusNoContent, rec.Code)
 	}
 }
 

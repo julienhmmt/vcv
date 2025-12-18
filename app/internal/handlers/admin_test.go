@@ -304,7 +304,7 @@ func TestNewVaultKey_GeneratesValue(t *testing.T) {
 func TestAdminRoutes_HTMXPanelLoginLogoutAndVaultActions(t *testing.T) {
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	router := chi.NewRouter()
-	t.Setenv("VCV_ADMIN_PASSWORD", "secret")
+	t.Setenv("VCV_ADMIN_PASSWORD", mustBcryptPasswordHash(t, "secret"))
 	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
 
 	panelReq := httptest.NewRequest(http.MethodGet, "/admin/panel", nil)
@@ -355,7 +355,7 @@ func TestAdminRoutes_HTMXPanelLoginLogoutAndVaultActions(t *testing.T) {
 func TestAdminRoutes_SettingsPost_ErrorsAndSuccess(t *testing.T) {
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	router := chi.NewRouter()
-	t.Setenv("VCV_ADMIN_PASSWORD", "secret")
+	t.Setenv("VCV_ADMIN_PASSWORD", mustBcryptPasswordHash(t, "secret"))
 	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
 
 	loginReq := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
@@ -404,7 +404,7 @@ func TestAdminRoutes_VaultRemove_PersistsToSettings(t *testing.T) {
 	require.NoError(t, os.WriteFile(settingsPath, []byte(initial), 0o644))
 
 	router := chi.NewRouter()
-	t.Setenv("VCV_ADMIN_PASSWORD", "secret")
+	t.Setenv("VCV_ADMIN_PASSWORD", mustBcryptPasswordHash(t, "secret"))
 	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
 
 	loginReq := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
