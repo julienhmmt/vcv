@@ -41,10 +41,14 @@ type CORSConfig struct {
 }
 
 type VaultConfig struct {
-	Addr        string
-	PKIMounts   []string
-	ReadToken   string
-	TLSInsecure bool
+	Addr            string
+	PKIMounts       []string
+	ReadToken       string
+	TLSCACertBase64 string
+	TLSCACert       string
+	TLSCAPath       string
+	TLSServerName   string
+	TLSInsecure     bool
 }
 
 // ExpirationThresholds holds certificate expiration alert thresholds (in days).
@@ -290,7 +294,12 @@ func loadCORSConfig(env Environment) CORSConfig {
 }
 
 func loadVaultConfig() VaultConfig {
-	tlsInsecure := strings.ToLower(getEnv("VAULT_TLS_INSECURE", "false")) == "true"
+	skipVerifyDefault := getEnv("VAULT_SKIP_VERIFY", "false")
+	tlsInsecure := strings.ToLower(getEnv("VAULT_TLS_INSECURE", skipVerifyDefault)) == "true"
+	tlsCACertBase64 := strings.TrimSpace(getEnv("VAULT_TLS_CA_CERT_BASE64", getEnv("VAULT_CACERT_BYTES", "")))
+	tlsCACert := strings.TrimSpace(getEnv("VAULT_TLS_CA_CERT", getEnv("VAULT_CACERT", "")))
+	tlsCAPath := strings.TrimSpace(getEnv("VAULT_TLS_CA_PATH", getEnv("VAULT_CAPATH", "")))
+	tlsServerName := strings.TrimSpace(getEnv("VAULT_TLS_SERVER_NAME", ""))
 
 	// Support both new VAULT_PKI_MOUNTS (comma-separated) and legacy VAULT_PKI_MOUNT
 	pkiMountsStr := getEnv("VAULT_PKI_MOUNTS", "")
@@ -309,10 +318,14 @@ func loadVaultConfig() VaultConfig {
 	}
 
 	return VaultConfig{
-		Addr:        getEnv("VAULT_ADDR", ""),
-		PKIMounts:   pkiMounts,
-		ReadToken:   getEnv("VAULT_READ_TOKEN", ""),
-		TLSInsecure: tlsInsecure,
+		Addr:            getEnv("VAULT_ADDR", ""),
+		PKIMounts:       pkiMounts,
+		ReadToken:       getEnv("VAULT_READ_TOKEN", ""),
+		TLSCACertBase64: tlsCACertBase64,
+		TLSCACert:       tlsCACert,
+		TLSCAPath:       tlsCAPath,
+		TLSServerName:   tlsServerName,
+		TLSInsecure:     tlsInsecure,
 	}
 }
 
@@ -326,10 +339,14 @@ func convertVaultInstanceToLegacy(instance VaultInstance) VaultConfig {
 		pkiMounts = []string{defaultMount}
 	}
 	return VaultConfig{
-		Addr:        instance.Address,
-		PKIMounts:   pkiMounts,
-		ReadToken:   instance.Token,
-		TLSInsecure: instance.TLSInsecure,
+		Addr:            instance.Address,
+		PKIMounts:       pkiMounts,
+		ReadToken:       instance.Token,
+		TLSCACertBase64: instance.TLSCACertBase64,
+		TLSCACert:       instance.TLSCACert,
+		TLSCAPath:       instance.TLSCAPath,
+		TLSServerName:   instance.TLSServerName,
+		TLSInsecure:     instance.TLSInsecure,
 	}
 }
 

@@ -54,6 +54,26 @@
         </div>
       </div>
 
+      <div class="admin-form-row admin-form-row-full">
+        <label class="admin-label">TLS CA cert (base64)</label>
+        <textarea class="vcv-input admin-textarea" name="vault_tls_ca_cert_base64_{{.Key}}" rows="3" placeholder="Base64-encoded PEM bundle">{{.Vault.TLSCACertBase64}}</textarea>
+      </div>
+
+      <div class="admin-form-row admin-form-row-full">
+        <label class="admin-label">TLS CA cert (file path)</label>
+        <input class="vcv-input admin-input" name="vault_tls_ca_cert_{{.Key}}" value="{{.Vault.TLSCACert}}" placeholder="/etc/vcv/tls/vault-ca.pem" />
+      </div>
+
+      <div class="admin-form-row admin-form-row-full">
+        <label class="admin-label">TLS CA path (directory)</label>
+        <input class="vcv-input admin-input" name="vault_tls_ca_path_{{.Key}}" value="{{.Vault.TLSCAPath}}" placeholder="/etc/vcv/tls/ca" />
+      </div>
+
+      <div class="admin-form-row admin-form-row-full">
+        <label class="admin-label">TLS server name (SNI)</label>
+        <input class="vcv-input admin-input" name="vault_tls_server_name_{{.Key}}" value="{{.Vault.TLSServerName}}" placeholder="vault.service.consul" />
+      </div>
+
       <div class="admin-form-row">
         <label class="admin-label">TLS insecure</label>
         <label class="admin-toggle">

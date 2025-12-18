@@ -34,6 +34,10 @@
         "pki_production"
       ],
       "display_name": "Vault",
+      "tls_ca_cert_base64": "BASE64_PEM_CA_BUNDLE",
+      "tls_ca_cert": "",
+      "tls_ca_path": "",
+      "tls_server_name": "vault.service.consul",
       "tls_insecure": true,
       "enabled": true
     },
@@ -48,6 +52,10 @@
         "pki_partners"
       ],
       "display_name": "Vault dev",
+      "tls_ca_cert_base64": "BASE64_PEM_CA_BUNDLE",
+      "tls_ca_cert": "",
+      "tls_ca_path": "",
+      "tls_server_name": "vault-dev.service.consul",
       "tls_insecure": true,
       "enabled": true
     }

@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"crypto/sha256"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
@@ -27,6 +28,18 @@ type realClient struct {
 	stopChan chan struct{}
 }
 
+func decodeBase64String(value string) ([]byte, error) {
+	decoded, err := base64.StdEncoding.DecodeString(value)
+	if err == nil {
+		return decoded, nil
+	}
+	decoded, rawErr := base64.RawStdEncoding.DecodeString(value)
+	if rawErr == nil {
+		return decoded, nil
+	}
+	return nil, err
+}
+
 func NewClientFromConfig(cfg config.VaultConfig) (Client, error) {
 	if cfg.Addr == "" && cfg.ReadToken == "" {
 		return &disabledClient{}, nil
@@ -44,9 +57,17 @@ func NewClientFromConfig(cfg config.VaultConfig) (Client, error) {
 	}
 
 	clientConfig.Address = cfg.Addr
-	if err := clientConfig.ConfigureTLS(&api.TLSConfig{
-		Insecure: cfg.TLSInsecure,
-	}); err != nil {
+	tlsConfig := &api.TLSConfig{CACert: cfg.TLSCACert, CAPath: cfg.TLSCAPath, TLSServerName: cfg.TLSServerName, Insecure: cfg.TLSInsecure}
+	if strings.TrimSpace(cfg.TLSCACertBase64) != "" {
+		decoded, err := decodeBase64String(strings.TrimSpace(cfg.TLSCACertBase64))
+		if err != nil {
+			return nil, fmt.Errorf("invalid vault tls ca cert base64: %w", err)
+		}
+		tlsConfig.CACertBytes = decoded
+		tlsConfig.CACert = ""
+		tlsConfig.CAPath = ""
+	}
+	if err := clientConfig.ConfigureTLS(tlsConfig); err != nil {
 		return nil, fmt.Errorf("failed to configure Vault TLS: %w", err)
 	}
 
