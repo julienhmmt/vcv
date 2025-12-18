@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"math"
 	"net/http"
-	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -199,6 +198,30 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 		panic(err)
 	}
 	vaultHealthCache := newFooterVaultHealthCache(5 * time.Second)
+	vaultDisplayNames := buildVaultDisplayNames(vaultInstances)
+	showVaultMount := shouldShowVaultMount(vaultInstances)
+	renderCerts := func(w http.ResponseWriter, r *http.Request) bool {
+		language := resolveLanguage(r)
+		messages := i18n.MessagesForLanguage(language)
+		queryState := parseCertsQueryState(r)
+		certificates, listErr := vaultClient.ListCertificates(r.Context())
+		if listErr != nil {
+			requestID := middleware.GetRequestID(r.Context())
+			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, listErr).
+				Str("request_id", requestID).
+				Msg("failed to list certificates")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return false
+		}
+		if renderErr := renderCertsFragment(w, templates, certificates, expirationThresholds, messages, queryState, vaultDisplayNames, showVaultMount); renderErr != nil {
+			requestID := middleware.GetRequestID(r.Context())
+			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, renderErr).
+				Str("request_id", requestID).
+				Msg("failed to render certs fragment template")
+			return false
+		}
+		return true
+	}
 	router.Post("/ui/theme/toggle", func(w http.ResponseWriter, r *http.Request) {
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
@@ -233,25 +256,7 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 			Msg("toggled theme")
 	})
 	router.Get("/ui/certs", func(w http.ResponseWriter, r *http.Request) {
-		language := resolveLanguage(r)
-		messages := i18n.MessagesForLanguage(language)
-		queryState := parseCertsQueryState(r)
-		vaultDisplayNames := buildVaultDisplayNames(vaultInstances)
-		showVaultMount := shouldShowVaultMount(vaultInstances)
-		certificates, listErr := vaultClient.ListCertificates(r.Context())
-		if listErr != nil {
-			requestID := middleware.GetRequestID(r.Context())
-			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, listErr).
-				Str("request_id", requestID).
-				Msg("failed to list certificates")
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		if err := renderCertsFragment(w, templates, certificates, expirationThresholds, messages, queryState, vaultDisplayNames, showVaultMount); err != nil {
-			requestID := middleware.GetRequestID(r.Context())
-			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
-				Str("request_id", requestID).
-				Msg("failed to render certs fragment template")
+		if !renderCerts(w, r) {
 			return
 		}
 		requestID := middleware.GetRequestID(r.Context())
@@ -261,25 +266,7 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 	})
 	router.Post("/ui/certs/refresh", func(w http.ResponseWriter, r *http.Request) {
 		vaultClient.InvalidateCache()
-		language := resolveLanguage(r)
-		messages := i18n.MessagesForLanguage(language)
-		queryState := parseCertsQueryState(r)
-		vaultDisplayNames := buildVaultDisplayNames(vaultInstances)
-		showVaultMount := shouldShowVaultMount(vaultInstances)
-		certificates, listErr := vaultClient.ListCertificates(r.Context())
-		if listErr != nil {
-			requestID := middleware.GetRequestID(r.Context())
-			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, listErr).
-				Str("request_id", requestID).
-				Msg("failed to list certificates")
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		if err := renderCertsFragment(w, templates, certificates, expirationThresholds, messages, queryState, vaultDisplayNames, showVaultMount); err != nil {
-			requestID := middleware.GetRequestID(r.Context())
-			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
-				Str("request_id", requestID).
-				Msg("failed to render certs fragment template")
+		if !renderCerts(w, r) {
 			return
 		}
 		requestID := middleware.GetRequestID(r.Context())
@@ -373,22 +360,13 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 			Msg("rendered footer status")
 	})
 	router.Get("/ui/certs/{id:[^/]*}/details", func(w http.ResponseWriter, r *http.Request) {
-		certificateIDParam := chi.URLParam(r, "id")
-		if certificateIDParam == "" {
+		certificateID, statusCode, decodeErr := decodeCertificateIDParam(r)
+		if statusCode != http.StatusOK {
 			requestID := middleware.GetRequestID(r.Context())
-			logger.HTTPError(r.Method, r.URL.Path, http.StatusBadRequest, nil).
+			logger.HTTPError(r.Method, r.URL.Path, statusCode, decodeErr).
 				Str("request_id", requestID).
 				Msg("missing certificate id in path")
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-		certificateID, err := url.PathUnescape(certificateIDParam)
-		if err != nil {
-			requestID := middleware.GetRequestID(r.Context())
-			logger.HTTPError(r.Method, r.URL.Path, http.StatusBadRequest, err).
-				Str("request_id", requestID).
-				Msg("failed to decode certificate id")
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			http.Error(w, http.StatusText(statusCode), statusCode)
 			return
 		}
 		details, err := vaultClient.GetCertificateDetails(r.Context(), certificateID)

@@ -52,22 +52,13 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 	})
 
 	r.Get("/api/certs/{id}/details", func(w http.ResponseWriter, req *http.Request) {
-		certificateIDParam := chi.URLParam(req, "id")
-		if certificateIDParam == "" {
+		certificateID, statusCode, decodeErr := decodeCertificateIDParam(req)
+		if statusCode != http.StatusOK {
 			requestID := middleware.GetRequestID(req.Context())
-			logger.HTTPError(req.Method, req.URL.Path, http.StatusBadRequest, nil).
+			logger.HTTPError(req.Method, req.URL.Path, statusCode, decodeErr).
 				Str("request_id", requestID).
 				Msg("missing certificate id in path")
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-		certificateID, err := url.PathUnescape(certificateIDParam)
-		if err != nil {
-			requestID := middleware.GetRequestID(req.Context())
-			logger.HTTPError(req.Method, req.URL.Path, http.StatusBadRequest, err).
-				Str("request_id", requestID).
-				Msg("failed to decode certificate id")
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			http.Error(w, http.StatusText(statusCode), statusCode)
 			return
 		}
 
@@ -99,22 +90,13 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 	})
 
 	r.Get("/api/certs/{id}/pem", func(w http.ResponseWriter, req *http.Request) {
-		certificateIDParam := chi.URLParam(req, "id")
-		if certificateIDParam == "" {
+		certificateID, statusCode, decodeErr := decodeCertificateIDParam(req)
+		if statusCode != http.StatusOK {
 			requestID := middleware.GetRequestID(req.Context())
-			logger.HTTPError(req.Method, req.URL.Path, http.StatusBadRequest, nil).
+			logger.HTTPError(req.Method, req.URL.Path, statusCode, decodeErr).
 				Str("request_id", requestID).
 				Msg("missing certificate id in path")
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-		certificateID, err := url.PathUnescape(certificateIDParam)
-		if err != nil {
-			requestID := middleware.GetRequestID(req.Context())
-			logger.HTTPError(req.Method, req.URL.Path, http.StatusBadRequest, err).
-				Str("request_id", requestID).
-				Msg("failed to decode certificate id")
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			http.Error(w, http.StatusText(statusCode), statusCode)
 			return
 		}
 
@@ -146,22 +128,13 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 	})
 
 	r.Get("/api/certs/{id}/pem/download", func(w http.ResponseWriter, req *http.Request) {
-		certificateIDParam := chi.URLParam(req, "id")
-		if certificateIDParam == "" {
+		certificateID, statusCode, decodeErr := decodeCertificateIDParam(req)
+		if statusCode != http.StatusOK {
 			requestID := middleware.GetRequestID(req.Context())
-			logger.HTTPError(req.Method, req.URL.Path, http.StatusBadRequest, nil).
+			logger.HTTPError(req.Method, req.URL.Path, statusCode, decodeErr).
 				Str("request_id", requestID).
 				Msg("missing certificate id in path")
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-			return
-		}
-		certificateID, err := url.PathUnescape(certificateIDParam)
-		if err != nil {
-			requestID := middleware.GetRequestID(req.Context())
-			logger.HTTPError(req.Method, req.URL.Path, http.StatusBadRequest, err).
-				Str("request_id", requestID).
-				Msg("failed to decode certificate id")
-			http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
+			http.Error(w, http.StatusText(statusCode), statusCode)
 			return
 		}
 		pemResponse, err := vaultClient.GetCertificatePEM(req.Context(), certificateID)
@@ -200,6 +173,22 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			Str("request_id", requestID).
 			Msg("invalidated cache")
 	})
+}
+
+func decodeCertificateIDParam(req *http.Request) (string, int, error) {
+	certificateIDParam := strings.TrimSpace(chi.URLParam(req, "id"))
+	if certificateIDParam == "" {
+		return "", http.StatusBadRequest, nil
+	}
+	certificateID, err := url.PathUnescape(certificateIDParam)
+	if err != nil {
+		return "", http.StatusBadRequest, err
+	}
+	certificateID = strings.TrimSpace(certificateID)
+	if certificateID == "" {
+		return "", http.StatusBadRequest, nil
+	}
+	return certificateID, http.StatusOK, nil
 }
 
 func parseMountsQueryParam(query url.Values) []string {

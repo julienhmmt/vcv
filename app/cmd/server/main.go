@@ -78,6 +78,7 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 	if assetsError != nil {
 		return nil, assetsError
 	}
+	indexHTML, indexHTMLError := fs.ReadFile(webFS, "index.html")
 
 	// Middleware must be registered before any routes
 	r.Use(middleware.RequestID)
@@ -87,16 +88,15 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 
 	// Static frontend from embedded filesystem
 	r.Get("/", func(w http.ResponseWriter, req *http.Request) {
-		data, readError := fs.ReadFile(webFS, "index.html")
-		if readError != nil {
-			logger.Get().Error().Err(readError).
+		if indexHTMLError != nil {
+			logger.Get().Error().Err(indexHTMLError).
 				Str("path", "/").
 				Msg("Failed to read embedded index.html")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_, _ = w.Write(data)
+		_, _ = w.Write(indexHTML)
 	})
 	staticHandler := http.StripPrefix("/assets/", http.FileServer(http.FS(assetsFS)))
 	r.Handle("/assets/*", staticHandler)
