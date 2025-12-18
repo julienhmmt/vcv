@@ -60,6 +60,12 @@
       </div>
 
       <div class="admin-form-row admin-form-row-full">
+        <div class="admin-note">
+          TLS tip: Provide the CA bundle either inline as base64 (preferred) or via a PEM file path / CA directory. If "TLS CA cert (base64)" is set, it takes precedence and the file/path fields are ignored. Encode a PEM bundle with: <code>cat /path/to/ca.pem | base64 -w0</code>. "TLS server name" overrides SNI. "TLS insecure" disables verification (development only).
+        </div>
+      </div>
+
+      <div class="admin-form-row admin-form-row-full">
         <label class="admin-label">TLS CA cert (file path)</label>
         <input class="vcv-input admin-input" name="vault_tls_ca_cert_{{.Key}}" value="{{.Vault.TLSCACert}}" placeholder="/etc/vcv/tls/vault-ca.pem" />
       </div>
