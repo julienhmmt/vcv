@@ -1,0 +1,20 @@
+[Unit]
+Description=VCV vault dev-1 container
+Documentation=https://github.com/julienhmmt/vcv
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+ContainerName=vcv-vault-dev-1
+Image=docker.io/hashicorp/vault:1.21.1
+PublishPort=38201:8201
+Network=bridge
+Volume=%h/containers/storage/vcv/vault-dev-init-1.sh:/vault-init.sh
+Exec=/vault-init.sh
+
+[Service]
+Restart=always
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target default.target

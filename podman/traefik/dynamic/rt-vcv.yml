@@ -1,0 +1,24 @@
+http:
+  services:
+    svc-vcv:
+      loadBalancer:
+        servers:
+          - url: "http://localhost:30008"
+
+  middlewares:
+    csp:
+      headers:
+        contentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';"
+
+  routers:
+    rt-vcv:
+      entryPoints:
+        - "websecure"
+      rule: "Host(`vcv.hommet.net`)"
+      service: "svc-vcv"
+      middlewares:
+        - compression
+        - csp
+        - headersLight
+      tls:
+        certResolver: cloudflare

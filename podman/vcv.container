@@ -1,0 +1,26 @@
+[Unit]
+Description=VCV container
+Documentation=https://github.com/julienhmmt/vcv
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+ContainerName=vcv
+Image=docker.io/jhmmt/vcv:1.4
+PublishPort=30008:52000
+Network=bridge
+## Volumes
+# create the needed directories: mkdir -p $HOME/containers/storage/vcv
+# settings file, create the file before running the container. Look at the default config file in the root git repository. (touch $HOME/containers/storage/vcv/settings.json)
+Volume=%h/containers/storage/vcv/settings.json:/app/settings.json
+# log file, create the file before running the container. (touch $HOME/containers/storage/vcv/vcv.log)
+Volume=%h/containers/storage/vcv/vcv.log:/var/log/app/vcv.log
+Environment=VCV_ADMIN_PASSWORD=changeme
+Environment=SETTINGS_PATH=/app/settings.json
+
+[Service]
+Restart=always
+TimeoutStartSec=300
+
+[Install]
+WantedBy=multi-user.target default.target
