@@ -1,0 +1,43 @@
+version: '3'
+
+tasks:
+  default: task --list
+
+  dev:
+    desc: Construit le binaire Go et le container docker
+    cmds:
+      - echo "Building binary"
+      - 'cd /Users/jh/git/vcv && go clean -cache && go build -C app -o ../vcv ./cmd/server'
+      - echo "Binary built successfully"
+      - echo ""
+      - echo "Remove old app logs and create new one"
+      - rm -f vcv.log
+      - touch vcv.log
+      - echo "Successfully cleaned app logs"
+      - echo "Building and running docker container"
+      - docker compose -f docker-compose.dev.yml down
+      - 'docker buildx build --platform linux/arm64 --load --build-arg VERSION=dev -t jhmmt/vcv:dev ./app'
+      - docker compose -f docker-compose.dev.yml up -d
+      - echo ""
+
+  docker-build:
+    desc: Construit les images docker (arm64 et amd64) et push sur Docker Hub
+    vars:
+      VCV_TAG: latest
+    cmds:
+      - 'echo "Building Docker images for multiple architectures..."'
+      - 'echo "Usage: task docker-build VCV_TAG=your-tag"'
+      - 'echo "Default tag: {{.VCV_TAG}}"'
+      - 'docker buildx build --platform linux/amd64,linux/arm64 --build-arg VERSION={{.VCV_TAG}} -t jhmmt/vcv:{{.VCV_TAG}} --push ./app'
+
+  test-offline:
+    desc: Run unit tests offline (no Vault) with coverage
+    dir: app
+    cmds:
+      - 'go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out'
+
+  test-dev:
+    desc: Run tests against dev stack (docker-compose)
+    dir: app
+    cmds:
+      - 'VAULT_ADDR=http://localhost:8200 VAULT_TOKEN=root go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out'
