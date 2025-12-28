@@ -1574,12 +1574,20 @@ body {
   line-height: 1;
 }
 
+[data-theme="dark"] .vcv-card-value {
+  color: #e2e8f0;
+}
+
 .vcv-card-label {
   font-size: 0.75rem;
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-top: 0.25rem;
+}
+
+[data-theme="dark"] .vcv-card-label {
+  color: #cbd5e1;
 }
 
 .vcv-dashboard-charts {
