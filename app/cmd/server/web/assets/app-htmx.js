@@ -1,11 +1,37 @@
-const mountsAllSentinel = "__all__";
+const MOUNTS_ALL_SENTINEL = "__all__";
+
+const DOM_IDS = {
+  CERTS_BODY: 'vcv-certs-body',
+  LOADING_INDICATOR: 'vcv-loading-indicator',
+  SEARCH_INPUT: 'vcv-search',
+  STATUS_FILTER: 'vcv-status-filter',
+  EXPIRY_FILTER: 'vcv-expiry-filter',
+  VAULT_FILTER: 'vcv-vault-filter',
+  PKI_FILTER: 'vcv-pki-filter',
+  PAGE_SIZE: 'vcv-page-size',
+  PAGE: 'vcv-page',
+  SORT_KEY: 'vcv-sort-key',
+  SORT_DIR: 'vcv-sort-dir',
+  MOUNTS: 'vcv-mounts',
+  LANG_SELECT: 'vcv-lang-select',
+};
+
+const TIMEOUTS = {
+  DEBOUNCE_MS: 300,
+  ERROR_DEBOUNCE_MS: 200,
+  RETRY_BASE_MS: 1000,
+};
+
+const LIMITS = {
+  MAX_RETRIES: 3,
+};
 
 const state = {
   availableMounts: [],
   hasSyncedInitialUrl: false,
   lastErrorAtByTargetId: new Map(),
   lastRequestByTargetId: new Map(),
-  maxRetries: 3,
+  maxRetries: LIMITS.MAX_RETRIES,
   messages: {},
   retryCount: new Map(),
   selectedMounts: [],
@@ -16,6 +42,20 @@ const state = {
 
 function buildVaultMountKey(vaultId, mount) {
   return `${vaultId}|${mount}`;
+}
+
+function showLoadingIndicator() {
+  const indicator = document.getElementById(DOM_IDS.LOADING_INDICATOR);
+  if (indicator) {
+    indicator.classList.remove('vcv-hidden');
+  }
+}
+
+function hideLoadingIndicator() {
+  const indicator = document.getElementById(DOM_IDS.LOADING_INDICATOR);
+  if (indicator) {
+    indicator.classList.add('vcv-hidden');
+  }
 }
 
 function formatMountGroupTitle(group) {
@@ -145,7 +185,7 @@ function applyCertsStateFromUrl() {
   }
   const mountsValue = params.get("mounts");
   if (typeof mountsValue === "string") {
-    if (mountsValue === mountsAllSentinel) {
+    if (mountsValue === MOUNTS_ALL_SENTINEL) {
       state.selectedMounts = [...state.availableMounts];
     } else if (mountsValue === "") {
       state.selectedMounts = [];
@@ -209,7 +249,7 @@ function initHtmxErrorHandler() {
     const targetId = getRequestTargetId(detail);
     const now = Date.now();
     const lastAt = state.lastErrorAtByTargetId.get(targetId) || 0;
-    if (now-lastAt < 200) {
+    if (now-lastAt < TIMEOUTS.ERROR_DEBOUNCE_MS) {
       return;
     }
     state.lastErrorAtByTargetId.set(targetId, now);
@@ -268,7 +308,7 @@ function handleRetry(targetId) {
     return;
   }
   
-  const delay = Math.pow(2, currentRetries) * 1000; // 1s, 2s, 4s
+  const delay = Math.pow(2, currentRetries) * TIMEOUTS.RETRY_BASE_MS; // 1s, 2s, 4s
   state.retryCount.set(targetId, currentRetries + 1);
   
   const messages = state.messages;
@@ -289,13 +329,10 @@ function initLoadingIndicators() {
   // Show loading spinner
   document.body.addEventListener('htmx:beforeRequest', function(evt) {
     const target = evt.detail.target;
-    if (target.id !== 'vcv-certs-body') {
+    if (target.id !== DOM_IDS.CERTS_BODY) {
       return;
     }
-    const loadingIndicator = document.getElementById('vcv-loading-indicator');
-    if (loadingIndicator) {
-      loadingIndicator.classList.remove('vcv-hidden');
-    }
+    showLoadingIndicator();
     target.classList.add('vcv-loading');
     setCertsBusy(true);
   });
@@ -303,56 +340,29 @@ function initLoadingIndicators() {
   // Hide loading spinner
   document.body.addEventListener('htmx:afterRequest', function(evt) {
     const target = evt.detail.target;
-    if (target.id !== 'vcv-certs-body') {
+    if (target.id !== DOM_IDS.CERTS_BODY) {
       return;
     }
-    const loadingIndicator = document.getElementById('vcv-loading-indicator');
-    if (loadingIndicator) {
-      loadingIndicator.classList.add('vcv-hidden');
-    }
+    hideLoadingIndicator();
     target.classList.remove('vcv-loading');
     setCertsBusy(false);
   });
   
   // Hide loading on error
-  document.body.addEventListener('htmx:responseError', function(evt) {
+  const hideLoadingOnError = function(evt) {
     const target = evt.detail.target;
-    if (target.id !== 'vcv-certs-body') {
+    if (target.id !== DOM_IDS.CERTS_BODY) {
       return;
     }
-    const loadingIndicator = document.getElementById('vcv-loading-indicator');
-    if (loadingIndicator) {
-      loadingIndicator.classList.add('vcv-hidden');
-    }
+    hideLoadingIndicator();
     target.classList.remove('vcv-loading');
     setCertsBusy(false);
-  });
+  };
 
-  document.body.addEventListener('htmx:sendError', function(evt) {
-    const target = evt.detail.target;
-    if (target.id !== 'vcv-certs-body') {
-      return;
-    }
-    const loadingIndicator = document.getElementById('vcv-loading-indicator');
-    if (loadingIndicator) {
-      loadingIndicator.classList.add('vcv-hidden');
-    }
-    target.classList.remove('vcv-loading');
-    setCertsBusy(false);
-  });
+  document.body.addEventListener('htmx:responseError', hideLoadingOnError);
+  document.body.addEventListener('htmx:sendError', hideLoadingOnError);
 
-  document.body.addEventListener('htmx:timeout', function(evt) {
-    const target = evt.detail.target;
-    if (target.id !== 'vcv-certs-body') {
-      return;
-    }
-    const loadingIndicator = document.getElementById('vcv-loading-indicator');
-    if (loadingIndicator) {
-      loadingIndicator.classList.add('vcv-hidden');
-    }
-    target.classList.remove('vcv-loading');
-    setCertsBusy(false);
-  });
+  document.body.addEventListener('htmx:timeout', hideLoadingOnError);
 }
 
 function initModalHandlers() {
@@ -794,7 +804,7 @@ function setMountsHiddenField() {
     return;
   }
   if (state.availableMounts.length === 0) {
-    mountsInput.value = mountsAllSentinel;
+    mountsInput.value = MOUNTS_ALL_SENTINEL;
     return;
   }
   if (state.selectedMounts.length === 0) {
@@ -802,7 +812,7 @@ function setMountsHiddenField() {
     return;
   }
   if (state.selectedMounts.length === state.availableMounts.length) {
-    mountsInput.value = mountsAllSentinel;
+    mountsInput.value = MOUNTS_ALL_SENTINEL;
     return;
   }
   mountsInput.value = state.selectedMounts.join(",");

@@ -24,6 +24,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"vcv/config"
+	vcverrors "vcv/internal/errors"
 	"vcv/internal/i18n"
 	"vcv/internal/logger"
 	"vcv/middleware"
@@ -403,20 +404,20 @@ func validateSettings(settings config.SettingsFile) error {
 		address := strings.TrimSpace(vault.Address)
 		token := strings.TrimSpace(vault.Token)
 		if id == "" {
-			return errors.New("vault id is empty")
+			return vcverrors.ErrVaultIDEmpty
 		}
 		if _, ok := seen[id]; ok {
-			return errors.New("duplicate vault id")
+			return vcverrors.ErrDuplicateVaultID
 		}
 		seen[id] = struct{}{}
 		if address == "" {
 			return errors.New("vault address is empty")
 		}
 		if _, err := url.ParseRequestURI(address); err != nil {
-			return errors.New("invalid vault address")
+			return vcverrors.ErrInvalidAddress
 		}
 		if token == "" {
-			return errors.New("vault token is empty")
+			return vcverrors.ErrInvalidToken
 		}
 		if len(vault.PKIMounts) == 0 {
 			if strings.TrimSpace(vault.PKIMount) == "" {
@@ -493,11 +494,11 @@ func parseSettingsUpdateForm(r *http.Request, existing config.SettingsFile) (con
 	warningText := strings.TrimSpace(r.PostForm.Get("expire_warning"))
 	critical, err := strconv.Atoi(defaultString(criticalText, "0"))
 	if err != nil {
-		return config.SettingsFile{}, errors.New("invalid critical threshold")
+		return config.SettingsFile{}, vcverrors.ErrInvalidThreshold
 	}
 	warning, err := strconv.Atoi(defaultString(warningText, "0"))
 	if err != nil {
-		return config.SettingsFile{}, errors.New("invalid warning threshold")
+		return config.SettingsFile{}, vcverrors.ErrInvalidThreshold
 	}
 	updated.Certificates.ExpirationThresholds.Critical = critical
 	updated.Certificates.ExpirationThresholds.Warning = warning

@@ -193,12 +193,12 @@ func TestParseSettingsUpdateForm_InvalidThresholds(t *testing.T) {
 	reqCritical.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	_, errCritical := parseSettingsUpdateForm(reqCritical, base)
 	require.Error(t, errCritical)
-	assert.Contains(t, errCritical.Error(), "invalid critical")
+	assert.Contains(t, errCritical.Error(), "invalid expiration threshold")
 	reqWarning := httptest.NewRequest(http.MethodPost, "/admin/settings", strings.NewReader("expire_critical=1&expire_warning=abc"))
 	reqWarning.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	_, errWarning := parseSettingsUpdateForm(reqWarning, base)
 	require.Error(t, errWarning)
-	assert.Contains(t, errWarning.Error(), "invalid warning")
+	assert.Contains(t, errWarning.Error(), "invalid expiration threshold")
 }
 
 func TestSplitAndTrim(t *testing.T) {
@@ -373,7 +373,7 @@ func TestAdminRoutes_SettingsPost_ErrorsAndSuccess(t *testing.T) {
 	badFormRec := httptest.NewRecorder()
 	router.ServeHTTP(badFormRec, badFormReq)
 	assert.Equal(t, http.StatusOK, badFormRec.Code)
-	assert.Contains(t, badFormRec.Body.String(), "invalid critical")
+	assert.Contains(t, badFormRec.Body.String(), "invalid expiration threshold")
 
 	invalidVaultReq := httptest.NewRequest(http.MethodPost, "/admin/settings", strings.NewReader("expire_critical=1&expire_warning=2&vault_id_1=&vault_address_1=https://vault.example.com&vault_token_1=tok&vault_mounts_1=pki"))
 	invalidVaultReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
