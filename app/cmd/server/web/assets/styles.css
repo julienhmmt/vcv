@@ -32,15 +32,15 @@ body {
 .vcv-header {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 1rem;
   position: sticky;
   top: 0;
   z-index: 40;
-  padding: 1rem 0;
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid #e2e8f0;
   margin-bottom: 2rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .vcv-header-bar {
@@ -48,7 +48,11 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+  padding: 1.25rem 1.5rem;
   flex-wrap: wrap;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .vcv-header-actions {
@@ -63,11 +67,14 @@ body {
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.75rem;
+  padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
   border: 1px solid #e2e8f0;
   background: #fff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .vcv-toolbar-actions {
@@ -77,11 +84,11 @@ body {
 }
 
 .vcv-title {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #1e293b;
+  color: #0f172a;
   margin: 0;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
 }
 
 .vcv-header-right {
@@ -1835,8 +1842,9 @@ body {
 }
 
 [data-theme="dark"] .vcv-header {
-  background: rgba(2, 6, 23, 0.8);
+  background: rgba(2, 6, 23, 0.95);
   border-bottom: 1px solid #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="dark"] .vcv-title {
