@@ -2,7 +2,7 @@
 
 ## 📋 Vue d'ensemble
 
-VaultCertsViewer peut être configuré via un fichier `settings.json` ou des variables d'environnement. Le fichier de configuration a la priorité sur les variables d'environnement. Ce panneau d'administration vous permet de gérer le fichier `settings.json` directement depuis l'interface web.
+VaultCertsViewer est configuré via un fichier `settings.json`. Ce panneau d'administration vous permet de gérer le fichier `settings.json` directement depuis l'interface web.
 
 > **⚠️ Important :** Après avoir enregistré les modifications, un redémarrage du serveur peut être nécessaire pour que tous les changements prennent effet.
 
@@ -10,7 +10,7 @@ VaultCertsViewer peut être configuré via un fichier `settings.json` ou des var
 
 ### VCV_ADMIN_PASSWORD
 
-Variable d'environnement requise pour activer le panneau d'administration. Doit être un **hash bcrypt** (préfixe `$2a$`, `$2b$`, ou `$2y$`).
+Variable d'environnement requise pour activer le panneau d'administration. Doit être un **hash bcrypt**.
 
 ```bash
 # Générer un hash bcrypt (exemple avec htpasswd)
@@ -23,9 +23,11 @@ python3 -c "import bcrypt; print(bcrypt.hashpw(b'VotreMotDePasse', bcrypt.gensal
 export VCV_ADMIN_PASSWORD='$2a$10$...'
 ```
 
-**Nom d'utilisateur par défaut :** `admin`  
-**Durée de session :** 12 heures  
-**Limitation de débit :** 10 tentatives par 5 minutes (production uniquement)
+Vous pouvez également utiliser le service 'bcrypt' de <https://tools.hommet.net/bcrypt> pour générer un hash bcrypt (aucune donnée n'est stockée).
+
+**Nom d'utilisateur par défaut :** `admin` (non modifiable, à titre indicatif)
+**Durée de session :** 12 heures (non modifiable, à titre indicatif)
+**Limitation de débit :** 10 tentatives par 5 minutes (non modifiable, à titre indicatif)
 
 ## 📁 Paramètres de l'application
 
@@ -34,48 +36,40 @@ export VCV_ADMIN_PASSWORD='$2a$10$...'
 Définit l'environnement de l'application. Affecte les fonctionnalités de sécurité et le comportement des logs.
 
 - `dev` - Mode développement (logs verbeux, pas de limitation de débit)
-- `stage` - Environnement de staging
 - `prod` - Mode production (cookies sécurisés, limitation de débit activée)
 
-```bash
-# Variable d'environnement (fallback)
-export APP_ENV=prod
-```
+**Par défaut :** `prod`
 
 ### Port (app.port)
 
-Port d'écoute du serveur HTTP. Par défaut : `52000`
+Port d'écoute du serveur HTTP.
 
-```bash
-# Variable d'environnement (fallback)
-export PORT=52000
-```
+**Par défaut :** `52000`
 
 ### Journalisation (app.logging)
 
 Configurer le comportement de la journalisation :
 
-- **level** : `debug`, `info`, `warn`, `error` (par défaut : `info`)
-- **format** : `json` ou `text` (par défaut : `json`)
-- **output** : `stdout`, `file`, ou `both` (par défaut : `stdout`)
-- **file_path** : Chemin du fichier de log quand output est `file` ou `both` (par défaut : `/var/log/app/vcv.log`)
+- **level** : `debug`, `info`, `warn`, `error`
+- **format** : `json` ou `text`
+- **output** : `stdout`, `file`, ou `both`
+- **file_path** : Chemin du fichier de log quand output est `file` ou `both`
 
-```bash
-# Variables d'environnement (fallback)
-export LOG_LEVEL=info
-export LOG_FORMAT=json
-export LOG_OUTPUT=stdout
-export LOG_FILE_PATH=/var/log/app/vcv.log
-```
+**Par défaut :**
+
+- level: `info`
+- format: `json`
+- output: `stdout`
+- file_path: `/var/log/app/vcv.log`
 
 ## 📜 Paramètres des certificats
 
-### Seuils d'expiration
+### Seuils d'expiration (certificates.expiration_thresholds)
 
 Configurer quand les certificats sont signalés comme expirant bientôt :
 
-- **critical** : Jours avant expiration pour afficher une alerte critique (par défaut : `7`)
-- **warning** : Jours avant expiration pour afficher un avertissement (par défaut : `30`)
+- **critical** : Jours avant expiration pour afficher une alerte critique
+- **warning** : Jours avant expiration pour afficher un avertissement
 
 Ces seuils contrôlent :
 
@@ -84,22 +78,28 @@ Ces seuils contrôlent :
 - La visualisation de la timeline sur le tableau de bord
 - Les métriques Prometheus (`vcv_certificates_expiring_critical`, `vcv_certificates_expiring_warning`)
 
-```bash
-# Variables d'environnement (fallback)
-export VCV_EXPIRE_CRITICAL=7
-export VCV_EXPIRE_WARNING=30
+**Par défaut :**
+
+- critical: `7`
+- warning: `30`
+
+## 🌐 Paramètres CORS (cors)
+
+### Origines autorisées (cors.allowed_origins)
+
+Tableau des origines CORS autorisées. Utilisez `["*"]` pour autoriser toutes les origines (non recommandé en production).
+
+**Exemple :**
+
+```json
+"allowed_origins": ["https://example.com", "https://app.example.com"]
 ```
 
-## 🌐 Paramètres CORS
+### Autoriser les credentials (cors.allow_credentials)
 
-### Origines autorisées
+Booléen pour autoriser les credentials dans les requêtes CORS.
 
-Liste séparée par des virgules des origines CORS autorisées. Utilisez `*` pour autoriser toutes les origines (non recommandé en production).
-
-```text
-# Exemple
-https://example.com,https://app.example.com
-```
+**Par défaut :** `false`
 
 **Note :** CORS est principalement utile si vous intégrez VCV dans une autre application web ou y accédez depuis un domaine différent.
 
@@ -110,21 +110,21 @@ https://example.com,https://app.example.com
 VaultCertsViewer prend en charge la surveillance de plusieurs instances Vault simultanément. Chaque instance Vault nécessite :
 
 - **ID** : Identifiant unique pour cette instance Vault (requis)
-- **Display Name** : Nom lisible affiché dans l'interface (optionnel)
+- **Display name** : Nom lisible affiché dans l'interface (optionnel)
 - **Address** : URL du serveur Vault (ex : `https://vault.example.com:8200`)
 - **Token** : Token Vault en lecture seule avec accès PKI (requis)
-- **PKI Mounts** : Liste séparée par des virgules des chemins de montage PKI (ex : `pki,pki2,pki-prod`)
+- **PKI mounts** : Liste séparée par des virgules des chemins de montage PKI (ex : `pki,pki2,pki-prod`)
 - **Enabled** : Si cette instance Vault est active
 
 ### Configuration TLS
 
 Pour les Vaults utilisant des certificats CA personnalisés ou auto-signés :
 
-- **TLS CA Cert (Base64)** : Bundle CA PEM encodé en base64 (méthode préférée)
-- **TLS CA Cert Path** : Chemin du fichier vers le bundle CA PEM
-- **TLS CA Path** : Répertoire contenant les certificats CA
-- **TLS Server Name** : Remplacement du nom de serveur SNI
-- **TLS Insecure** : Ignorer la vérification TLS (⚠️ développement uniquement, non recommandé)
+- **TLS CA cert (Base64)** : Bundle CA PEM encodé en base64 (méthode préférée)
+- **TLS CA cert path** : Chemin du fichier vers le bundle CA PEM
+- **TLS CA path** : Répertoire contenant les certificats CA
+- **TLS server name** : Remplacement du nom de serveur SNI
+- **TLS insecure** : Ignorer la vérification TLS (⚠️ développement uniquement, non recommandé)
 
 ```bash
 # Encoder un certificat en base64
@@ -159,11 +159,13 @@ vault write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
 vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 ```
 
+Vous devez remplacer 'pki' et 'pki2' par les chemins de montage PKI de votre Vault. En plus, ajoutez autant de chemins de montage PKI que vous avez dans votre Vault.
+
 ## ⚡ Optimisations de performance
 
 ### Cache
 
-VaultCertsViewer implémente un cache intelligent pour améliorer les performances :
+VaultCertsViewer implémente un cache pour améliorer les performances :
 
 - **TTL du cache des certificats :** 15 minutes (réduit les appels API Vault)
 - **Cache des vérifications de santé :** 30 secondes (pour les indicateurs de statut du footer)
@@ -199,13 +201,10 @@ Toutes les métriques incluent les labels : `vault_id`, `vault_name`, `pki_mount
 ## 🔒 Bonnes pratiques de sécurité
 
 - Toujours utiliser l'environnement `prod` en production
-- Utiliser des mots de passe hashés bcrypt pour l'accès admin
-- Ne jamais utiliser `tls_insecure: true` en production
 - Protéger le fichier `settings.json` (contient des tokens sensibles)
 - Utiliser des tokens Vault en lecture seule avec permissions minimales
 - Activer la limitation de débit en production (automatique en mode `prod`)
 - Exécuter le conteneur avec `--read-only` et `--cap-drop=ALL`
-- Monter le répertoire de logs en lecture-écriture si vous utilisez la journalisation fichier
 
 ## 📝 Exemple settings.json
 
@@ -256,4 +255,4 @@ Toutes les métriques incluent les labels : `vault_id`, `vault_name`, `pki_mount
 }
 ```
 
-> **💡 Astuce :** Utilisez le panneau d'administration pour éditer ces paramètres visuellement. Les modifications sont enregistrées automatiquement dans `settings.json`.
+> **💡 Astuce :** Utilisez le panneau d'administration pour éditer ces paramètres visuellement. Les modifications sont enregistrées dans le fichier `settings.json`.

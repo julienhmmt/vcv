@@ -2,7 +2,7 @@
 
 ## 📋 Overview
 
-VaultCertsViewer can be configured through a `settings.json` file or environment variables. The settings file takes precedence over environment variables. This admin panel allows you to manage the `settings.json` file directly from the web interface.
+VaultCertsViewer is configured through a `settings.json` file. This admin panel allows you to manage the `settings.json` file directly from the web interface.
 
 > **⚠️ Important:** After saving changes, a server restart may be required for all settings to take effect.
 
@@ -10,7 +10,7 @@ VaultCertsViewer can be configured through a `settings.json` file or environment
 
 ### VCV_ADMIN_PASSWORD
 
-Environment variable required to enable the admin panel. Must be a **bcrypt hash** (prefix `$2a$`, `$2b$`, or `$2y$`).
+Environment variable required to enable the admin panel. Must be a **bcrypt hash**.
 
 ```bash
 # Generate a bcrypt hash (example with htpasswd)
@@ -23,9 +23,11 @@ python3 -c "import bcrypt; print(bcrypt.hashpw(b'YourPassword', bcrypt.gensalt()
 export VCV_ADMIN_PASSWORD='$2a$10$...'
 ```
 
-**Default username:** `admin`  
-**Session duration:** 12 hours  
-**Rate limiting:** 10 attempts per 5 minutes (production only)
+You can also use the 'bcrypt' service of <https://tools.hommet.net/bcrypt> to generate a bcrypt hash (no data is stored).
+
+**Default username:** `admin` (no editable, default value)
+**Session duration:** 12 hours (no editable, default value)
+**Rate limiting:** 10 attempts per 5 minutes (no editable, default value)
 
 ## 📁 Application settings
 
@@ -34,48 +36,40 @@ export VCV_ADMIN_PASSWORD='$2a$10$...'
 Defines the application environment. Affects security features and logging behavior.
 
 - `dev` - Development mode (verbose logging, no rate limiting)
-- `stage` - Staging environment
 - `prod` - Production mode (secure cookies, rate limiting enabled)
 
-```bash
-# Environment variable (fallback)
-export APP_ENV=prod
-```
+**Default:** `prod`
 
 ### Port (app.port)
 
-HTTP server listening port. Default: `52000`
+HTTP server listening port.
 
-```bash
-# Environment variable (fallback)
-export PORT=52000
-```
+**Default:** `52000`
 
 ### Logging (app.logging)
 
 Configure application logging behavior:
 
-- **level**: `debug`, `info`, `warn`, `error` (default: `info`)
-- **format**: `json` or `text` (default: `json`)
-- **output**: `stdout`, `file`, or `both` (default: `stdout`)
-- **file_path**: Log file path when output is `file` or `both` (default: `/var/log/app/vcv.log`)
+- **level**: `debug`, `info`, `warn`, `error`
+- **format**: `json` or `text`
+- **output**: `stdout`, `file`, or `both`
+- **file_path**: Log file path when output is `file` or `both`
 
-```bash
-# Environment variables (fallback)
-export LOG_LEVEL=info
-export LOG_FORMAT=json
-export LOG_OUTPUT=stdout
-export LOG_FILE_PATH=/var/log/app/vcv.log
-```
+**Defaults:**
+
+- level: `info`
+- format: `json`
+- output: `stdout`
+- file_path: `/var/log/app/vcv.log`
 
 ## 📜 Certificate settings
 
-### Expiration thresholds
+### Expiration thresholds (certificates.expiration_thresholds)
 
 Configure when certificates are flagged as expiring soon:
 
-- **critical**: Days before expiration to show critical alert (default: `7`)
-- **warning**: Days before expiration to show warning (default: `30`)
+- **critical**: Days before expiration to show critical alert
+- **warning**: Days before expiration to show warning
 
 These thresholds control:
 
@@ -84,22 +78,28 @@ These thresholds control:
 - Timeline visualization on the dashboard
 - Prometheus metrics (`vcv_certificates_expiring_critical`, `vcv_certificates_expiring_warning`)
 
-```bash
-# Environment variables (fallback)
-export VCV_EXPIRE_CRITICAL=7
-export VCV_EXPIRE_WARNING=30
+**Defaults:**
+
+- critical: `7`
+- warning: `30`
+
+## 🌐 CORS settings (cors)
+
+### Allowed origins (cors.allowed_origins)
+
+Array of allowed CORS origins. Use `["*"]` to allow all origins (not recommended in production).
+
+**Example:**
+
+```json
+"allowed_origins": ["https://example.com", "https://app.example.com"]
 ```
 
-## 🌐 CORS settings
+### Allow credentials (cors.allow_credentials)
 
-### Allowed origins
+Boolean to allow credentials in CORS requests.
 
-Comma-separated list of allowed CORS origins. Use `*` to allow all origins (not recommended in production).
-
-```text
-# Example
-https://example.com,https://app.example.com
-```
+**Default:** `false`
 
 **Note:** CORS is primarily useful if you embed VCV in another web application or access it from a different domain.
 
@@ -110,21 +110,21 @@ https://example.com,https://app.example.com
 VaultCertsViewer supports monitoring multiple Vault instances simultaneously. Each vault instance requires:
 
 - **ID**: Unique identifier for this Vault instance (required)
-- **Display Name**: Human-readable name shown in the UI (optional)
+- **Display name**: Human-readable name shown in the UI (optional)
 - **Address**: Vault server URL (e.g., `https://vault.example.com:8200`)
 - **Token**: Read-only Vault token with PKI access (required)
-- **PKI Mounts**: Comma-separated list of PKI mount paths (e.g., `pki,pki2,pki-prod`)
+- **PKI mounts**: Comma-separated list of PKI mount paths (e.g., `pki,pki2,pki-prod`)
 - **Enabled**: Whether this Vault instance is active
 
 ### TLS configuration
 
 For Vaults using custom CA certificates or self-signed certificates:
 
-- **TLS CA Cert (Base64)**: Base64-encoded PEM CA bundle (preferred method)
-- **TLS CA Cert Path**: File path to PEM CA bundle
-- **TLS CA Path**: Directory containing CA certificates
-- **TLS Server Name**: SNI server name override
-- **TLS Insecure**: Skip TLS verification (⚠️ development only, not recommended)
+- **TLS CA cert (Base64)**: Base64-encoded PEM CA bundle (preferred method)
+- **TLS CA cert path**: File path to PEM CA bundle
+- **TLS CA path**: Directory containing CA certificates
+- **TLS server name**: SNI server name override
+- **TLS insecure**: Skip TLS verification (⚠️ development only, not recommended)
 
 ```bash
 # Encode a certificate to base64
@@ -159,11 +159,13 @@ vault write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
 vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 ```
 
+You must replace 'pki' and 'pki2' with the PKI mount paths of your Vault. Add as many PKI mount paths as you have in your Vault.
+
 ## ⚡ Performance optimizations
 
 ### Caching
 
-VaultCertsViewer implements intelligent caching to improve performance:
+VaultCertsViewer implements caching to improve performance:
 
 - **Certificate cache TTL:** 15 minutes (reduces Vault API calls)
 - **Health check cache:** 30 seconds (for footer status indicators)
@@ -199,13 +201,10 @@ All metrics include labels: `vault_id`, `vault_name`, `pki_mount`
 ## 🔒 Security best practices
 
 - Always use `prod` environment in production
-- Use bcrypt-hashed passwords for admin access
-- Never use `tls_insecure: true` in production
 - Protect `settings.json` file (contains sensitive tokens)
 - Use read-only Vault tokens with minimal permissions
 - Enable rate limiting in production (automatic in `prod` mode)
 - Run container with `--read-only` and `--cap-drop=ALL`
-- Mount log directory as read-write if using file logging
 
 ## 📝 Example settings.json
 
@@ -256,4 +255,4 @@ All metrics include labels: `vault_id`, `vault_name`, `pki_mount`
 }
 ```
 
-> **💡 Tip:** Use the admin panel to edit these settings visually. Changes are saved to `settings.json` automatically.
+> **💡 Tip:** Use the admin panel to edit these settings visually. Changes are saved to `settings.json` file.
