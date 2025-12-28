@@ -49,6 +49,34 @@
   transform: translateY(-1px);
 }
 
+[data-theme="dark"] .admin-surface .vcv-button-primary {
+  background: #059669;
+  border-color: #10b981;
+  color: #e7f7f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .admin-surface .vcv-button-primary:hover:not(:disabled) {
+  background: #10b981;
+  border-color: #34d399;
+  color: #f8fafc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45);
+}
+
+[data-theme="dark"] .admin-surface .vcv-button-secondary {
+  background: #1f2937;
+  color: #e2e8f0;
+  border: 1px solid #334155;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .admin-surface .vcv-button-secondary:hover:not(:disabled) {
+  background: #334155;
+  color: #f8fafc;
+  border-color: #475569;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.45);
+}
+
 .admin-surface .vcv-button-danger {
   background: #dc2626;
   color: white;
