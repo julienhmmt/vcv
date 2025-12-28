@@ -272,6 +272,22 @@ body {
   color: #475569;
 }
 
+[data-theme="dark"] .vcv-mount-trigger {
+  background: #1f2937;
+  border-color: #334155;
+  color: #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .vcv-mount-trigger:hover {
+  background: #334155;
+  border-color: #475569;
+}
+
+[data-theme="dark"] .vcv-mount-trigger-label {
+  color: #e2e8f0;
+}
+
 .vcv-mount-modal-list {
   display: flex;
   flex-direction: column;
@@ -1742,6 +1758,29 @@ body {
   text-transform: uppercase;
   font-size: 0.8rem;
   color: #e2e8f0;
+}
+
+.vcv-footer .vcv-mount-trigger {
+  background: #1e293b;
+  border: 1px solid #334155;
+  color: #f1f5f9;
+  font-weight: 600;
+}
+
+.vcv-mount-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.65rem;
+  border-radius: 9999px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  font-weight: 600;
+}
+
+.vcv-mount-trigger:hover {
+  background: #f8fafc;
 }
 
 .vcv-footer-version {
