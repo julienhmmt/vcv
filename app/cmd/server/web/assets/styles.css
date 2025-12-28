@@ -721,6 +721,12 @@ body {
     transform 0.15s;
 }
 
+.vcv-button:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
 .vcv-button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
@@ -822,6 +828,20 @@ body {
   background: #f8fafc;
   border-color: #cbd5e1;
   color: #1e293b;
+}
+
+[data-theme="dark"] .vcv-button-secondary {
+  background: #1f2937;
+  border-color: #334155;
+  color: #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] .vcv-button-secondary:hover:not(:disabled) {
+  background: #334155;
+  border-color: #475569;
+  color: #f8fafc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Status & Summary */
@@ -1490,6 +1510,12 @@ body {
   border: 1px solid #e2e8f0;
 }
 
+[data-theme="dark"] .vcv-card {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+}
+
 .vcv-card-icon {
   width: 3rem;
   height: 3rem;
@@ -1503,6 +1529,11 @@ body {
 .vcv-card-total .vcv-card-icon {
   background: #f1f5f9;
   color: #475569;
+}
+
+[data-theme="dark"] .vcv-card-total .vcv-card-icon {
+  background: #1e293b;
+  color: #cbd5e1;
 }
 
 .vcv-card-valid .vcv-card-icon {
@@ -1876,6 +1907,12 @@ body {
   background: #334155;
   border-color: #475569;
   color: #e2e8f0;
+}
+
+[data-theme="dark"] .vcv-button:hover:not(:disabled) {
+  background: #475569;
+  border-color: #64748b;
+  color: #f8fafc;
 }
 
 [data-theme="dark"] .vcv-button:disabled {
