@@ -436,7 +436,51 @@ body {
 
 .vcv-button-icon {
   width: 2.25rem;
+  height: 2.25rem;
   padding: 0;
+  border-radius: 0.625rem;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+  transition:
+    all 0.2s ease,
+    transform 0.15s ease;
+}
+
+.vcv-button-icon:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  border-color: #94a3b8;
+  box-shadow: 0 4px 12px rgb(15 23 42 / 10%);
+  transform: translateY(-1px);
+}
+
+.vcv-button-icon:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+}
+
+.vcv-button-icon span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  transition: transform 0.2s ease;
+}
+
+.vcv-button-icon:hover:not(:disabled) span {
+  transform: scale(1.1);
+}
+
+.vcv-theme-toggle span {
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.vcv-documentation-btn span {
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
 }
 
 .vcv-button-primary {
@@ -1489,6 +1533,18 @@ body {
 
 [data-theme="dark"] .vcv-button:disabled {
   border-color: #334155;
+}
+
+[data-theme="dark"] .vcv-button-icon {
+  background: linear-gradient(135deg, #334155 0%, #1e293b 100%);
+  border-color: #475569;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 20%);
+}
+
+[data-theme="dark"] .vcv-button-icon:hover:not(:disabled) {
+  background: linear-gradient(135deg, #475569 0%, #334155 100%);
+  border-color: #64748b;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 30%);
 }
 
 [data-theme="dark"] .vcv-button-ghost:hover:not(:disabled) {

@@ -29,27 +29,28 @@
           <div class="vcv-header-actions">
             <button
               id="theme-toggle"
-              class="vcv-button vcv-button-icon"
+              class="vcv-button vcv-button-icon vcv-theme-toggle"
               type="button"
               title="Toggle dark mode"
+              aria-label="Toggle dark mode"
               hx-post="/ui/theme/toggle"
               hx-target="#vcv-theme-sink"
               hx-swap="innerHTML"
               hx-include="#vcv-theme-value"
             >
-              <span id="theme-icon">🌙</span>
+              <span id="theme-icon" aria-hidden="true">🌙</span>
             </button>
             <input id="vcv-theme-value" name="theme" type="hidden" value="light" />
             <div id="vcv-theme-sink" class="vcv-hidden"></div>
             <button
               id="vcv-documentation-btn"
-              class="vcv-button vcv-button-icon"
+              class="vcv-button vcv-button-icon vcv-documentation-btn"
               type="button"
               title="{{.Messages.ButtonDocumentation}}"
               aria-label="{{.Messages.ButtonDocumentation}}"
               onclick="openDocumentationModal()"
             >
-              <span id="vcv-documentation-icon">📖</span>
+              <span id="vcv-documentation-icon" aria-hidden="true">📖</span>
             </button>
             <form action="/" method="GET">
               <select id="vcv-lang-select" name="lang" class="vcv-select vcv-lang-select" aria-label="{{.Messages.LabelLanguage}}" onchange="this.form.submit()">
