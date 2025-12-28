@@ -70,22 +70,6 @@
               <div id="mount-selector" class="vcv-mount-filter"></div>
               <input id="vcv-mounts" name="mounts" type="hidden" value="__all__" />
             </div>
-            <div class="vcv-filter-group" id="vcv-vault-filter-group">
-              <label id="vcv-vault-filter-label" class="vcv-filter-label" for="vcv-vault-filter">{{.Messages.LabelVault}}</label>
-              <select
-                id="vcv-vault-filter"
-                class="vcv-select"
-                name="vault"
-                hx-get="/ui/certs"
-                hx-trigger="change"
-                hx-target="#vcv-certs-body"
-                hx-swap="innerHTML"
-                hx-sync="#vcv-certs-body:replace"
-                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
-              >
-                <option value="all">{{.Messages.StatusFilterAll}}</option>
-              </select>
-            </div>
             <div class="vcv-filter-group" id="vcv-pki-filter-group">
               <label id="vcv-pki-filter-label" class="vcv-filter-label" for="vcv-pki-filter">{{.Messages.LabelPKI}}</label>
               <select
@@ -175,10 +159,32 @@
 
       <!-- Mount selector modal -->
       <div id="mount-modal" class="vcv-modal-backdrop vcv-hidden">
-        <div class="vcv-modal">
+        <div class="vcv-modal vcv-modal-lg">
           <div class="vcv-modal-header">
-            <h2 class="vcv-modal-title" id="mount-modal-title">PKI Engines</h2>
+            <div class="vcv-modal-header-content">
+              <h2 class="vcv-modal-title" id="mount-modal-title">PKI Engines</h2>
+              <div class="vcv-mount-stats" id="mount-stats">
+                <span class="vcv-mount-stats-item">
+                  <span class="vcv-mount-stats-label" id="mount-stats-selected-label">Selected:</span>
+                  <span class="vcv-mount-stats-value" id="mount-stats-selected">0</span>
+                </span>
+                <span class="vcv-mount-stats-separator">/</span>
+                <span class="vcv-mount-stats-item">
+                  <span class="vcv-mount-stats-label" id="mount-stats-total-label">Total:</span>
+                  <span class="vcv-mount-stats-value" id="mount-stats-total">0</span>
+                </span>
+              </div>
+            </div>
             <button type="button" class="vcv-modal-close" onclick="closeMountModal()">×</button>
+          </div>
+          <div class="vcv-modal-search">
+            <input
+              type="search"
+              id="mount-search"
+              class="vcv-input vcv-mount-search-input"
+              placeholder="{{.Messages.MountSearchPlaceholder}}"
+              oninput="filterMountList(this.value)"
+            />
           </div>
           <div class="vcv-modal-content">
             <div id="mount-modal-list" class="vcv-mount-modal-list"></div>

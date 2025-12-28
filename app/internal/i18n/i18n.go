@@ -90,7 +90,10 @@ type Messages struct {
 	LoadUnexpectedFormat        string `json:"loadUnexpectedFormat"`
 	LoadingDetails              string `json:"loadingDetails"`
 	ModalDetailsTitle           string `json:"modalDetailsTitle"`
+	MountSearchPlaceholder      string `json:"mountSearchPlaceholder"`
 	MountSelectorTitle          string `json:"mountSelectorTitle"`
+	MountStatsSelected          string `json:"mountStatsSelected"`
+	MountStatsTotal             string `json:"mountStatsTotal"`
 	NoCertsExpiringSoon         string `json:"noCertsExpiringSoon"`
 	NoData                      string `json:"noData"`
 	NotificationCritical        string `json:"notificationCritical"`
@@ -195,7 +198,10 @@ var englishMessages = Messages{
 	LoadUnexpectedFormat:        "Unexpected response format from server",
 	LoadingDetails:              "Loading certificate details...",
 	ModalDetailsTitle:           "Certificate details",
+	MountSearchPlaceholder:      "Search vaults or PKI engines...",
 	MountSelectorTitle:          "PKI engines",
+	MountStatsSelected:          "Selected",
+	MountStatsTotal:             "Total",
 	NoCertsExpiringSoon:         "No certificates expiring soon",
 	NoData:                      "No data",
 	NotificationCritical:        "{{count}} certificate(s) expiring within {{threshold}} days or less!",
@@ -294,7 +300,10 @@ var frenchMessages = Messages{
 	LoadUnexpectedFormat:        "Format de réponse inattendu du serveur",
 	LoadingDetails:              "Chargement des détails du certificat...",
 	ModalDetailsTitle:           "Détails du certificat",
+	MountSearchPlaceholder:      "Rechercher des vaults ou moteurs PKI...",
 	MountSelectorTitle:          "Moteurs PKI",
+	MountStatsSelected:          "Sélectionnés",
+	MountStatsTotal:             "Total",
 	NoCertsExpiringSoon:         "Aucun certificat expirant bientôt",
 	NoData:                      "Aucune donnée",
 	NotificationCritical:        "{{count}} certificat(s) expirant dans {{threshold}} jours ou moins !",
@@ -393,7 +402,10 @@ var spanishMessages = Messages{
 	LoadUnexpectedFormat:        "Formato de respuesta inesperado del servidor",
 	LoadingDetails:              "Cargando detalles del certificado...",
 	ModalDetailsTitle:           "Detalles del certificado",
+	MountSearchPlaceholder:      "Buscar vaults o motores PKI...",
 	MountSelectorTitle:          "Motores PKI",
+	MountStatsSelected:          "Seleccionados",
+	MountStatsTotal:             "Total",
 	NoCertsExpiringSoon:         "Ningún certificado caducando pronto",
 	NoData:                      "Sin datos",
 	NotificationCritical:        "{{count}} certificado(s) caducando en {{threshold}} días o menos!",
@@ -492,7 +504,10 @@ var germanMessages = Messages{
 	LoadUnexpectedFormat:        "Unerwartetes Antwortformat vom Server",
 	LoadingDetails:              "Zertifikatsdetails werden geladen...",
 	ModalDetailsTitle:           "Zertifikatsdetails",
+	MountSearchPlaceholder:      "Vaults oder PKI-Motoren suchen...",
 	MountSelectorTitle:          "PKI-Motoren",
+	MountStatsSelected:          "Ausgewählt",
+	MountStatsTotal:             "Gesamt",
 	NoCertsExpiringSoon:         "Keine Zertifikate, die bald ablaufen",
 	NoData:                      "Keine Daten",
 	NotificationCritical:        "{{count}} Zertifikat(e) laufen in {{threshold}} Tagen oder weniger ab!",
@@ -591,7 +606,10 @@ var italianMessages = Messages{
 	LoadUnexpectedFormat:        "Formato di risposta inatteso dal server",
 	// ...
 	ModalDetailsTitle:       "Dettagli del certificato",
+	MountSearchPlaceholder:  "Cerca vaults o motori PKI...",
 	MountSelectorTitle:      "Motori PKI",
+	MountStatsSelected:      "Selezionati",
+	MountStatsTotal:         "Totale",
 	NoCertsExpiringSoon:     "Nessun certificato in scadenza a breve",
 	NoData:                  "Nessun dato",
 	NotificationCritical:    "{{count}} certificato/i in scadenza entro {{threshold}} giorni o meno!",
