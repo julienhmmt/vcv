@@ -154,6 +154,9 @@ function applyCertsStateFromUrl() {
       state.selectedMounts = requested.filter((value) => state.availableMounts.includes(value));
     }
   }
+  if (vaultFilter && vaultFilter.value && vaultFilter.value !== "all") {
+    updatePkiFilterOptions(vaultFilter.value);
+  }
 }
 
 function updateSelectOptions(select, options) {
@@ -164,7 +167,8 @@ function updateSelectOptions(select, options) {
   select.innerHTML = "";
   const allOption = document.createElement("option");
   allOption.value = "all";
-  allOption.textContent = "All";
+  const messages = state.messages || {};
+  allOption.textContent = messages.statusFilterAll || "All";
   select.appendChild(allOption);
   options.forEach((value) => {
     const option = document.createElement("option");
@@ -890,9 +894,9 @@ function renderMountModalList() {
   if (!listContainer) {
     return;
   }
+  const messages = state.messages || {};
   const deselectAllLabel = typeof messages.deselectAll === "string" && messages.deselectAll !== "" ? messages.deselectAll : "None";
   const groups = Array.isArray(state.vaultMountGroups) ? state.vaultMountGroups : [];
-  const messages = state.messages || {};
   const selectAllLabel = typeof messages.selectAll === "string" && messages.selectAll !== "" ? messages.selectAll : "All";
   const selectedSet = new Set(state.selectedMounts);
   if (groups.length > 0) {
@@ -1076,6 +1080,67 @@ function initLanguageFromURL() {
   langSelect.value = lang;
 }
 
+function updatePkiFilterOptions(selectedVaultId) {
+  const pkiFilter = document.getElementById("vcv-pki-filter");
+  if (!pkiFilter) {
+    return;
+  }
+  if (!Array.isArray(state.vaultMountGroups) || state.vaultMountGroups.length === 0) {
+    return;
+  }
+  let pkiOptions = [];
+  if (selectedVaultId === "all" || selectedVaultId === "") {
+    const uniquePki = state.vaultMountGroups
+      .map((group) => group.mounts)
+      .reduce((acc, mounts) => acc.concat(mounts), [])
+      .map((value) => String(value).trim())
+      .filter((value) => value !== "");
+    pkiOptions = Array.from(new Set(uniquePki)).sort();
+  } else {
+    const vault = state.vaultMountGroups.find((group) => group.id === selectedVaultId);
+    if (vault && Array.isArray(vault.mounts)) {
+      pkiOptions = vault.mounts.slice().sort();
+    }
+  }
+  updateSelectOptions(pkiFilter, pkiOptions);
+}
+
+function handleVaultFilterChange() {
+  const vaultFilter = document.getElementById("vcv-vault-filter");
+  if (!vaultFilter) {
+    return;
+  }
+  const selectedVault = vaultFilter.value || "all";
+  updatePkiFilterOptions(selectedVault);
+  updateSelectedMountsForVault(selectedVault);
+  renderMountSelector();
+}
+
+function updateSelectedMountsForVault(selectedVaultId) {
+  if (!Array.isArray(state.vaultMountGroups) || state.vaultMountGroups.length === 0) {
+    return;
+  }
+  if (selectedVaultId === "all" || selectedVaultId === "") {
+    state.selectedMounts = [...state.availableMounts];
+  } else {
+    const vault = state.vaultMountGroups.find((group) => group.id === selectedVaultId);
+    if (vault && Array.isArray(vault.mounts)) {
+      const vaultMountKeys = vault.mounts.map((mount) => buildVaultMountKey(vault.id, mount));
+      state.selectedMounts = state.selectedMounts.filter((key) => {
+        return vaultMountKeys.includes(key) || !key.startsWith(selectedVaultId + "|");
+      });
+      const allVaultMounts = vaultMountKeys.every((key) => state.selectedMounts.includes(key));
+      if (!allVaultMounts) {
+        vaultMountKeys.forEach((key) => {
+          if (!state.selectedMounts.includes(key)) {
+            state.selectedMounts.push(key);
+          }
+        });
+      }
+    }
+  }
+}
+
 async function loadConfig() {
   try {
     const response = await fetch("/api/config");
@@ -1105,16 +1170,11 @@ async function loadConfig() {
       const vaultFilter = document.getElementById("vcv-vault-filter");
       const pkiFilter = document.getElementById("vcv-pki-filter");
       const vaultOptions = state.vaultMountGroups.map((group) => group.id);
-      const uniquePki = state.vaultMountGroups
-        .map((group) => group.mounts)
-        .reduce((acc, mounts) => acc.concat(mounts), [])
-        .map((value) => String(value).trim())
-        .filter((value) => value !== "");
-      const pkiOptions = Array.from(new Set(uniquePki)).sort();
       updateSelectOptions(vaultFilter, vaultOptions);
-      updateSelectOptions(pkiFilter, pkiOptions);
-      updateVaultPkiFiltersVisibility(vaultOptions, pkiOptions);
+      updatePkiFilterOptions(vaultFilter ? vaultFilter.value : "all");
+      updateVaultPkiFiltersVisibility(vaultOptions, []);
       applyTranslations();
+      attachVaultFilterListener();
       return;
     }
     if (!Array.isArray(data.pkiMounts)) {
@@ -1131,6 +1191,15 @@ async function loadConfig() {
     applyTranslations();
   } catch {
   }
+}
+
+function attachVaultFilterListener() {
+  const vaultFilter = document.getElementById("vcv-vault-filter");
+  if (!vaultFilter) {
+    return;
+  }
+  vaultFilter.removeEventListener("change", handleVaultFilterChange);
+  vaultFilter.addEventListener("change", handleVaultFilterChange);
 }
 
 function initEventHandlers() {
