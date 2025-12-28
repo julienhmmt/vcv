@@ -625,6 +625,19 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 			return
 		}
 	})
+	router.Get("/admin/docs", func(w http.ResponseWriter, r *http.Request) {
+		if !sessions.isAuthed(r) {
+			if err := renderAdminTemplate(w, templates, "admin-login-fragment.html", adminLoginTemplateData{}); err != nil {
+				requestID := middleware.GetRequestID(r.Context())
+				logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
+					Str("request_id", requestID).
+					Msg("failed to render admin login")
+				return
+			}
+			return
+		}
+		http.Redirect(w, r, "/ui/docs/configuration", http.StatusSeeOther)
+	})
 	router.Post("/admin/login", func(w http.ResponseWriter, r *http.Request) {
 		ok, errorText := sessions.loginFromForm(w, r)
 		if ok {

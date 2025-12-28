@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"vcv/config"
@@ -104,19 +105,36 @@ func (c *multiClient) InvalidateCache() {
 }
 
 func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate, error) {
-	all := make([]certs.Certificate, 0)
+	type result struct {
+		vaultID      string
+		certificates []certs.Certificate
+	}
+	resultChan := make(chan result, len(c.orderedVaultIDs))
+	var wg sync.WaitGroup
 	for _, vaultID := range c.orderedVaultIDs {
 		client := c.clientsByVault[vaultID]
 		if client == nil {
 			continue
 		}
-		certificates, err := client.ListCertificates(ctx)
-		if err != nil {
-			continue
-		}
-		for _, certificate := range certificates {
+		wg.Add(1)
+		go func(id string, cl Client) {
+			defer wg.Done()
+			certificates, err := cl.ListCertificates(ctx)
+			if err != nil {
+				return
+			}
+			resultChan <- result{vaultID: id, certificates: certificates}
+		}(vaultID, client)
+	}
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+	all := make([]certs.Certificate, 0)
+	for res := range resultChan {
+		for _, certificate := range res.certificates {
 			prefixed := certificate
-			prefixed.ID = fmt.Sprintf("%s|%s", vaultID, certificate.ID)
+			prefixed.ID = fmt.Sprintf("%s|%s", res.vaultID, certificate.ID)
 			all = append(all, prefixed)
 		}
 	}

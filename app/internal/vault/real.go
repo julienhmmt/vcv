@@ -83,7 +83,7 @@ func NewClientFromConfig(cfg config.VaultConfig) (Client, error) {
 		client:   apiClient,
 		mounts:   cfg.PKIMounts,
 		addr:     cfg.Addr,
-		cache:    cache.New(5 * time.Minute),
+		cache:    cache.New(15 * time.Minute),
 		stopChan: make(chan struct{}),
 	}
 

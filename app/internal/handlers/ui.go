@@ -207,7 +207,7 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 			logger.Get().Error().Err(err).Msg("failed to parse index.html")
 		}
 	}
-	vaultHealthCache := newFooterVaultHealthCache(5 * time.Second)
+	vaultHealthCache := newFooterVaultHealthCache(30 * time.Second)
 	vaultDisplayNames := buildVaultDisplayNames(vaultInstances)
 	showVaultMount := shouldShowVaultMount(vaultInstances)
 
@@ -323,37 +323,65 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 		if len(vaultInstances) == 0 || len(vaultStatusClients) == 0 {
 			vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: messages.FooterVaultNotConfigured, Class: "vcv-footer-pill", Title: vault.ErrVaultNotConfigured.Error()})
 		} else {
-			for _, instance := range vaultInstances {
-				name := strings.TrimSpace(instance.DisplayName)
+			type healthCheckResult struct {
+				index    int
+				instance config.VaultInstance
+				entry    footerVaultHealthCacheEntry
+			}
+			resultChan := make(chan healthCheckResult, len(vaultInstances))
+			var wg sync.WaitGroup
+			for idx, instance := range vaultInstances {
+				entry, found := vaultHealthCache.get(instance.ID)
+				if found {
+					resultChan <- healthCheckResult{index: idx, instance: instance, entry: entry}
+					continue
+				}
+				client, ok := vaultStatusClients[instance.ID]
+				if !ok || client == nil {
+					entry := footerVaultHealthCacheEntry{checkedAt: time.Now(), connected: false, errText: "missing vault status client"}
+					resultChan <- healthCheckResult{index: idx, instance: instance, entry: entry}
+					continue
+				}
+				wg.Add(1)
+				go func(i int, inst config.VaultInstance, cl vault.Client) {
+					defer wg.Done()
+					vaultErr := cl.CheckConnection(r.Context())
+					e := footerVaultHealthCacheEntry{checkedAt: time.Now(), connected: vaultErr == nil}
+					if vaultErr != nil {
+						e.errText = vaultErr.Error()
+						e.isNotConfigured = errors.Is(vaultErr, vault.ErrVaultNotConfigured)
+					}
+					vaultHealthCache.set(inst.ID, e)
+					resultChan <- healthCheckResult{index: i, instance: inst, entry: e}
+				}(idx, instance, client)
+			}
+			go func() {
+				wg.Wait()
+				close(resultChan)
+			}()
+			results := make([]healthCheckResult, 0, len(vaultInstances))
+			for res := range resultChan {
+				results = append(results, res)
+			}
+			sort.Slice(results, func(i, j int) bool {
+				return results[i].index < results[j].index
+			})
+			for _, res := range results {
+				name := strings.TrimSpace(res.instance.DisplayName)
 				if name == "" {
-					name = strings.TrimSpace(instance.ID)
+					name = strings.TrimSpace(res.instance.ID)
 				}
 				if name == "" {
 					name = "Vault"
 				}
-				client, ok := vaultStatusClients[instance.ID]
-				if !ok || client == nil {
-					vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: name, Class: "vcv-footer-pill vcv-footer-pill-error", Title: "missing vault status client"})
-					continue
-				}
 				title := ""
 				cssClass := "vcv-footer-pill"
-				entry, found := vaultHealthCache.get(instance.ID)
-				if !found {
-					vaultErr := client.CheckConnection(r.Context())
-					entry = footerVaultHealthCacheEntry{checkedAt: time.Now(), connected: vaultErr == nil}
-					if vaultErr != nil {
-						entry.errText = vaultErr.Error()
-						entry.isNotConfigured = errors.Is(vaultErr, vault.ErrVaultNotConfigured)
-					}
-					vaultHealthCache.set(instance.ID, entry)
-				}
-				if !entry.connected {
-					if entry.isNotConfigured {
+				if !res.entry.connected {
+					if res.entry.isNotConfigured {
 						title = messages.FooterVaultNotConfigured
 					} else {
 						cssClass = "vcv-footer-pill vcv-footer-pill-error"
-						title = entry.errText
+						title = res.entry.errText
 					}
 				} else {
 					cssClass = "vcv-footer-pill vcv-footer-pill-ok"
@@ -461,8 +489,34 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 
 		mdContent, err := fs.ReadFile(webFS, filename)
 		if err != nil {
-			// Fallback to English if translation is missing
 			filename = "docs/user-guide.en.md"
+			mdContent, err = fs.ReadFile(webFS, filename)
+			if err != nil {
+				http.Error(w, "Documentation not found", http.StatusNotFound)
+				return
+			}
+		}
+
+		var buf bytes.Buffer
+		if err := goldmark.Convert(mdContent, &buf); err != nil {
+			http.Error(w, "Failed to render documentation", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write(buf.Bytes()); err != nil {
+			logger.Get().Error().Err(err).Msg("failed to write documentation response")
+		}
+	})
+
+	router.Get("/ui/docs/configuration", func(w http.ResponseWriter, r *http.Request) {
+		language := i18n.ResolveLanguage(r)
+		filename := fmt.Sprintf("docs/configuration.%s.md", language)
+
+		mdContent, err := fs.ReadFile(webFS, filename)
+		if err != nil {
+			filename = "docs/configuration.en.md"
 			mdContent, err = fs.ReadFile(webFS, filename)
 			if err != nil {
 				http.Error(w, "Documentation not found", http.StatusNotFound)
