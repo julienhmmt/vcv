@@ -26,7 +26,7 @@ type configResponse struct {
 
 func newServerWebFS() fs.FS {
 	return fstest.MapFS{
-		"index.html":                           &fstest.MapFile{Data: []byte("<html><body>ok</body></html>")},
+		"index.html":                           &fstest.MapFile{Data: []byte(`<!DOCTYPE html><html lang="{{.Language}}"><head><title>{{.Messages.AppTitle}}</title></head><body>ok</body></html>`)},
 		"assets/app.js":                        &fstest.MapFile{Data: []byte("console.log('ok')")},
 		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div></div>")},
 		"templates/footer-status.html":         &fstest.MapFile{Data: []byte("<div></div>")},

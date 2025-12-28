@@ -1,6 +1,11 @@
 package i18n
 
-import "strings"
+import (
+	"log"
+	"net/http"
+	"net/url"
+	"strings"
+)
 
 // Language represents a supported UI language.
 type Language string
@@ -18,6 +23,7 @@ type Messages struct {
 	AppTitle                    string `json:"appTitle"`
 	ButtonClose                 string `json:"buttonClose"`
 	ButtonDetails               string `json:"buttonDetails"`
+	ButtonDocumentation         string `json:"buttonDocumentation"`
 	ButtonDownloadPEM           string `json:"buttonDownloadPEM"`
 	ButtonRefresh               string `json:"buttonRefresh"`
 	CacheInvalidateFailed       string `json:"cacheInvalidateFailed"`
@@ -62,6 +68,8 @@ type Messages struct {
 	LabelFingerprintSHA256      string `json:"labelFingerprintSHA256"`
 	LabelIssuer                 string `json:"labelIssuer"`
 	LabelKeyAlgorithm           string `json:"labelKeyAlgorithm"`
+	LabelLanguage               string `json:"labelLanguage"`
+	LabelLoading                string `json:"labelLoading"`
 	LabelPEM                    string `json:"labelPem"`
 	LabelSerialNumber           string `json:"labelSerialNumber"`
 	LabelSubject                string `json:"labelSubject"`
@@ -72,6 +80,8 @@ type Messages struct {
 	LegendRevokedTitle          string `json:"legendRevokedTitle"`
 	LegendValidText             string `json:"legendValidText"`
 	LegendValidTitle            string `json:"legendValidTitle"`
+	LabelVault                  string `json:"labelVault"`
+	LabelPKI                    string `json:"labelPki"`
 	LoadDetailsFailed           string `json:"loadDetailsFailed"`
 	LoadDetailsNetworkError     string `json:"loadDetailsNetworkError"`
 	LoadFailed                  string `json:"loadFailed"`
@@ -118,6 +128,7 @@ var englishMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Close",
 	ButtonDetails:               "Details",
+	ButtonDocumentation:         "Documentation",
 	ButtonDownloadPEM:           "Download PEM",
 	ButtonRefresh:               "Refresh",
 	CacheInvalidateFailed:       "Failed to clear cache",
@@ -162,6 +173,8 @@ var englishMessages = Messages{
 	LabelFingerprintSHA256:      "SHA-256 Fingerprint",
 	LabelIssuer:                 "Issuer",
 	LabelKeyAlgorithm:           "Key Algorithm",
+	LabelLanguage:               "Language",
+	LabelLoading:                "Loading...",
 	LabelPEM:                    "PEM Certificate",
 	LabelSerialNumber:           "Serial Number",
 	LabelSubject:                "Subject",
@@ -172,6 +185,8 @@ var englishMessages = Messages{
 	LegendRevokedTitle:          "Revoked",
 	LegendValidText:             "Not expired and not revoked.",
 	LegendValidTitle:            "Valid",
+	LabelVault:                  "Vault",
+	LabelPKI:                    "PKI",
 	LoadDetailsFailed:           "Failed to load certificate details ({{status}})",
 	LoadDetailsNetworkError:     "Network error loading certificate details. Please try again.",
 	LoadFailed:                  "Failed to load certificates ({{status}})",
@@ -212,6 +227,7 @@ var frenchMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Fermer",
 	ButtonDetails:               "Détails",
+	ButtonDocumentation:         "Documentation",
 	ButtonDownloadPEM:           "Télécharger PEM",
 	ButtonRefresh:               "Rafraîchir",
 	CacheInvalidateFailed:       "Échec du vidage du cache",
@@ -256,6 +272,8 @@ var frenchMessages = Messages{
 	LabelFingerprintSHA256:      "Empreinte SHA-256",
 	LabelIssuer:                 "Émetteur",
 	LabelKeyAlgorithm:           "Algorithme de clé",
+	LabelLanguage:               "Langue",
+	LabelLoading:                "Chargement...",
 	LabelPEM:                    "Certificat PEM",
 	LabelSerialNumber:           "Numéro de série",
 	LabelSubject:                "Sujet",
@@ -266,6 +284,8 @@ var frenchMessages = Messages{
 	LegendRevokedTitle:          "Révoqué",
 	LegendValidText:             "Non expiré et non révoqué.",
 	LegendValidTitle:            "Valide",
+	LabelVault:                  "Vault",
+	LabelPKI:                    "PKI",
 	LoadDetailsFailed:           "Échec du chargement des détails du certificat ({{status}})",
 	LoadDetailsNetworkError:     "Erreur réseau lors du chargement des détails du certificat. Veuillez réessayer.",
 	LoadFailed:                  "Échec du chargement des certificats ({{status}})",
@@ -306,6 +326,7 @@ var spanishMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Cerrar",
 	ButtonDetails:               "Detalles",
+	ButtonDocumentation:         "Documentación",
 	ButtonDownloadPEM:           "Descargar PEM",
 	ButtonRefresh:               "Actualizar",
 	CacheInvalidateFailed:       "Error al borrar el caché",
@@ -350,6 +371,8 @@ var spanishMessages = Messages{
 	LabelFingerprintSHA256:      "Huella SHA-256",
 	LabelIssuer:                 "Emisor",
 	LabelKeyAlgorithm:           "Algoritmo de clave",
+	LabelLanguage:               "Idioma",
+	LabelLoading:                "Cargando...",
 	LabelPEM:                    "Certificado PEM",
 	LabelSerialNumber:           "Número de serie",
 	LabelSubject:                "Sujeto",
@@ -360,6 +383,8 @@ var spanishMessages = Messages{
 	LegendRevokedTitle:          "Revocado",
 	LegendValidText:             "No caducado y no revocado.",
 	LegendValidTitle:            "Válido",
+	LabelVault:                  "Vault",
+	LabelPKI:                    "PKI",
 	LoadDetailsFailed:           "Error al cargar los detalles del certificado ({{status}})",
 	LoadDetailsNetworkError:     "Error de red al cargar los detalles del certificado. Por favor intente nuevamente.",
 	LoadFailed:                  "Error al cargar los certificados ({{status}})",
@@ -400,6 +425,7 @@ var germanMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Schließen",
 	ButtonDetails:               "Details",
+	ButtonDocumentation:         "Dokumentation",
 	ButtonDownloadPEM:           "PEM herunterladen",
 	ButtonRefresh:               "Aktualisieren",
 	CacheInvalidateFailed:       "Cache konnte nicht geleert werden",
@@ -444,6 +470,8 @@ var germanMessages = Messages{
 	LabelFingerprintSHA256:      "SHA-256-Fingerabdruck",
 	LabelIssuer:                 "Aussteller",
 	LabelKeyAlgorithm:           "Schlüsselalgorithmus",
+	LabelLanguage:               "Sprache",
+	LabelLoading:                "Wird geladen...",
 	LabelPEM:                    "PEM-Zertifikat",
 	LabelSerialNumber:           "Seriennummer",
 	LabelSubject:                "Betreff",
@@ -454,6 +482,8 @@ var germanMessages = Messages{
 	LegendRevokedTitle:          "Widerrufen",
 	LegendValidText:             "Nicht abgelaufen und nicht widerrufen.",
 	LegendValidTitle:            "Gültig",
+	LabelVault:                  "Vault",
+	LabelPKI:                    "PKI",
 	LoadDetailsFailed:           "Zertifikatsdetails konnten nicht geladen werden ({{status}})",
 	LoadDetailsNetworkError:     "Netzwerkfehler beim Laden der Zertifikatsdetails. Bitte versuchen Sie es erneut.",
 	LoadFailed:                  "Zertifikate konnten nicht geladen werden ({{status}})",
@@ -494,6 +524,7 @@ var italianMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
 	ButtonClose:                 "Chiudi",
 	ButtonDetails:               "Dettagli",
+	ButtonDocumentation:         "Documentazione",
 	ButtonDownloadPEM:           "Scarica PEM",
 	ButtonRefresh:               "Aggiorna",
 	CacheInvalidateFailed:       "Impossibile cancellare la cache",
@@ -538,6 +569,8 @@ var italianMessages = Messages{
 	LabelFingerprintSHA256:      "Impronta SHA-256",
 	LabelIssuer:                 "Emittente",
 	LabelKeyAlgorithm:           "Algoritmo della chiave",
+	LabelLanguage:               "Lingua",
+	LabelLoading:                "Caricamento...",
 	LabelPEM:                    "Certificato PEM",
 	LabelSerialNumber:           "Numero di serie",
 	LabelSubject:                "Soggetto",
@@ -548,40 +581,42 @@ var italianMessages = Messages{
 	LegendRevokedTitle:          "Revocato",
 	LegendValidText:             "Non scaduto e non revocato.",
 	LegendValidTitle:            "Valido",
+	LabelVault:                  "Vault",
+	LabelPKI:                    "PKI",
 	LoadDetailsFailed:           "Impossibile caricare i dettagli del certificato ({{status}})",
 	LoadDetailsNetworkError:     "Errore di rete durante il caricamento dei dettagli del certificato. Riprova.",
 	LoadFailed:                  "Impossibile caricare i certificati ({{status}})",
 	LoadNetworkError:            "Errore di rete durante il caricamento dei certificati. Riprova.",
 	LoadSuccess:                 "Certificati caricati correttamente",
 	LoadUnexpectedFormat:        "Formato di risposta inatteso dal server",
-	LoadingDetails:              "Caricamento dei dettagli del certificato...",
-	ModalDetailsTitle:           "Dettagli del certificato",
-	MountSelectorTitle:          "Motori PKI",
-	NoCertsExpiringSoon:         "Nessun certificato in scadenza a breve",
-	NoData:                      "Nessun dato",
-	NotificationCritical:        "{{count}} certificato/i in scadenza entro {{threshold}} giorni o meno!",
-	NotificationWarning:         "{{count}} certificato/i in scadenza entro {{threshold}} giorni o meno",
-	PaginationAll:               "Tutti i risultati",
-	PaginationInfo:              "Pagina {{current}} di {{total}}",
-	PaginationNext:              "Successivo",
-	PaginationPageSizeLabel:     "Risultati per pagina",
-	PaginationPrev:              "Precedente",
-	SearchPlaceholder:           "CN o SAN",
-	SelectAll:                   "Seleziona tutto",
-	StatusFilterAll:             "Tutti",
-	StatusFilterExpired:         "Scaduto",
-	StatusFilterRevoked:         "Revocato",
-	StatusFilterTitle:           "Filtro di stato",
-	StatusFilterValid:           "Valido",
-	StatusLabelExpired:          "Scaduto",
-	StatusLabelRevoked:          "Revocato",
-	StatusLabelValid:            "Valido",
-	SummaryAll:                  "{{total}} certificati",
-	SummaryNoCertificates:       "Nessun certificato.",
-	SummarySome:                 "Mostrati {{visible}} di {{total}} certificati",
-	TechnicalDetailsTitle:       "Dettagli tecnici",
-	VaultConnectionLost:         "Connessione al Vault interrotta",
-	VaultConnectionRestored:     "Connessione al Vault ripristinata",
+	// ...
+	ModalDetailsTitle:       "Dettagli del certificato",
+	MountSelectorTitle:      "Motori PKI",
+	NoCertsExpiringSoon:     "Nessun certificato in scadenza a breve",
+	NoData:                  "Nessun dato",
+	NotificationCritical:    "{{count}} certificato/i in scadenza entro {{threshold}} giorni o meno!",
+	NotificationWarning:     "{{count}} certificato/i in scadenza entro {{threshold}} giorni o meno",
+	PaginationAll:           "Tutti i risultati",
+	PaginationInfo:          "Pagina {{current}} di {{total}}",
+	PaginationNext:          "Successivo",
+	PaginationPageSizeLabel: "Risultati per pagina",
+	PaginationPrev:          "Precedente",
+	SearchPlaceholder:       "CN o SAN",
+	SelectAll:               "Seleziona tutto",
+	StatusFilterAll:         "Tutti",
+	StatusFilterExpired:     "Scaduto",
+	StatusFilterRevoked:     "Revocato",
+	StatusFilterTitle:       "Filtro di stato",
+	StatusFilterValid:       "Valido",
+	StatusLabelExpired:      "Scaduto",
+	StatusLabelRevoked:      "Revocato",
+	StatusLabelValid:        "Valido",
+	SummaryAll:              "{{total}} certificati",
+	SummaryNoCertificates:   "Nessun certificato.",
+	SummarySome:             "Mostrati {{visible}} di {{total}} certificati",
+	TechnicalDetailsTitle:   "Dettagli tecnici",
+	VaultConnectionLost:     "Connessione al Vault interrotta",
+	VaultConnectionRestored: "Connessione al Vault ripristinata",
 }
 
 // MessagesForLanguage returns the translations for a given language code.
@@ -603,42 +638,102 @@ func MessagesForLanguage(language Language) Messages {
 
 // FromQueryLanguage parses a short language code coming from a query parameter.
 func FromQueryLanguage(value string) (Language, bool) {
-	code := strings.ToLower(strings.TrimSpace(value))
-	if code == string(LanguageEnglish) {
+	return GetLanguage(value)
+}
+
+// Translations maps language codes to their message sets.
+var Translations = map[string]Messages{
+	string(LanguageEnglish): englishMessages,
+	string(LanguageFrench):  frenchMessages,
+	string(LanguageSpanish): spanishMessages,
+	string(LanguageGerman):  germanMessages,
+	string(LanguageItalian): italianMessages,
+}
+
+// GetLanguage returns the Language constant for a given code.
+func GetLanguage(code string) (Language, bool) {
+	code = strings.ToLower(strings.TrimSpace(code))
+	switch code {
+	case string(LanguageEnglish):
 		return LanguageEnglish, true
-	}
-	if code == string(LanguageFrench) {
+	case string(LanguageFrench):
 		return LanguageFrench, true
-	}
-	if code == string(LanguageSpanish) {
+	case string(LanguageSpanish):
 		return LanguageSpanish, true
-	}
-	if code == string(LanguageGerman) {
+	case string(LanguageGerman):
 		return LanguageGerman, true
-	}
-	if code == string(LanguageItalian) {
+	case string(LanguageItalian):
 		return LanguageItalian, true
 	}
 	return "", false
 }
 
-// FromAcceptLanguage inspects an Accept-Language header and picks a best-effort language.
+// FromAcceptLanguage parses the Accept-Language header and returns the best match.
 func FromAcceptLanguage(headerValue string) Language {
-	lowered := strings.ToLower(headerValue)
-	if lowered == "" {
+	if headerValue == "" {
 		return LanguageEnglish
 	}
-	if strings.Contains(lowered, "fr") {
-		return LanguageFrench
+
+	// Split by comma: fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7
+	parts := strings.Split(headerValue, ",")
+	for _, part := range parts {
+		// Extract the language code before any semicolon
+		langCode := strings.Split(strings.TrimSpace(part), ";")[0]
+		langCode = strings.ToLower(langCode)
+
+		// Try exact match first
+		if lang, ok := GetLanguage(langCode); ok {
+			return lang
+		}
+
+		// Try primary language (e.g., "fr" from "fr-FR")
+		if len(langCode) > 2 {
+			primary := langCode[:2]
+			if lang, ok := GetLanguage(primary); ok {
+				return lang
+			}
+		}
 	}
-	if strings.Contains(lowered, "es") {
-		return LanguageSpanish
-	}
-	if strings.Contains(lowered, "de") {
-		return LanguageGerman
-	}
-	if strings.Contains(lowered, "it") {
-		return LanguageItalian
-	}
+
 	return LanguageEnglish
+}
+
+// ResolveLanguage resolves the language from the request using query param, cookie, or Accept-Language header.
+func ResolveLanguage(r *http.Request) Language {
+	// 1. Check query parameter
+	if lang := r.URL.Query().Get("lang"); lang != "" {
+		if l, ok := GetLanguage(lang); ok {
+			log.Printf("[i18n] Language resolved from query param: %s", lang)
+			return l
+		}
+	}
+
+	// 2. Check HX-Current-URL header
+	currentURL := r.Header.Get("hx-current-url")
+	if currentURL != "" {
+		parsed, err := url.Parse(currentURL)
+		if err == nil {
+			headerLanguage := parsed.Query().Get("lang")
+			if headerLanguage != "" {
+				if language, ok := GetLanguage(headerLanguage); ok {
+					log.Printf("[i18n] Language resolved from HX-Current-URL: %s", headerLanguage)
+					return language
+				}
+			}
+		}
+	}
+
+	// 3. Check cookie
+	if cookie, err := r.Cookie("lang"); err == nil {
+		if l, ok := GetLanguage(cookie.Value); ok {
+			log.Printf("[i18n] Language resolved from cookie: %s", cookie.Value)
+			return l
+		}
+	}
+
+	// 4. Use Accept-Language header
+	acceptLang := r.Header.Get("Accept-Language")
+	lang := FromAcceptLanguage(acceptLang)
+	log.Printf("[i18n] Language resolved from Accept-Language header (%s): %s", acceptLang, string(lang))
+	return lang
 }

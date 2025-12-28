@@ -98,6 +98,15 @@ function buildCertsPageUrl() {
 
 function applyCertsStateFromUrl() {
   const params = new URLSearchParams(window.location.search || "");
+  
+  // Sync language select if present in URL
+  const langParam = params.get("lang");
+  const langSelect = document.getElementById("vcv-lang-select");
+  if (langParam && langSelect && langSelect.value !== langParam) {
+    console.log(`[VCV] URL lang param detected: ${langParam}. Updating select.`);
+    langSelect.value = langParam;
+  }
+
   const searchInput = document.getElementById("vcv-search");
   if (searchInput && params.has("search")) {
     searchInput.value = params.get("search") || "";
@@ -342,6 +351,27 @@ function initLoadingIndicators() {
   });
 }
 
+function initModalHandlers() {
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      closeCertificateModal();
+      closeMountModal();
+      closeDocumentationModal();
+    }
+  });
+
+  const backdrops = document.querySelectorAll(".vcv-modal-backdrop");
+  backdrops.forEach((backdrop) => {
+    backdrop.addEventListener("click", (event) => {
+      if (event.target === backdrop) {
+        closeCertificateModal();
+        closeMountModal();
+        closeDocumentationModal();
+      }
+    });
+  });
+}
+
 function initUrlSync() {
   if (!window.htmx) {
     return;
@@ -377,12 +407,21 @@ function initUrlSync() {
     window.history.pushState({}, '', url);
   });
 
-  window.addEventListener('popstate', function() {
+  window.addEventListener('popstate', async function() {
+    console.log("[VCV] popstate detected. Syncing UI state.");
     state.suppressUrlUpdateUntilNextSuccess = true;
     applyCertsStateFromUrl();
+    await loadMessages();
+    applyTranslations();
     renderMountSelector();
     setMountsHiddenField();
     refreshHtmxCertsTable();
+    
+    // If documentation modal is open, reload it
+    const docModal = document.getElementById("vcv-documentation-modal");
+    if (docModal && !docModal.classList.contains("vcv-hidden")) {
+      loadDocumentation();
+    }
   });
 }
 
@@ -594,16 +633,32 @@ function showToast(message, type = 'info', duration = 5000) {
 
 function getCurrentLanguage() {
   const params = new URLSearchParams(window.location.search || "");
-  const lang = params.get("lang");
-  return lang || "";
+  const langParam = params.get("lang");
+  if (langParam) {
+    console.log(`[VCV] Detected language from URL: ${langParam}`);
+    return langParam;
+  }
+  const langSelect = document.getElementById("vcv-lang-select");
+  if (langSelect && langSelect.value) {
+    console.log(`[VCV] Detected language from select: ${langSelect.value}`);
+    return langSelect.value;
+  }
+  const htmlLang = document.documentElement.lang;
+  if (htmlLang) {
+    console.log(`[VCV] Detected language from html tag: ${htmlLang}`);
+    return htmlLang;
+  }
+  return "en";
 }
 
 async function loadMessages() {
+  const lang = getCurrentLanguage();
+  console.log(`[VCV] Loading messages for: ${lang}`);
   try {
-    const lang = getCurrentLanguage();
-    const url = lang ? `/api/i18n?lang=${encodeURIComponent(lang)}` : "/api/i18n";
+    const url = `/api/i18n?lang=${encodeURIComponent(lang)}`;
     const response = await fetch(url);
     if (!response.ok) {
+      console.error(`[VCV] Failed to load messages: ${response.status}`);
       return;
     }
     const payload = await response.json();
@@ -611,7 +666,21 @@ async function loadMessages() {
       return;
     }
     state.messages = payload.messages;
-  } catch {
+    console.log(`[VCV] Messages loaded. Server reported language: ${payload.language}`);
+    
+    // Sync language select with what the server actually returned
+    const langSelect = document.getElementById("vcv-lang-select");
+    if (langSelect && payload.language && langSelect.value !== payload.language) {
+      console.log(`[VCV] Syncing language select: ${langSelect.value} -> ${payload.language}`);
+      langSelect.value = payload.language;
+    }
+    
+    // Update html lang attribute if it differs
+    if (payload.language && document.documentElement.lang !== payload.language) {
+      document.documentElement.lang = payload.language;
+    }
+  } catch (err) {
+    console.error("[VCV] Error loading messages:", err);
   }
 }
 
@@ -639,9 +708,9 @@ function applyTranslations() {
   setText(document.getElementById("mount-modal-title"), messages.mountSelectorTitle);
   setText(document.getElementById("mount-select-all"), messages.selectAll);
   setText(document.getElementById("vcv-page-size-label"), messages.paginationPageSizeLabel);
-  setText(document.getElementById("vcv-pki-filter-label"), "PKI");
+  setText(document.getElementById("vcv-pki-filter-label"), messages.labelPki || "PKI");
   setText(document.getElementById("vcv-status-filter-label"), messages.statusFilterTitle);
-  setText(document.getElementById("vcv-vault-filter-label"), "Vault");
+  setText(document.getElementById("vcv-vault-filter-label"), messages.labelVault || "Vault");
   setText(document.querySelector("#certificate-modal .vcv-modal-title"), messages.modalDetailsTitle);
   const searchInput = document.getElementById("vcv-search");
   if (searchInput && typeof messages.searchPlaceholder === "string" && messages.searchPlaceholder !== "") {
@@ -666,7 +735,27 @@ function applyTranslations() {
     setText(pageSizeSelect.querySelector("option[value='all']"), messages.paginationAll);
   }
   setText(document.getElementById("vcv-page-prev"), messages.paginationPrev);
-  setText(document.getElementById("vcv-page-next"), messages.paginationNext);
+  setText(document.getElementById("vcv-documentation-modal-close"), messages.buttonClose);
+  setText(document.getElementById("vcv-documentation-modal-title"), messages.buttonDocumentation);
+  
+  const refreshBtn = document.getElementById("refresh-btn");
+  if (refreshBtn) {
+    refreshBtn.setAttribute("title", messages.buttonRefresh);
+  }
+
+  const docBtn = document.getElementById("vcv-documentation-btn");
+  if (docBtn) {
+    docBtn.setAttribute("title", messages.buttonDocumentation);
+    docBtn.setAttribute("aria-label", messages.buttonDocumentation);
+  }
+  const langSelect = document.getElementById("vcv-lang-select");
+  if (langSelect) {
+    langSelect.setAttribute("aria-label", messages.labelLanguage || "Language");
+  }
+  const loadingIndicator = document.getElementById("vcv-loading-indicator");
+  if (loadingIndicator) {
+    setText(loadingIndicator.querySelector(".vcv-loading-text"), messages.labelLoading || "Loading...");
+  }
   const legend = document.querySelector(".vcv-legend");
   if (legend) {
     const validBadge = legend.querySelector(".vcv-badge-valid");
@@ -721,6 +810,7 @@ function getCertsHtmxValues() {
   const sortKeyInput = document.getElementById("vcv-sort-key");
   const statusFilter = document.getElementById("vcv-status-filter");
   const vaultFilter = document.getElementById("vcv-vault-filter");
+  const langSelect = document.getElementById("vcv-lang-select");
   return {
     expiry: expiryFilter ? expiryFilter.value : "all",
     mounts: mountsInput ? mountsInput.value : "",
@@ -732,6 +822,7 @@ function getCertsHtmxValues() {
     sortKey: sortKeyInput ? sortKeyInput.value : "commonName",
     status: statusFilter ? statusFilter.value : "all",
     vault: vaultFilter ? vaultFilter.value : "all",
+    lang: langSelect ? langSelect.value : "",
   };
 }
 
@@ -916,6 +1007,53 @@ function closeCertificateModal() {
   modal.classList.add("vcv-hidden");
 }
 
+function openDocumentationModal() {
+  const modal = document.getElementById("vcv-documentation-modal");
+  if (!modal) {
+    return;
+  }
+  modal.classList.remove("vcv-hidden");
+  loadDocumentation();
+}
+
+function closeDocumentationModal() {
+  const modal = document.getElementById("vcv-documentation-modal");
+  if (!modal) {
+    return;
+  }
+  modal.classList.add("vcv-hidden");
+}
+
+async function loadDocumentation() {
+  const content = document.getElementById("vcv-documentation-content");
+  if (!content) {
+    return;
+  }
+  
+  // Show loading spinner
+  content.innerHTML = `
+    <div class="vcv-loading-spinner-container">
+      <div class="vcv-loading-spinner"></div>
+    </div>
+  `;
+
+  const lang = getCurrentLanguage() || "en";
+  console.log(`[VCV] Loading documentation for language: ${lang}`);
+  
+  try {
+    const response = await fetch(`/ui/docs/user-guide?lang=${lang}&_=${Date.now()}`);
+    if (!response.ok) {
+      content.innerHTML = `<p class="vcv-error">Failed to load documentation (${response.status})</p>`;
+      return;
+    }
+    const html = await response.text();
+    content.innerHTML = html;
+  } catch (err) {
+    console.error("[VCV] Error loading documentation:", err);
+    content.innerHTML = `<p class="vcv-error">Error: ${err.message}</p>`;
+  }
+}
+
 function applyThemeFromStorage() {
   const theme = localStorage.getItem("vcv-theme") || "light";
   document.documentElement.setAttribute("data-theme", theme);
@@ -1026,8 +1164,11 @@ function dismissNotifications() {
 }
 
 async function main() {
-  applyThemeFromStorage();
+  // Sync language first to ensure all subsequent loads (messages, config, etc.) use correct language
   initLanguageFromURL();
+  await loadMessages();
+
+  applyThemeFromStorage();
   initEventHandlers();
 
   // Initialize HTMX enhancements
@@ -1036,14 +1177,15 @@ async function main() {
   initClientValidation();
   initCacheManagement();
   initUrlSync();
+  initModalHandlers();
   initVaultConnectionNotifications();
 
   // Apply URL state and trigger first table load ASAP.
   applyCertsStateFromUrl();
   refreshHtmxCertsTable();
 
-  // Load non-critical startup data in parallel.
-  await Promise.all([loadMessages(), loadConfig()]);
+  // Load remaining non-critical startup data
+  await loadConfig();
   applyTranslations();
   renderMountSelector();
   setMountsHiddenField();
@@ -1060,4 +1202,6 @@ window.selectAllVaultMounts = selectAllVaultMounts;
 window.deselectAllVaultMounts = deselectAllVaultMounts;
 window.openCertificateModal = openCertificateModal;
 window.closeCertificateModal = closeCertificateModal;
+window.openDocumentationModal = openDocumentationModal;
+window.closeDocumentationModal = closeDocumentationModal;
 window.dismissNotifications = dismissNotifications;

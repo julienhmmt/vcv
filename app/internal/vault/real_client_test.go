@@ -86,9 +86,6 @@ func newVaultTestServer(state vaultTestServerState) *httptest.Server {
 
 func newRealClientForTest(t *testing.T, serverURL string, mounts []string) *realClient {
 	clientConfig := api.DefaultConfig()
-	if clientConfig == nil {
-		t.Fatalf("expected default config")
-	}
 	clientConfig.Address = serverURL
 	apiClient, err := api.NewClient(clientConfig)
 	if err != nil {

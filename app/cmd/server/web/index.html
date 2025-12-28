@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{.Language}}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>VaultCertsViewer</title>
+    <title>{{.Messages.AppTitle}}</title>
     <style>
       .vcv-hidden { display: none; }
     </style>
@@ -24,7 +24,7 @@
       <header class="vcv-header">
         <div class="vcv-header-bar">
           <div class="vcv-header-left">
-            <h1 class="vcv-title">VaultCertsViewer</h1>
+            <h1 class="vcv-title">{{.Messages.AppTitle}}</h1>
           </div>
           <div class="vcv-header-actions">
             <button
@@ -41,13 +41,23 @@
             </button>
             <input id="vcv-theme-value" name="theme" type="hidden" value="light" />
             <div id="vcv-theme-sink" class="vcv-hidden"></div>
+            <button
+              id="vcv-documentation-btn"
+              class="vcv-button vcv-button-icon"
+              type="button"
+              title="{{.Messages.ButtonDocumentation}}"
+              aria-label="{{.Messages.ButtonDocumentation}}"
+              onclick="openDocumentationModal()"
+            >
+              <span id="vcv-documentation-icon">📖</span>
+            </button>
             <form action="/" method="GET">
-              <select id="vcv-lang-select" name="lang" class="vcv-select vcv-lang-select" aria-label="Language" onchange="this.form.submit()">
-                <option value="en">EN</option>
-                <option value="fr">FR</option>
-                <option value="es">ES</option>
-                <option value="de">DE</option>
-                <option value="it">IT</option>
+              <select id="vcv-lang-select" name="lang" class="vcv-select vcv-lang-select" aria-label="{{.Messages.LabelLanguage}}" onchange="this.form.submit()">
+                <option value="de" {{if eq .Language "de"}}selected{{end}}>DE</option>
+                <option value="en" {{if eq .Language "en"}}selected{{end}}>EN</option>
+                <option value="es" {{if eq .Language "es"}}selected{{end}}>ES</option>
+                <option value="fr" {{if eq .Language "fr"}}selected{{end}}>FR</option>
+                <option value="it" {{if eq .Language "it"}}selected{{end}}>IT</option>
               </select>
             </form>
           </div>
@@ -60,7 +70,7 @@
               <input id="vcv-mounts" name="mounts" type="hidden" value="__all__" />
             </div>
             <div class="vcv-filter-group" id="vcv-vault-filter-group">
-              <label id="vcv-vault-filter-label" class="vcv-filter-label" for="vcv-vault-filter">Vault</label>
+              <label id="vcv-vault-filter-label" class="vcv-filter-label" for="vcv-vault-filter">{{.Messages.LabelVault}}</label>
               <select
                 id="vcv-vault-filter"
                 class="vcv-select"
@@ -72,11 +82,11 @@
                 hx-sync="#vcv-certs-body:replace"
                 hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
               >
-                <option value="all">All</option>
+                <option value="all">{{.Messages.StatusFilterAll}}</option>
               </select>
             </div>
             <div class="vcv-filter-group" id="vcv-pki-filter-group">
-              <label id="vcv-pki-filter-label" class="vcv-filter-label" for="vcv-pki-filter">PKI</label>
+              <label id="vcv-pki-filter-label" class="vcv-filter-label" for="vcv-pki-filter">{{.Messages.LabelPKI}}</label>
               <select
                 id="vcv-pki-filter"
                 class="vcv-select"
@@ -88,7 +98,7 @@
                 hx-sync="#vcv-certs-body:replace"
                 hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
               >
-                <option value="all">All</option>
+                <option value="all">{{.Messages.StatusFilterAll}}</option>
               </select>
             </div>
             <div class="vcv-filter-group vcv-filter-group-search">
@@ -96,7 +106,7 @@
                 id="vcv-search"
                 class="vcv-input"
                 type="search"
-                placeholder="CN / SAN"
+                placeholder="{{.Messages.SearchPlaceholder}}"
                 name="search"
                 hx-get="/ui/certs"
                 hx-trigger="input changed delay:300ms"
@@ -107,7 +117,7 @@
               />
             </div>
             <div class="vcv-filter-group">
-              <label id="vcv-status-filter-label" class="vcv-filter-label" for="vcv-status-filter">Status filter</label>
+              <label id="vcv-status-filter-label" class="vcv-filter-label" for="vcv-status-filter">{{.Messages.StatusFilterTitle}}</label>
               <select
                 id="vcv-status-filter"
                 class="vcv-select"
@@ -119,10 +129,10 @@
                 hx-sync="#vcv-certs-body:replace"
                 hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
               >
-                <option value="all">All</option>
-                <option value="valid">Valid</option>
-                <option value="expired">Expired</option>
-                <option value="revoked">Revoked</option>
+                <option value="all" {{if eq .Messages.StatusFilterAll ""}}selected{{end}}>{{.Messages.StatusFilterAll}}</option>
+                <option value="valid">{{.Messages.StatusFilterValid}}</option>
+                <option value="expired">{{.Messages.StatusFilterExpired}}</option>
+                <option value="revoked">{{.Messages.StatusFilterRevoked}}</option>
               </select>
             </div>
             <div class="vcv-filter-group">
@@ -137,10 +147,10 @@
                 hx-sync="#vcv-certs-body:replace"
                 hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
               >
-                <option value="all">All dates</option>
-                <option value="7">≤ 7 days</option>
-                <option value="30">≤ 30 days</option>
-                <option value="90">≤ 90 days</option>
+                <option value="all">{{.Messages.ExpiryFilterAll}}</option>
+                <option value="7">{{.Messages.ExpiryFilter7Days}}</option>
+                <option value="30">{{.Messages.ExpiryFilter30Days}}</option>
+                <option value="90">{{.Messages.ExpiryFilter90Days}}</option>
               </select>
             </div>
           </div>
@@ -359,14 +369,14 @@
     <!-- Loading indicator -->
     <div id="vcv-loading-indicator" class="vcv-loading-indicator vcv-hidden">
       <div class="vcv-loading-spinner"></div>
-      <span class="vcv-loading-text">Loading...</span>
+      <span class="vcv-loading-text">{{.Messages.LabelLoading}}</span>
     </div>
 
     <!-- Certificate details modal -->
     <div id="certificate-modal" class="vcv-modal-backdrop vcv-hidden">
       <div class="vcv-modal">
         <div class="vcv-modal-header">
-          <h2 class="vcv-modal-title">Certificate details</h2>
+          <h2 class="vcv-modal-title">{{.Messages.ModalDetailsTitle}}</h2>
           <button type="button" class="vcv-modal-close" onclick="closeCertificateModal()">×</button>
         </div>
         <div class="vcv-modal-content">
@@ -375,7 +385,28 @@
           </div>
         </div>
         <div class="vcv-modal-actions">
-          <button id="certificate-modal-close" type="button" class="vcv-button" onclick="closeCertificateModal()">Close</button>
+          <button id="certificate-modal-close" type="button" class="vcv-button" onclick="closeCertificateModal()">{{.Messages.ButtonClose}}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documentation modal -->
+    <div id="vcv-documentation-modal" class="vcv-modal-backdrop vcv-hidden">
+      <div class="vcv-modal vcv-modal-lg">
+        <div class="vcv-modal-header">
+          <h2 class="vcv-modal-title" id="vcv-documentation-modal-title">{{.Messages.ButtonDocumentation}}</h2>
+          <button type="button" class="vcv-modal-close" onclick="closeDocumentationModal()">×</button>
+        </div>
+        <div class="vcv-modal-content">
+          <div id="vcv-documentation-content" class="vcv-documentation-content markdown-body">
+            <!-- Documentation content will be loaded here -->
+            <div class="vcv-loading-spinner-container">
+              <div class="vcv-loading-spinner"></div>
+            </div>
+          </div>
+        </div>
+        <div class="vcv-modal-actions">
+          <button id="vcv-documentation-modal-close" type="button" class="vcv-button" onclick="closeDocumentationModal()">{{.Messages.ButtonClose}}</button>
         </div>
       </div>
     </div>

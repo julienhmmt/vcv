@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"html/template"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/yuin/goldmark"
 
 	"vcv/config"
 	"vcv/internal/certs"
@@ -193,15 +195,49 @@ type certsQueryState struct {
 }
 
 func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstances []config.VaultInstance, vaultStatusClients map[string]vault.Client, webFS fs.FS, expirationThresholds config.ExpirationThresholds) {
-	templates, err := template.ParseFS(webFS, "templates/*.html")
-	if err != nil {
-		panic(err)
+	templates := template.New("")
+	if t, err := template.ParseFS(webFS, "templates/*.html"); err == nil {
+		templates = t
+	} else {
+		logger.Get().Error().Err(err).Msg("failed to parse templates")
+	}
+	// Try to add index.html if it exists
+	if indexData, err := fs.ReadFile(webFS, "index.html"); err == nil {
+		if _, err := templates.New("index.html").Parse(string(indexData)); err != nil {
+			logger.Get().Error().Err(err).Msg("failed to parse index.html")
+		}
 	}
 	vaultHealthCache := newFooterVaultHealthCache(5 * time.Second)
 	vaultDisplayNames := buildVaultDisplayNames(vaultInstances)
 	showVaultMount := shouldShowVaultMount(vaultInstances)
+
+	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		if templates == nil || templates.Lookup("index.html") == nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		language := i18n.ResolveLanguage(r)
+		messages := i18n.MessagesForLanguage(language)
+		data := struct {
+			Language string
+			Messages i18n.Messages
+		}{
+			Language: string(language),
+			Messages: messages,
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := templates.ExecuteTemplate(w, "index.html", data); err != nil {
+			requestID := middleware.GetRequestID(r.Context())
+			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
+				Str("request_id", requestID).
+				Msg("failed to render index template")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+	})
+
 	renderCerts := func(w http.ResponseWriter, r *http.Request) bool {
-		language := resolveLanguage(r)
+		language := i18n.ResolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
 		queryState := parseCertsQueryState(r)
 		certificates, listErr := vaultClient.ListCertificates(r.Context())
@@ -275,7 +311,11 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 			Msg("refreshed certs fragment")
 	})
 	router.Get("/ui/status", func(w http.ResponseWriter, r *http.Request) {
-		language := resolveLanguage(r)
+		if templates == nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		language := i18n.ResolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
 		vaultPills := make([]footerVaultStatusTemplateData, 0, len(vaultInstances))
 		connectedCount := 0
@@ -360,6 +400,10 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 			Msg("rendered footer status")
 	})
 	router.Get("/ui/certs/{id:[^/]*}/details", func(w http.ResponseWriter, r *http.Request) {
+		if templates == nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 		certificateID, statusCode, decodeErr := decodeCertificateIDParam(r)
 		if statusCode != http.StatusOK {
 			requestID := middleware.GetRequestID(r.Context())
@@ -379,7 +423,7 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		language := resolveLanguage(r)
+		language := i18n.ResolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
 		statuses := certificateStatuses(details.Certificate, time.Now())
 		badgeViews := make([]certStatusBadgeTemplateData, 0, len(statuses))
@@ -409,6 +453,34 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 			Str("request_id", requestID).
 			Str("serial_number", certificateID).
 			Msg("rendered certificate details")
+	})
+
+	router.Get("/ui/docs/user-guide", func(w http.ResponseWriter, r *http.Request) {
+		language := i18n.ResolveLanguage(r)
+		filename := fmt.Sprintf("docs/user-guide.%s.md", language)
+
+		mdContent, err := fs.ReadFile(webFS, filename)
+		if err != nil {
+			// Fallback to English if translation is missing
+			filename = "docs/user-guide.en.md"
+			mdContent, err = fs.ReadFile(webFS, filename)
+			if err != nil {
+				http.Error(w, "Documentation not found", http.StatusNotFound)
+				return
+			}
+		}
+
+		var buf bytes.Buffer
+		if err := goldmark.Convert(mdContent, &buf); err != nil {
+			http.Error(w, "Failed to render documentation", http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		if _, err := w.Write(buf.Bytes()); err != nil {
+			logger.Get().Error().Err(err).Msg("failed to write documentation response")
+		}
 	})
 }
 
@@ -869,6 +941,9 @@ func containsString(values []string, needle string) bool {
 }
 
 func renderCertsFragment(w http.ResponseWriter, templates *template.Template, certificates []certs.Certificate, expirationThresholds config.ExpirationThresholds, messages i18n.Messages, queryState certsQueryState, vaultDisplayNames map[string]string, showVaultMount bool) error {
+	if templates == nil {
+		return fmt.Errorf("templates not available")
+	}
 	filteredByMount := filterCertificatesByMounts(certificates, queryState.SelectedMounts)
 	dashboardStats := computeDashboardStats(filteredByMount, expirationThresholds)
 	chartData := computeStatusChartData(filteredByMount, messages)
