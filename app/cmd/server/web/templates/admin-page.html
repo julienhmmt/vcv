@@ -27,7 +27,29 @@
       <div id="admin-root" hx-get="/admin/panel" hx-trigger="load" hx-swap="innerHTML"></div>
     </div>
 
+    <!-- Documentation modal -->
+    <div id="vcv-documentation-modal" class="vcv-modal-backdrop vcv-hidden">
+      <div class="vcv-modal vcv-modal-lg">
+        <div class="vcv-modal-header">
+          <h2 class="vcv-modal-title" id="vcv-documentation-modal-title">{{.Messages.ButtonDocumentation}}</h2>
+          <button type="button" class="vcv-modal-close" onclick="closeDocumentationModal()">×</button>
+        </div>
+        <div class="vcv-modal-content">
+          <div id="vcv-documentation-content" class="vcv-documentation-content markdown-body">
+            <!-- Documentation content will be loaded here -->
+            <div class="vcv-loading-spinner-container">
+              <div class="vcv-loading-spinner"></div>
+            </div>
+          </div>
+        </div>
+        <div class="vcv-modal-actions">
+          <button id="vcv-documentation-modal-close" type="button" class="vcv-button" onclick="closeDocumentationModal()">{{.Messages.ButtonClose}}</button>
+        </div>
+      </div>
+    </div>
+
     <script src="/assets/htmx.min.js"></script>
+    <script src="/assets/app-htmx.js"></script>
     <script>
       function focusVault(key) {
         const root = document.getElementById(`admin-vault-${key}`);

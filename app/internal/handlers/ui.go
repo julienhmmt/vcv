@@ -141,8 +141,9 @@ type certsFragmentTemplateData struct {
 	DonutValidOffset      string
 	DonutExpiredOffset    string
 	DonutRevokedOffset    string
-	DualStatusCount       int
-	DualStatusNoteText    string
+	DualStatusCount       int    `json:"dualStatusCount"`
+	DualStatusNoteText    string `json:"dualStatusNoteText"`
+	AdminDocsTitle        string `json:"adminDocsTitle"`
 	TimelineItems         []expiryTimelineItemTemplateData
 }
 
@@ -1037,6 +1038,7 @@ func renderCertsFragment(w http.ResponseWriter, templates *template.Template, ce
 		DonutValidOffset:      chartData.ValidOffset,
 		DualStatusCount:       chartData.DualStatusCount,
 		DualStatusNoteText:    chartData.DualStatusNoteText,
+		AdminDocsTitle:        messages.AdminDocsTitle,
 		Messages:              messages,
 		ShowVaultMount:        showVaultMount,
 		PageCountHidden:       len(visible) == 0,

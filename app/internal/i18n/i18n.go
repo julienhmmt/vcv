@@ -54,6 +54,7 @@ type Messages struct {
 	DownloadPEMNetworkError     string `json:"downloadPEMNetworkError"`
 	DownloadPEMSuccess          string `json:"downloadPEMSuccess"`
 	DualStatusNote              string `json:"dualStatusNote"`
+	AdminDocsTitle              string `json:"adminDocsTitle"`
 	ExpiryFilter30Days          string `json:"expiryFilter30Days"`
 	ExpiryFilter7Days           string `json:"expiryFilter7Days"`
 	ExpiryFilter90Days          string `json:"expiryFilter90Days"`
@@ -162,6 +163,7 @@ var englishMessages = Messages{
 	DownloadPEMNetworkError:     "Network error downloading certificate PEM. Please try again.",
 	DownloadPEMSuccess:          "Certificate PEM downloaded successfully",
 	DualStatusNote:              "{{count}} certificate(s) are both expired and revoked",
+	AdminDocsTitle:              "Admin documentation",
 	ExpiryFilter30Days:          "≤ 30 days",
 	ExpiryFilter7Days:           "≤ 7 days",
 	ExpiryFilter90Days:          "≤ 90 days",
@@ -264,6 +266,7 @@ var frenchMessages = Messages{
 	DownloadPEMNetworkError:     "Erreur réseau lors du téléchargement du certificat PEM. Veuillez réessayer.",
 	DownloadPEMSuccess:          "Certificat PEM téléchargé avec succès",
 	DualStatusNote:              "{{count}} certificat(s) sont à la fois expirés et révoqués",
+	AdminDocsTitle:              "Documentation admin",
 	ExpiryFilter30Days:          "≤ 30 jours",
 	ExpiryFilter7Days:           "≤ 7 jours",
 	ExpiryFilter90Days:          "≤ 90 jours",
@@ -366,6 +369,7 @@ var spanishMessages = Messages{
 	DownloadPEMNetworkError:     "Error de red al descargar el certificado PEM. Por favor intente nuevamente.",
 	DownloadPEMSuccess:          "Certificado PEM descargado exitosamente",
 	DualStatusNote:              "{{count}} certificado(s) están tanto caducados como revocados",
+	AdminDocsTitle:              "Documentación admin",
 	ExpiryFilter30Days:          "≤ 30 días",
 	ExpiryFilter7Days:           "≤ 7 días",
 	ExpiryFilter90Days:          "≤ 90 días",
@@ -468,6 +472,7 @@ var germanMessages = Messages{
 	DownloadPEMNetworkError:     "Netzwerkfehler beim Herunterladen des Zertifikat-PEM. Bitte versuchen Sie es erneut.",
 	DownloadPEMSuccess:          "Zertifikat-PEM erfolgreich heruntergeladen",
 	DualStatusNote:              "{{count}} Zertifikat(e) sind sowohl abgelaufen als auch widerrufen",
+	AdminDocsTitle:              "Admin-dokumentation",
 	ExpiryFilter30Days:          "≤ 30 Tage",
 	ExpiryFilter7Days:           "≤ 7 Tage",
 	ExpiryFilter90Days:          "≤ 90 Tage",
@@ -570,6 +575,7 @@ var italianMessages = Messages{
 	DownloadPEMNetworkError:     "Errore di rete durante il download del certificato PEM. Riprova.",
 	DownloadPEMSuccess:          "Certificato PEM scaricato con successo",
 	DualStatusNote:              "{{count}} certificato(i) sono sia scaduti che revocati",
+	AdminDocsTitle:              "Documentazione admin",
 	ExpiryFilter30Days:          "≤ 30 giorni",
 	ExpiryFilter7Days:           "≤ 7 giorni",
 	ExpiryFilter90Days:          "≤ 90 giorni",

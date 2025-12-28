@@ -1099,13 +1099,26 @@ function closeCertificateModal() {
   modal.classList.add("vcv-hidden");
 }
 
-function openDocumentationModal() {
+let currentDocType = "user";
+
+function openDocumentationModal(type = "user") {
   const modal = document.getElementById("vcv-documentation-modal");
+  const title = document.getElementById("vcv-documentation-modal-title");
   if (!modal) {
     return;
   }
+  
+  currentDocType = type;
+  
+  if (title) {
+    const messages = state.messages || {};
+    title.textContent = type === "admin" 
+      ? (messages.adminDocsTitle || "Admin documentation - VCV") 
+      : (messages.buttonDocumentation || "Documentation");
+  }
+  
   modal.classList.remove("vcv-hidden");
-  loadDocumentation();
+  loadDocumentation(type);
 }
 
 function closeDocumentationModal() {
@@ -1116,11 +1129,13 @@ function closeDocumentationModal() {
   modal.classList.add("vcv-hidden");
 }
 
-async function loadDocumentation() {
+async function loadDocumentation(type = null) {
   const content = document.getElementById("vcv-documentation-content");
   if (!content) {
     return;
   }
+  
+  const docType = type || currentDocType || "user";
   
   // Show loading spinner
   content.innerHTML = `
@@ -1130,10 +1145,11 @@ async function loadDocumentation() {
   `;
 
   const lang = getCurrentLanguage() || "en";
-  console.log(`[VCV] Loading documentation for language: ${lang}`);
+  console.log(`[VCV] Loading documentation (${docType}) for language: ${lang}`);
   
   try {
-    const response = await fetch(`/ui/docs/user-guide?lang=${lang}&_=${Date.now()}`);
+    const endpoint = docType === "admin" ? "/ui/docs/configuration" : "/ui/docs/user-guide";
+    const response = await fetch(`${endpoint}?lang=${lang}&_=${Date.now()}`);
     if (!response.ok) {
       content.innerHTML = `<p class="vcv-error">Failed to load documentation (${response.status})</p>`;
       return;
@@ -1333,19 +1349,26 @@ async function main() {
   initLoadingIndicators();
   initClientValidation();
   initCacheManagement();
-  initUrlSync();
-  initModalHandlers();
-  initVaultConnectionNotifications();
+  
+  const isCertsPage = !!document.getElementById("vcv-certs-body");
+  if (isCertsPage) {
+    initUrlSync();
+    initModalHandlers();
+    initVaultConnectionNotifications();
 
-  // Apply URL state and trigger first table load ASAP.
-  applyCertsStateFromUrl();
-  refreshHtmxCertsTable();
+    // Apply URL state and trigger first table load ASAP.
+    applyCertsStateFromUrl();
+    refreshHtmxCertsTable();
 
-  // Load remaining non-critical startup data
-  await loadConfig();
-  applyTranslations();
-  renderMountSelector();
-  setMountsHiddenField();
+    // Load remaining non-critical startup data
+    await loadConfig();
+    applyTranslations();
+    renderMountSelector();
+    setMountsHiddenField();
+  } else {
+    // Admin page or other pages
+    initModalHandlers();
+  }
 }
 
 main();

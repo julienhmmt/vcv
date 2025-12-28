@@ -24,6 +24,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"vcv/config"
+	"vcv/internal/i18n"
 	"vcv/internal/logger"
 	"vcv/middleware"
 )
@@ -576,6 +577,10 @@ func newVaultKey() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(buf), nil
 }
 
+type adminPageTemplateData struct {
+	Messages i18n.Messages
+}
+
 func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, env config.Environment) {
 	password := strings.TrimSpace(os.Getenv("VCV_ADMIN_PASSWORD"))
 	if password == "" {
@@ -592,7 +597,12 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 		panic(templatesErr)
 	}
 	router.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
-		if err := renderAdminTemplate(w, templates, "admin-page.html", nil); err != nil {
+		language := i18n.ResolveLanguage(r)
+		messages := i18n.MessagesForLanguage(language)
+		data := adminPageTemplateData{
+			Messages: messages,
+		}
+		if err := renderAdminTemplate(w, templates, "admin-page.html", data); err != nil {
 			requestID := middleware.GetRequestID(r.Context())
 			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
@@ -624,19 +634,6 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 				Msg("failed to render admin panel")
 			return
 		}
-	})
-	router.Get("/admin/docs", func(w http.ResponseWriter, r *http.Request) {
-		if !sessions.isAuthed(r) {
-			if err := renderAdminTemplate(w, templates, "admin-login-fragment.html", adminLoginTemplateData{}); err != nil {
-				requestID := middleware.GetRequestID(r.Context())
-				logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
-					Str("request_id", requestID).
-					Msg("failed to render admin login")
-				return
-			}
-			return
-		}
-		http.Redirect(w, r, "/ui/docs/configuration", http.StatusSeeOther)
 	})
 	router.Post("/admin/login", func(w http.ResponseWriter, r *http.Request) {
 		ok, errorText := sessions.loginFromForm(w, r)
