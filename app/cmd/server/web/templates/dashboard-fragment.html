@@ -12,7 +12,7 @@
     <svg viewBox="0 0 120 120" width="140" height="140">
       <circle cx="60" cy="60" r="50" fill="none" stroke="#e2e8f0" stroke-width="16" />
       {{if .DonutHasValid}}
-      <circle cx="60" cy="60" r="50" fill="none" stroke="#22c55e" stroke-width="16" stroke-dasharray="{{.DonutValidDashArray}}" stroke-dashoffset="{{.DonutValidOffset}}" />
+      <circle cx="60" cy="60" r="50" fill="none" stroke="#10b981" stroke-width="16" stroke-dasharray="{{.DonutValidDashArray}}" stroke-dashoffset="{{.DonutValidOffset}}" />
       {{end}}
       {{if .DonutHasExpired}}
       <circle cx="60" cy="60" r="50" fill="none" stroke="#f59e0b" stroke-width="16" stroke-dasharray="{{.DonutExpiredDashArray}}" stroke-dashoffset="{{.DonutExpiredOffset}}" />
@@ -28,7 +28,7 @@
   </div>
   <div class="vcv-chart-legend">
     <div class="vcv-chart-legend-item">
-      <span class="vcv-chart-legend-dot" style="background: #22c55e"></span>
+      <span class="vcv-chart-legend-dot" style="background: #10b981"></span>
       <span>{{.Messages.ChartLegendValid}} ({{.ChartValid}})</span>
     </div>
     <div class="vcv-chart-legend-item">
@@ -40,7 +40,7 @@
       <span>{{.Messages.ChartLegendRevoked}} ({{.ChartRevoked}})</span>
     </div>
     {{if gt .DualStatusCount 0}}
-    <div class="vcv-chart-note" style="font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem;">{{.DualStatusNoteText}}</div>
+    <div class="vcv-chart-note" style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">{{.DualStatusNoteText}}</div>
     {{end}}
   </div>
   {{end}}

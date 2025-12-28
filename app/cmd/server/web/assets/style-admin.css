@@ -15,41 +15,56 @@
 
 .admin-surface .vcv-button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgb(16 185 129 / 20%);
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
 }
 
 .admin-surface .vcv-button:active {
   transform: translateY(1px);
 }
 
-.admin-surface .vcv-button-primary:hover:not(:disabled) {
-  background: #16a34a;
+.admin-surface .vcv-button-primary {
+  background: #10b981;
+  color: white;
+  border: 1px solid #059669;
+  transition: all 0.2s ease;
 }
 
-.admin-surface .vcv-button-primary:active:not(:disabled) {
-  background: #15803d;
+.admin-surface .vcv-button-primary:hover:not(:disabled) {
+  background: #059669;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.admin-surface .vcv-button-secondary {
+  background: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
 }
 
 .admin-surface .vcv-button-secondary:hover:not(:disabled) {
-  background: #4f46e5;
-}
-
-.admin-surface .vcv-button-secondary:active:not(:disabled) {
-  background: #4338ca;
+  background: #f1f5f9;
+  color: #1e293b;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
 }
 
 .admin-surface .vcv-button-danger {
-  background: #ef4444;
-  border: none;
-  color: #fff;
+  background: #dc2626;
+  color: white;
+  border: 1px solid #b91c1c;
+  transition: all 0.2s ease;
 }
 
 .admin-surface .vcv-button-danger:hover:not(:disabled) {
-  background: #dc2626;
+  background: #991b1b;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .admin-surface .vcv-button-danger:active:not(:disabled) {
-  background: #b91c1c;
+  background: #991b1b;
+  transform: translateY(0);
 }
 
 .admin-card-header {
@@ -63,7 +78,7 @@
 .admin-card-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #0f172a;
+  color: #1e293b;
   margin: 0;
 }
 
@@ -109,15 +124,15 @@
 }
 
 .admin-alert-error {
-  background: #fef2f2;
+  background: #fee2e2;
   border: 1px solid #fecaca;
   color: #991b1b;
 }
 
 .admin-alert-success {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  color: #166534;
+  background: #d1fae5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
 }
 
 .admin-grid {
@@ -127,11 +142,17 @@
 }
 
 .admin-fieldset {
-  border: 1px solid rgb(226 232 240 / 80%);
+  border: 1px solid #e2e8f0;
   border-radius: 1rem;
   padding: 1rem 1.25rem;
   margin: 0;
-  background: #fff;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.admin-fieldset:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .admin-legend {
@@ -182,8 +203,14 @@
 
 .admin-vault-accordion {
   border-radius: 0.75rem;
-  border: 1px solid rgb(226 232 240 / 80%);
-  background: #fff;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  transition: all 0.2s ease;
+}
+
+.admin-vault-accordion:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .admin-vault-summary {
@@ -194,6 +221,11 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.admin-vault-summary:hover {
+  background: #f8fafc;
 }
 
 .admin-vault-summary::-webkit-details-marker {
@@ -202,7 +234,7 @@
 
 .admin-vault-summary-title {
   font-weight: 700;
-  color: #0f172a;
+  color: #1e293b;
 }
 
 .admin-vault-summary-meta {
@@ -223,7 +255,7 @@
 }
 
 .admin-vault-card {
-  border-top: 1px solid rgb(226 232 240 / 80%);
+  border-top: 1px solid #e2e8f0;
   padding: 0.75rem;
   background: #f8fafc;
 }
@@ -392,29 +424,26 @@
 }
 
 [data-theme="dark"] .admin-docs-section-title {
-  color: #f1f5f9;
-  border-bottom-color: #334155;
+  color: #f8fafc;
+  border-bottom-color: #1e293b;
 }
 
 [data-theme="dark"] .admin-docs-subtitle {
-  color: #e2e8f0;
+  color: #f1f5f9;
 }
 
-[data-theme="dark"] .admin-docs-text {
-  color: #cbd5e1;
-}
-
+[data-theme="dark"] .admin-docs-text,
 [data-theme="dark"] .admin-docs-list {
   color: #cbd5e1;
 }
 
 [data-theme="dark"] .admin-docs-list code {
-  background: #1e293b;
-  color: #e2e8f0;
+  background: #0f172a;
+  color: #f8fafc;
 }
 
 [data-theme="dark"] .admin-docs-code {
-  background: #0f172a;
+  background: #020617;
   color: #e2e8f0;
 }
 
@@ -428,6 +457,80 @@
 }
 
 [data-theme="dark"] .admin-docs-text code {
+  background: #0f172a;
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .admin-card-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .admin-fieldset {
+  border-color: #1e293b;
+  background: #0f172a;
+}
+
+[data-theme="dark"] .admin-fieldset:hover {
+  border-color: #334155;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .admin-legend {
+  color: #94a3b8;
+}
+
+[data-theme="dark"] .admin-vault-accordion {
+  border-color: #1e293b;
+  background: #0f172a;
+}
+
+[data-theme="dark"] .admin-vault-accordion:hover {
+  border-color: #334155;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .admin-vault-summary:hover {
   background: #1e293b;
-  color: #e2e8f0;
+}
+
+[data-theme="dark"] .admin-vault-summary-title {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .admin-vault-card {
+  border-top-color: #1e293b;
+  background: #020617;
+}
+
+[data-theme="dark"] .admin-surface .vcv-button-primary {
+  background: #10b981;
+  border-color: #059669;
+}
+
+[data-theme="dark"] .admin-surface .vcv-button-secondary {
+  background: #334155;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .admin-surface .vcv-button-secondary:hover:not(:disabled) {
+  background: #475569;
+  border-color: #64748b;
+}
+
+[data-theme="dark"] .admin-surface .vcv-button-danger {
+  background: #dc2626;
+  border-color: #b91c1c;
+}
+
+[data-theme="dark"] .admin-alert-error {
+  background: #450a0a;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+[data-theme="dark"] .admin-alert-success {
+  background: #064e3b;
+  border-color: #065f46;
+  color: #a7f3d0;
 }

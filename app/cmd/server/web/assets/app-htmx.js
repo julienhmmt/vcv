@@ -882,14 +882,10 @@ function renderMountSelector() {
   if (!container) {
     return;
   }
-  const totalMounts = state.availableMounts.length;
-  const selectedCount = state.selectedMounts.length;
   const label = typeof state.messages.mountSelectorTitle === "string" && state.messages.mountSelectorTitle !== "" ? state.messages.mountSelectorTitle : "PKI Engines";
-  const summary = totalMounts === 0 ? "—" : `${selectedCount}/${totalMounts}`;
   container.innerHTML = `
     <button type="button" class="vcv-button vcv-button-ghost vcv-mount-trigger" onclick="openMountModal()">
       <span class="vcv-mount-trigger-label">${label}</span>
-      <span class="vcv-badge vcv-badge-neutral">${summary}</span>
     </button>
   `;
 }
@@ -939,7 +935,7 @@ function renderMountModalList() {
             return `<label class="vcv-mount-option${selectedClass}" data-vault="${group.id}" data-mount="${mountName}"><input type="checkbox" ${checkedAttr} onchange="toggleMount('${key}')" /><span class="vcv-mount-name">${mountName}</span></label>`;
           })
           .join("");
-        const headerActions = `<div class="vcv-mount-modal-section-actions"><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="selectAllVaultMounts('${group.id}')">${selectAllLabel}</button><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="deselectAllVaultMounts('${group.id}')">${deselectAllLabel}</button></div>`;
+        const headerActions = `<div class="vcv-mount-modal-section-actions"><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="selectAllVaultMounts('${group.id}', event)">${selectAllLabel}</button><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="deselectAllVaultMounts('${group.id}', event)">${deselectAllLabel}</button></div>`;
         return `<div class="vcv-mount-modal-section" data-vault-section="${group.id}"><div class="vcv-mount-modal-section-header" onclick="toggleVaultSection('${group.id}')"><div class="vcv-mount-modal-section-title">${title} ${countBadge}</div>${headerActions}</div><div class="vcv-mount-modal-section-options">${options}</div></div>`;
       })
       .join("");
@@ -1058,7 +1054,10 @@ function deselectAllMounts() {
   refreshHtmxCertsTable();
 }
 
-function selectAllVaultMounts(vaultId) {
+function selectAllVaultMounts(vaultId, event) {
+  if (event) {
+    event.stopPropagation();
+  }
   const groups = Array.isArray(state.vaultMountGroups) ? state.vaultMountGroups : [];
   const group = groups.find((item) => item.id === vaultId);
   if (!group || !Array.isArray(group.mounts)) {
@@ -1073,7 +1072,10 @@ function selectAllVaultMounts(vaultId) {
   refreshHtmxCertsTable();
 }
 
-function deselectAllVaultMounts(vaultId) {
+function deselectAllVaultMounts(vaultId, event) {
+  if (event) {
+    event.stopPropagation();
+  }
   const prefix = `${vaultId}|`;
   state.selectedMounts = state.selectedMounts.filter((key) => !key.startsWith(prefix));
   renderMountSelector();
