@@ -15,9 +15,8 @@ import (
 type Environment string
 
 const (
-	EnvDev   Environment = "dev"
-	EnvStage Environment = "stage"
-	EnvProd  Environment = "prod"
+	EnvDev  Environment = "dev"
+	EnvProd Environment = "prod"
 )
 
 // Config holds application configuration.
@@ -240,8 +239,6 @@ func parseEnv(s string) Environment {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "prod", "production":
 		return EnvProd
-	case "stage", "staging":
-		return EnvStage
 	default:
 		return EnvDev
 	}
@@ -251,8 +248,6 @@ func defaultLogLevel(env Environment) string {
 	switch env {
 	case EnvProd:
 		return "info"
-	case EnvStage:
-		return "debug"
 	default:
 		return "debug"
 	}

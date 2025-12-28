@@ -222,7 +222,6 @@ func TestConfig_IsDev_IsProd(t *testing.T) {
 	}{
 		{name: "dev", env: EnvDev, expectDev: true, expectProd: false},
 		{name: "prod", env: EnvProd, expectDev: false, expectProd: true},
-		{name: "stage", env: EnvStage, expectDev: false, expectProd: false},
 	}
 	for _, tt := range tests {
 		tt := tt
