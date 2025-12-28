@@ -29,13 +29,23 @@ import (
 const footerVaultPreviewMaxCount int = 3
 
 type certDetailsTemplateData struct {
-	Certificate   certs.DetailedCertificate
-	Messages      i18n.Messages
 	Badges        []certStatusBadgeTemplateData
-	KeySummary    string
-	UsageSummary  string
-	Language      i18n.Language
+	Certificate   certs.DetailedCertificate
 	CertificateID string
+	CreatedAtDate string
+	CreatedAtText string
+	CreatedAtTime string
+	DaysLabel     string
+	ExpiresAtDate string
+	ExpiresAtText string
+	ExpiresAtTime string
+	ExpiryHint    string
+	ExpiryState   string
+	ExpiryTone    string
+	KeySummary    string
+	Language      i18n.Language
+	Messages      i18n.Messages
+	UsageSummary  string
 }
 
 type footerStatusTemplateData struct {
@@ -454,10 +464,44 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 		}
 		language := i18n.ResolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
-		statuses := certificateStatuses(details.Certificate, time.Now())
+		now := time.Now()
+		statuses := certificateStatuses(details.Certificate, now)
 		badgeViews := make([]certStatusBadgeTemplateData, 0, len(statuses))
 		for _, status := range statuses {
 			badgeViews = append(badgeViews, certStatusBadgeTemplateData{Class: "vcv-badge vcv-badge-" + status, Label: statusLabelForMessages(status, messages)})
+		}
+		createdAtText := formatTime(details.CreatedAt)
+		createdAtDate := formatDate(details.CreatedAt)
+		createdAtTime := formatClock(details.CreatedAt)
+		expiresAtText := formatTime(details.ExpiresAt)
+		expiresAtDate := formatDate(details.ExpiresAt)
+		expiresAtTime := formatClock(details.ExpiresAt)
+		daysLabel := ""
+		expiryTone := "neutral"
+		expiryHint := ""
+		expiryState := "scheduled"
+		daysRemaining := daysUntil(details.ExpiresAt.UTC(), now)
+		hasExpired := !details.ExpiresAt.IsZero() && !details.ExpiresAt.After(now)
+		if hasExpired {
+			expiryTone = "critical"
+			expiryState = "expired"
+			daysLabel = interpolatePlaceholder(messages.ExpiredSince, "date", details.ExpiresAt.UTC().Format("2006-01-02"))
+		} else if daysRemaining >= 0 {
+			if daysRemaining == 0 || daysRemaining == 1 {
+				daysLabel = interpolatePlaceholder(messages.DaysRemainingSingular, "days", fmt.Sprintf("%d", daysRemaining))
+			} else {
+				daysLabel = interpolatePlaceholder(messages.DaysRemaining, "days", fmt.Sprintf("%d", daysRemaining))
+			}
+			if daysRemaining <= expirationThresholds.Critical {
+				expiryTone = "critical"
+			} else if daysRemaining <= expirationThresholds.Warning {
+				expiryTone = "warning"
+			} else {
+				expiryTone = "ok"
+			}
+		}
+		if expiresAtText != "" {
+			expiryHint = fmt.Sprintf("%s: %s", messages.ColumnExpiresAt, expiresAtText)
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
@@ -469,6 +513,16 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 			UsageSummary:  buildUsageSummary(details.Usage),
 			Language:      language,
 			CertificateID: certificateID,
+			CreatedAtText: createdAtText,
+			CreatedAtDate: createdAtDate,
+			CreatedAtTime: createdAtTime,
+			ExpiresAtText: expiresAtText,
+			ExpiresAtDate: expiresAtDate,
+			ExpiresAtTime: expiresAtTime,
+			ExpiryState:   expiryState,
+			ExpiryTone:    expiryTone,
+			ExpiryHint:    expiryHint,
+			DaysLabel:     daysLabel,
 		}
 		if err := templates.ExecuteTemplate(w, "cert-details.html", data); err != nil {
 			requestID := middleware.GetRequestID(r.Context())
@@ -973,6 +1027,20 @@ func formatTime(value time.Time) string {
 		return ""
 	}
 	return value.UTC().Format("2006-01-02 15:04:05")
+}
+
+func formatDate(value time.Time) string {
+	if value.IsZero() {
+		return ""
+	}
+	return value.UTC().Format("2006-01-02")
+}
+
+func formatClock(value time.Time) string {
+	if value.IsZero() {
+		return ""
+	}
+	return value.UTC().Format("15:04:05")
 }
 
 func statusLabelForMessages(status string, messages i18n.Messages) string {
