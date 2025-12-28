@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{.Language}}">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>VaultCertsViewer Admin</title>
+    <title>{{.Messages.AdminTitle}}</title>
     <style>
       .vcv-hidden { display: none; }
     </style>
@@ -16,10 +16,19 @@
       <header class="vcv-header">
         <div class="vcv-header-bar">
           <div class="vcv-header-left">
-            <h1 class="vcv-title">VaultCertsViewer Admin</h1>
+            <h1 class="vcv-title">{{.Messages.AdminTitle}}</h1>
           </div>
           <div class="vcv-header-actions">
-            <a class="vcv-button" href="/">Back to VCV</a>
+            <form action="/admin" method="GET">
+              <select id="vcv-lang-select" name="lang" class="vcv-select vcv-lang-select" aria-label="{{.Messages.LabelLanguage}}" onchange="this.form.submit()">
+                <option value="de" {{if eq .Language "de"}}selected{{end}}>DE</option>
+                <option value="en" {{if eq .Language "en"}}selected{{end}}>EN</option>
+                <option value="es" {{if eq .Language "es"}}selected{{end}}>ES</option>
+                <option value="fr" {{if eq .Language "fr"}}selected{{end}}>FR</option>
+                <option value="it" {{if eq .Language "it"}}selected{{end}}>IT</option>
+              </select>
+            </form>
+            <a class="vcv-button" href="/">{{.Messages.AdminBackToVCV}}</a>
           </div>
         </div>
       </header>
@@ -67,7 +76,8 @@
         if (!input) return;
         const isHidden = input.type === 'password';
         input.type = isHidden ? 'text' : 'password';
-        button.textContent = isHidden ? 'Hide' : 'Reveal';
+        const messages = window.vcvMessages || {};
+        button.textContent = isHidden ? (messages.adminVaultTokenHide || 'Hide') : (messages.adminVaultTokenReveal || 'Reveal');
       }
 
       document.body.addEventListener('adminVaultAdded', (event) => {

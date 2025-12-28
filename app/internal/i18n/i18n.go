@@ -120,6 +120,38 @@ type Messages struct {
 	TechnicalDetailsTitle       string `json:"technicalDetailsTitle"`
 	VaultConnectionLost         string `json:"vaultConnectionLost"`
 	VaultConnectionRestored     string `json:"vaultConnectionRestored"`
+	AdminTitle                  string `json:"adminTitle"`
+	AdminBackToVCV              string `json:"adminBackToVCV"`
+	AdminSettings               string `json:"adminSettings"`
+	AdminLogout                 string `json:"adminLogout"`
+	AdminLogin                  string `json:"adminLogin"`
+	AdminPassword               string `json:"adminPassword"`
+	AdminCertificates           string `json:"adminCertificates"`
+	AdminCriticalThreshold      string `json:"adminCriticalThreshold"`
+	AdminWarningThreshold       string `json:"adminWarningThreshold"`
+	AdminCORS                   string `json:"adminCORS"`
+	AdminCORSOrigins            string `json:"adminCORSOrigins"`
+	AdminVaults                 string `json:"adminVaults"`
+	AdminVaultsHint             string `json:"adminVaultsHint"`
+	AdminAddVault               string `json:"adminAddVault"`
+	AdminSaveSettings           string `json:"adminSaveSettings"`
+	AdminRestartNote            string `json:"adminRestartNote"`
+	AdminVaultID                string `json:"adminVaultID"`
+	AdminVaultDisplayName       string `json:"adminVaultDisplayName"`
+	AdminVaultAddress           string `json:"adminVaultAddress"`
+	AdminVaultPKIMounts         string `json:"adminVaultPKIMounts"`
+	AdminVaultToken             string `json:"adminVaultToken"`
+	AdminVaultTokenReveal       string `json:"adminVaultTokenReveal"`
+	AdminVaultTokenHide         string `json:"adminVaultTokenHide"`
+	AdminVaultTLSCABase64       string `json:"adminVaultTLSCABase64"`
+	AdminVaultTLSCAFile         string `json:"adminVaultTLSCAFile"`
+	AdminVaultTLSCAPath         string `json:"adminVaultTLSCAPath"`
+	AdminVaultTLSServerName     string `json:"adminVaultTLSServerName"`
+	AdminVaultTLSInsecure       string `json:"adminVaultTLSInsecure"`
+	AdminVaultEnabled           string `json:"adminVaultEnabled"`
+	AdminVaultRemove            string `json:"adminVaultRemove"`
+	AdminVaultTLSTip            string `json:"adminVaultTLSTip"`
+	AdminToggleEnable           string `json:"adminToggleEnable"`
 }
 
 // Response is the payload returned by the /api/i18n endpoint.
@@ -229,6 +261,38 @@ var englishMessages = Messages{
 	TechnicalDetailsTitle:       "Technical details",
 	VaultConnectionLost:         "Vault connection lost",
 	VaultConnectionRestored:     "Vault connection restored",
+	AdminTitle:                  "VaultCertsViewer Admin",
+	AdminBackToVCV:              "Back to VCV",
+	AdminSettings:               "Settings",
+	AdminLogout:                 "Logout",
+	AdminLogin:                  "Login",
+	AdminPassword:               "Password",
+	AdminCertificates:           "Certificates",
+	AdminCriticalThreshold:      "Critical threshold (days)",
+	AdminWarningThreshold:       "Warning threshold (days)",
+	AdminCORS:                   "CORS",
+	AdminCORSOrigins:            "Allowed origins (comma-separated)",
+	AdminVaults:                 "Vaults",
+	AdminVaultsHint:             "Manage configured Vault instances.",
+	AdminAddVault:               "Add vault",
+	AdminSaveSettings:           "Save settings.json",
+	AdminRestartNote:            "Changes are persisted to the settings file. A server restart may be required for all changes to take effect.",
+	AdminVaultID:                "ID",
+	AdminVaultDisplayName:       "Display name",
+	AdminVaultAddress:           "Address",
+	AdminVaultPKIMounts:         "PKI mounts (comma-separated)",
+	AdminVaultToken:             "Token",
+	AdminVaultTokenReveal:       "Reveal",
+	AdminVaultTokenHide:         "Hide",
+	AdminVaultTLSCABase64:       "TLS CA cert (base64)",
+	AdminVaultTLSCAFile:         "TLS CA cert (file path)",
+	AdminVaultTLSCAPath:         "TLS CA path (directory)",
+	AdminVaultTLSServerName:     "TLS server name (SNI)",
+	AdminVaultTLSInsecure:       "TLS insecure",
+	AdminVaultEnabled:           "Enabled",
+	AdminVaultRemove:            "Remove",
+	AdminVaultTLSTip:            "TLS tip: Provide the CA bundle either inline as base64 (preferred) or via a PEM file path / CA directory. If \"TLS CA cert (base64)\" is set, it takes precedence and the file/path fields are ignored. Encode a PEM bundle with: cat /path/to/ca.pem | base64 | tr -d '\\n'. \"TLS server name\" overrides SNI. \"TLS insecure\" disables verification (development only).",
+	AdminToggleEnable:           "Enable",
 }
 
 var frenchMessages = Messages{
@@ -332,6 +396,38 @@ var frenchMessages = Messages{
 	TechnicalDetailsTitle:       "Détails techniques",
 	VaultConnectionLost:         "Connexion à Vault perdue",
 	VaultConnectionRestored:     "Connexion à Vault rétablie",
+	AdminTitle:                  "VaultCertsViewer Admin",
+	AdminBackToVCV:              "Retour à VCV",
+	AdminSettings:               "Paramètres",
+	AdminLogout:                 "Déconnexion",
+	AdminLogin:                  "Connexion",
+	AdminPassword:               "Mot de passe",
+	AdminCertificates:           "Certificats",
+	AdminCriticalThreshold:      "Seuil critique (jours)",
+	AdminWarningThreshold:       "Seuil d'avertissement (jours)",
+	AdminCORS:                   "CORS",
+	AdminCORSOrigins:            "Origines autorisées (séparées par des virgules)",
+	AdminVaults:                 "Vaults",
+	AdminVaultsHint:             "Gérer les instances Vault configurées.",
+	AdminAddVault:               "Ajouter un vault",
+	AdminSaveSettings:           "Enregistrer settings.json",
+	AdminRestartNote:            "Les modifications sont enregistrées dans le fichier de paramètres. Un redémarrage du serveur peut être nécessaire pour que tous les changements prennent effet.",
+	AdminVaultID:                "ID",
+	AdminVaultDisplayName:       "Nom d'affichage",
+	AdminVaultAddress:           "Adresse",
+	AdminVaultPKIMounts:         "Montages PKI (séparés par des virgules)",
+	AdminVaultToken:             "Jeton",
+	AdminVaultTokenReveal:       "Révéler",
+	AdminVaultTokenHide:         "Masquer",
+	AdminVaultTLSCABase64:       "Certificat CA TLS (base64)",
+	AdminVaultTLSCAFile:         "Certificat CA TLS (chemin du fichier)",
+	AdminVaultTLSCAPath:         "Chemin CA TLS (répertoire)",
+	AdminVaultTLSServerName:     "Nom du serveur TLS (SNI)",
+	AdminVaultTLSInsecure:       "TLS non sécurisé",
+	AdminVaultEnabled:           "Activé",
+	AdminVaultRemove:            "Supprimer",
+	AdminVaultTLSTip:            "Astuce TLS : Fournissez le bundle CA soit en ligne en base64 (préféré) soit via un chemin de fichier PEM / répertoire CA. Si \"Certificat CA TLS (base64)\" est défini, il a la priorité et les champs fichier/chemin sont ignorés. Encodez un bundle PEM avec : cat /chemin/vers/ca.pem | base64 | tr -d '\\n'. \"Nom du serveur TLS\" remplace SNI. \"TLS non sécurisé\" désactive la vérification (développement uniquement).",
+	AdminToggleEnable:           "Activer",
 }
 
 var spanishMessages = Messages{
@@ -435,6 +531,38 @@ var spanishMessages = Messages{
 	TechnicalDetailsTitle:       "Detalles técnicos",
 	VaultConnectionLost:         "Conexión a Vault perdida",
 	VaultConnectionRestored:     "Conexión a Vault restablecida",
+	AdminTitle:                  "VaultCertsViewer Admin",
+	AdminBackToVCV:              "Volver a VCV",
+	AdminSettings:               "Configuración",
+	AdminLogout:                 "Cerrar sesión",
+	AdminLogin:                  "Iniciar sesión",
+	AdminPassword:               "Contraseña",
+	AdminCertificates:           "Certificados",
+	AdminCriticalThreshold:      "Umbral crítico (días)",
+	AdminWarningThreshold:       "Umbral de advertencia (días)",
+	AdminCORS:                   "CORS",
+	AdminCORSOrigins:            "Orígenes permitidos (separados por comas)",
+	AdminVaults:                 "Vaults",
+	AdminVaultsHint:             "Administrar instancias de Vault configuradas.",
+	AdminAddVault:               "Agregar vault",
+	AdminSaveSettings:           "Guardar settings.json",
+	AdminRestartNote:            "Los cambios se guardan en el archivo de configuración. Es posible que se requiera reiniciar el servidor para que todos los cambios surtan efecto.",
+	AdminVaultID:                "ID",
+	AdminVaultDisplayName:       "Nombre para mostrar",
+	AdminVaultAddress:           "Dirección",
+	AdminVaultPKIMounts:         "Montajes PKI (separados por comas)",
+	AdminVaultToken:             "Token",
+	AdminVaultTokenReveal:       "Revelar",
+	AdminVaultTokenHide:         "Ocultar",
+	AdminVaultTLSCABase64:       "Certificado CA TLS (base64)",
+	AdminVaultTLSCAFile:         "Certificado CA TLS (ruta del archivo)",
+	AdminVaultTLSCAPath:         "Ruta CA TLS (directorio)",
+	AdminVaultTLSServerName:     "Nombre del servidor TLS (SNI)",
+	AdminVaultTLSInsecure:       "TLS inseguro",
+	AdminVaultEnabled:           "Habilitado",
+	AdminVaultRemove:            "Eliminar",
+	AdminVaultTLSTip:            "Consejo TLS: Proporcione el paquete CA en línea como base64 (preferido) o mediante una ruta de archivo PEM / directorio CA. Si se establece \"Certificado CA TLS (base64)\", tiene prioridad y se ignoran los campos de archivo/ruta. Codifique un paquete PEM con: cat /ruta/a/ca.pem | base64 | tr -d '\\n'. \"Nombre del servidor TLS\" anula SNI. \"TLS inseguro\" deshabilita la verificación (solo desarrollo).",
+	AdminToggleEnable:           "Habilitar",
 }
 
 var germanMessages = Messages{
@@ -538,6 +666,38 @@ var germanMessages = Messages{
 	TechnicalDetailsTitle:       "Technische Details",
 	VaultConnectionLost:         "Verbindung zu Vault unterbrochen",
 	VaultConnectionRestored:     "Verbindung zu Vault wiederhergestellt",
+	AdminTitle:                  "VaultCertsViewer Admin",
+	AdminBackToVCV:              "Zurück zu VCV",
+	AdminSettings:               "Einstellungen",
+	AdminLogout:                 "Abmelden",
+	AdminLogin:                  "Anmelden",
+	AdminPassword:               "Passwort",
+	AdminCertificates:           "Zertifikate",
+	AdminCriticalThreshold:      "Kritischer Schwellenwert (Tage)",
+	AdminWarningThreshold:       "Warnschwellenwert (Tage)",
+	AdminCORS:                   "CORS",
+	AdminCORSOrigins:            "Erlaubte Ursprünge (durch Kommas getrennt)",
+	AdminVaults:                 "Vaults",
+	AdminVaultsHint:             "Konfigurierte Vault-Instanzen verwalten.",
+	AdminAddVault:               "Vault hinzufügen",
+	AdminSaveSettings:           "settings.json speichern",
+	AdminRestartNote:            "Änderungen werden in der Einstellungsdatei gespeichert. Ein Neustart des Servers kann erforderlich sein, damit alle Änderungen wirksam werden.",
+	AdminVaultID:                "ID",
+	AdminVaultDisplayName:       "Anzeigename",
+	AdminVaultAddress:           "Adresse",
+	AdminVaultPKIMounts:         "PKI-Mounts (durch Kommas getrennt)",
+	AdminVaultToken:             "Token",
+	AdminVaultTokenReveal:       "Anzeigen",
+	AdminVaultTokenHide:         "Verbergen",
+	AdminVaultTLSCABase64:       "TLS-CA-Zertifikat (base64)",
+	AdminVaultTLSCAFile:         "TLS-CA-Zertifikat (Dateipfad)",
+	AdminVaultTLSCAPath:         "TLS-CA-Pfad (Verzeichnis)",
+	AdminVaultTLSServerName:     "TLS-Servername (SNI)",
+	AdminVaultTLSInsecure:       "TLS unsicher",
+	AdminVaultEnabled:           "Aktiviert",
+	AdminVaultRemove:            "Entfernen",
+	AdminVaultTLSTip:            "TLS-Tipp: Geben Sie das CA-Bundle entweder inline als base64 (bevorzugt) oder über einen PEM-Dateipfad / CA-Verzeichnis an. Wenn \"TLS-CA-Zertifikat (base64)\" gesetzt ist, hat es Vorrang und die Datei-/Pfadfelder werden ignoriert. Kodieren Sie ein PEM-Bundle mit: cat /pfad/zu/ca.pem | base64 | tr -d '\\n'. \"TLS-Servername\" überschreibt SNI. \"TLS unsicher\" deaktiviert die Überprüfung (nur Entwicklung).",
+	AdminToggleEnable:           "Aktivieren",
 }
 
 var italianMessages = Messages{
@@ -641,6 +801,38 @@ var italianMessages = Messages{
 	TechnicalDetailsTitle:   "Dettagli tecnici",
 	VaultConnectionLost:     "Connessione al Vault interrotta",
 	VaultConnectionRestored: "Connessione al Vault ripristinata",
+	AdminTitle:              "VaultCertsViewer Admin",
+	AdminBackToVCV:          "Torna a VCV",
+	AdminSettings:           "Impostazioni",
+	AdminLogout:             "Disconnetti",
+	AdminLogin:              "Accedi",
+	AdminPassword:           "Password",
+	AdminCertificates:       "Certificati",
+	AdminCriticalThreshold:  "Soglia critica (giorni)",
+	AdminWarningThreshold:   "Soglia di avviso (giorni)",
+	AdminCORS:               "CORS",
+	AdminCORSOrigins:        "Origini consentite (separate da virgole)",
+	AdminVaults:             "Vaults",
+	AdminVaultsHint:         "Gestisci le istanze Vault configurate.",
+	AdminAddVault:           "Aggiungi vault",
+	AdminSaveSettings:       "Salva settings.json",
+	AdminRestartNote:        "Le modifiche vengono salvate nel file delle impostazioni. Potrebbe essere necessario riavviare il server affinché tutte le modifiche abbiano effetto.",
+	AdminVaultID:            "ID",
+	AdminVaultDisplayName:   "Nome visualizzato",
+	AdminVaultAddress:       "Indirizzo",
+	AdminVaultPKIMounts:     "Mount PKI (separati da virgole)",
+	AdminVaultToken:         "Token",
+	AdminVaultTokenReveal:   "Mostra",
+	AdminVaultTokenHide:     "Nascondi",
+	AdminVaultTLSCABase64:   "Certificato CA TLS (base64)",
+	AdminVaultTLSCAFile:     "Certificato CA TLS (percorso file)",
+	AdminVaultTLSCAPath:     "Percorso CA TLS (directory)",
+	AdminVaultTLSServerName: "Nome server TLS (SNI)",
+	AdminVaultTLSInsecure:   "TLS non sicuro",
+	AdminVaultEnabled:       "Abilitato",
+	AdminVaultRemove:        "Rimuovi",
+	AdminVaultTLSTip:        "Suggerimento TLS: Fornire il bundle CA in linea come base64 (preferito) o tramite un percorso file PEM / directory CA. Se \"Certificato CA TLS (base64)\" è impostato, ha la precedenza e i campi file/percorso vengono ignorati. Codificare un bundle PEM con: cat /percorso/a/ca.pem | base64 | tr -d '\\n'. \"Nome server TLS\" sovrascrive SNI. \"TLS non sicuro\" disabilita la verifica (solo sviluppo).",
+	AdminToggleEnable:       "Abilita",
 }
 
 // MessagesForLanguage returns the translations for a given language code.

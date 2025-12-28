@@ -7,44 +7,44 @@
   {{end}}
 
   <div class="admin-card-header">
-    <h2 class="admin-card-title">Settings</h2>
+    <h2 class="admin-card-title">{{.Messages.AdminSettings}}</h2>
     <div class="admin-actions">
-      <button class="vcv-button vcv-button-secondary" type="button" onclick="openDocumentationModal('admin')">📖 Documentation</button>
-      <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/logout" hx-target="#admin-root" hx-swap="innerHTML">Logout</button>
+      <button class="vcv-button vcv-button-secondary" type="button" onclick="openDocumentationModal('admin')">📖 {{.Messages.ButtonDocumentation}}</button>
+      <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/logout" hx-target="#admin-root" hx-swap="innerHTML">{{.Messages.AdminLogout}}</button>
     </div>
   </div>
 
   <form id="admin-settings-form" class="admin-form" hx-post="/admin/settings" hx-target="#admin-root" hx-swap="innerHTML">
     <fieldset class="admin-fieldset">
-      <legend class="admin-legend">Certificates</legend>
+      <legend class="admin-legend">{{.Messages.AdminCertificates}}</legend>
       <div class="admin-grid">
         <div class="admin-form-row">
-          <label class="admin-label" for="settings-expire-critical">Critical threshold (days)</label>
+          <label class="admin-label" for="settings-expire-critical">{{.Messages.AdminCriticalThreshold}}</label>
           <input class="vcv-input" id="settings-expire-critical" name="expire_critical" type="number" min="1" max="3650" value="{{.Settings.Certificates.ExpirationThresholds.Critical}}" />
         </div>
         <div class="admin-form-row">
-          <label class="admin-label" for="settings-expire-warning">Warning threshold (days)</label>
+          <label class="admin-label" for="settings-expire-warning">{{.Messages.AdminWarningThreshold}}</label>
           <input class="vcv-input" id="settings-expire-warning" name="expire_warning" type="number" min="1" max="3650" value="{{.Settings.Certificates.ExpirationThresholds.Warning}}" />
         </div>
       </div>
     </fieldset>
 
     <fieldset class="admin-fieldset">
-      <legend class="admin-legend">CORS</legend>
+      <legend class="admin-legend">{{.Messages.AdminCORS}}</legend>
       <div class="admin-grid">
         <div class="admin-form-row admin-form-row-full">
-          <label class="admin-label" for="settings-cors-origins">Allowed origins (comma-separated)</label>
+          <label class="admin-label" for="settings-cors-origins">{{.Messages.AdminCORSOrigins}}</label>
           <textarea class="vcv-input admin-textarea" id="settings-cors-origins" name="cors_origins" rows="3">{{.CorsOriginsText}}</textarea>
         </div>
       </div>
     </fieldset>
 
     <fieldset class="admin-fieldset">
-      <legend class="admin-legend">Vaults</legend>
+      <legend class="admin-legend">{{.Messages.AdminVaults}}</legend>
       <div class="admin-section-header">
-        <div class="admin-section-hint">Manage configured Vault instances.</div>
+        <div class="admin-section-hint">{{.Messages.AdminVaultsHint}}</div>
         <div class="admin-actions">
-          <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/vault/add" hx-target="#admin-vaults-list" hx-swap="beforeend">Add vault</button>
+          <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/vault/add" hx-target="#admin-vaults-list" hx-swap="beforeend">{{.Messages.AdminAddVault}}</button>
         </div>
       </div>
       <div id="admin-vaults-list" class="admin-vaults-list">
@@ -55,11 +55,11 @@
     </fieldset>
 
     <div class="admin-actions admin-actions-space">
-      <button class="vcv-button vcv-button-primary" type="submit">Save settings.json</button>
+      <button class="vcv-button vcv-button-primary" type="submit">{{.Messages.AdminSaveSettings}}</button>
     </div>
 
     <div class="admin-note">
-      Changes are persisted to the settings file. A server restart may be required for all changes to take effect.
+      {{.Messages.AdminRestartNote}}
     </div>
   </form>
 </section>

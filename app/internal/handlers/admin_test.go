@@ -22,6 +22,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"vcv/config"
+	"vcv/internal/i18n"
 )
 
 func newAdminWebFS() fstest.MapFS {
@@ -285,7 +286,8 @@ func TestBuildAdminPanelData_BuildsVaultViewsAndCORS(t *testing.T) {
 			{ID: "v2", Address: "https://vault2.example.com", Token: "tok2", PKIMount: "", PKIMounts: []string{}, DisplayName: "", Enabled: &enabled},
 		},
 	}
-	data := buildAdminPanelData(settings, "ok", "")
+	messages := i18n.MessagesForLanguage(i18n.LanguageEnglish)
+	data := buildAdminPanelData(settings, "ok", "", messages)
 	assert.Equal(t, "http://a,http://b", data.CorsOriginsText)
 	assert.Equal(t, "ok", data.SuccessText)
 	require.Len(t, data.VaultViews, 2)

@@ -13,11 +13,11 @@
     <div class="admin-vault-card-header">
       <div class="admin-vault-card-title">
         <div class="admin-form-row">
-          <label class="admin-label">ID</label>
+          <label class="admin-label">{{.Messages.AdminVaultID}}</label>
           <input class="vcv-input admin-input" name="vault_id_{{.Key}}" value="{{.Vault.ID}}" placeholder="id" required />
         </div>
         <div class="admin-form-row">
-          <label class="admin-label">Display name</label>
+          <label class="admin-label">{{.Messages.AdminVaultDisplayName}}</label>
           <input class="vcv-input admin-input" name="vault_display_{{.Key}}" value="{{.Vault.DisplayName}}" placeholder="display name" />
         </div>
       </div>
@@ -30,69 +30,69 @@
           hx-target="closest details"
           hx-swap="delete"
         >
-          Remove
+          {{.Messages.AdminVaultRemove}}
         </button>
       </div>
     </div>
 
     <div class="admin-vault-card-grid">
       <div class="admin-form-row admin-form-row-full">
-        <label class="admin-label">Address</label>
+        <label class="admin-label">{{.Messages.AdminVaultAddress}}</label>
         <input class="vcv-input admin-input" name="vault_address_{{.Key}}" value="{{.Vault.Address}}" required />
       </div>
 
       <div class="admin-form-row">
-        <label class="admin-label">PKI mounts (comma-separated)</label>
+        <label class="admin-label">{{.Messages.AdminVaultPKIMounts}}</label>
         <input class="vcv-input admin-input" name="vault_mounts_{{.Key}}" value="{{.MountsText}}" />
       </div>
 
       <div class="admin-form-row">
-        <label class="admin-label">Token</label>
+        <label class="admin-label">{{.Messages.AdminVaultToken}}</label>
         <div class="admin-token-row">
           <input class="vcv-input admin-input" name="vault_token_{{.Key}}" type="password" value="{{.Vault.Token}}" required />
-          <button class="vcv-button vcv-button-secondary vcv-button-small" type="button" data-vault-key="{{.Key}}" onclick="toggleToken(this)">Reveal</button>
+          <button class="vcv-button vcv-button-secondary vcv-button-small" type="button" data-vault-key="{{.Key}}" onclick="toggleToken(this)">{{.Messages.AdminVaultTokenReveal}}</button>
         </div>
       </div>
 
       <div class="admin-form-row admin-form-row-full">
-        <label class="admin-label">TLS CA cert (base64)</label>
+        <label class="admin-label">{{.Messages.AdminVaultTLSCABase64}}</label>
         <textarea class="vcv-input admin-textarea" name="vault_tls_ca_cert_base64_{{.Key}}" rows="3" placeholder="Base64-encoded PEM bundle">{{.Vault.TLSCACertBase64}}</textarea>
       </div>
 
       <div class="admin-form-row admin-form-row-full">
         <div class="admin-note">
-          TLS tip: Provide the CA bundle either inline as base64 (preferred) or via a PEM file path / CA directory. If "TLS CA cert (base64)" is set, it takes precedence and the file/path fields are ignored. Encode a PEM bundle with: <code>cat /path/to/ca.pem | base64 | tr -d '\n'</code>. "TLS server name" overrides SNI. "TLS insecure" disables verification (development only).
+          {{.Messages.AdminVaultTLSTip}}
         </div>
       </div>
 
       <div class="admin-form-row admin-form-row-full">
-        <label class="admin-label">TLS CA cert (file path)</label>
+        <label class="admin-label">{{.Messages.AdminVaultTLSCAFile}}</label>
         <input class="vcv-input admin-input" name="vault_tls_ca_cert_{{.Key}}" value="{{.Vault.TLSCACert}}" placeholder="/etc/vcv/tls/vault-ca.pem" />
       </div>
 
       <div class="admin-form-row admin-form-row-full">
-        <label class="admin-label">TLS CA path (directory)</label>
+        <label class="admin-label">{{.Messages.AdminVaultTLSCAPath}}</label>
         <input class="vcv-input admin-input" name="vault_tls_ca_path_{{.Key}}" value="{{.Vault.TLSCAPath}}" placeholder="/etc/vcv/tls/ca" />
       </div>
 
       <div class="admin-form-row admin-form-row-full">
-        <label class="admin-label">TLS server name (SNI)</label>
+        <label class="admin-label">{{.Messages.AdminVaultTLSServerName}}</label>
         <input class="vcv-input admin-input" name="vault_tls_server_name_{{.Key}}" value="{{.Vault.TLSServerName}}" placeholder="vault.service.consul" />
       </div>
 
       <div class="admin-form-row">
-        <label class="admin-label">TLS insecure</label>
+        <label class="admin-label">{{.Messages.AdminVaultTLSInsecure}}</label>
         <label class="admin-toggle">
           <input name="vault_tls_{{.Key}}" type="checkbox" {{if .TLSInsecure}}checked{{end}} />
-          <span class="admin-toggle-label">Enable</span>
+          <span class="admin-toggle-label">{{.Messages.AdminToggleEnable}}</span>
         </label>
       </div>
 
       <div class="admin-form-row">
-        <label class="admin-label">Enabled</label>
+        <label class="admin-label">{{.Messages.AdminVaultEnabled}}</label>
         <label class="admin-toggle">
           <input name="vault_enabled_{{.Key}}" type="checkbox" {{if .Enabled}}checked{{end}} />
-          <span class="admin-toggle-label">Enable</span>
+          <span class="admin-toggle-label">{{.Messages.AdminToggleEnable}}</span>
         </label>
       </div>
     </div>

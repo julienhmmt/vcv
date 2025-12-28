@@ -40,10 +40,12 @@ type adminLoginRequest struct {
 }
 
 type adminLoginTemplateData struct {
+	Messages  i18n.Messages
 	ErrorText string
 }
 
 type adminVaultViewData struct {
+	Messages    i18n.Messages
 	Enabled     bool
 	Key         string
 	MountsText  string
@@ -53,6 +55,7 @@ type adminVaultViewData struct {
 }
 
 type adminPanelTemplateData struct {
+	Messages        i18n.Messages
 	CorsOriginsText string
 	ErrorText       string
 	Settings        config.SettingsFile
@@ -463,7 +466,7 @@ func renderAdminTemplate(w http.ResponseWriter, templates *template.Template, na
 	return templates.ExecuteTemplate(w, name, data)
 }
 
-func buildAdminPanelData(settings config.SettingsFile, successText string, errorText string) adminPanelTemplateData {
+func buildAdminPanelData(settings config.SettingsFile, successText string, errorText string, messages i18n.Messages) adminPanelTemplateData {
 	corsOriginsText := strings.Join(settings.CORS.AllowedOrigins, ",")
 	views := make([]adminVaultViewData, 0, len(settings.Vaults))
 	for i, vault := range settings.Vaults {
@@ -476,9 +479,9 @@ func buildAdminPanelData(settings config.SettingsFile, successText string, error
 		}
 		mountsText := strings.Join(mounts, ",")
 		key := fmt.Sprintf("%d", i)
-		views = append(views, adminVaultViewData{Enabled: config.IsVaultEnabled(vault), Key: key, MountsText: mountsText, Open: false, TLSInsecure: vault.TLSInsecure, Vault: vault})
+		views = append(views, adminVaultViewData{Messages: messages, Enabled: config.IsVaultEnabled(vault), Key: key, MountsText: mountsText, Open: false, TLSInsecure: vault.TLSInsecure, Vault: vault})
 	}
-	return adminPanelTemplateData{CorsOriginsText: corsOriginsText, ErrorText: errorText, Settings: settings, SuccessText: successText, VaultViews: views}
+	return adminPanelTemplateData{Messages: messages, CorsOriginsText: corsOriginsText, ErrorText: errorText, Settings: settings, SuccessText: successText, VaultViews: views}
 }
 
 func parseSettingsUpdateForm(r *http.Request, existing config.SettingsFile) (config.SettingsFile, error) {
@@ -578,6 +581,7 @@ func newVaultKey() (string, error) {
 }
 
 type adminPageTemplateData struct {
+	Language i18n.Language
 	Messages i18n.Messages
 }
 
@@ -600,6 +604,7 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 		language := i18n.ResolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
 		data := adminPageTemplateData{
+			Language: language,
 			Messages: messages,
 		}
 		if err := renderAdminTemplate(w, templates, "admin-page.html", data); err != nil {
@@ -611,8 +616,10 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 		}
 	})
 	router.Get("/admin/panel", func(w http.ResponseWriter, r *http.Request) {
+		language := i18n.ResolveLanguage(r)
+		messages := i18n.MessagesForLanguage(language)
 		if !sessions.isAuthed(r) {
-			if err := renderAdminTemplate(w, templates, "admin-login-fragment.html", adminLoginTemplateData{}); err != nil {
+			if err := renderAdminTemplate(w, templates, "admin-login-fragment.html", adminLoginTemplateData{Messages: messages}); err != nil {
 				requestID := middleware.GetRequestID(r.Context())
 				logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
 					Str("request_id", requestID).
@@ -626,7 +633,7 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		data := buildAdminPanelData(settings, "", "")
+		data := buildAdminPanelData(settings, "", "", messages)
 		if err := renderAdminTemplate(w, templates, "admin-panel-fragment.html", data); err != nil {
 			requestID := middleware.GetRequestID(r.Context())
 			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
@@ -636,6 +643,8 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 		}
 	})
 	router.Post("/admin/login", func(w http.ResponseWriter, r *http.Request) {
+		language := i18n.ResolveLanguage(r)
+		messages := i18n.MessagesForLanguage(language)
 		ok, errorText := sessions.loginFromForm(w, r)
 		if ok {
 			settings, err := store.load()
@@ -643,19 +652,23 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-			data := buildAdminPanelData(settings, "", "")
+			data := buildAdminPanelData(settings, "", "", messages)
 			_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
 			return
 		}
-		_ = renderAdminTemplate(w, templates, "admin-login-fragment.html", adminLoginTemplateData{ErrorText: errorText})
+		_ = renderAdminTemplate(w, templates, "admin-login-fragment.html", adminLoginTemplateData{Messages: messages, ErrorText: errorText})
 	})
 	router.Post("/admin/logout", func(w http.ResponseWriter, r *http.Request) {
+		language := i18n.ResolveLanguage(r)
+		messages := i18n.MessagesForLanguage(language)
 		sessions.clearCookie(w)
-		_ = renderAdminTemplate(w, templates, "admin-login-fragment.html", adminLoginTemplateData{})
+		_ = renderAdminTemplate(w, templates, "admin-login-fragment.html", adminLoginTemplateData{Messages: messages})
 	})
 	router.Group(func(r chi.Router) {
 		r.Use(sessions.requireAuth)
 		r.Post("/admin/settings", func(w http.ResponseWriter, r *http.Request) {
+			language := i18n.ResolveLanguage(r)
+			messages := i18n.MessagesForLanguage(language)
 			current, err := store.load()
 			if err != nil {
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -663,12 +676,12 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 			}
 			updated, err := parseSettingsUpdateForm(r, current)
 			if err != nil {
-				data := buildAdminPanelData(current, "", err.Error())
+				data := buildAdminPanelData(current, "", err.Error(), messages)
 				_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
 				return
 			}
 			if err := store.save(updated); err != nil {
-				data := buildAdminPanelData(updated, "", err.Error())
+				data := buildAdminPanelData(updated, "", err.Error(), messages)
 				_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
 				return
 			}
@@ -677,17 +690,19 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-			data := buildAdminPanelData(settings, "Settings saved", "")
+			data := buildAdminPanelData(settings, "Settings saved", "", messages)
 			_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
 		})
 		r.Post("/admin/vault/add", func(w http.ResponseWriter, r *http.Request) {
+			language := i18n.ResolveLanguage(r)
+			messages := i18n.MessagesForLanguage(language)
 			key, err := newVaultKey()
 			if err != nil {
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
 			vault := config.VaultInstance{ID: "", Address: "", Token: "", PKIMount: "pki", PKIMounts: []string{"pki"}, DisplayName: "", TLSInsecure: false}
-			data := adminVaultViewData{Enabled: true, Key: key, MountsText: "pki", Open: true, TLSInsecure: false, Vault: vault}
+			data := adminVaultViewData{Messages: messages, Enabled: true, Key: key, MountsText: "pki", Open: true, TLSInsecure: false, Vault: vault}
 			w.Header().Set("HX-Trigger-After-Swap", fmt.Sprintf(`{"adminVaultAdded":{"key":"%s"}}`, key))
 			_ = renderAdminTemplate(w, templates, "admin-vault-item.html", data)
 		})
