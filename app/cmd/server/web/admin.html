@@ -16,9 +16,24 @@
       <header class="vcv-header">
         <div class="vcv-header-bar">
           <div class="vcv-header-left">
-            <h1 class="vcv-title">VaultCertsViewer Admin</h1>
+            <h1 class="vcv-title">VaultCertsViewer admin</h1>
           </div>
           <div class="vcv-header-actions">
+            <button
+              id="theme-toggle"
+              class="vcv-button vcv-button-icon vcv-theme-toggle"
+              type="button"
+              title="Toggle dark mode"
+              aria-label="Toggle dark mode"
+              hx-post="/ui/theme/toggle"
+              hx-target="#vcv-theme-sink"
+              hx-swap="innerHTML"
+              hx-include="#vcv-theme-value"
+            >
+              <span id="theme-icon" aria-hidden="true"></span>
+            </button>
+            <input id="vcv-theme-value" name="theme" type="hidden" value="light" />
+            <div id="vcv-theme-sink" class="vcv-hidden"></div>
             <a class="vcv-button" href="/">Back to VCV</a>
           </div>
         </div>
@@ -443,7 +458,34 @@
         });
       }
 
-      bootstrap();
+      function safeApplyTheme() {
+        const key = 'vcv-theme';
+        const stored = (typeof localStorage !== 'undefined') ? localStorage.getItem(key) : null;
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = stored || (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-theme', theme);
+        const themeInput = document.getElementById('vcv-theme-value');
+        if (themeInput) {
+          themeInput.value = theme;
+        }
+      }
+
+      function initAdmin() {
+        initLoginForm();
+        initLogout();
+        initAddVault();
+        initVaultRemoval();
+        // Reuse global theme toggle logic from app-htmx.js when available, otherwise fallback
+        if (typeof applyThemeFromStorage === 'function') {
+          applyThemeFromStorage();
+        } else {
+          safeApplyTheme();
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', initAdmin);
     </script>
+    <script src="/assets/htmx.min.js"></script>
+    <script src="/assets/app-htmx.js"></script>
   </body>
 </html>
