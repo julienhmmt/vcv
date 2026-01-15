@@ -691,7 +691,7 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-			data := buildAdminPanelData(settings, "Settings saved", "", messages)
+			data := buildAdminPanelData(settings, messages.AdminSettingsSaved, "", messages)
 			_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
 		})
 		r.Post("/admin/vault/add", func(w http.ResponseWriter, r *http.Request) {

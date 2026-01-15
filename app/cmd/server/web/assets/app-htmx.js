@@ -680,6 +680,7 @@ async function loadMessages() {
       return;
     }
     state.messages = payload.messages;
+    window.vcvMessages = payload.messages;
     console.log(`[VCV] Messages loaded. Server reported language: ${payload.language}`);
     
     // Sync language select with what the server actually returned
@@ -766,6 +767,11 @@ function applyTranslations() {
   if (docBtn) {
     docBtn.setAttribute("title", messages.buttonDocumentation);
     docBtn.setAttribute("aria-label", messages.buttonDocumentation);
+  }
+  const themeToggle = document.getElementById("theme-toggle");
+  if (themeToggle) {
+    themeToggle.setAttribute("title", messages.buttonToggleTheme || "Toggle theme");
+    themeToggle.setAttribute("aria-label", messages.buttonToggleTheme || "Toggle theme");
   }
   const langSelect = document.getElementById("vcv-lang-select");
   if (langSelect) {
@@ -1378,6 +1384,7 @@ async function main() {
   } else {
     // Admin page or other pages
     initModalHandlers();
+    applyTranslations();
   }
 }
 

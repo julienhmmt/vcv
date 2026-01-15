@@ -21,6 +21,7 @@ const (
 // Messages contains all translatable UI strings used by the web interface.
 type Messages struct {
 	AppTitle                    string `json:"appTitle"`
+	ButtonToggleTheme           string `json:"buttonToggleTheme"`
 	ButtonClose                 string `json:"buttonClose"`
 	ButtonDetails               string `json:"buttonDetails"`
 	ButtonDocumentation         string `json:"buttonDocumentation"`
@@ -123,6 +124,7 @@ type Messages struct {
 	AdminTitle                  string `json:"adminTitle"`
 	AdminBackToVCV              string `json:"adminBackToVCV"`
 	AdminSettings               string `json:"adminSettings"`
+	AdminSettingsSaved          string `json:"adminSettingsSaved"`
 	AdminLogout                 string `json:"adminLogout"`
 	AdminLogin                  string `json:"adminLogin"`
 	AdminPassword               string `json:"adminPassword"`
@@ -162,6 +164,7 @@ type Response struct {
 
 var englishMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
+	ButtonToggleTheme:           "Toggle theme",
 	ButtonClose:                 "Close",
 	ButtonDetails:               "Details",
 	ButtonDocumentation:         "Documentation",
@@ -264,6 +267,7 @@ var englishMessages = Messages{
 	AdminTitle:                  "VaultCertsViewer Admin",
 	AdminBackToVCV:              "Back to VCV",
 	AdminSettings:               "Settings",
+	AdminSettingsSaved:          "Settings saved",
 	AdminLogout:                 "Logout",
 	AdminLogin:                  "Login",
 	AdminPassword:               "Password",
@@ -297,6 +301,7 @@ var englishMessages = Messages{
 
 var frenchMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
+	ButtonToggleTheme:           "Changer de thème",
 	ButtonClose:                 "Fermer",
 	ButtonDetails:               "Détails",
 	ButtonDocumentation:         "Documentation",
@@ -399,6 +404,7 @@ var frenchMessages = Messages{
 	AdminTitle:                  "VaultCertsViewer Admin",
 	AdminBackToVCV:              "Retour à VCV",
 	AdminSettings:               "Paramètres",
+	AdminSettingsSaved:          "Paramètres enregistrés",
 	AdminLogout:                 "Déconnexion",
 	AdminLogin:                  "Connexion",
 	AdminPassword:               "Mot de passe",
@@ -432,6 +438,7 @@ var frenchMessages = Messages{
 
 var spanishMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
+	ButtonToggleTheme:           "Cambiar tema",
 	ButtonClose:                 "Cerrar",
 	ButtonDetails:               "Detalles",
 	ButtonDocumentation:         "Documentación",
@@ -534,6 +541,7 @@ var spanishMessages = Messages{
 	AdminTitle:                  "VaultCertsViewer Admin",
 	AdminBackToVCV:              "Volver a VCV",
 	AdminSettings:               "Configuración",
+	AdminSettingsSaved:          "Configuración guardada",
 	AdminLogout:                 "Cerrar sesión",
 	AdminLogin:                  "Iniciar sesión",
 	AdminPassword:               "Contraseña",
@@ -567,6 +575,7 @@ var spanishMessages = Messages{
 
 var germanMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
+	ButtonToggleTheme:           "Design umschalten",
 	ButtonClose:                 "Schließen",
 	ButtonDetails:               "Details",
 	ButtonDocumentation:         "Dokumentation",
@@ -669,6 +678,7 @@ var germanMessages = Messages{
 	AdminTitle:                  "VaultCertsViewer Admin",
 	AdminBackToVCV:              "Zurück zu VCV",
 	AdminSettings:               "Einstellungen",
+	AdminSettingsSaved:          "Einstellungen gespeichert",
 	AdminLogout:                 "Abmelden",
 	AdminLogin:                  "Anmelden",
 	AdminPassword:               "Passwort",
@@ -702,6 +712,7 @@ var germanMessages = Messages{
 
 var italianMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
+	ButtonToggleTheme:           "Cambia tema",
 	ButtonClose:                 "Chiudi",
 	ButtonDetails:               "Dettagli",
 	ButtonDocumentation:         "Documentazione",
@@ -804,6 +815,7 @@ var italianMessages = Messages{
 	AdminTitle:              "VaultCertsViewer Admin",
 	AdminBackToVCV:          "Torna a VCV",
 	AdminSettings:           "Impostazioni",
+	AdminSettingsSaved:      "Impostazioni salvate",
 	AdminLogout:             "Disconnetti",
 	AdminLogin:              "Accedi",
 	AdminPassword:           "Password",
