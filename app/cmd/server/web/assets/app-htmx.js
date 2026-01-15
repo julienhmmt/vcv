@@ -44,20 +44,6 @@ function buildVaultMountKey(vaultId, mount) {
   return `${vaultId}|${mount}`;
 }
 
-function showLoadingIndicator() {
-  const indicator = document.getElementById(DOM_IDS.LOADING_INDICATOR);
-  if (indicator) {
-    indicator.classList.remove('vcv-hidden');
-  }
-}
-
-function hideLoadingIndicator() {
-  const indicator = document.getElementById(DOM_IDS.LOADING_INDICATOR);
-  if (indicator) {
-    indicator.classList.add('vcv-hidden');
-  }
-}
-
 function formatMountGroupTitle(group) {
   if (group && typeof group.displayName === "string" && group.displayName !== "") {
     return group.displayName;
@@ -94,26 +80,6 @@ function isRetryable(detail) {
     return true;
   }
   return xhr.status >= 500;
-}
-
-function setCertsBusy(isBusy) {
-  const toolbar = document.querySelector(".vcv-toolbar");
-  if (toolbar) {
-    if (isBusy) {
-      toolbar.setAttribute("aria-busy", "true");
-    } else {
-      toolbar.removeAttribute("aria-busy");
-    }
-  }
-  const refreshButton = document.getElementById("refresh-btn");
-  if (refreshButton) {
-    refreshButton.disabled = isBusy;
-    if (isBusy) {
-      refreshButton.classList.add("vcv-button-loading");
-    } else {
-      refreshButton.classList.remove("vcv-button-loading");
-    }
-  }
 }
 
 function buildCertsPageUrl() {
@@ -322,47 +288,6 @@ function handleRetry(targetId) {
     }
     window.htmx.ajax(lastRequest.verb, lastRequest.path, lastRequest.requestConfig);
   }, delay);
-}
-
-// Loading indicators
-function initLoadingIndicators() {
-  // Show loading spinner
-  document.body.addEventListener('htmx:beforeRequest', function(evt) {
-    const target = evt.detail.target;
-    if (target.id !== DOM_IDS.CERTS_BODY) {
-      return;
-    }
-    showLoadingIndicator();
-    target.classList.add('vcv-loading');
-    setCertsBusy(true);
-  });
-  
-  // Hide loading spinner
-  document.body.addEventListener('htmx:afterRequest', function(evt) {
-    const target = evt.detail.target;
-    if (target.id !== DOM_IDS.CERTS_BODY) {
-      return;
-    }
-    hideLoadingIndicator();
-    target.classList.remove('vcv-loading');
-    setCertsBusy(false);
-  });
-  
-  // Hide loading on error
-  const hideLoadingOnError = function(evt) {
-    const target = evt.detail.target;
-    if (target.id !== DOM_IDS.CERTS_BODY) {
-      return;
-    }
-    hideLoadingIndicator();
-    target.classList.remove('vcv-loading');
-    setCertsBusy(false);
-  };
-
-  document.body.addEventListener('htmx:responseError', hideLoadingOnError);
-  document.body.addEventListener('htmx:sendError', hideLoadingOnError);
-
-  document.body.addEventListener('htmx:timeout', hideLoadingOnError);
 }
 
 function initModalHandlers() {
@@ -887,6 +812,7 @@ function refreshHtmxCertsTable() {
   }
   setMountsHiddenField();
   window.htmx.ajax("GET", "/ui/certs", {
+    indicator: "#vcv-loading-indicator",
     target: "#vcv-certs-body",
     swap: "innerHTML",
     values: getCertsHtmxValues(),
@@ -1355,14 +1281,12 @@ function dismissNotifications() {
 async function main() {
   // Sync language first to ensure all subsequent loads (messages, config, etc.) use correct language
   initLanguageFromURL();
-  await loadMessages();
-
+  const messagesPromise = loadMessages();
   applyThemeFromStorage();
   initEventHandlers();
 
   // Initialize HTMX enhancements
   initHtmxErrorHandler();
-  initLoadingIndicators();
   initClientValidation();
   initCacheManagement();
   
@@ -1377,6 +1301,8 @@ async function main() {
     refreshHtmxCertsTable();
 
     // Load remaining non-critical startup data
+    await messagesPromise;
+    applyTranslations();
     await loadConfig();
     applyTranslations();
     renderMountSelector();
@@ -1384,6 +1310,7 @@ async function main() {
   } else {
     // Admin page or other pages
     initModalHandlers();
+    await messagesPromise;
     applyTranslations();
   }
 }

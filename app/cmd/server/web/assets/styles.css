@@ -1133,7 +1133,7 @@ body {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  display: flex;
+  display: none;
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
@@ -1145,6 +1145,10 @@ body {
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
   z-index: 1000;
   transition: opacity 0.2s ease;
+}
+
+.vcv-loading-indicator.htmx-request {
+  display: flex;
 }
 
 .vcv-loading-indicator.vcv-hidden {
