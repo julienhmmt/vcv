@@ -15,7 +15,7 @@
 
 .admin-surface .vcv-button:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 0 3px var(--vcv-color-primary-soft);
 }
 
 .admin-surface .vcv-button:active {
@@ -23,29 +23,29 @@
 }
 
 .admin-surface .vcv-button-primary {
-  background: #10b981;
+  background: var(--vcv-color-primary);
   color: white;
-  border: 1px solid #059669;
+  border: 1px solid var(--vcv-color-primary-strong);
   transition: all 0.2s ease;
 }
 
 .admin-surface .vcv-button-primary:hover:not(:disabled) {
-  background: #059669;
+  background: var(--vcv-color-primary-strong);
   transform: translateY(-1px);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 .admin-surface .vcv-button-secondary {
-  background: #f8fafc;
-  color: #475569;
-  border: 1px solid #e2e8f0;
+  background: var(--vcv-color-bg);
+  color: var(--vcv-color-muted);
+  border: 1px solid var(--vcv-color-border);
   transition: all 0.2s ease;
 }
 
 .admin-surface .vcv-button-secondary:hover:not(:disabled) {
-  background: #f1f5f9;
-  color: #1e293b;
-  border-color: #cbd5e1;
+  background: var(--vcv-color-surface-muted);
+  color: var(--vcv-color-text);
+  border-color: var(--vcv-color-border-strong);
   transform: translateY(-1px);
 }
 
@@ -78,7 +78,7 @@
 }
 
 .admin-surface .vcv-button-danger {
-  background: #dc2626;
+  background: var(--vcv-color-danger);
   color: white;
   border: 1px solid #b91c1c;
   transition: all 0.2s ease;
@@ -106,7 +106,7 @@
 .admin-card-title {
   font-size: 1rem;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--vcv-color-text-strong);
   margin: 0;
 }
 
@@ -129,7 +129,7 @@
 .admin-label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--vcv-color-muted);
 }
 
 .admin-actions {
