@@ -1,23 +1,6 @@
 const MOUNTS_ALL_SENTINEL = "__all__";
 
-const DOM_IDS = {
-  CERTS_BODY: 'vcv-certs-body',
-  LOADING_INDICATOR: 'vcv-loading-indicator',
-  SEARCH_INPUT: 'vcv-search',
-  STATUS_FILTER: 'vcv-status-filter',
-  EXPIRY_FILTER: 'vcv-expiry-filter',
-  VAULT_FILTER: 'vcv-vault-filter',
-  PKI_FILTER: 'vcv-pki-filter',
-  PAGE_SIZE: 'vcv-page-size',
-  PAGE: 'vcv-page',
-  SORT_KEY: 'vcv-sort-key',
-  SORT_DIR: 'vcv-sort-dir',
-  MOUNTS: 'vcv-mounts',
-  LANG_SELECT: 'vcv-lang-select',
-};
-
 const TIMEOUTS = {
-  DEBOUNCE_MS: 300,
   ERROR_DEBOUNCE_MS: 200,
   RETRY_BASE_MS: 1000,
 };
@@ -1249,23 +1232,6 @@ function attachVaultFilterListener() {
 }
 
 function initEventHandlers() {
-  const mountModal = document.getElementById("mount-modal");
-  if (mountModal) {
-    mountModal.addEventListener("click", (e) => {
-      if (e.target === mountModal) {
-        closeMountModal();
-      }
-    });
-  }
-  const certModal = document.getElementById("certificate-modal");
-  if (certModal) {
-    certModal.addEventListener("click", (e) => {
-      if (e.target === certModal) {
-        closeCertificateModal();
-      }
-    });
-  }
-
   document.querySelectorAll(".vcv-sort").forEach((button) => {
     button.addEventListener("click", handleSortClick);
   });
@@ -1303,7 +1269,6 @@ async function main() {
     await messagesPromise;
     applyTranslations();
     await loadConfig();
-    applyTranslations();
     renderMountSelector();
     setMountsHiddenField();
   } else {
