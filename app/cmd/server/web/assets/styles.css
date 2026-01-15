@@ -1151,11 +1151,6 @@ body {
   display: flex;
 }
 
-.vcv-loading-indicator.vcv-hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
 .vcv-loading-spinner {
   width: 1.25rem;
   height: 1.25rem;
@@ -1181,37 +1176,6 @@ body {
   }
 }
 
-/* Loading state for tables */
-.vcv-loading {
-  position: relative;
-  opacity: 0.6;
-}
-
-.vcv-loading::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--vcv-color-loading-overlay);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 10;
-}
-
-.vcv-loading::before {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 2rem;
-  height: 2rem;
-  border: 3px solid var(--vcv-color-border);
-  border-top: 3px solid var(--vcv-color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  z-index: 11;
-}
 
 @keyframes toast-in {
   from {

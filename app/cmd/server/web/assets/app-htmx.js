@@ -1296,9 +1296,8 @@ async function main() {
     initModalHandlers();
     initVaultConnectionNotifications();
 
-    // Apply URL state and trigger first table load ASAP.
+    // Apply URL state without triggering a redundant initial fetch.
     applyCertsStateFromUrl();
-    refreshHtmxCertsTable();
 
     // Load remaining non-critical startup data
     await messagesPromise;

@@ -105,6 +105,12 @@ type themeToggleTemplateData struct {
 	Icon  string
 }
 
+type indexTemplateData struct {
+	Language string
+	Messages i18n.Messages
+	Certs    certsFragmentTemplateData
+}
+
 type certsFragmentTemplateData struct {
 	Rows                  []certRowTemplateData
 	Messages              i18n.Messages
@@ -229,13 +235,19 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 		}
 		language := i18n.ResolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
-		data := struct {
-			Language string
-			Messages i18n.Messages
-		}{
-			Language: string(language),
-			Messages: messages,
+		var queryState certsQueryState = parseCertsQueryState(r)
+		var certificates []certs.Certificate
+		var listErr error
+		certificates, listErr = vaultClient.ListCertificates(r.Context())
+		if listErr != nil {
+			requestID := middleware.GetRequestID(r.Context())
+			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, listErr).
+				Str("request_id", requestID).
+				Msg("failed to list certificates for index")
+			certificates = []certs.Certificate{}
 		}
+		var certsData certsFragmentTemplateData = buildCertsFragmentData(certificates, expirationThresholds, messages, queryState, vaultDisplayNames, showVaultMount)
+		data := indexTemplateData{Language: string(language), Messages: messages, Certs: certsData}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := templates.ExecuteTemplate(w, "index.html", data); err != nil {
 			requestID := middleware.GetRequestID(r.Context())
@@ -1067,6 +1079,13 @@ func renderCertsFragment(w http.ResponseWriter, templates *template.Template, ce
 	if templates == nil {
 		return fmt.Errorf("templates not available")
 	}
+	data := buildCertsFragmentData(certificates, expirationThresholds, messages, queryState, vaultDisplayNames, showVaultMount)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	return templates.ExecuteTemplate(w, "certs-fragment.html", data)
+}
+
+func buildCertsFragmentData(certificates []certs.Certificate, expirationThresholds config.ExpirationThresholds, messages i18n.Messages, queryState certsQueryState, vaultDisplayNames map[string]string, showVaultMount bool) certsFragmentTemplateData {
 	filteredByMount := filterCertificatesByMounts(certificates, queryState.SelectedMounts)
 	dashboardStats := computeDashboardStats(filteredByMount, expirationThresholds)
 	chartData := computeStatusChartData(filteredByMount, messages)
@@ -1081,60 +1100,7 @@ func renderCertsFragment(w http.ResponseWriter, templates *template.Template, ce
 	}
 	pageIndex = applyPageAction(queryState.PageAction, pageIndex, totalPages)
 	pageVisible, _ := paginateCertificates(visible, pageIndex, queryState.PageSize)
-	data := certsFragmentTemplateData{
-		ChartExpired:          chartData.Expired,
-		ChartHasData:          chartData.Total > 0,
-		ChartRevoked:          chartData.Revoked,
-		ChartTotal:            chartData.Total,
-		ChartValid:            chartData.Valid,
-		DashboardExpired:      dashboardStats.Expired,
-		DashboardExpiring:     dashboardStats.ExpiringSoon,
-		DashboardTotal:        dashboardStats.Total,
-		DashboardValid:        dashboardStats.Valid,
-		DonutCircumference:    chartData.Circumference,
-		DonutExpiredDash:      chartData.ExpiredDash,
-		DonutExpiredDashArray: chartData.ExpiredDashArray,
-		DonutExpiredOffset:    chartData.ExpiredOffset,
-		DonutHasExpired:       chartData.Expired > 0,
-		DonutHasRevoked:       chartData.Revoked > 0,
-		DonutHasValid:         chartData.Valid > 0,
-		DonutRevokedDash:      chartData.RevokedDash,
-		DonutRevokedDashArray: chartData.RevokedDashArray,
-		DonutRevokedOffset:    chartData.RevokedOffset,
-		DonutValidDash:        chartData.ValidDash,
-		DonutValidDashArray:   chartData.ValidDashArray,
-		DonutValidOffset:      chartData.ValidOffset,
-		DualStatusCount:       chartData.DualStatusCount,
-		DualStatusNoteText:    chartData.DualStatusNoteText,
-		AdminDocsTitle:        messages.AdminDocsTitle,
-		Messages:              messages,
-		ShowVaultMount:        showVaultMount,
-		PageCountHidden:       len(visible) == 0,
-		PageCountText:         fmt.Sprintf("%d", len(visible)),
-		PageIndex:             pageIndex,
-		PageInfoText:          buildPaginationInfo(messages, queryState.PageSize, pageIndex, totalPages),
-		PageNextDisabled:      queryState.PageSize == "all" || pageIndex >= totalPages-1,
-		PagePrevDisabled:      queryState.PageSize == "all" || pageIndex <= 0,
-		PaginationNextText:    messages.PaginationNext,
-		PaginationPrevText:    messages.PaginationPrev,
-		Rows:                  buildCertRows(pageVisible, messages, expirationThresholds, vaultDisplayNames, showVaultMount),
-		SortCommonActive:      sortKey == "commonName",
-		SortCommonDir:         resolveSortDirAttribute(sortKey, sortDirection, "commonName"),
-		SortCreatedActive:     sortKey == "createdAt",
-		SortCreatedDir:        resolveSortDirAttribute(sortKey, sortDirection, "createdAt"),
-		SortDirection:         sortDirection,
-		SortExpiresActive:     sortKey == "expiresAt",
-		SortExpiresDir:        resolveSortDirAttribute(sortKey, sortDirection, "expiresAt"),
-		SortVaultActive:       sortKey == "vault",
-		SortVaultDir:          resolveSortDirAttribute(sortKey, sortDirection, "vault"),
-		SortPkiActive:         sortKey == "pki",
-		SortPkiDir:            resolveSortDirAttribute(sortKey, sortDirection, "pki"),
-		SortKey:               sortKey,
-		TimelineItems:         timelineItems,
-	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	return templates.ExecuteTemplate(w, "certs-fragment.html", data)
+	return certsFragmentTemplateData{ChartExpired: chartData.Expired, ChartHasData: chartData.Total > 0, ChartRevoked: chartData.Revoked, ChartTotal: chartData.Total, ChartValid: chartData.Valid, DashboardExpired: dashboardStats.Expired, DashboardExpiring: dashboardStats.ExpiringSoon, DashboardTotal: dashboardStats.Total, DashboardValid: dashboardStats.Valid, DonutCircumference: chartData.Circumference, DonutExpiredDash: chartData.ExpiredDash, DonutExpiredDashArray: chartData.ExpiredDashArray, DonutExpiredOffset: chartData.ExpiredOffset, DonutHasExpired: chartData.Expired > 0, DonutHasRevoked: chartData.Revoked > 0, DonutHasValid: chartData.Valid > 0, DonutRevokedDash: chartData.RevokedDash, DonutRevokedDashArray: chartData.RevokedDashArray, DonutRevokedOffset: chartData.RevokedOffset, DonutValidDash: chartData.ValidDash, DonutValidDashArray: chartData.ValidDashArray, DonutValidOffset: chartData.ValidOffset, DualStatusCount: chartData.DualStatusCount, DualStatusNoteText: chartData.DualStatusNoteText, AdminDocsTitle: messages.AdminDocsTitle, Messages: messages, ShowVaultMount: showVaultMount, PageCountHidden: len(visible) == 0, PageCountText: fmt.Sprintf("%d", len(visible)), PageIndex: pageIndex, PageInfoText: buildPaginationInfo(messages, queryState.PageSize, pageIndex, totalPages), PageNextDisabled: queryState.PageSize == "all" || pageIndex >= totalPages-1, PagePrevDisabled: queryState.PageSize == "all" || pageIndex <= 0, PaginationNextText: messages.PaginationNext, PaginationPrevText: messages.PaginationPrev, Rows: buildCertRows(pageVisible, messages, expirationThresholds, vaultDisplayNames, showVaultMount), SortCommonActive: sortKey == "commonName", SortCommonDir: resolveSortDirAttribute(sortKey, sortDirection, "commonName"), SortCreatedActive: sortKey == "createdAt", SortCreatedDir: resolveSortDirAttribute(sortKey, sortDirection, "createdAt"), SortDirection: sortDirection, SortExpiresActive: sortKey == "expiresAt", SortExpiresDir: resolveSortDirAttribute(sortKey, sortDirection, "expiresAt"), SortVaultActive: sortKey == "vault", SortVaultDir: resolveSortDirAttribute(sortKey, sortDirection, "vault"), SortPkiActive: sortKey == "pki", SortPkiDir: resolveSortDirAttribute(sortKey, sortDirection, "pki"), SortKey: sortKey, TimelineItems: timelineItems}
 }
 
 func clampInt(value int, min int, max int) int {
