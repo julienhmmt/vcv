@@ -1,22 +1,9 @@
 const MOUNTS_ALL_SENTINEL = "__all__";
 
-const TIMEOUTS = {
-  ERROR_DEBOUNCE_MS: 200,
-  RETRY_BASE_MS: 1000,
-};
-
-const LIMITS = {
-  MAX_RETRIES: 3,
-};
-
 const state = {
   availableMounts: [],
   hasSyncedInitialUrl: false,
-  lastErrorAtByTargetId: new Map(),
-  lastRequestByTargetId: new Map(),
-  maxRetries: LIMITS.MAX_RETRIES,
   messages: {},
-  retryCount: new Map(),
   selectedMounts: [],
   suppressUrlUpdateUntilNextSuccess: false,
   vaultConnected: null,
@@ -37,14 +24,6 @@ function formatMountGroupTitle(group) {
   return "Vault";
 }
 
-function getRequestTargetId(detail) {
-  const target = detail && detail.target;
-  if (!target || !target.id) {
-    return "unknown";
-  }
-  return target.id;
-}
-
 function shouldSuppressErrorToast(detail) {
   const xhr = detail && detail.xhr;
   if (!xhr) {
@@ -52,17 +31,6 @@ function shouldSuppressErrorToast(detail) {
   }
   const isAbort = xhr.status === 0 && (xhr.statusText === "abort" || xhr.statusText === "");
   return isAbort;
-}
-
-function isRetryable(detail) {
-  const xhr = detail && detail.xhr;
-  if (!xhr) {
-    return true;
-  }
-  if (xhr.status === 0) {
-    return true;
-  }
-  return xhr.status >= 500;
 }
 
 function buildCertsPageUrl() {
@@ -181,27 +149,8 @@ function updateVaultPkiFiltersVisibility(vaultOptions, pkiOptions) {
 
 // HTMX Error Handler with translation support
 function initHtmxErrorHandler() {
-  document.body.addEventListener('htmx:configRequest', function(evt) {
-    const detail = evt.detail;
-    const targetId = getRequestTargetId(detail);
-    if (targetId !== "unknown") {
-      state.lastRequestByTargetId.set(targetId, {
-        verb: detail.verb,
-        path: detail.path,
-        requestConfig: detail.requestConfig,
-      });
-    }
-  });
-
   const handleErrorEvent = function(evt, kind) {
     const detail = evt.detail;
-    const targetId = getRequestTargetId(detail);
-    const now = Date.now();
-    const lastAt = state.lastErrorAtByTargetId.get(targetId) || 0;
-    if (now-lastAt < TIMEOUTS.ERROR_DEBOUNCE_MS) {
-      return;
-    }
-    state.lastErrorAtByTargetId.set(targetId, now);
     if (shouldSuppressErrorToast(detail)) {
       return;
     }
@@ -209,7 +158,7 @@ function initHtmxErrorHandler() {
     const status = xhr ? xhr.status : 0;
     const statusText = xhr ? xhr.statusText : kind;
     const url = xhr ? xhr.responseURL : "";
-    console.error('HTMX request failed:', {status, statusText, url, targetId});
+    console.error('HTMX request failed:', {status, statusText, url});
     const messages = state.messages;
     let errorMessage = messages.errorGeneric || "Request failed";
     if (status === 404) {
@@ -220,9 +169,6 @@ function initHtmxErrorHandler() {
       errorMessage = messages.errorNetwork || "Network error";
     }
     showErrorToast(errorMessage);
-    if (isRetryable(detail)) {
-      handleRetry(targetId);
-    }
   };
 
   document.body.addEventListener('htmx:responseError', function(evt) {
@@ -237,40 +183,6 @@ function initHtmxErrorHandler() {
     handleErrorEvent(evt, "timeout");
   });
   
-  document.body.addEventListener('htmx:afterRequest', function(evt) {
-    // Reset retry count on success
-    if (evt.detail.successful) {
-      state.retryCount.delete(evt.detail.target.id);
-    }
-  });
-}
-
-// Retry strategy with exponential backoff
-function handleRetry(targetId) {
-  const currentRetries = state.retryCount.get(targetId) || 0;
-  
-  if (currentRetries >= state.maxRetries) {
-    state.retryCount.delete(targetId);
-    const messages = state.messages;
-    const finalError = messages.errorMaxRetries || "Maximum retry attempts reached";
-    showErrorToast(finalError);
-    return;
-  }
-  
-  const delay = Math.pow(2, currentRetries) * TIMEOUTS.RETRY_BASE_MS; // 1s, 2s, 4s
-  state.retryCount.set(targetId, currentRetries + 1);
-  
-  const messages = state.messages;
-  const retryMessage = messages.errorRetry || `Retrying... (${currentRetries + 1}/${state.maxRetries})`;
-  showInfoToast(retryMessage);
-  
-  setTimeout(() => {
-    const lastRequest = state.lastRequestByTargetId.get(targetId);
-    if (!lastRequest || !lastRequest.requestConfig) {
-      return;
-    }
-    window.htmx.ajax(lastRequest.verb, lastRequest.path, lastRequest.requestConfig);
-  }, delay);
 }
 
 function initModalHandlers() {
@@ -464,55 +376,6 @@ function initClientValidation() {
         showErrorToast(validationError);
         return;
       }
-    }
-  });
-}
-
-// Cache management
-function initCacheManagement() {
-  // Configure HTMX cache behavior
-  document.body.addEventListener('htmx:configRequest', function(evt) {
-    // Add cache control headers
-    const headers = evt.detail.headers;
-    
-    // Cache GET requests for 5 minutes
-    if (evt.detail.verb === 'GET') {
-      headers['Cache-Control'] = 'max-age=300';
-    }
-    
-    // Add ETag support
-    headers['If-None-Match'] = localStorage.getItem('vcv-etag-' + evt.detail.path) || '';
-  });
-  
-  // Handle cache responses
-  document.body.addEventListener('htmx:afterRequest', function(evt) {
-    const xhr = evt.detail.xhr;
-    const etag = xhr.getResponseHeader('ETag');
-    
-    if (etag && evt.detail.path) {
-      localStorage.setItem('vcv-etag-' + evt.detail.path, etag);
-    }
-    
-    // Handle 304 Not Modified
-    if (xhr.status === 304) {
-      evt.preventDefault();
-      console.log('Using cached version for:', evt.detail.path);
-    }
-  });
-  
-  // Clear cache on refresh
-  document.addEventListener('htmx:afterRequest', function(evt) {
-    if (evt.detail.path === '/ui/certs/refresh') {
-      // Clear all cache when explicitly refreshing
-      Object.keys(localStorage).forEach(key => {
-        if (key.startsWith('vcv-etag-')) {
-          localStorage.removeItem(key);
-        }
-      });
-      
-      const messages = state.messages;
-      const cacheCleared = messages.cacheCleared || "Cache cleared";
-      showInfoToast(cacheCleared);
     }
   });
 }
@@ -1254,7 +1117,6 @@ async function main() {
   // Initialize HTMX enhancements
   initHtmxErrorHandler();
   initClientValidation();
-  initCacheManagement();
   
   const isCertsPage = !!document.getElementById("vcv-certs-body");
   if (isCertsPage) {
