@@ -1923,11 +1923,7 @@ body {
     border-color 0.2s ease;
 }
 
-.vcv-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--vcv-color-border-strong);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
-}
+/* .vcv-card:hover removed */
 
 .vcv-card-icon {
   width: 3rem;
@@ -1992,11 +1988,7 @@ body {
     border-color 0.2s ease;
 }
 
-.vcv-chart-container:hover {
-  transform: translateY(-2px);
-  border-color: var(--vcv-color-border-strong);
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-}
+/* .vcv-chart-container:hover removed */
 
 .vcv-chart-title {
   font-size: 0.875rem;
@@ -2099,11 +2091,7 @@ body {
     box-shadow 0.2s ease;
 }
 
-.vcv-timeline-item:hover {
-  background: var(--vcv-color-surface-muted);
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
-}
+/* .vcv-timeline-item:hover removed */
 
 .vcv-timeline-dot {
   width: 0.5rem;
