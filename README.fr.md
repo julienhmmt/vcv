@@ -1,8 +1,10 @@
 # VaultCertsViewer 🔐
 
-VaultCertsViewer (vcv) est une interface web légère qui permet de lister et de consulter les certificats stockés dans un ou plusieurs coffres 'pki' d'HashiCorp Vault. Elle affiche notamment les noms communs, les SAN et surtout les dates d'expiration des certificats.
+VaultCertsViewer (vcv) est une interface web légère qui permet de lister et de consulter les certificats stockés dans un ou plusieurs coffres 'pki' d'Hashicorp Vault ou OpenBao. Elle affiche notamment les noms communs, les SAN et surtout les dates d'expiration des certificats.
 
-VaultCertsViewer (vcv) peut surveiller simultanément plusieurs moteurs PKI via une seule interface, avec un sélecteur modal pour choisir les montages à afficher. Grâce au fichier de configuration `settings.json`, VCV peut se connecter à plusieurs instances Vault et montages PKI.
+VaultCertsViewer (vcv) peut surveiller simultanément plusieurs moteurs PKI via une seule interface, avec un sélecteur modal pour choisir les montages à afficher. Grâce au fichier de configuration `settings.json`, VCV peut se connecter à plusieurs instances Vault/OpenBao et montages PKI.
+
+**Compatible avec OpenBao** : VCV fonctionne avec Hashicorp Vault et OpenBao, car ils partagent la même API PKI. Testé avec OpenBao 2.4 et Vault 1.21 (au 01/2026).
 
 ## ✨ Quelles sont les fonctionnalités ?
 
@@ -16,18 +18,18 @@ VaultCertsViewer (vcv) peut surveiller simultanément plusieurs moteurs PKI via 
 
 ## 🎯 Pourquoi cet outil existe-t-il ?
 
-L'interface de Vault est trop lourde et complexe pour consulter les certificats. Elle ne permet pas **facilement** et rapidement de consulter les dates d'expiration et les détails des certificats.
+L'interface de Vault/OpenBao est trop lourde et complexe pour consulter les certificats. Elle ne permet pas **facilement** et rapidement de consulter les dates d'expiration et les détails des certificats.
 
-VaultCertsViewer permet aux équipes plateforme / sécurité / ops une vue rapide et en **lecture seule** sur l'inventaire PKI Vault avec les seules informations nécessaires et utiles.
+VaultCertsViewer permet aux équipes plateforme / sécurité / ops une vue rapide et en **lecture seule** sur l'inventaire PKI Vault/OpenBao avec les seules informations nécessaires et utiles.
 
 ## 👥 À qui s'adresse-t-il ?
 
-- Aux equipes exploitant l'outil Vault PKI qui ont besoin de visibilité sur leurs certificats.
-- Aux opérateurs qui veulent une vue navigateur prête à l’emploi, à côté de la CLI ou de la Web UI de Vault.
+- Aux equipes exploitant l'outil Vault/OpenBao PKI qui ont besoin de visibilité sur leurs certificats.
+- Aux opérateurs qui veulent une vue navigateur prête à l'emploi, à côté de la CLI ou de la Web UI de Vault/OpenBao.
 
-## 🚀 Comment le déployer et l'utiliser ?
+## 🚀 Comment le déployer et l'utiliser pour Hashicorp Vault ?
 
-Dans HashiCorp Vault, créez un rôle et un jeton en lecture seule pour l'API afin d'accéder aux certificats des moteurs PKI ciblés. Pour plusieurs montages, vous pouvez spécifier chaque montage explicitement ou utiliser des motifs génériques :
+Dans Hashicorp Vault **ou OpenBao**, créez un rôle et un jeton en lecture seule pour l'API afin d'accéder aux certificats des moteurs PKI ciblés. Pour plusieurs montages, vous pouvez spécifier chaque montage explicitement ou utiliser des motifs génériques :
 
 ```bash
 # Option 1 : Montages explicites (recommandé pour la production). Remplacez 'pki' et 'pki2' par vos montages réels.
@@ -48,6 +50,33 @@ EOF
 
 vault write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
 vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
+```
+
+Ce jeton dédié limite les droits à la consultation des certificats, peut être renouvelé et sert de valeur `VAULT_READ_TOKEN` pour l'application.
+
+## 🚀 Comment le déployer et l'utiliser pour OpenBao
+
+Dans OpenBao, créez un rôle et un jeton en lecture seule pour l'API afin d'accéder aux certificats des moteurs PKI ciblés. Les commandes sont similaires à Vault mais utilisent la CLI `bao` :
+
+```bash
+# Option 1 : Montages explicites (recommandé pour la production). Remplacez 'pki' et 'pki2' par vos montages réels.
+bao policy write vcv - <<'EOF'
+path "pki/certs"    { capabilities = ["list"] }
+path "pki/certs/*"  { capabilities = ["read","list"] }
+path "pki2/certs"   { capabilities = ["list"] }
+path "pki2/certs/*" { capabilities = ["read","list"] }
+path "sys/health"   { capabilities = ["read"] }
+EOF
+
+# Option 2 : Motif générique (pour environnements dynamiques)
+bao policy write vcv - <<'EOF'
+path "pki*/certs"    { capabilities = ["list"] }
+path "pki*/certs/*"  { capabilities = ["read","list"] }
+path "sys/health"     { capabilities = ["read"] }
+EOF
+
+bao write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
+bao token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 ```
 
 Ce jeton dédié limite les droits à la consultation des certificats, peut être renouvelé et sert de valeur `VAULT_READ_TOKEN` pour l'application.
@@ -103,9 +132,9 @@ docker run -d \
   -p 52000:52000 jhmmt/vcv:1.5
 ```
 
-## 🔐 Configuration TLS Vault
+## 🔐 Configuration TLS Vault/OpenBao
 
-VCV supporte la configuration TLS de Vault via `settings.json` (recommandé) ou via des variables d’environnement (fallback historique).
+VCV supporte la configuration TLS de Vault/OpenBao via `settings.json` (recommandé) ou via des variables d’environnement (fallback historique).
 
 Par instance Vault (`vaults[]`), vous pouvez configurer :
 

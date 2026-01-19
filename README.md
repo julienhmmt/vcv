@@ -1,8 +1,10 @@
 # VaultCertsViewer 🔐
 
-VaultCertsViewer (vcv) is a lightweight web UI that lists and inspects certificates stored in one or more HashiCorp Vault PKI mounts, especially their expiration dates and SANs.
+VaultCertsViewer (vcv) is a lightweight web UI that lists and inspects certificates stored in one or more Hashicorp Vault or OpenBao PKI (the Hashicorp Vault fork) mounts, especially their expiration dates and SANs.
 
-VaultCertsViewer can simultaneously monitor multiple PKI engines through a single interface, with a modal selector to choose which mounts to display. With its `settings.json` file configuration, VCV can connect to multiple Vault instances and PKI mounts.
+VaultCertsViewer can simultaneously monitor multiple PKI engines through a single interface, with a modal selector to choose which mounts to display. With its `settings.json` file configuration, VCV can connect to multiple Vault/OpenBao instances and PKI mounts.
+
+**OpenBao compatible**: VCV works seamlessly with both Hashicorp Vault and OpenBao, as they share the same PKI API. Tested with OpenBao 2.4 and Vault 1.21 (as of 01/2026).
 
 ## ✨ What it does
 
@@ -16,16 +18,16 @@ VaultCertsViewer can simultaneously monitor multiple PKI engines through a singl
 
 ## 🎯 Why it exists
 
-The native Vault UI is heavy and not convenient for quickly checking certificate expirations and details. VaultCertsViewer gives platform / security / ops teams a fast, **read-only** view of the Vault PKI inventory with only the essential information.
+The native Vault/OpenBao UI is heavy and not convenient for quickly checking certificate expirations and details. VaultCertsViewer gives platform / security / ops teams a fast, **read-only** view of the Vault/OpenBao PKI inventory with only the essential information.
 
 ## 👥 Who should use it
 
-- Teams operating Vault PKI who need visibility on their certificates.
-- Operators who want a ready-to-use browser view alongside Vault CLI or Web UI.
+- Teams operating Vault/OpenBao PKI who need visibility on their certificates.
+- Operators who want a ready-to-use browser view alongside Vault/OpenBao CLI or Web UI.
 
-## 🚀 How to deploy and use
+## 🚀 How to deploy and use for Hashicorp Vault
 
-In HashiCorp Vault, create a read-only role and token for the API to reach the target PKI engines. For multiple mounts, you can either specify each mount explicitly or use wildcard patterns:
+In Hashicorp Vault, create a read-only role and token for the API to reach the target PKI engines. For multiple mounts, you can either specify each mount explicitly or use wildcard patterns:
 
 ```bash
 # Option 1: Explicit mounts (recommended for production). Replace 'pki' and 'pki2' with your actual mount names.
@@ -46,6 +48,33 @@ EOF
 
 vault write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
 vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
+```
+
+This dedicated token limits permissions to certificate listing/reading, can be renewed, and is used as `VAULT_READ_TOKEN` by the app.
+
+## 🚀 How to deploy and use for OpenBao
+
+In OpenBao, create a read-only role and token for the API to reach the target PKI engines. The commands are similar to Vault but use the `bao` CLI:
+
+```bash
+# Option 1: Explicit mounts (recommended for production). Replace 'pki' and 'pki2' with your actual mount names.
+bao policy write vcv - <<'EOF'
+path "pki/certs"    { capabilities = ["list"] }
+path "pki/certs/*"  { capabilities = ["read","list"] }
+path "pki2/certs"   { capabilities = ["list"] }
+path "pki2/certs/*" { capabilities = ["read","list"] }
+path "sys/health"   { capabilities = ["read"] }
+EOF
+
+# Option 2: Wildcard pattern (for dynamic environments)
+bao policy write vcv - <<'EOF'
+path "pki*/certs"    { capabilities = ["list"] }
+path "pki*/certs/*"  { capabilities = ["read","list"] }
+path "sys/health"     { capabilities = ["read"] }
+EOF
+
+bao write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
+bao token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 ```
 
 This dedicated token limits permissions to certificate listing/reading, can be renewed, and is used as `VAULT_READ_TOKEN` by the app.
@@ -101,9 +130,9 @@ docker run -d \
   -p 52000:52000 jhmmt/vcv:1.5
 ```
 
-## 🔐 Vault TLS configuration
+## 🔐 Vault/OpenBao TLS configuration
 
-VCV supports configuring Vault TLS verification and custom CA bundles either through `settings.json` (recommended) or environment variables (legacy fallback).
+VCV supports configuring Vault/OpenBao TLS verification and custom CA bundles either through `settings.json` (recommended) or environment variables (legacy fallback).
 
 Per Vault instance (`vaults[]`), you can configure:
 

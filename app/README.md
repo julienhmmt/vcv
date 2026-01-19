@@ -1,13 +1,14 @@
 # VaultCertsViewer — Technical overview
 
-This document describes the technical structure of VaultCertsViewer (vcv), a single Go binary that embeds a static HTML/CSS/JS UI to browse and manage certificates from one or more HashiCorp Vault PKI mounts.
+This document describes the technical structure of VaultCertsViewer (vcv), a single Go binary that embeds a static HTML/CSS/JS UI to browse and manage certificates from one or more HashiCorp Vault or OpenBao PKI mounts.
 
 ## Architecture
 
-- **Backend**: Go + chi router, Vault client (`github.com/hashicorp/vault/api`), zerolog-based logging.
+- **Backend**: Go + chi router, Vault/OpenBao client (`github.com/hashicorp/vault/api`), zerolog-based logging.
 - **Frontend**: Plain `index.html`, `styles.css`, `app-htmx.js` served from the embedded filesystem (no Node/bundler).
 - **Binary layout**: `app/cmd/server` embeds `/web` assets via Go `embed`; a single executable serves both API and UI.
 - **HTMX Integration**: Certificate UI fragments under `/ui/*` and optional Admin panel under `/admin/*`.
+- **OpenBao compatibility**: Uses the same Vault client library which works with both Hashicorp Vault and OpenBao due to API compatibility.
 
 ## Directory layout (app/)
 
@@ -336,7 +337,7 @@ See README.md on the root path for production deployment instructions.
 
 ### Development
 
-A HashiCorp Vault server is required to run the application in development mode. Thus, a container with an init script is provided in `docker-compose.dev.yml`. It will initialize a Vault server with a PKI mount and some certs.
+A Hashicorp Vault or OpenBao server is required to run the application in development mode. Thus, a container with an init script is provided in `docker-compose.dev.yml`. It will initialize a Vault server with a PKI mount and some certs.
 
 ```bash
 make dev
