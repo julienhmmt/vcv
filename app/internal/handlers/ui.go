@@ -235,7 +235,7 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 		}
 		language := i18n.ResolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
-		var queryState certsQueryState = parseCertsQueryState(r)
+		queryState := parseCertsQueryState(r)
 		var certificates []certs.Certificate
 		var listErr error
 		certificates, listErr = vaultClient.ListCertificates(r.Context())
@@ -246,7 +246,7 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 				Msg("failed to list certificates for index")
 			certificates = []certs.Certificate{}
 		}
-		var certsData certsFragmentTemplateData = buildCertsFragmentData(certificates, expirationThresholds, messages, queryState, vaultDisplayNames, showVaultMount)
+		certsData := buildCertsFragmentData(certificates, expirationThresholds, messages, queryState, vaultDisplayNames, showVaultMount)
 		data := indexTemplateData{Language: string(language), Messages: messages, Certs: certsData}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := templates.ExecuteTemplate(w, "index.html", data); err != nil {

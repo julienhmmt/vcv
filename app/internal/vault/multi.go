@@ -113,7 +113,7 @@ func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate
 		certificates []certs.Certificate
 		err          error
 	}
-	var resultChan chan result = make(chan result, len(c.orderedVaultIDs))
+	resultChan := make(chan result, len(c.orderedVaultIDs))
 	var wg sync.WaitGroup
 	for _, vaultID := range c.orderedVaultIDs {
 		client := c.clientsByVault[vaultID]
@@ -138,8 +138,8 @@ func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate
 		wg.Wait()
 		close(resultChan)
 	}()
-	var all []certs.Certificate = make([]certs.Certificate, 0)
-	var successCount int = 0
+	all := make([]certs.Certificate, 0)
+	successCount := 0
 	var lastError error
 	for res := range resultChan {
 		if res.err != nil {

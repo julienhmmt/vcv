@@ -138,8 +138,8 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 		return []certs.Certificate{}, ErrVaultNotConfigured
 	}
 	var allCertificates []certs.Certificate
-	var revokedSet map[string]bool = make(map[string]bool)
-	var listedMounts int = 0
+	revokedSet := make(map[string]bool)
+	listedMounts := 0
 	var lastError error
 
 	// Collect certificates from all mounts
