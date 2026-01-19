@@ -1,8 +1,10 @@
 package vault
 
 import (
+	"bytes"
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -11,6 +13,7 @@ import (
 
 	"vcv/config"
 	"vcv/internal/certs"
+	"vcv/internal/logger"
 )
 
 type fakeSizerClient struct {
@@ -193,4 +196,142 @@ func TestMultiClient_InvalidateCache_And_Shutdown_Unique(t *testing.T) {
 	m.Shutdown()
 	c1.AssertExpectations(t)
 	c2.AssertExpectations(t)
+}
+
+// TestMultiClient_Logging tests that logging works correctly for multi-vault operations
+func TestMultiClient_Logging(t *testing.T) {
+	// Setup logger to capture output
+	logger.Init("debug")
+	var buf bytes.Buffer
+	logger.SetOutput(&buf)
+
+	instances := []config.VaultInstance{{ID: "v1"}, {ID: "v2"}}
+	c1 := &MockClient{}
+	c2 := &MockClient{}
+
+	// Mock successful certificate listing
+	certs := []certs.Certificate{{ID: "cert1", CommonName: "test.com"}}
+	c1.On("ListCertificates", mock.Anything).Return(certs, nil)
+	c2.On("ListCertificates", mock.Anything).Return(certs, nil)
+
+	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2})
+
+	// Test CheckConnection logging
+	buf.Reset()
+	c1.On("CheckConnection", mock.Anything).Return(nil)
+	c2.On("CheckConnection", mock.Anything).Return(nil)
+
+	err := m.CheckConnection(context.Background())
+	assert.NoError(t, err)
+
+	output := buf.String()
+	if !strings.Contains(output, "checking connection to vault instances") {
+		t.Errorf("Expected connection check start log, got: %s", output)
+	}
+	if !strings.Contains(output, "checking connection to vault instance") {
+		t.Errorf("Expected per-vault connection check log, got: %s", output)
+	}
+	if !strings.Contains(output, "successfully connected to vault instance") {
+		t.Errorf("Expected success connection logs, got: %s", output)
+	}
+	if !strings.Contains(output, "all vault instances connected successfully") {
+		t.Errorf("Expected final success log, got: %s", output)
+	}
+
+	// Test ListCertificates logging
+	buf.Reset()
+	_, err = m.ListCertificates(context.Background())
+	assert.NoError(t, err)
+
+	output = buf.String()
+	if !strings.Contains(output, "listing certificates from all vault instances") {
+		t.Errorf("Expected listing start log, got: %s", output)
+	}
+	if !strings.Contains(output, "fetching certificates from vault instance") {
+		t.Errorf("Expected per-vault fetching logs, got: %s", output)
+	}
+	if !strings.Contains(output, "successfully fetched certificates from vault instance") {
+		t.Errorf("Expected success fetching logs, got: %s", output)
+	}
+	if !strings.Contains(output, "completed certificate listing from all vault instances") {
+		t.Errorf("Expected completion log, got: %s", output)
+	}
+}
+
+// TestMultiClient_LoggingErrors tests that error logging works correctly for multi-vault operations
+func TestMultiClient_LoggingErrors(t *testing.T) {
+	// Setup logger to capture output
+	logger.Init("debug")
+	var buf bytes.Buffer
+	logger.SetOutput(&buf)
+
+	instances := []config.VaultInstance{{ID: "v1"}, {ID: "v2"}}
+	c1 := &MockClient{}
+	c2 := &MockClient{}
+
+	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2})
+
+	// Test CheckConnection error logging
+	buf.Reset()
+	c1.On("CheckConnection", mock.Anything).Return(nil)
+	c2.On("CheckConnection", mock.Anything).Return(errors.New("connection failed"))
+
+	err := m.CheckConnection(context.Background())
+	assert.Error(t, err)
+
+	output := buf.String()
+	if !strings.Contains(output, "checking connection to vault instances") {
+		t.Errorf("Expected connection check start log, got: %s", output)
+	}
+	if !strings.Contains(output, "failed to connect to vault instance") {
+		t.Errorf("Expected error connection log, got: %s", output)
+	}
+
+	// Test ListCertificates error logging
+	buf.Reset()
+	c1.On("ListCertificates", mock.Anything).Return([]certs.Certificate{}, nil)
+	c2.On("ListCertificates", mock.Anything).Return([]certs.Certificate{}, errors.New("listing failed"))
+
+	_, err = m.ListCertificates(context.Background())
+	assert.NoError(t, err) // Should succeed with partial results
+
+	output = buf.String()
+	if !strings.Contains(output, "listing certificates from all vault instances") {
+		t.Errorf("Expected listing start log, got: %s", output)
+	}
+	if !strings.Contains(output, "failed to fetch certificates from vault instance") {
+		t.Errorf("Expected error fetching log, got: %s", output)
+	}
+}
+
+// TestMultiClient_LoggingNoVaults tests logging when no vaults are configured
+func TestMultiClient_LoggingNoVaults(t *testing.T) {
+	// Setup logger to capture output
+	logger.Init("debug")
+	var buf bytes.Buffer
+	logger.SetOutput(&buf)
+
+	m := NewMultiClient([]config.VaultInstance{}, map[string]Client{})
+
+	// Test CheckConnection with no vaults
+	buf.Reset()
+	err := m.CheckConnection(context.Background())
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrVaultNotConfigured)
+
+	output := buf.String()
+	if !strings.Contains(output, "no vault instances configured for connection check") {
+		t.Errorf("Expected no vaults log, got: %s", output)
+	}
+
+	// Test ListCertificates with no vaults
+	buf.Reset()
+	_, err = m.ListCertificates(context.Background())
+	assert.Error(t, err)
+	assert.ErrorIs(t, err, ErrVaultNotConfigured)
+
+	output = buf.String()
+	if !strings.Contains(output, "no vault instances configured for certificate listing") {
+		t.Errorf("Expected no vaults listing log, got: %s", output)
+	}
 }

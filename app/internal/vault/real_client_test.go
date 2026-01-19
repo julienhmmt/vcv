@@ -1,6 +1,7 @@
 package vault
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
@@ -15,12 +16,14 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
 	"vcv/config"
 	"vcv/internal/cache"
 	"vcv/internal/certs"
+	"vcv/internal/logger"
 
 	"github.com/hashicorp/vault/api"
 )
@@ -464,5 +467,152 @@ func TestRealClient_CacheSize(t *testing.T) {
 	client.cache.Set("k2", "v2")
 	if client.CacheSize() != 2 {
 		t.Fatalf("expected cache size 2")
+	}
+}
+
+// TestRealClient_Logging tests that logging works correctly for vault operations
+func TestRealClient_Logging(t *testing.T) {
+	// Setup logger to capture output
+	logger.Init("debug")
+	var buf bytes.Buffer
+	logger.SetOutput(&buf)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/sys/health":
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"initialized": true,
+				"sealed":      false,
+				"version":     "1.12.0",
+			})
+		case "/v1/pki/certs":
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"data": map[string][]string{"keys": {"01"}},
+			})
+		case "/v1/pki/cert/01":
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"data": map[string]string{
+					"certificate": newVaultTestCertificatePEM(t),
+				},
+			})
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+
+	// Test CheckConnection logging
+	buf.Reset()
+	err := client.CheckConnection(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "checking vault connection") {
+		t.Errorf("Expected connection check log, got: %s", output)
+	}
+	if !strings.Contains(output, "vault connection successful") {
+		t.Errorf("Expected successful connection log, got: %s", output)
+	}
+
+	// Test ListCertificates logging
+	buf.Reset()
+	_, err = client.ListCertificates(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	output = buf.String()
+	if !strings.Contains(output, "listing certificates from vault mounts") {
+		t.Errorf("Expected listing logs, got: %s", output)
+	}
+	if !strings.Contains(output, "listing certificates from mount") {
+		t.Errorf("Expected mount listing logs, got: %s", output)
+	}
+	if !strings.Contains(output, "successfully listed certificates from mount") {
+		t.Errorf("Expected success logs, got: %s", output)
+	}
+	if !strings.Contains(output, "completed certificate listing and cached result") {
+		t.Errorf("Expected completion logs, got: %s", output)
+	}
+
+	// Test GetCertificateDetails logging
+	buf.Reset()
+	_, err = client.GetCertificateDetails(context.Background(), "01")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	output = buf.String()
+	if !strings.Contains(output, "getting certificate details") {
+		t.Errorf("Expected details log, got: %s", output)
+	}
+	if !strings.Contains(output, "successfully retrieved and cached certificate details") {
+		t.Errorf("Expected success details log, got: %s", output)
+	}
+
+	// Test InvalidateCache logging
+	buf.Reset()
+	client.InvalidateCache()
+
+	output = buf.String()
+	if !strings.Contains(output, "invalidating vault client cache") {
+		t.Errorf("Expected cache invalidation start log, got: %s", output)
+	}
+	if !strings.Contains(output, "cache invalidated successfully") {
+		t.Errorf("Expected cache invalidation success log, got: %s", output)
+	}
+}
+
+// TestRealClient_LoggingErrors tests that error logging works correctly
+func TestRealClient_LoggingErrors(t *testing.T) {
+	// Setup logger to capture output
+	logger.Init("debug")
+	var buf bytes.Buffer
+	logger.SetOutput(&buf)
+
+	// Create a server that returns errors
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/v1/sys/health":
+			w.WriteHeader(http.StatusInternalServerError)
+		case "/v1/pki/certs":
+			w.WriteHeader(http.StatusInternalServerError)
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+
+	// Test CheckConnection error logging
+	buf.Reset()
+	err := client.CheckConnection(context.Background())
+	if err == nil {
+		t.Fatal("expected error")
+	}
+
+	output := buf.String()
+	if !strings.Contains(output, "vault health check failed") {
+		t.Errorf("Expected health check error log, got: %s", output)
+	}
+
+	// Test ListCertificates error logging
+	buf.Reset()
+	_, err = client.ListCertificates(context.Background())
+	if err == nil {
+		t.Fatal("expected error")
+	}
+
+	output = buf.String()
+	if !strings.Contains(output, "failed to list certificates from mount") {
+		t.Errorf("Expected mount listing error log, got: %s", output)
 	}
 }

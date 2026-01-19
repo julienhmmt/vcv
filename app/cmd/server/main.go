@@ -176,6 +176,7 @@ func main() {
 	log.Info().
 		Str("vault_addr", cfg.Vault.Addr).
 		Strs("vault_mounts", cfg.Vault.PKIMounts).
+		Int("vault_instances_count", len(cfg.Vaults)).
 		Msg("Vault client initialized")
 
 	registry := prometheus.NewRegistry()
@@ -190,6 +191,9 @@ func main() {
 
 	settingsPath := strings.TrimSpace(os.Getenv("SETTINGS_PATH"))
 	if settingsPath == "" {
+		log.Info().
+			Str("env", string(cfg.Env)).
+			Msg("No SETTINGS_PATH provided, searching for default settings files")
 		candidates := []string{fmt.Sprintf("settings.%s.json", string(cfg.Env)), "settings.json", "./settings.json", "/etc/vcv/settings.json"}
 		for _, candidate := range candidates {
 			absPath, absErr := filepath.Abs(candidate)
@@ -206,6 +210,10 @@ func main() {
 			settingsPath = filepath.Join(".", fmt.Sprintf("settings.%s.json", string(cfg.Env)))
 		}
 	}
+
+	log.Info().
+		Str("settings_path", settingsPath).
+		Msg("Using admin settings file")
 
 	router, buildErr := buildRouter(cfg, primaryVaultClient, statusClients, multiVaultClient, registry, webFS, settingsPath)
 	if buildErr != nil {

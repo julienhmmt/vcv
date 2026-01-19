@@ -20,10 +20,15 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 	r.Get("/api/certs", func(w http.ResponseWriter, req *http.Request) {
 		// Parse mount filter from query parameters
 		selectedMounts := parseMountsQueryParam(req.URL.Query())
+		requestID := middleware.GetRequestID(req.Context())
+
+		logger.Get().Debug().
+			Str("request_id", requestID).
+			Strs("selected_mounts", selectedMounts).
+			Msg("listing certificates with mount filters")
 
 		certificates, err := vaultClient.ListCertificates(req.Context())
 		if err != nil {
-			requestID := middleware.GetRequestID(req.Context())
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
 				Msg("failed to list certificates")
@@ -31,24 +36,27 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			return
 		}
 
+		logger.Get().Debug().
+			Str("request_id", requestID).
+			Int("total_certificates", len(certificates)).
+			Msg("retrieved certificates from vault")
+
 		// Filter certificates by selected mounts
 		filteredCertificates := filterCertificatesByMounts(certificates, selectedMounts)
 
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(filteredCertificates); err != nil {
-			requestID := middleware.GetRequestID(req.Context())
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
 				Msg("failed to encode certificates response")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		requestID := middleware.GetRequestID(req.Context())
 		logger.HTTPEvent(req.Method, req.URL.Path, http.StatusOK, 0).
 			Str("request_id", requestID).
 			Int("count", len(filteredCertificates)).
 			Strs("mounts", selectedMounts).
-			Msg("listed certificates")
+			Msg("certificates listed successfully")
 	})
 
 	r.Get("/api/certs/{id}/details", func(w http.ResponseWriter, req *http.Request) {
@@ -62,9 +70,14 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			return
 		}
 
+		requestID := middleware.GetRequestID(req.Context())
+		logger.Get().Debug().
+			Str("request_id", requestID).
+			Str("certificate_id", certificateID).
+			Msg("fetching certificate details")
+
 		details, err := vaultClient.GetCertificateDetails(req.Context(), certificateID)
 		if err != nil {
-			requestID := middleware.GetRequestID(req.Context())
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
 				Str("serial_number", certificateID).
@@ -75,14 +88,12 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(details); err != nil {
-			requestID := middleware.GetRequestID(req.Context())
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
 				Msg("failed to encode certificate details response")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		requestID := middleware.GetRequestID(req.Context())
 		logger.HTTPEvent(req.Method, req.URL.Path, http.StatusOK, 0).
 			Str("request_id", requestID).
 			Str("serial_number", certificateID).

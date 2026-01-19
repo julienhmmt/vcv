@@ -16,6 +16,7 @@ import (
 	"vcv/config"
 	"vcv/internal/cache"
 	"vcv/internal/certs"
+	"vcv/internal/logger"
 
 	"github.com/hashicorp/vault/api"
 )
@@ -43,6 +44,7 @@ func decodeBase64String(value string) ([]byte, error) {
 
 func NewClientFromConfig(cfg config.VaultConfig) (Client, error) {
 	if cfg.Addr == "" && cfg.ReadToken == "" {
+		logger.Get().Debug().Msg("creating disabled vault client - no address and token provided")
 		return &disabledClient{}, nil
 	}
 	if cfg.Addr == "" {
@@ -51,6 +53,11 @@ func NewClientFromConfig(cfg config.VaultConfig) (Client, error) {
 	if cfg.ReadToken == "" {
 		return nil, fmt.Errorf("vault read token is empty")
 	}
+
+	logger.Get().Debug().
+		Str("vault_addr", cfg.Addr).
+		Strs("vault_mounts", cfg.PKIMounts).
+		Msg("creating new vault client")
 
 	clientConfig := api.DefaultConfig()
 	if clientConfig == nil {
@@ -87,6 +94,11 @@ func NewClientFromConfig(cfg config.VaultConfig) (Client, error) {
 		stopChan: make(chan struct{}),
 	}
 
+	logger.Get().Info().
+		Str("vault_addr", cfg.Addr).
+		Int("mount_count", len(cfg.PKIMounts)).
+		Msg("vault client created successfully")
+
 	// Start periodic cache cleanup
 	go func() {
 		ticker := time.NewTicker(1 * time.Minute)
@@ -106,24 +118,47 @@ func NewClientFromConfig(cfg config.VaultConfig) (Client, error) {
 
 // CheckConnection verifies Vault availability and seal status.
 func (c *realClient) CheckConnection(ctx context.Context) error {
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
+		Msg("checking vault connection")
+
 	health, err := c.client.Sys().HealthWithContext(ctx)
 	if err != nil {
+		logger.Get().Error().
+			Str("vault_addr", c.addr).
+			Err(err).
+			Msg("vault health check failed")
 		return fmt.Errorf("vault health check failed: %w", err)
 	}
 	if health == nil {
 		return fmt.Errorf("vault health response is nil")
 	}
 	if !health.Initialized {
+		logger.Get().Error().
+			Str("vault_addr", c.addr).
+			Msg("vault is not initialized")
 		return fmt.Errorf("vault is not initialized")
 	}
 	if health.Sealed {
+		logger.Get().Error().
+			Str("vault_addr", c.addr).
+			Msg("vault is sealed")
 		return fmt.Errorf("vault is sealed")
 	}
+
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
+		Str("version", health.Version).
+		Msg("vault connection successful")
+
 	return nil
 }
 
 // Shutdown stops background goroutines.
 func (c *realClient) Shutdown() {
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
+		Msg("shutting down vault client")
 	close(c.stopChan)
 }
 
@@ -131,9 +166,19 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 	// Try cache first
 	if cached, found := c.cache.Get("certificates"); found {
 		if certificates, ok := cached.([]certs.Certificate); ok {
+			logger.Get().Debug().
+				Str("vault_addr", c.addr).
+				Int("cached_certificates", len(certificates)).
+				Msg("serving certificates from cache")
 			return certificates, nil
 		}
 	}
+
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
+		Strs("mounts", c.mounts).
+		Msg("listing certificates from vault mounts")
+
 	if len(c.mounts) == 0 {
 		return []certs.Certificate{}, ErrVaultNotConfigured
 	}
@@ -144,12 +189,30 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 
 	// Collect certificates from all mounts
 	for _, mount := range c.mounts {
+		logger.Get().Debug().
+			Str("vault_addr", c.addr).
+			Str("mount", mount).
+			Msg("listing certificates from mount")
+
 		mountCerts, mountRevoked, err := c.listCertificatesFromMount(ctx, mount)
 		if err != nil {
+			logger.Get().Error().
+				Str("vault_addr", c.addr).
+				Str("mount", mount).
+				Err(err).
+				Msg("failed to list certificates from mount")
 			// Log error but continue with other mounts
 			lastError = err
 			continue
 		}
+
+		logger.Get().Debug().
+			Str("vault_addr", c.addr).
+			Str("mount", mount).
+			Int("certificate_count", len(mountCerts)).
+			Int("revoked_count", len(mountRevoked)).
+			Msg("successfully listed certificates from mount")
+
 		listedMounts += 1
 		allCertificates = append(allCertificates, mountCerts...)
 		for serial := range mountRevoked {
@@ -169,6 +232,12 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 
 	// Cache the result
 	c.cache.Set("certificates", allCertificates)
+
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
+		Int("total_certificates", len(allCertificates)).
+		Int("successful_mounts", listedMounts).
+		Msg("completed certificate listing and cached result")
 
 	return allCertificates, nil
 }
@@ -289,10 +358,20 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 		return certs.DetailedCertificate{}, err
 	}
 
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
+		Str("mount", mount).
+		Str("serial", serial).
+		Msg("getting certificate details")
+
 	// Try cache first
 	cacheKey := fmt.Sprintf("details_%s", serialNumber)
 	if cached, found := c.cache.Get(cacheKey); found {
 		if details, ok := cached.(certs.DetailedCertificate); ok {
+			logger.Get().Debug().
+				Str("vault_addr", c.addr).
+				Str("serial", serial).
+				Msg("serving certificate details from cache")
 			return details, nil
 		}
 	}
@@ -300,6 +379,12 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 	path := fmt.Sprintf("%s/cert/%s", mount, serial)
 	secret, err := c.client.Logical().Read(path)
 	if err != nil {
+		logger.Get().Error().
+			Str("vault_addr", c.addr).
+			Str("mount", mount).
+			Str("serial", serial).
+			Err(err).
+			Msg("failed to read certificate from vault")
 		return certs.DetailedCertificate{}, fmt.Errorf("failed to read certificate %s from mount %s: %w", serial, mount, err)
 	}
 	if secret == nil || secret.Data == nil {
@@ -378,6 +463,12 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 	// Cache the full detailed certificate
 	c.cache.Set(cacheKey, details)
 
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
+		Str("serial", serial).
+		Str("common_name", x509Certificate.Subject.CommonName).
+		Msg("successfully retrieved and cached certificate details")
+
 	return details, nil
 }
 
@@ -407,10 +498,20 @@ func (c *realClient) parseMountAndSerial(serialNumber string) (string, string, e
 }
 
 func (c *realClient) GetCertificatePEM(ctx context.Context, serialNumber string) (certs.PEMResponse, error) {
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
+		Str("serial_number", serialNumber).
+		Msg("getting certificate PEM")
+
 	details, err := c.GetCertificateDetails(ctx, serialNumber)
 	if err != nil {
 		return certs.PEMResponse{}, err
 	}
+
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
+		Str("serial_number", serialNumber).
+		Msg("successfully retrieved certificate PEM")
 
 	return certs.PEMResponse{
 		SerialNumber: details.SerialNumber, // Return only the serial part
@@ -419,7 +520,13 @@ func (c *realClient) GetCertificatePEM(ctx context.Context, serialNumber string)
 }
 
 func (c *realClient) InvalidateCache() {
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
+		Msg("invalidating vault client cache")
 	c.cache.Clear()
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
+		Msg("cache invalidated successfully")
 }
 
 func (c *realClient) CacheSize() int {

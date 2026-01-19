@@ -25,10 +25,21 @@ const RequestIDKey contextKey = "request_id"
 func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
+		requestID := GetRequestID(r.Context())
+
+		// Debug log at request start
+		logger.Get().Debug().
+			Str("request_id", requestID).
+			Str("method", r.Method).
+			Str("path", r.URL.Path).
+			Str("remote_addr", r.RemoteAddr).
+			Str("user_agent", r.UserAgent()).
+			Msg("HTTP request started")
+
 		wrapped := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
 		next.ServeHTTP(wrapped, r)
 		duration := time.Since(start)
-		requestID := GetRequestID(r.Context())
+
 		logger.HTTPEvent(r.Method, r.URL.Path, wrapped.statusCode, float64(duration.Milliseconds())).
 			Str("request_id", requestID).
 			Str("remote_addr", r.RemoteAddr).

@@ -10,6 +10,7 @@ import (
 
 	"vcv/config"
 	"vcv/internal/certs"
+	"vcv/internal/logger"
 )
 
 type multiClient struct {
@@ -48,17 +49,42 @@ func NewMultiClient(vaultInstances []config.VaultInstance, clientsByVault map[st
 
 func (c *multiClient) CheckConnection(ctx context.Context) error {
 	if len(c.orderedVaultIDs) == 0 {
+		logger.Get().Debug().Msg("no vault instances configured for connection check")
 		return ErrVaultNotConfigured
 	}
+
+	logger.Get().Debug().
+		Strs("vault_ids", c.orderedVaultIDs).
+		Int("vault_count", len(c.orderedVaultIDs)).
+		Msg("checking connection to vault instances")
+
 	for _, vaultID := range c.orderedVaultIDs {
 		client := c.clientsByVault[vaultID]
 		if client == nil {
+			logger.Get().Error().
+				Str("vault_id", vaultID).
+				Msg("missing vault client for connection check")
 			return fmt.Errorf("missing vault client for %s", vaultID)
 		}
+
+		logger.Get().Debug().
+			Str("vault_id", vaultID).
+			Msg("checking connection to vault instance")
+
 		if err := client.CheckConnection(ctx); err != nil {
+			logger.Get().Error().
+				Str("vault_id", vaultID).
+				Err(err).
+				Msg("failed to connect to vault instance")
 			return err
 		}
+
+		logger.Get().Debug().
+			Str("vault_id", vaultID).
+			Msg("successfully connected to vault instance")
 	}
+
+	logger.Get().Debug().Msg("all vault instances connected successfully")
 	return nil
 }
 
@@ -106,8 +132,15 @@ func (c *multiClient) InvalidateCache() {
 
 func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate, error) {
 	if len(c.orderedVaultIDs) == 0 {
+		logger.Get().Debug().Msg("no vault instances configured for certificate listing")
 		return []certs.Certificate{}, ErrVaultNotConfigured
 	}
+
+	logger.Get().Debug().
+		Strs("vault_ids", c.orderedVaultIDs).
+		Int("vault_count", len(c.orderedVaultIDs)).
+		Msg("listing certificates from all vault instances")
+
 	type result struct {
 		vaultID      string
 		certificates []certs.Certificate
@@ -115,22 +148,40 @@ func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate
 	}
 	resultChan := make(chan result, len(c.orderedVaultIDs))
 	var wg sync.WaitGroup
+
 	for _, vaultID := range c.orderedVaultIDs {
 		client := c.clientsByVault[vaultID]
 		if client == nil {
+			logger.Get().Error().
+				Str("vault_id", vaultID).
+				Msg("missing vault client for certificate listing")
 			resultChan <- result{vaultID: vaultID, certificates: []certs.Certificate{}, err: fmt.Errorf("missing vault client for %s", vaultID)}
 			continue
 		}
 		wg.Add(1)
 		go func(id string, cl Client) {
 			defer wg.Done()
+			logger.Get().Debug().
+				Str("vault_id", id).
+				Msg("fetching certificates from vault instance")
+
 			var certificates []certs.Certificate
 			var err error
 			certificates, err = cl.ListCertificates(ctx)
 			if err != nil {
+				logger.Get().Error().
+					Str("vault_id", id).
+					Err(err).
+					Msg("failed to fetch certificates from vault instance")
 				resultChan <- result{vaultID: id, certificates: []certs.Certificate{}, err: err}
 				return
 			}
+
+			logger.Get().Debug().
+				Str("vault_id", id).
+				Int("certificate_count", len(certificates)).
+				Msg("successfully fetched certificates from vault instance")
+
 			resultChan <- result{vaultID: id, certificates: certificates, err: nil}
 		}(vaultID, client)
 	}
@@ -153,6 +204,13 @@ func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate
 			all = append(all, prefixed)
 		}
 	}
+
+	logger.Get().Debug().
+		Int("total_certificates", len(all)).
+		Int("successful_vaults", successCount).
+		Int("total_vaults", len(c.orderedVaultIDs)).
+		Msg("completed certificate listing from all vault instances")
+
 	if successCount == 0 {
 		if lastError != nil {
 			return []certs.Certificate{}, lastError

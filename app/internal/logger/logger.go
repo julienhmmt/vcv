@@ -94,9 +94,6 @@ func Init(level string) {
 		output = zerolog.MultiLevelWriter(writers...)
 	}
 
-	// Set the global logger
-	log.Logger = log.Output(output)
-
 	// Set log level, defaulting to InfoLevel if parsing fails.
 	lvl, err := zerolog.ParseLevel(strings.ToLower(level))
 	if err != nil {
@@ -109,6 +106,9 @@ func Init(level string) {
 	for _, msg := range deferredWarnings {
 		log.Warn().Msg(msg)
 	}
+
+	// Re-create logger with correct level after setting global level
+	log.Logger = log.Output(output).Level(lvl)
 
 	log.Info().
 		Str("level", zerolog.GlobalLevel().String()).

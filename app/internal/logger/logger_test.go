@@ -263,3 +263,105 @@ func TestInit_BothOutput_InvalidFilePath_DoesNotPanic(t *testing.T) {
 	logger.Init("info")
 	logger.Get().Info().Msg("both output fallback")
 }
+
+// TestInit_DebugLevel_VerboseLogging tests that debug level shows all log levels
+func TestInit_DebugLevel_VerboseLogging(t *testing.T) {
+	unsetEnvHelper(t, "LOG_OUTPUT")
+	unsetEnvHelper(t, "LOG_FILE_PATH")
+	unsetEnvHelper(t, "LOG_FORMAT")
+
+	var buf bytes.Buffer
+	logger.Init("debug")
+	logger.SetOutput(&buf)
+
+	// Log at all levels
+	logger.Get().Debug().Msg("debug message")
+	logger.Get().Info().Msg("info message")
+	logger.Get().Warn().Msg("warn message")
+	logger.Get().Error().Msg("error message")
+
+	output := buf.String()
+	expectedMessages := []string{"debug message", "info message", "warn message", "error message"}
+	for _, msg := range expectedMessages {
+		if !strings.Contains(output, msg) {
+			t.Errorf("Expected log output to contain '%s', got: %s", msg, output)
+		}
+	}
+}
+
+// TestInit_InfoLevel_FilteredLogging tests that info level filters out debug messages
+func TestInit_InfoLevel_FilteredLogging(t *testing.T) {
+	unsetEnvHelper(t, "LOG_OUTPUT")
+	unsetEnvHelper(t, "LOG_FILE_PATH")
+	unsetEnvHelper(t, "LOG_FORMAT")
+
+	var buf bytes.Buffer
+	logger.Init("info")
+	logger.SetOutput(&buf)
+
+	// Log at all levels
+	logger.Get().Debug().Msg("debug message")
+	logger.Get().Info().Msg("info message")
+	logger.Get().Warn().Msg("warn message")
+	logger.Get().Error().Msg("error message")
+
+	output := buf.String()
+	// Should not contain debug message
+	if strings.Contains(output, "debug message") {
+		t.Errorf("Expected log output NOT to contain 'debug message', got: %s", output)
+	}
+	// Should contain other messages
+	expectedMessages := []string{"info message", "warn message", "error message"}
+	for _, msg := range expectedMessages {
+		if !strings.Contains(output, msg) {
+			t.Errorf("Expected log output to contain '%s', got: %s", msg, output)
+		}
+	}
+}
+
+// TestInit_GlobalLevelSetting tests that the global level is correctly set
+func TestInit_GlobalLevelSetting(t *testing.T) {
+	unsetEnvHelper(t, "LOG_OUTPUT")
+	unsetEnvHelper(t, "LOG_FILE_PATH")
+	unsetEnvHelper(t, "LOG_FORMAT")
+
+	logger.Init("debug")
+	log := logger.Get()
+
+	// Test that we can log at debug level
+	var buf bytes.Buffer
+	logger.SetOutput(&buf)
+	log.Debug().Msg("test debug")
+
+	if !strings.Contains(buf.String(), "test debug") {
+		t.Errorf("Expected debug message to appear when global level is debug, got: %s", buf.String())
+	}
+}
+
+// TestInit_LevelAfterInitialization tests that level changes work after initialization
+func TestInit_LevelAfterInitialization(t *testing.T) {
+	unsetEnvHelper(t, "LOG_OUTPUT")
+	unsetEnvHelper(t, "LOG_FILE_PATH")
+	unsetEnvHelper(t, "LOG_FORMAT")
+
+	// Initialize with info level
+	logger.Init("info")
+	var buf bytes.Buffer
+	logger.SetOutput(&buf)
+
+	// Debug message should not appear
+	logger.Get().Debug().Msg("debug message")
+	if strings.Contains(buf.String(), "debug message") {
+		t.Errorf("Expected debug message to be filtered at info level, got: %s", buf.String())
+	}
+
+	// Re-initialize with debug level and reset output
+	buf.Reset()
+	logger.Init("debug")
+	logger.SetOutput(&buf) // Important: reset output after re-initialization
+	logger.Get().Debug().Msg("debug message")
+
+	if !strings.Contains(buf.String(), "debug message") {
+		t.Errorf("Expected debug message to appear after re-initialization with debug level, got: %s", buf.String())
+	}
+}
