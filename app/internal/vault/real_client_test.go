@@ -481,23 +481,29 @@ func TestRealClient_Logging(t *testing.T) {
 		switch r.URL.Path {
 		case "/v1/sys/health":
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			if err := json.NewEncoder(w).Encode(map[string]interface{}{
 				"initialized": true,
 				"sealed":      false,
 				"version":     "1.12.0",
-			})
+			}); err != nil {
+				t.Fatalf("failed to encode health response: %v", err)
+			}
 		case "/v1/pki/certs":
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			if err := json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": map[string][]string{"keys": {"01"}},
-			})
+			}); err != nil {
+				t.Fatalf("failed to encode certs response: %v", err)
+			}
 		case "/v1/pki/cert/01":
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			if err := json.NewEncoder(w).Encode(map[string]interface{}{
 				"data": map[string]string{
 					"certificate": newVaultTestCertificatePEM(t),
 				},
-			})
+			}); err != nil {
+				t.Fatalf("failed to encode cert response: %v", err)
+			}
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
