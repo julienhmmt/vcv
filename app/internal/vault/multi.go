@@ -105,38 +105,59 @@ func (c *multiClient) InvalidateCache() {
 }
 
 func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate, error) {
+	if len(c.orderedVaultIDs) == 0 {
+		return []certs.Certificate{}, ErrVaultNotConfigured
+	}
 	type result struct {
 		vaultID      string
 		certificates []certs.Certificate
+		err          error
 	}
-	resultChan := make(chan result, len(c.orderedVaultIDs))
+	var resultChan chan result = make(chan result, len(c.orderedVaultIDs))
 	var wg sync.WaitGroup
 	for _, vaultID := range c.orderedVaultIDs {
 		client := c.clientsByVault[vaultID]
 		if client == nil {
+			resultChan <- result{vaultID: vaultID, certificates: []certs.Certificate{}, err: fmt.Errorf("missing vault client for %s", vaultID)}
 			continue
 		}
 		wg.Add(1)
 		go func(id string, cl Client) {
 			defer wg.Done()
-			certificates, err := cl.ListCertificates(ctx)
+			var certificates []certs.Certificate
+			var err error
+			certificates, err = cl.ListCertificates(ctx)
 			if err != nil {
+				resultChan <- result{vaultID: id, certificates: []certs.Certificate{}, err: err}
 				return
 			}
-			resultChan <- result{vaultID: id, certificates: certificates}
+			resultChan <- result{vaultID: id, certificates: certificates, err: nil}
 		}(vaultID, client)
 	}
 	go func() {
 		wg.Wait()
 		close(resultChan)
 	}()
-	all := make([]certs.Certificate, 0)
+	var all []certs.Certificate = make([]certs.Certificate, 0)
+	var successCount int = 0
+	var lastError error
 	for res := range resultChan {
+		if res.err != nil {
+			lastError = res.err
+			continue
+		}
+		successCount += 1
 		for _, certificate := range res.certificates {
 			prefixed := certificate
 			prefixed.ID = fmt.Sprintf("%s|%s", res.vaultID, certificate.ID)
 			all = append(all, prefixed)
 		}
+	}
+	if successCount == 0 {
+		if lastError != nil {
+			return []certs.Certificate{}, lastError
+		}
+		return []certs.Certificate{}, ErrVaultNotConfigured
 	}
 	sort.Slice(all, func(leftIndex int, rightIndex int) bool {
 		left := all[leftIndex]

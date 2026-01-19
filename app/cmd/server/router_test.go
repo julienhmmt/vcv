@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"vcv/config"
+	"vcv/internal/certs"
 	"vcv/internal/vault"
 )
 
@@ -52,6 +53,7 @@ func TestBuildRouter_BasicEndpoints(t *testing.T) {
 	primary := &vault.MockClient{}
 	primary.On("CheckConnection", mock.Anything).Return(nil)
 	multi := &vault.MockClient{}
+	multi.On("ListCertificates", mock.Anything).Return([]certs.Certificate{}, nil)
 	registry := prometheus.NewRegistry()
 	webFS := newServerWebFS()
 	statusClients := map[string]vault.Client{}

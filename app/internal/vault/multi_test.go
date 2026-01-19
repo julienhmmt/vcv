@@ -140,6 +140,18 @@ func TestMultiClient_ListCertificates_SortsAndPrefixes(t *testing.T) {
 	c2.AssertExpectations(t)
 }
 
+func TestMultiClient_ListCertificates_AllFailed(t *testing.T) {
+	var instances []config.VaultInstance = []config.VaultInstance{{ID: "v1"}}
+	var mockClient *MockClient = &MockClient{}
+	var errBoom error = errors.New("boom")
+	mockClient.On("ListCertificates", mock.Anything).Return([]certs.Certificate{}, errBoom)
+	var client Client = NewMultiClient(instances, map[string]Client{"v1": mockClient})
+	var err error
+	_, err = client.ListCertificates(context.Background())
+	assert.Error(t, err)
+	mockClient.AssertExpectations(t)
+}
+
 func TestMultiClient_ListCertificatesByVault_ReturnsErrorsAndDurations(t *testing.T) {
 	instances := []config.VaultInstance{{ID: "v1"}, {ID: "v2"}}
 	c1 := &MockClient{}

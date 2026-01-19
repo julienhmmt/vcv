@@ -114,6 +114,10 @@ function applyCertsStateFromUrl() {
   if (vaultFilter && vaultFilter.value && vaultFilter.value !== "all") {
     updatePkiFilterOptions(vaultFilter.value);
   }
+  updateVaultPkiFiltersVisibility(
+    vaultFilter ? Array.from(vaultFilter.options).map((option) => option.value).filter((value) => value !== "all") : [],
+    pkiFilter ? Array.from(pkiFilter.options).map((option) => option.value).filter((value) => value !== "all") : []
+  );
 }
 
 function updateSelectOptions(select, options) {
@@ -1064,7 +1068,7 @@ async function loadConfig() {
       const vaultOptions = state.vaultMountGroups.map((group) => group.id);
       updateSelectOptions(vaultFilter, vaultOptions);
       updatePkiFilterOptions(vaultFilter ? vaultFilter.value : "all");
-      updateVaultPkiFiltersVisibility(vaultOptions, []);
+      updateVaultPkiFiltersVisibility(vaultOptions, pkiFilter ? Array.from(pkiFilter.options).map((option) => option.value).filter((value) => value !== "all") : []);
       applyTranslations();
       attachVaultFilterListener();
       return;
@@ -1123,14 +1127,11 @@ async function main() {
     initUrlSync();
     initModalHandlers();
     initVaultConnectionNotifications();
-
-    // Apply URL state without triggering a redundant initial fetch.
-    applyCertsStateFromUrl();
-
     // Load remaining non-critical startup data
     await messagesPromise;
     applyTranslations();
     await loadConfig();
+    applyCertsStateFromUrl();
     renderMountSelector();
     setMountsHiddenField();
   } else {

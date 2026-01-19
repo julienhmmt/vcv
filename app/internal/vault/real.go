@@ -134,21 +134,33 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 			return certificates, nil
 		}
 	}
-
+	if len(c.mounts) == 0 {
+		return []certs.Certificate{}, ErrVaultNotConfigured
+	}
 	var allCertificates []certs.Certificate
-	revokedSet := make(map[string]bool)
+	var revokedSet map[string]bool = make(map[string]bool)
+	var listedMounts int = 0
+	var lastError error
 
 	// Collect certificates from all mounts
 	for _, mount := range c.mounts {
 		mountCerts, mountRevoked, err := c.listCertificatesFromMount(ctx, mount)
 		if err != nil {
 			// Log error but continue with other mounts
+			lastError = err
 			continue
 		}
+		listedMounts += 1
 		allCertificates = append(allCertificates, mountCerts...)
 		for serial := range mountRevoked {
 			revokedSet[serial] = true
 		}
+	}
+	if listedMounts == 0 {
+		if lastError != nil {
+			return []certs.Certificate{}, lastError
+		}
+		return []certs.Certificate{}, fmt.Errorf("failed to list certificates from mounts")
 	}
 
 	sort.Slice(allCertificates, func(leftIndex, rightIndex int) bool {

@@ -10,6 +10,7 @@
   <td class="{{.ExpiresCellClass}}">
     <div class="{{.ExpiresDateClass}}">{{.ExpiresAt}}</div>
     {{if .DaysRemainingText}}<div class="{{.DaysRemainingClass}}">{{.DaysRemainingText}}</div>{{end}}
+  </td>
   <td>
     {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
   </td>
