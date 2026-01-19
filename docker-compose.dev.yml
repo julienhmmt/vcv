@@ -85,6 +85,22 @@ services:
     volumes:
       - ./vault-dev-init-5.sh:/vault-dev-init-5.sh:ro
 
+  openbao-dev-1:
+    image: docker.io/openbao/openbao:2.4.4
+    container_name: openbao-dev-1
+    ports:
+      - "1337:1337/tcp"
+    environment:
+      - OPENBAO_DEV_ROOT_TOKEN_ID=root
+      - OPENBAO_DEV_LISTEN_ADDRESS=0.0.0.0:1337
+    cap_add:
+      - IPC_LOCK
+    command: "sh /openbao-dev-init-1.sh"
+    networks:
+      - vcv-network
+    volumes:
+      - ./openbao-dev-init-1.sh:/openbao-dev-init-1.sh:ro
+
   app:
     # build:
       # context: ./app
@@ -104,6 +120,7 @@ services:
       - vault-dev-3
       - vault-dev-4
       - vault-dev-5
+      - openbao-dev-1
     read_only: true
     security_opt:
       - no-new-privileges:true

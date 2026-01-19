@@ -110,6 +110,21 @@
       "display_name": "Vault dev-6 (fake)",
       "tls_insecure": true,
       "enabled": true
+    },
+    {
+      "id": "openbao-dev-1",
+      "address": "http://openbao-dev-1:1337",
+      "token": "root",
+      "pki_mount": "pki_openbao",
+      "pki_mounts": [
+        "pki_openbao",
+        "pki_openbao_dev", 
+        "pki_openbao_stage",
+        "pki_openbao_prod"
+      ],
+      "display_name": "OpenBao dev-1",
+      "tls_insecure": true,
+      "enabled": true
     }
   ]
 }
