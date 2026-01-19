@@ -70,6 +70,22 @@
               <div id="mount-selector" class="vcv-mount-filter"></div>
               <input id="vcv-mounts" name="mounts" type="hidden" value="__all__" />
             </div>
+            <div class="vcv-filter-group" id="vcv-vault-filter-group">
+              <label id="vcv-vault-filter-label" class="vcv-filter-label" for="vcv-vault-filter">{{.Messages.LabelVault}}</label>
+              <select
+                id="vcv-vault-filter"
+                class="vcv-select"
+                name="vault"
+                hx-get="/ui/certs"
+                hx-trigger="change"
+                hx-target="#vcv-certs-body"
+                hx-swap="innerHTML"
+                hx-sync="#vcv-certs-body:replace"
+                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+              >
+                <option value="all">{{.Messages.StatusFilterAll}}</option>
+              </select>
+            </div>
             <div class="vcv-filter-group" id="vcv-pki-filter-group">
               <label id="vcv-pki-filter-label" class="vcv-filter-label" for="vcv-pki-filter">{{.Messages.LabelPKI}}</label>
               <select
