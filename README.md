@@ -185,16 +185,16 @@ The UI is localized in English, French, Spanish, German, and Italian. Language i
 
 ## 📊 Export metrics to Prometheus
 
-Metrics are exposed at `/metrics` endpoint.
+Metrics are exposed at `/metrics` endpoint. Expiration thresholds are configurable via `settings.json` and exposed as metrics.
 
-- vcv_cache_size
-- vcv_certificate_exporter_last_scrape_duration_seconds
-- vcv_certificate_expiry_timestamp_seconds{certificate_id, common_name, status, vault_id, pki} (optional)
-- vcv_certificate_exporter_last_scrape_success
-- vcv_certificates_expired_count
-- vcv_certificates_expiring_soon_count{vault_id, pki, level}
-- vcv_certificates_last_fetch_timestamp_seconds
+**Core metrics:**
+
 - vcv_certificates_total{vault_id, pki, status}
+- vcv_certificates_expired_count
+- vcv_certificates_expiring_soon_count{vault_id, pki, level} - Uses configured thresholds
+- vcv_expiration_threshold_critical_days - Configured critical threshold
+- vcv_expiration_threshold_warning_days - Configured warning threshold
+- vcv_certificates_expiry_bucket{vault_id, pki, bucket} - Certificate distribution by time range
 - vcv_vault_connected{vault_id}
 - vcv_vault_list_certificates_success{vault_id}
 - vcv_vault_list_certificates_error{vault_id}
@@ -202,6 +202,22 @@ Metrics are exposed at `/metrics` endpoint.
 - vcv_certificates_partial_scrape{vault_id}
 - vcv_vaults_configured
 - vcv_pki_mounts_configured{vault_id}
+- vcv_cache_size
+- vcv_certificates_last_fetch_timestamp_seconds
+- vcv_certificate_exporter_last_scrape_success
+- vcv_certificate_exporter_last_scrape_duration_seconds
+
+**Per-certificate metrics** (high cardinality, disabled by default):
+
+- vcv_certificate_expiry_timestamp_seconds{certificate_id, common_name, status, vault_id, pki}
+- vcv_certificate_days_until_expiry{certificate_id, common_name, status, vault_id, pki}
+
+**Configuration:**
+
+- `VCV_METRICS_PER_CERTIFICATE=true` - Enable per-certificate metrics
+- `VCV_METRICS_ENHANCED=true` - Enable enhanced metrics (default: enabled)
+
+📖 **[Complete Metrics Reference](PROMETHEUS_METRICS.md)** - Detailed documentation with queries and alert examples
 
 To scrape metrics, add this to your Prometheus config:
 

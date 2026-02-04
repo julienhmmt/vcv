@@ -25,6 +25,10 @@ var (
 	expiredCountDesc           = prometheus.NewDesc("vcv_certificates_expired_count", "Number of expired certificates", nil, nil)
 	expiringSoonCountDesc      = prometheus.NewDesc("vcv_certificates_expiring_soon_count", "Number of certificates expiring soon within threshold window", []string{"vault_id", "pki", "level"}, nil)
 	expiryTimestampDesc        = prometheus.NewDesc("vcv_certificate_expiry_timestamp_seconds", "Certificate expiration timestamp in seconds since epoch", []string{"certificate_id", "common_name", "status", "vault_id", "pki"}, nil)
+	daysUntilExpiryDesc        = prometheus.NewDesc("vcv_certificate_days_until_expiry", "Days remaining until certificate expiration (negative if expired)", []string{"certificate_id", "common_name", "status", "vault_id", "pki"}, nil)
+	expiryBucketDesc           = prometheus.NewDesc("vcv_certificates_expiry_bucket", "Number of certificates expiring in time bucket", []string{"vault_id", "pki", "bucket"}, nil)
+	thresholdCriticalDesc      = prometheus.NewDesc("vcv_expiration_threshold_critical_days", "Configured critical expiration threshold in days", nil, nil)
+	thresholdWarningDesc       = prometheus.NewDesc("vcv_expiration_threshold_warning_days", "Configured warning expiration threshold in days", nil, nil)
 	lastScrapeDurationDesc     = prometheus.NewDesc("vcv_certificate_exporter_last_scrape_duration_seconds", "Duration of the last certificate scrape in seconds", nil, nil)
 	lastScrapeSuccessDesc      = prometheus.NewDesc("vcv_certificate_exporter_last_scrape_success", "Whether the last scrape succeeded (1) or failed (0)", nil, nil)
 	vaultConnectedDesc         = prometheus.NewDesc("vcv_vault_connected", "Vault connection status (1=connected,0=disconnected)", []string{"vault_id"}, nil)
@@ -41,6 +45,7 @@ type certificateCollector struct {
 	statusClients    map[string]vault.Client
 	thresholds       config.ExpirationThresholds
 	perCertificate   bool
+	enhancedMetrics  bool
 	configuredVaults []config.VaultInstance
 	now              func() time.Time
 }
@@ -57,6 +62,7 @@ func NewCertificateCollector(vaultClient vault.Client, statusClients map[string]
 		warning = 30
 	}
 	perCertificate := parseBoolEnv("VCV_METRICS_PER_CERTIFICATE", false)
+	enhancedMetrics := parseBoolEnv("VCV_METRICS_ENHANCED", true)
 	clients := statusClients
 	if clients == nil {
 		clients = map[string]vault.Client{}
@@ -66,6 +72,7 @@ func NewCertificateCollector(vaultClient vault.Client, statusClients map[string]
 		statusClients:    clients,
 		thresholds:       config.ExpirationThresholds{Critical: critical, Warning: warning},
 		perCertificate:   perCertificate,
+		enhancedMetrics:  enhancedMetrics,
 		configuredVaults: []config.VaultInstance{},
 		now:              time.Now,
 	}
@@ -88,6 +95,10 @@ func (collector *certificateCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- expiredCountDesc
 	ch <- expiringSoonCountDesc
 	ch <- expiryTimestampDesc
+	ch <- daysUntilExpiryDesc
+	ch <- expiryBucketDesc
+	ch <- thresholdCriticalDesc
+	ch <- thresholdWarningDesc
 	ch <- lastScrapeDurationDesc
 	ch <- lastScrapeSuccessDesc
 	ch <- vaultConnectedDesc
@@ -135,8 +146,13 @@ func (collector *certificateCollector) Collect(ch chan<- prometheus.Metric) {
 	ch <- prometheus.MustNewConstMetric(expiredCountDesc, prometheus.GaugeValue, float64(expiredCount))
 	ch <- prometheus.MustNewConstMetric(expiringSoonCountDesc, prometheus.GaugeValue, float64(warningSoonCount), allLabelValue, allLabelValue, "warning")
 	ch <- prometheus.MustNewConstMetric(expiringSoonCountDesc, prometheus.GaugeValue, float64(criticalSoonCount), allLabelValue, allLabelValue, "critical")
+	ch <- prometheus.MustNewConstMetric(thresholdCriticalDesc, prometheus.GaugeValue, float64(collector.thresholds.Critical))
+	ch <- prometheus.MustNewConstMetric(thresholdWarningDesc, prometheus.GaugeValue, float64(collector.thresholds.Warning))
 	collector.emitCertificateAggregationMetrics(ch, certificates, now)
 	collector.emitPerCertificateMetrics(ch, certificates, now)
+	if collector.enhancedMetrics {
+		collector.emitEnhancedMetrics(ch, certificates, now)
+	}
 }
 
 func (collector *certificateCollector) listCertificates() ([]certs.Certificate, error) {
@@ -382,6 +398,10 @@ func (collector *certificateCollector) emitPerCertificateMetrics(ch chan<- prome
 		status := collector.statusLabel(certificate, now)
 		expiryTimestamp := float64(certificate.ExpiresAt.Unix())
 		ch <- prometheus.MustNewConstMetric(expiryTimestampDesc, prometheus.GaugeValue, expiryTimestamp, certificate.ID, certificate.CommonName, status, vaultID, pki)
+		if collector.enhancedMetrics {
+			daysRemaining := float64(daysUntil(certificate.ExpiresAt.UTC(), now.UTC()))
+			ch <- prometheus.MustNewConstMetric(daysUntilExpiryDesc, prometheus.GaugeValue, daysRemaining, certificate.ID, certificate.CommonName, status, vaultID, pki)
+		}
 	}
 }
 
@@ -434,6 +454,66 @@ func daysUntil(expiresAt time.Time, now time.Time) int {
 	}
 	diff := expiresAt.Sub(now)
 	return int(math.Ceil(diff.Hours() / 24))
+}
+
+func (collector *certificateCollector) emitEnhancedMetrics(ch chan<- prometheus.Metric, certificates []certs.Certificate, now time.Time) {
+	buckets := make(map[string]map[string]map[string]int)
+	for _, certificate := range certificates {
+		vaultID, pki := extractVaultIDAndPKI(certificate.ID)
+		if _, ok := buckets[vaultID]; !ok {
+			buckets[vaultID] = make(map[string]map[string]int)
+		}
+		if _, ok := buckets[vaultID][pki]; !ok {
+			buckets[vaultID][pki] = map[string]int{"0-7d": 0, "7-30d": 0, "30-90d": 0, "90d+": 0, "expired": 0, "revoked": 0}
+		}
+		if certificate.Revoked {
+			buckets[vaultID][pki]["revoked"]++
+			continue
+		}
+		if certificate.ExpiresAt.IsZero() {
+			continue
+		}
+		daysRemaining := daysUntil(certificate.ExpiresAt.UTC(), now.UTC())
+		if daysRemaining < 0 {
+			buckets[vaultID][pki]["expired"]++
+		} else if daysRemaining <= 7 {
+			buckets[vaultID][pki]["0-7d"]++
+		} else if daysRemaining <= 30 {
+			buckets[vaultID][pki]["7-30d"]++
+		} else if daysRemaining <= 90 {
+			buckets[vaultID][pki]["30-90d"]++
+		} else {
+			buckets[vaultID][pki]["90d+"]++
+		}
+	}
+	vaultIDs := make([]string, 0, len(buckets))
+	for vaultID := range buckets {
+		vaultIDs = append(vaultIDs, vaultID)
+	}
+	sort.Strings(vaultIDs)
+	for _, vaultID := range vaultIDs {
+		pkis := make([]string, 0, len(buckets[vaultID]))
+		for pki := range buckets[vaultID] {
+			pkis = append(pkis, pki)
+		}
+		sort.Strings(pkis)
+		for _, pki := range pkis {
+			for _, bucket := range []string{"0-7d", "7-30d", "30-90d", "90d+", "expired", "revoked"} {
+				ch <- prometheus.MustNewConstMetric(expiryBucketDesc, prometheus.GaugeValue, float64(buckets[vaultID][pki][bucket]), vaultID, pki, bucket)
+			}
+		}
+	}
+	allBuckets := map[string]int{"0-7d": 0, "7-30d": 0, "30-90d": 0, "90d+": 0, "expired": 0, "revoked": 0}
+	for vaultID := range buckets {
+		for pki := range buckets[vaultID] {
+			for bucket, count := range buckets[vaultID][pki] {
+				allBuckets[bucket] += count
+			}
+		}
+	}
+	for _, bucket := range []string{"0-7d", "7-30d", "30-90d", "90d+", "expired", "revoked"} {
+		ch <- prometheus.MustNewConstMetric(expiryBucketDesc, prometheus.GaugeValue, float64(allBuckets[bucket]), allLabelValue, allLabelValue, bucket)
+	}
 }
 
 func parseBoolEnv(key string, fallback bool) bool {
