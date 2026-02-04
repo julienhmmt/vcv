@@ -721,7 +721,7 @@ body {
 
 .vcv-filter-group-search .vcv-input {
   width: 100%;
-  min-width: 10rem;
+  min-width: 16rem;
 }
 
 .vcv-table-footer {
@@ -2093,7 +2093,7 @@ body {
   box-shadow:
     0 12px 35px rgba(0, 0, 0, 0.35),
     0 2px 8px rgba(0, 0, 0, 0.18);
-  min-width: 16rem;
+  min-width: 18rem;
   max-width: min(24rem, 85vw);
   max-height: min(52vh, 26rem);
   overflow: auto;

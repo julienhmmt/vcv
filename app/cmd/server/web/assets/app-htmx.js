@@ -42,14 +42,12 @@ function buildCertsPageUrl() {
   }
   params.set("expiry", values.expiry);
   params.set("mounts", values.mounts);
-  params.set("pki", values.pki);
   params.set("page", values.page);
   params.set("pageSize", values.pageSize);
   params.set("search", values.search);
   params.set("sortDir", values.sortDir);
   params.set("sortKey", values.sortKey);
   params.set("status", values.status);
-  params.set("vault", values.vault);
   return `/?${params.toString()}`;
 }
 
@@ -92,14 +90,6 @@ function applyCertsStateFromUrl() {
   if (sortDirInput && params.has("sortDir")) {
     sortDirInput.value = params.get("sortDir") || "asc";
   }
-  const vaultFilter = document.getElementById("vcv-vault-filter");
-  if (vaultFilter && params.has("vault")) {
-    vaultFilter.value = params.get("vault") || "all";
-  }
-  const pkiFilter = document.getElementById("vcv-pki-filter");
-  if (pkiFilter && params.has("pki")) {
-    pkiFilter.value = params.get("pki") || "all";
-  }
   const mountsValue = params.get("mounts");
   if (typeof mountsValue === "string") {
     if (mountsValue === MOUNTS_ALL_SENTINEL) {
@@ -111,45 +101,8 @@ function applyCertsStateFromUrl() {
       state.selectedMounts = requested.filter((value) => state.availableMounts.includes(value));
     }
   }
-  if (vaultFilter && vaultFilter.value && vaultFilter.value !== "all") {
-    updatePkiFilterOptions(vaultFilter.value);
-  }
-  updateVaultPkiFiltersVisibility(
-    vaultFilter ? Array.from(vaultFilter.options).map((option) => option.value).filter((value) => value !== "all") : [],
-    pkiFilter ? Array.from(pkiFilter.options).map((option) => option.value).filter((value) => value !== "all") : []
-  );
 }
 
-function updateSelectOptions(select, options) {
-  if (!select) {
-    return;
-  }
-  const current = typeof select.value === "string" && select.value !== "" ? select.value : "all";
-  select.innerHTML = "";
-  const allOption = document.createElement("option");
-  allOption.value = "all";
-  const messages = state.messages || {};
-  allOption.textContent = messages.statusFilterAll || "All";
-  select.appendChild(allOption);
-  options.forEach((value) => {
-    const option = document.createElement("option");
-    option.value = value;
-    option.textContent = value;
-    select.appendChild(option);
-  });
-  select.value = current;
-}
-
-function updateVaultPkiFiltersVisibility(vaultOptions, pkiOptions) {
-  const vaultGroup = document.getElementById("vcv-vault-filter-group");
-  const pkiGroup = document.getElementById("vcv-pki-filter-group");
-  if (vaultGroup) {
-    vaultGroup.classList.toggle("vcv-hidden", !(Array.isArray(vaultOptions) && vaultOptions.length > 1));
-  }
-  if (pkiGroup) {
-    pkiGroup.classList.toggle("vcv-hidden", !(Array.isArray(pkiOptions) && pkiOptions.length > 1));
-  }
-}
 
 // HTMX Error Handler with translation support
 function initHtmxErrorHandler() {
@@ -502,9 +455,7 @@ function applyTranslations() {
   setText(document.getElementById("mount-stats-selected-label"), messages.mountStatsSelected);
   setText(document.getElementById("mount-stats-total-label"), messages.mountStatsTotal);
   setText(document.getElementById("vcv-page-size-label"), messages.paginationPageSizeLabel);
-  setText(document.getElementById("vcv-pki-filter-label"), messages.labelPki || "PKI");
   setText(document.getElementById("vcv-status-filter-label"), messages.statusFilterTitle);
-  setText(document.querySelector("#certificate-modal .vcv-modal-title"), messages.modalDetailsTitle);
   const searchInput = document.getElementById("vcv-search");
   if (searchInput && typeof messages.searchPlaceholder === "string" && messages.searchPlaceholder !== "") {
     searchInput.setAttribute("placeholder", messages.searchPlaceholder);
@@ -608,24 +559,20 @@ function getCertsHtmxValues() {
   const mountsInput = document.getElementById("vcv-mounts");
   const pageInput = document.getElementById("vcv-page");
   const pageSizeSelect = document.getElementById("vcv-page-size");
-  const pkiFilter = document.getElementById("vcv-pki-filter");
   const searchInput = document.getElementById("vcv-search");
   const sortDirInput = document.getElementById("vcv-sort-dir");
   const sortKeyInput = document.getElementById("vcv-sort-key");
   const statusFilter = document.getElementById("vcv-status-filter");
-  const vaultFilter = document.getElementById("vcv-vault-filter");
   const langSelect = document.getElementById("vcv-lang-select");
   return {
     expiry: expiryFilter ? expiryFilter.value : "all",
     mounts: mountsInput ? mountsInput.value : "",
     page: pageInput ? pageInput.value : "0",
     pageSize: pageSizeSelect ? pageSizeSelect.value : "25",
-    pki: pkiFilter ? pkiFilter.value : "all",
     search: searchInput ? searchInput.value : "",
     sortDir: sortDirInput ? sortDirInput.value : "asc",
     sortKey: sortKeyInput ? sortKeyInput.value : "commonName",
     status: statusFilter ? statusFilter.value : "all",
-    vault: vaultFilter ? vaultFilter.value : "all",
     lang: langSelect ? langSelect.value : "",
   };
 }
@@ -679,8 +626,9 @@ function renderMountSelector() {
     return;
   }
   const label = typeof state.messages.mountSelectorTitle === "string" && state.messages.mountSelectorTitle !== "" ? state.messages.mountSelectorTitle : "PKI Engines";
+  const tooltip = typeof state.messages.mountSelectorTooltip === "string" && state.messages.mountSelectorTooltip !== "" ? state.messages.mountSelectorTooltip : "Filter certificates by Vault instance and PKI mount";
   container.innerHTML = `
-    <button type="button" class="vcv-button vcv-button-ghost vcv-mount-trigger" onclick="openMountModal()">
+    <button type="button" class="vcv-button vcv-button-ghost vcv-mount-trigger" onclick="openMountModal()" title="${tooltip}">
       <span class="vcv-mount-trigger-label">${label}</span>
     </button>
   `;
@@ -865,6 +813,17 @@ function handleVaultRefresh(event) {
   return true;
 }
 
+function toggleMount(mountKey) {
+  const index = state.selectedMounts.indexOf(mountKey);
+  if (index === -1) {
+    state.selectedMounts.push(mountKey);
+  } else {
+    state.selectedMounts.splice(index, 1);
+  }
+  renderMountModalList();
+  refreshHtmxCertsTable();
+}
+
 function selectAllMounts() {
   state.selectedMounts = [...state.availableMounts];
   renderMountSelector();
@@ -1009,66 +968,6 @@ function initLanguageFromURL() {
   langSelect.value = lang;
 }
 
-function updatePkiFilterOptions(selectedVaultId) {
-  const pkiFilter = document.getElementById("vcv-pki-filter");
-  if (!pkiFilter) {
-    return;
-  }
-  if (!Array.isArray(state.vaultMountGroups) || state.vaultMountGroups.length === 0) {
-    return;
-  }
-  let pkiOptions = [];
-  if (selectedVaultId === "all" || selectedVaultId === "") {
-    const uniquePki = state.vaultMountGroups
-      .map((group) => group.mounts)
-      .reduce((acc, mounts) => acc.concat(mounts), [])
-      .map((value) => String(value).trim())
-      .filter((value) => value !== "");
-    pkiOptions = Array.from(new Set(uniquePki)).sort();
-  } else {
-    const vault = state.vaultMountGroups.find((group) => group.id === selectedVaultId);
-    if (vault && Array.isArray(vault.mounts)) {
-      pkiOptions = vault.mounts.slice().sort();
-    }
-  }
-  updateSelectOptions(pkiFilter, pkiOptions);
-}
-
-function handleVaultFilterChange() {
-  const vaultFilter = document.getElementById("vcv-vault-filter");
-  if (!vaultFilter) {
-    return;
-  }
-  const selectedVault = vaultFilter.value || "all";
-  updatePkiFilterOptions(selectedVault);
-  updateSelectedMountsForVault(selectedVault);
-  renderMountSelector();
-}
-
-function updateSelectedMountsForVault(selectedVaultId) {
-  if (!Array.isArray(state.vaultMountGroups) || state.vaultMountGroups.length === 0) {
-    return;
-  }
-  if (selectedVaultId === "all" || selectedVaultId === "") {
-    state.selectedMounts = [...state.availableMounts];
-  } else {
-    const vault = state.vaultMountGroups.find((group) => group.id === selectedVaultId);
-    if (vault && Array.isArray(vault.mounts)) {
-      const vaultMountKeys = vault.mounts.map((mount) => buildVaultMountKey(vault.id, mount));
-      state.selectedMounts = state.selectedMounts.filter((key) => {
-        return vaultMountKeys.includes(key) || !key.startsWith(selectedVaultId + "|");
-      });
-      const allVaultMounts = vaultMountKeys.every((key) => state.selectedMounts.includes(key));
-      if (!allVaultMounts) {
-        vaultMountKeys.forEach((key) => {
-          if (!state.selectedMounts.includes(key)) {
-            state.selectedMounts.push(key);
-          }
-        });
-      }
-    }
-  }
-}
 
 async function loadConfig() {
   try {
@@ -1095,15 +994,7 @@ async function loadConfig() {
         .map((vault) => vault.mounts.map((mount) => buildVaultMountKey(vault.id, mount)))
         .reduce((acc, keys) => acc.concat(keys), []);
       state.selectedMounts = [...state.availableMounts];
-
-      const vaultFilter = document.getElementById("vcv-vault-filter");
-      const pkiFilter = document.getElementById("vcv-pki-filter");
-      const vaultOptions = state.vaultMountGroups.map((group) => group.id);
-      updateSelectOptions(vaultFilter, vaultOptions);
-      updatePkiFilterOptions(vaultFilter ? vaultFilter.value : "all");
-      updateVaultPkiFiltersVisibility(vaultOptions, pkiFilter ? Array.from(pkiFilter.options).map((option) => option.value).filter((value) => value !== "all") : []);
       applyTranslations();
-      attachVaultFilterListener();
       return;
     }
     if (!Array.isArray(data.pkiMounts)) {
@@ -1111,24 +1002,9 @@ async function loadConfig() {
     }
     state.availableMounts = data.pkiMounts;
     state.selectedMounts = [...data.pkiMounts];
-
-    const vaultFilter = document.getElementById("vcv-vault-filter");
-    const pkiFilter = document.getElementById("vcv-pki-filter");
-    updateSelectOptions(vaultFilter, []);
-    updateSelectOptions(pkiFilter, state.availableMounts);
-    updateVaultPkiFiltersVisibility([], state.availableMounts);
     applyTranslations();
   } catch {
   }
-}
-
-function attachVaultFilterListener() {
-  const vaultFilter = document.getElementById("vcv-vault-filter");
-  if (!vaultFilter) {
-    return;
-  }
-  vaultFilter.removeEventListener("change", handleVaultFilterChange);
-  vaultFilter.addEventListener("change", handleVaultFilterChange);
 }
 
 function initEventHandlers() {

@@ -70,38 +70,6 @@
               <div id="mount-selector" class="vcv-mount-filter"></div>
               <input id="vcv-mounts" name="mounts" type="hidden" value="__all__" />
             </div>
-            <div class="vcv-filter-group" id="vcv-vault-filter-group">
-              <label id="vcv-vault-filter-label" class="vcv-filter-label" for="vcv-vault-filter">{{.Messages.LabelVault}}</label>
-              <select
-                id="vcv-vault-filter"
-                class="vcv-select"
-                name="vault"
-                hx-get="/ui/certs"
-                hx-trigger="change"
-                hx-target="#vcv-certs-body"
-                hx-swap="innerHTML"
-                hx-sync="#vcv-certs-body:replace"
-                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
-              >
-                <option value="all">{{.Messages.StatusFilterAll}}</option>
-              </select>
-            </div>
-            <div class="vcv-filter-group" id="vcv-pki-filter-group">
-              <label id="vcv-pki-filter-label" class="vcv-filter-label" for="vcv-pki-filter">{{.Messages.LabelPKI}}</label>
-              <select
-                id="vcv-pki-filter"
-                class="vcv-select"
-                name="pki"
-                hx-get="/ui/certs"
-                hx-trigger="change"
-                hx-target="#vcv-certs-body"
-                hx-swap="innerHTML"
-                hx-sync="#vcv-certs-body:replace"
-                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
-              >
-                <option value="all">{{.Messages.StatusFilterAll}}</option>
-              </select>
-            </div>
             <div class="vcv-filter-group vcv-filter-group-search">
               <input
                 id="vcv-search"
@@ -114,7 +82,7 @@
                 hx-target="#vcv-certs-body"
                 hx-swap="innerHTML"
                 hx-sync="#vcv-certs-body:replace"
-                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
               />
             </div>
             <div class="vcv-filter-group">
@@ -128,7 +96,7 @@
                 hx-target="#vcv-certs-body"
                 hx-swap="innerHTML"
                 hx-sync="#vcv-certs-body:replace"
-                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
               >
                 <option value="all" {{if eq .Messages.StatusFilterAll ""}}selected{{end}}>{{.Messages.StatusFilterAll}}</option>
                 <option value="valid">{{.Messages.StatusFilterValid}}</option>
@@ -146,7 +114,7 @@
                 hx-target="#vcv-certs-body"
                 hx-swap="innerHTML"
                 hx-sync="#vcv-certs-body:replace"
-                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
               >
                 <option value="all">{{.Messages.ExpiryFilterAll}}</option>
                 <option value="7">{{.Messages.ExpiryFilter7Days}}</option>
@@ -165,7 +133,7 @@
               hx-target="#vcv-certs-body"
               hx-swap="innerHTML"
               hx-sync="#vcv-certs-body:replace"
-              hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+              hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             >
               <span class="vcv-refresh-icon">↻</span>
             </button>
@@ -331,7 +299,7 @@
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
           >
             <option value="25">25</option>
             <option value="50">50</option>
@@ -348,7 +316,7 @@
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             hx-vals='{"pageAction":"prev"}'
             {{if .Certs.PagePrevDisabled}}disabled{{end}}
           >
@@ -364,7 +332,7 @@
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             hx-vals='{"pageAction":"next"}'
             {{if .Certs.PageNextDisabled}}disabled{{end}}
           >
@@ -414,7 +382,7 @@
             id="vcv-certs-body"
             hx-get="/ui/certs"
             hx-swap="innerHTML"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-vault-filter, #vcv-pki-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
           >
             {{if eq (len .Certs.Rows) 0}}
             <tr>
