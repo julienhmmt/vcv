@@ -195,6 +195,7 @@ function initModalHandlers() {
       closeCertificateModal();
       closeMountModal();
       closeDocumentationModal();
+      closeVaultStatusModal();
     }
   });
 
@@ -205,6 +206,7 @@ function initModalHandlers() {
         closeCertificateModal();
         closeMountModal();
         closeDocumentationModal();
+        closeVaultStatusModal();
       }
     });
   });
@@ -532,6 +534,8 @@ function applyTranslations() {
   setText(document.getElementById("vcv-page-prev"), messages.paginationPrev);
   setText(document.getElementById("vcv-documentation-modal-close"), messages.buttonClose);
   setText(document.getElementById("vcv-documentation-modal-title"), messages.buttonDocumentation);
+  setText(document.getElementById("vault-status-modal-close"), messages.buttonClose);
+  setText(document.getElementById("vault-status-modal-title"), messages.vaultStatusTitle || "Vault status");
   
   const refreshBtn = document.getElementById("refresh-btn");
   if (refreshBtn) {
@@ -819,17 +823,46 @@ function closeMountModal() {
   modal.classList.add("vcv-hidden");
 }
 
-function toggleMount(mount) {
-  const index = state.selectedMounts.indexOf(mount);
-  if (index > -1) {
-    state.selectedMounts.splice(index, 1);
-  } else {
-    state.selectedMounts.push(mount);
+function openVaultStatusModal() {
+  const modal = document.getElementById("vault-status-modal");
+  if (!modal) {
+    return;
   }
-  renderMountSelector();
-  renderMountModalList();
-  updateMountStats();
-  refreshHtmxCertsTable();
+  modal.classList.remove("vcv-hidden");
+}
+
+function closeVaultStatusModal() {
+  const modal = document.getElementById("vault-status-modal");
+  if (!modal) {
+    return;
+  }
+  modal.classList.add("vcv-hidden");
+}
+
+let vaultRefreshLastTime = 0;
+const vaultRefreshCooldown = 5000;
+
+function handleVaultRefresh(event) {
+  const now = Date.now();
+  const button = event.target;
+  if (!button) {
+    return;
+  }
+  if (now - vaultRefreshLastTime < vaultRefreshCooldown) {
+    event.preventDefault();
+    event.stopPropagation();
+    const remaining = Math.ceil((vaultRefreshCooldown - (now - vaultRefreshLastTime)) / 1000);
+    const messages = state.messages || {};
+    const msg = messages.cacheInvalidateFailed || "Please wait";
+    showErrorToast(`${msg} (${remaining}s)`);
+    return false;
+  }
+  vaultRefreshLastTime = now;
+  button.disabled = true;
+  setTimeout(() => {
+    button.disabled = false;
+  }, vaultRefreshCooldown);
+  return true;
 }
 
 function selectAllMounts() {

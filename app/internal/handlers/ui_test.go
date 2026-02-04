@@ -30,7 +30,7 @@ func setupUIRouter(mockVault *vault.MockClient, webFS fs.FS) *chi.Mux {
 
 func TestStatusFragment_MultiVaultAddsSummaryPill(t *testing.T) {
 	webFS := fstest.MapFS{
-		"templates/footer-status.html":         &fstest.MapFile{Data: []byte("{{if .VaultSummaryPill}}<span class=\"{{.VaultSummaryPill.Class}}\">{{.VaultSummaryPill.Text}}</span>{{end}}{{range .VaultAllPills}}<span class=\"{{.Class}}\">{{.Text}}</span>{{end}}")},
+		"templates/footer-status.html":         &fstest.MapFile{Data: []byte("{{if .VaultSummaryPill}}<span class=\"{{.VaultSummaryPill.Class}}\">{{.VaultSummaryPill.Text}}</span>{{end}}")},
 		"templates/theme-toggle-fragment.html": &fstest.MapFile{Data: []byte("<div></div>")},
 		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div></div>")},
 		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{define \"certs-fragment\"}}{{end}}")},
@@ -56,8 +56,6 @@ func TestStatusFragment_MultiVaultAddsSummaryPill(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	body := rec.Body.String()
 	assert.Contains(t, body, "Vaults: 1/2 up")
-	assert.Contains(t, body, "Vault 1")
-	assert.Contains(t, body, "Vault 2")
 	assert.Contains(t, body, "vcv-footer-pill-summary")
 	statusClient1.AssertExpectations(t)
 	statusClient2.AssertExpectations(t)

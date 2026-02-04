@@ -24,7 +24,7 @@
       <header class="vcv-header">
         <div class="vcv-header-bar">
           <div class="vcv-header-left">
-            <h1 class="vcv-title">{{.Messages.AppTitle}}</h1>
+            <h1 class="vcv-title">{{.Messages.AppTitle}} <span class="vcv-title-version">v{{.AppVersionText}}</span></h1>
           </div>
           <div class="vcv-header-actions">
             <button
@@ -489,6 +489,25 @@
       </div>
     </div>
 
+    <!-- Vault status modal -->
+    <div id="vault-status-modal" class="vcv-modal-backdrop vcv-hidden">
+      <div class="vcv-modal">
+        <div class="vcv-modal-header">
+          <h2 class="vcv-modal-title" id="vault-status-modal-title">{{.Messages.ModalVaultStatusTitle}}</h2>
+          <button type="button" class="vcv-modal-close" onclick="closeVaultStatusModal()">×</button>
+        </div>
+        <div class="vcv-modal-content">
+          <div id="vault-status-content" class="vcv-details-content">
+            <!-- Content will be populated by HTMX -->
+          </div>
+        </div>
+        <div class="vcv-modal-actions">
+          <button id="vault-status-refresh" type="button" class="vcv-button vcv-button-secondary" hx-post="/ui/vaults/refresh" hx-target="#vault-status-content" hx-swap="innerHTML" hx-include="#vcv-lang-select" onclick="handleVaultRefresh(event)">{{.Messages.ButtonRefresh}}</button>
+          <button id="vault-status-modal-close" type="button" class="vcv-button" onclick="closeVaultStatusModal()">{{.Messages.ButtonClose}}</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Documentation modal -->
     <div id="vcv-documentation-modal" class="vcv-modal-backdrop vcv-hidden">
       <div class="vcv-modal vcv-modal-lg">
@@ -511,9 +530,6 @@
     </div>
 
     <footer class="vcv-footer" hx-get="/ui/status" hx-trigger="load, every 10s" hx-target="#vcv-footer-sink" hx-swap="innerHTML" hx-include="#vcv-lang-select">
-      <div class="vcv-footer-left">
-        <span id="vcv-footer-version" class="vcv-footer-version">—</span>
-      </div>
       <div id="vcv-footer-vaults" class="vcv-footer-right">
         <span class="vcv-footer-pill">Vault: …</span>
       </div>

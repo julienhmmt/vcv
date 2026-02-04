@@ -1,20 +1,6 @@
-<span id="vcv-footer-version" class="vcv-footer-version" hx-swap-oob="true">{{.VersionText}}</span>
 <div id="vcv-footer-vaults" class="vcv-footer-right" hx-swap-oob="true">
   {{- if .VaultSummaryPill -}}
-    <span class="{{.VaultSummaryPill.Class}}" title="{{.VaultSummaryPill.Title}}">{{.VaultSummaryPill.Text}}</span>
-    {{- range .VaultPreviewPills -}}
-      <span class="{{.Class}}" title="{{.Title}}">{{.Text}}</span>
-    {{- end -}}
-    {{- if gt .VaultHiddenCount 0 -}}
-      <details class="vcv-footer-vaults-details">
-        <summary class="vcv-footer-pill vcv-footer-pill-more" title="{{.VaultHiddenCount}}">+{{.VaultHiddenCount}}</summary>
-        <div class="vcv-footer-vaults-panel">
-          {{- range .VaultAllPills -}}
-            <span class="{{.Class}}" title="{{.Title}}">{{.Text}}</span>
-          {{- end -}}
-        </div>
-      </details>
-    {{- end -}}
+    <button type="button" class="{{.VaultSummaryPill.Class}}" title="{{.VaultSummaryPill.Title}}" onclick="openVaultStatusModal()" hx-get="/ui/vaults/status" hx-target="#vault-status-content" hx-swap="innerHTML" hx-include="#vcv-lang-select">{{.VaultSummaryPill.Text}}</button>
   {{- else -}}
     {{- range .VaultPills -}}
       <span class="{{.Class}}" title="{{.Title}}">{{.Text}}</span>

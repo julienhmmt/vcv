@@ -67,6 +67,11 @@ func newVaultTestServer(state vaultTestServerState) *httptest.Server {
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
 			return
 		}
+		if r.URL.Path == "/v1/auth/token/lookup-self" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"id": "token"}})
+			return
+		}
 		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"keys": []string{"aa", "bb"}}})
@@ -139,6 +144,11 @@ func TestNewClientFromConfig_TLSInsecure_AllowsTLSWithoutCA(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
 			return
 		}
+		if r.URL.Path == "/v1/auth/token/lookup-self" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"id": "token"}})
+			return
+		}
 		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"keys": []string{"aa", "bb"}}})
@@ -168,6 +178,11 @@ func TestNewClientFromConfig_TLSCACert_AllowsTLSWithCA(t *testing.T) {
 		if r.URL.Path == "/v1/sys/health" {
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
+			return
+		}
+		if r.URL.Path == "/v1/auth/token/lookup-self" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"id": "token"}})
 			return
 		}
 		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
@@ -216,6 +231,11 @@ func TestNewClientFromConfig_TLSCACertBase64_AllowsTLSWithCA(t *testing.T) {
 		if r.URL.Path == "/v1/sys/health" {
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
+			return
+		}
+		if r.URL.Path == "/v1/auth/token/lookup-self" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"id": "token"}})
 			return
 		}
 		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
@@ -391,6 +411,11 @@ func TestListCertificatesFromMount_KeysWrongType(t *testing.T) {
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
 			return
 		}
+		if r.URL.Path == "/v1/auth/token/lookup-self" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"id": "token"}})
+			return
+		}
 		w.WriteHeader(http.StatusNotFound)
 	}))
 	defer server.Close()
@@ -487,6 +512,13 @@ func TestRealClient_Logging(t *testing.T) {
 				"version":     "1.12.0",
 			}); err != nil {
 				t.Fatalf("failed to encode health response: %v", err)
+			}
+		case "/v1/auth/token/lookup-self":
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(map[string]interface{}{
+				"data": map[string]interface{}{"id": "token"},
+			}); err != nil {
+				t.Fatalf("failed to encode token response: %v", err)
 			}
 		case "/v1/pki/certs":
 			w.Header().Set("Content-Type", "application/json")

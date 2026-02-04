@@ -149,6 +149,20 @@ func (c *realClient) CheckConnection(ctx context.Context) error {
 	logger.Get().Debug().
 		Str("vault_addr", c.addr).
 		Str("version", health.Version).
+		Msg("vault liveness check successful")
+
+	// Check if token is usable
+	_, err = c.client.Auth().Token().LookupSelf()
+	if err != nil {
+		logger.Get().Error().
+			Str("vault_addr", c.addr).
+			Err(err).
+			Msg("vault token check failed")
+		return fmt.Errorf("vault token check failed: %w", err)
+	}
+
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
 		Msg("vault connection successful")
 
 	return nil
