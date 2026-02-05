@@ -1,7 +1,17 @@
 {{define "dashboard-fragment"}}
-<div class="vcv-card-value" id="dashboard-total" hx-swap-oob="true">{{.DashboardTotal}}</div>
 <div class="vcv-card-value" id="dashboard-valid" hx-swap-oob="true">{{.DashboardValid}}</div>
 <div class="vcv-card-value" id="dashboard-expiring" hx-swap-oob="true">{{.DashboardExpiring}}</div>
 <div class="vcv-card-value" id="dashboard-expired" hx-swap-oob="true">{{.DashboardExpired}}</div>
 <div class="vcv-card-value" id="dashboard-revoked" hx-swap-oob="true">{{.DashboardRevoked}}</div>
+{{$total := add .DashboardValid .DashboardExpiring .DashboardExpired .DashboardRevoked}}
+<div id="dashboard-chart" class="vcv-dashboard-donut" hx-swap-oob="true"
+  style="--chart-valid: {{.DashboardValid}}; --chart-expiring: {{.DashboardExpiring}}; --chart-expired: {{.DashboardExpired}}; --chart-revoked: {{.DashboardRevoked}}; --chart-total: {{$total}};">
+  <div class="vcv-donut-wrapper">
+    <div class="vcv-donut{{if eq $total 0}} vcv-donut-empty{{end}}"></div>
+    <div class="vcv-donut-center">
+      <span class="vcv-donut-center-value" id="dashboard-total">{{.DashboardTotal}}</span>
+      <span class="vcv-donut-center-label">certs</span>
+    </div>
+  </div>
+</div>
 {{end}}

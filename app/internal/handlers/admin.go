@@ -458,7 +458,7 @@ func (s *adminSettingsStore) putSettings(w http.ResponseWriter, r *http.Request)
 }
 
 func parseTemplates(webFS fs.FS) (*template.Template, error) {
-	return template.ParseFS(webFS, "templates/*.html")
+	return template.New("").Funcs(templateFuncMap()).ParseFS(webFS, "templates/*.html")
 }
 
 func renderAdminTemplate(w http.ResponseWriter, templates *template.Template, name string, data interface{}) error {

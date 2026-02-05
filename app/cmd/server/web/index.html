@@ -195,41 +195,47 @@
       </div>
 
       <!-- Dashboard -->
+      {{$total := add .Certs.DashboardValid .Certs.DashboardExpiring .Certs.DashboardExpired .Certs.DashboardRevoked}}
       <div id="vcv-dashboard" class="vcv-dashboard">
-        <div class="vcv-dashboard-cards">
-          <div class="vcv-card vcv-card-total">
-            <div class="vcv-card-icon">📜</div>
-            <div class="vcv-card-content">
-              <div class="vcv-card-value" id="dashboard-total">{{.Certs.DashboardTotal}}</div>
-              <div class="vcv-card-label" id="dashboard-total-label">Total Certificates</div>
+        <div class="vcv-dashboard-row">
+          <div id="dashboard-chart" class="vcv-dashboard-donut"
+            style="--chart-valid: {{.Certs.DashboardValid}}; --chart-expiring: {{.Certs.DashboardExpiring}}; --chart-expired: {{.Certs.DashboardExpired}}; --chart-revoked: {{.Certs.DashboardRevoked}}; --chart-total: {{$total}};">
+            <div class="vcv-donut-wrapper">
+              <div class="vcv-donut{{if eq $total 0}} vcv-donut-empty{{end}}"></div>
+              <div class="vcv-donut-center">
+                <span class="vcv-donut-center-value" id="dashboard-total">{{.Certs.DashboardTotal}}</span>
+                <span class="vcv-donut-center-label">certs</span>
+              </div>
             </div>
           </div>
-          <div class="vcv-card vcv-card-valid">
-            <div class="vcv-card-icon">✓</div>
-            <div class="vcv-card-content">
-              <div class="vcv-card-value" id="dashboard-valid">{{.Certs.DashboardValid}}</div>
-              <div class="vcv-card-label" id="dashboard-valid-label">Valid</div>
+          <div class="vcv-dashboard-cards">
+            <div class="vcv-card vcv-card-valid">
+              <div class="vcv-card-icon">✓</div>
+              <div class="vcv-card-content">
+                <div class="vcv-card-value" id="dashboard-valid">{{.Certs.DashboardValid}}</div>
+                <div class="vcv-card-label" id="dashboard-valid-label">Valid</div>
+              </div>
             </div>
-          </div>
-          <div class="vcv-card vcv-card-expiring">
-            <div class="vcv-card-icon">⏰</div>
-            <div class="vcv-card-content">
-              <div class="vcv-card-value" id="dashboard-expiring">{{.Certs.DashboardExpiring}}</div>
-              <div class="vcv-card-label" id="dashboard-expiring-label">Expiring Soon</div>
+            <div class="vcv-card vcv-card-expiring">
+              <div class="vcv-card-icon">⏰</div>
+              <div class="vcv-card-content">
+                <div class="vcv-card-value" id="dashboard-expiring">{{.Certs.DashboardExpiring}}</div>
+                <div class="vcv-card-label" id="dashboard-expiring-label">Expiring Soon</div>
+              </div>
             </div>
-          </div>
-          <div class="vcv-card vcv-card-expired">
-            <div class="vcv-card-icon">✗</div>
-            <div class="vcv-card-content">
-              <div class="vcv-card-value" id="dashboard-expired">{{.Certs.DashboardExpired}}</div>
-              <div class="vcv-card-label" id="dashboard-expired-label">Expired</div>
+            <div class="vcv-card vcv-card-expired">
+              <div class="vcv-card-icon">✗</div>
+              <div class="vcv-card-content">
+                <div class="vcv-card-value" id="dashboard-expired">{{.Certs.DashboardExpired}}</div>
+                <div class="vcv-card-label" id="dashboard-expired-label">Expired</div>
+              </div>
             </div>
-          </div>
-          <div class="vcv-card vcv-card-revoked">
-            <div class="vcv-card-icon">⊘</div>
-            <div class="vcv-card-content">
-              <div class="vcv-card-value" id="dashboard-revoked">{{.Certs.DashboardRevoked}}</div>
-              <div class="vcv-card-label" id="dashboard-revoked-label">Revoked</div>
+            <div class="vcv-card vcv-card-revoked">
+              <div class="vcv-card-icon">⊘</div>
+              <div class="vcv-card-content">
+                <div class="vcv-card-value" id="dashboard-revoked">{{.Certs.DashboardRevoked}}</div>
+                <div class="vcv-card-label" id="dashboard-revoked-label">Revoked</div>
+              </div>
             </div>
           </div>
         </div>

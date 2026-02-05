@@ -202,8 +202,8 @@ type certsQueryState struct {
 }
 
 func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstances []config.VaultInstance, vaultStatusClients map[string]vault.Client, webFS fs.FS, expirationThresholds config.ExpirationThresholds) {
-	templates := template.New("")
-	if t, err := template.ParseFS(webFS, "templates/*.html"); err == nil {
+	templates := template.New("").Funcs(templateFuncMap())
+	if t, err := templates.ParseFS(webFS, "templates/*.html"); err == nil {
 		templates = t
 	} else {
 		logger.Get().Error().Err(err).Msg("failed to parse templates")
@@ -1257,17 +1257,18 @@ func computeDashboardStats(certificates []certs.Certificate, thresholds config.E
 	now := time.Now().UTC()
 	stats.Total = len(certificates)
 	for _, cert := range certificates {
-		if !cert.ExpiresAt.IsZero() && !cert.ExpiresAt.After(now) {
-			stats.Expired++
-			continue
-		}
 		if cert.Revoked {
 			stats.Revoked++
+			continue
+		}
+		if !cert.ExpiresAt.IsZero() && !cert.ExpiresAt.After(now) {
+			stats.Expired++
 			continue
 		}
 		days := daysUntil(cert.ExpiresAt.UTC(), now)
 		if thresholds.Warning > 0 && days >= 0 && days <= thresholds.Warning {
 			stats.Expiring++
+			continue
 		}
 		stats.Valid++
 	}
