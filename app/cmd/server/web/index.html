@@ -107,6 +107,7 @@
               >
                 <option value="all" {{if eq .Messages.StatusFilterAll ""}}selected{{end}}>{{.Messages.StatusFilterAll}}</option>
                 <option value="valid">{{.Messages.StatusFilterValid}}</option>
+                <option value="expiring">{{.Messages.StatusFilterExpiring}}</option>
                 <option value="expired">{{.Messages.StatusFilterExpired}}</option>
                 <option value="revoked">{{.Messages.StatusFilterRevoked}}</option>
               </select>
@@ -209,28 +210,28 @@
             </div>
           </div>
           <div class="vcv-dashboard-cards">
-            <div class="vcv-card vcv-card-valid">
+            <div class="vcv-card vcv-card-valid vcv-card-clickable" data-status="valid" onclick="filterByDashboardCard('valid')">
               <div class="vcv-card-icon">✓</div>
               <div class="vcv-card-content">
                 <div class="vcv-card-value" id="dashboard-valid">{{.Certs.DashboardValid}}</div>
                 <div class="vcv-card-label" id="dashboard-valid-label">Valid</div>
               </div>
             </div>
-            <div class="vcv-card vcv-card-expiring">
+            <div class="vcv-card vcv-card-expiring vcv-card-clickable" data-status="expiring" onclick="filterByDashboardCard('expiring')">
               <div class="vcv-card-icon">⏰</div>
               <div class="vcv-card-content">
                 <div class="vcv-card-value" id="dashboard-expiring">{{.Certs.DashboardExpiring}}</div>
                 <div class="vcv-card-label" id="dashboard-expiring-label">Expiring Soon</div>
               </div>
             </div>
-            <div class="vcv-card vcv-card-expired">
+            <div class="vcv-card vcv-card-expired vcv-card-clickable" data-status="expired" onclick="filterByDashboardCard('expired')">
               <div class="vcv-card-icon">✗</div>
               <div class="vcv-card-content">
                 <div class="vcv-card-value" id="dashboard-expired">{{.Certs.DashboardExpired}}</div>
                 <div class="vcv-card-label" id="dashboard-expired-label">Expired</div>
               </div>
             </div>
-            <div class="vcv-card vcv-card-revoked">
+            <div class="vcv-card vcv-card-revoked vcv-card-clickable" data-status="revoked" onclick="filterByDashboardCard('revoked')">
               <div class="vcv-card-icon">⊘</div>
               <div class="vcv-card-content">
                 <div class="vcv-card-value" id="dashboard-revoked">{{.Certs.DashboardRevoked}}</div>

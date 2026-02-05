@@ -783,7 +783,7 @@ func paginateCertificates(items []certs.Certificate, pageIndex int, pageSize str
 	return items[start:end], totalPages
 }
 
-func applyCertificateFilters(items []certs.Certificate, state certsQueryState, sortKey string, sortDirection string) []certs.Certificate {
+func applyCertificateFilters(items []certs.Certificate, state certsQueryState, sortKey string, sortDirection string, thresholds config.ExpirationThresholds) []certs.Certificate {
 	loweredTerm := strings.ToLower(strings.TrimSpace(state.SearchTerm))
 	vaultFilter := strings.ToLower(strings.TrimSpace(state.VaultFilter))
 	pkiFilter := strings.ToLower(strings.TrimSpace(state.PKIFilter))
@@ -806,7 +806,15 @@ func applyCertificateFilters(items []certs.Certificate, state certsQueryState, s
 			}
 		}
 		statuses := certificateStatuses(certificate, now)
-		if state.StatusFilter != "all" && !containsString(statuses, state.StatusFilter) {
+		if state.StatusFilter == "expiring" {
+			if !containsString(statuses, "valid") {
+				continue
+			}
+			days := daysUntil(certificate.ExpiresAt.UTC(), now)
+			if thresholds.Warning <= 0 || days < 0 || days > thresholds.Warning {
+				continue
+			}
+		} else if state.StatusFilter != "all" && !containsString(statuses, state.StatusFilter) {
 			continue
 		}
 		if maxDays >= 0 {
@@ -1190,7 +1198,7 @@ func buildCertsFragmentData(certificates []certs.Certificate, expirationThreshol
 	filteredByMount := filterCertificatesByMounts(certificates, queryState.SelectedMounts)
 	dashboardStats := computeDashboardStats(filteredByMount, expirationThresholds)
 	sortKey, sortDirection := resolveSortState(queryState)
-	visible := applyCertificateFilters(filteredByMount, queryState, sortKey, sortDirection)
+	visible := applyCertificateFilters(filteredByMount, queryState, sortKey, sortDirection, expirationThresholds)
 	pageIndex := resolvePageIndex(queryState, len(visible), queryState.PageSize)
 	_, totalPages := paginateCertificates(visible, pageIndex, queryState.PageSize)
 	if shouldResetPageIndex(queryState.TriggerID, queryState.PageAction) {

@@ -204,6 +204,7 @@ function initUrlSync() {
     console.log("[VCV] popstate detected. Syncing UI state.");
     state.suppressUrlUpdateUntilNextSuccess = true;
     applyCertsStateFromUrl();
+    syncDashboardCardFromStatusFilter();
     await loadMessages();
     applyTranslations();
     renderMountSelector();
@@ -444,6 +445,7 @@ function applyTranslations() {
   if (statusSelect) {
     setText(statusSelect.querySelector("option[value='all']"), messages.statusFilterAll);
     setText(statusSelect.querySelector("option[value='expired']"), messages.statusFilterExpired);
+    setText(statusSelect.querySelector("option[value='expiring']"), messages.statusFilterExpiring);
     setText(statusSelect.querySelector("option[value='revoked']"), messages.statusFilterRevoked);
     setText(statusSelect.querySelector("option[value='valid']"), messages.statusFilterValid);
   }
@@ -551,6 +553,40 @@ function getCertsHtmxValues() {
     status: statusFilter ? statusFilter.value : "all",
     lang: langSelect ? langSelect.value : "",
   };
+}
+
+function syncDashboardCardFromStatusFilter() {
+  const statusSelect = document.getElementById("vcv-status-filter");
+  const currentStatus = statusSelect ? statusSelect.value : "all";
+  updateActiveDashboardCard(currentStatus);
+}
+
+function filterByDashboardCard(status) {
+  const statusSelect = document.getElementById("vcv-status-filter");
+  if (!statusSelect) {
+    return;
+  }
+  const currentValue = statusSelect.value;
+  const nextValue = currentValue === status ? "all" : status;
+  statusSelect.value = nextValue;
+  const pageInput = document.getElementById("vcv-page");
+  if (pageInput) {
+    pageInput.value = "0";
+  }
+  updateActiveDashboardCard(nextValue);
+  refreshHtmxCertsTable();
+}
+
+function updateActiveDashboardCard(activeStatus) {
+  const cards = document.querySelectorAll(".vcv-card-clickable");
+  cards.forEach((card) => {
+    const cardStatus = card.getAttribute("data-status") || "";
+    if (cardStatus === activeStatus) {
+      card.classList.add("vcv-card-active");
+    } else {
+      card.classList.remove("vcv-card-active");
+    }
+  });
 }
 
 function handleSortClick(event) {
@@ -987,6 +1023,12 @@ function initEventHandlers() {
   document.querySelectorAll(".vcv-sort").forEach((button) => {
     button.addEventListener("click", handleSortClick);
   });
+  const statusSelect = document.getElementById("vcv-status-filter");
+  if (statusSelect) {
+    statusSelect.addEventListener("change", () => {
+      syncDashboardCardFromStatusFilter();
+    });
+  }
 }
 
 function dismissNotifications() {
@@ -1017,6 +1059,7 @@ async function main() {
     applyTranslations();
     await loadConfig();
     applyCertsStateFromUrl();
+    syncDashboardCardFromStatusFilter();
     renderMountSelector();
     setMountsHiddenField();
   } else {
@@ -1043,3 +1086,4 @@ window.closeCertificateModal = closeCertificateModal;
 window.openDocumentationModal = openDocumentationModal;
 window.closeDocumentationModal = closeDocumentationModal;
 window.dismissNotifications = dismissNotifications;
+window.filterByDashboardCard = filterByDashboardCard;

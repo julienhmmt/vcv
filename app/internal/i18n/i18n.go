@@ -108,6 +108,7 @@ type Messages struct {
 	SelectAll                   string `json:"selectAll"`
 	StatusFilterAll             string `json:"statusFilterAll"`
 	StatusFilterExpired         string `json:"statusFilterExpired"`
+	StatusFilterExpiring        string `json:"statusFilterExpiring"`
 	StatusFilterRevoked         string `json:"statusFilterRevoked"`
 	StatusFilterTitle           string `json:"statusFilterTitle"`
 	StatusFilterValid           string `json:"statusFilterValid"`
@@ -250,6 +251,7 @@ var englishMessages = Messages{
 	SelectAll:                   "Select all",
 	StatusFilterAll:             "All",
 	StatusFilterExpired:         "Expired",
+	StatusFilterExpiring:        "Expiring soon",
 	StatusFilterRevoked:         "Revoked",
 	StatusFilterTitle:           "Status filter",
 	StatusFilterValid:           "Valid",
@@ -386,6 +388,7 @@ var frenchMessages = Messages{
 	SelectAll:                   "Tout sélectionner",
 	StatusFilterAll:             "Tous",
 	StatusFilterExpired:         "Expiré",
+	StatusFilterExpiring:        "Expiration proche",
 	StatusFilterRevoked:         "Révoqué",
 	StatusFilterTitle:           "Filtre des statuts",
 	StatusFilterValid:           "Valide",
@@ -522,6 +525,7 @@ var spanishMessages = Messages{
 	SelectAll:                   "Seleccionar todo",
 	StatusFilterAll:             "Todos",
 	StatusFilterExpired:         "Caducado",
+	StatusFilterExpiring:        "Próximo a caducar",
 	StatusFilterRevoked:         "Revocado",
 	StatusFilterTitle:           "Filtro de estado",
 	StatusFilterValid:           "Válido",
@@ -658,6 +662,7 @@ var germanMessages = Messages{
 	SelectAll:                   "Alle auswählen",
 	StatusFilterAll:             "Alle",
 	StatusFilterExpired:         "Abgelaufen",
+	StatusFilterExpiring:        "Bald ablaufend",
 	StatusFilterRevoked:         "Widerrufen",
 	StatusFilterTitle:           "Statusfilter",
 	StatusFilterValid:           "Gültig",
@@ -793,6 +798,7 @@ var italianMessages = Messages{
 	SelectAll:                   "Seleziona tutto",
 	StatusFilterAll:             "Tutti",
 	StatusFilterExpired:         "Scaduto",
+	StatusFilterExpiring:        "In scadenza",
 	StatusFilterRevoked:         "Revocato",
 	StatusFilterTitle:           "Filtro di stato",
 	StatusFilterValid:           "Valido",

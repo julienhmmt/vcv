@@ -1902,6 +1902,36 @@ body {
   color: var(--vcv-color-danger);
 }
 
+.vcv-card-clickable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.vcv-card-clickable:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.vcv-card-clickable:active {
+  transform: translateY(0);
+}
+
+.vcv-card-active {
+  box-shadow: 0 0 0 2px var(--vcv-color-primary);
+}
+
+.vcv-card-active.vcv-card-expiring {
+  box-shadow: 0 0 0 2px var(--vcv-color-warning);
+}
+
+.vcv-card-active.vcv-card-expired {
+  box-shadow: 0 0 0 2px var(--vcv-color-danger);
+}
+
+.vcv-card-active.vcv-card-revoked {
+  box-shadow: 0 0 0 2px #991b1b;
+}
+
 .vcv-card-value {
   font-size: 1.375rem;
   font-weight: 700;
