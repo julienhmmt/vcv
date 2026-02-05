@@ -149,6 +149,7 @@ type certsFragmentTemplateData struct {
 	DashboardValid     int
 	DashboardExpiring  int
 	DashboardExpired   int
+	DashboardRevoked   int
 	AdminDocsTitle     string `json:"adminDocsTitle"`
 }
 
@@ -157,6 +158,7 @@ type dashboardStatsTemplateData struct {
 	Valid    int
 	Expiring int
 	Expired  int
+	Revoked  int
 }
 
 type certRowTemplateData struct {
@@ -1228,6 +1230,7 @@ func buildCertsFragmentData(certificates []certs.Certificate, expirationThreshol
 		DashboardValid:     dashboardStats.Valid,
 		DashboardExpiring:  dashboardStats.Expiring,
 		DashboardExpired:   dashboardStats.Expired,
+		DashboardRevoked:   dashboardStats.Revoked,
 		AdminDocsTitle:     messages.AdminDocsTitle,
 	}
 }
@@ -1259,6 +1262,7 @@ func computeDashboardStats(certificates []certs.Certificate, thresholds config.E
 			continue
 		}
 		if cert.Revoked {
+			stats.Revoked++
 			continue
 		}
 		days := daysUntil(cert.ExpiresAt.UTC(), now)

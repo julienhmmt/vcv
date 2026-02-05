@@ -1878,6 +1878,11 @@ body {
   color: var(--vcv-color-danger);
 }
 
+.vcv-card-revoked .vcv-card-icon {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--vcv-color-danger);
+}
+
 .vcv-card-value {
   font-size: 1.75rem;
   font-weight: 700;

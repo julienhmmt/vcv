@@ -421,6 +421,7 @@ function applyTranslations() {
   setText(document.getElementById("certificate-modal-close"), messages.buttonClose);
   setText(document.getElementById("dashboard-expired-label"), messages.dashboardExpired);
   setText(document.getElementById("dashboard-expiring-label"), messages.dashboardExpiring);
+  setText(document.getElementById("dashboard-revoked-label"), messages.dashboardRevoked);
   setText(document.getElementById("dashboard-total-label"), messages.dashboardTotal);
   setText(document.getElementById("dashboard-valid-label"), messages.dashboardValid);
   setText(document.getElementById("mount-close"), messages.buttonClose);

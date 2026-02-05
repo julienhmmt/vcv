@@ -225,10 +225,16 @@
               <div class="vcv-card-label" id="dashboard-expired-label">Expired</div>
             </div>
           </div>
+          <div class="vcv-card vcv-card-revoked">
+            <div class="vcv-card-icon">⊘</div>
+            <div class="vcv-card-content">
+              <div class="vcv-card-value" id="dashboard-revoked">{{.Certs.DashboardRevoked}}</div>
+              <div class="vcv-card-label" id="dashboard-revoked-label">Revoked</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div id="vcv-status" class="vcv-status"></div>
       <input id="vcv-page" name="page" type="hidden" value="{{.Certs.PageIndex}}" />
       <input id="vcv-sort-key" name="sortKey" type="hidden" value="{{.Certs.SortKey}}" />
       <input id="vcv-sort-dir" name="sortDir" type="hidden" value="{{.Certs.SortDirection}}" />
