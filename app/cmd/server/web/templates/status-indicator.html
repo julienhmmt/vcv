@@ -1,0 +1,29 @@
+{{- if .Summary -}}
+<button 
+  type="button" 
+  id="vcv-status-btn"
+  class="vcv-button vcv-button-ghost vcv-status-indicator {{.Summary.Class}}" 
+  title="{{.Summary.Title}}" 
+  aria-label="{{.Messages.ModalVaultStatusTitle}}: {{.Summary.Text}}"
+  onclick="openVaultStatusModal()" 
+  hx-get="/ui/vaults/status" 
+  hx-target="#vault-status-content" 
+  hx-swap="innerHTML" 
+  hx-include="#vcv-lang-select"
+>
+  <span class="vcv-status-icon" aria-hidden="true">
+    <svg viewBox="0 0 24 24" width="16" height="16" focusable="false" aria-hidden="true">
+      <path
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        d="M12 2l7 4v6c0 5-3 9-7 10-4-1-7-5-7-10V6l7-4z"
+      />
+    </svg>
+  </span>
+  <span class="vcv-status-label">{{.Messages.ModalVaultStatusTitle}}</span>
+  <span class="vcv-status-dot"></span>
+</button>
+{{- end -}}

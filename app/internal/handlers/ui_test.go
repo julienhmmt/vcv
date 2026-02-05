@@ -30,7 +30,7 @@ func setupUIRouter(mockVault *vault.MockClient, webFS fs.FS) *chi.Mux {
 
 func TestStatusFragment_MultiVaultAddsSummaryPill(t *testing.T) {
 	webFS := fstest.MapFS{
-		"templates/footer-status.html":         &fstest.MapFile{Data: []byte("{{if .VaultSummaryPill}}<span class=\"{{.VaultSummaryPill.Class}}\">{{.VaultSummaryPill.Text}}</span>{{end}}")},
+		"templates/status-indicator.html":      &fstest.MapFile{Data: []byte("{{if .Summary}}<button class=\"{{.Summary.Class}}\">{{.Summary.Text}}</button>{{end}}")},
 		"templates/theme-toggle-fragment.html": &fstest.MapFile{Data: []byte("<div></div>")},
 		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div></div>")},
 		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{define \"certs-fragment\"}}{{end}}")},
@@ -56,7 +56,7 @@ func TestStatusFragment_MultiVaultAddsSummaryPill(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	body := rec.Body.String()
 	assert.Contains(t, body, "Vaults: 1/2 up")
-	assert.Contains(t, body, "vcv-footer-pill-summary")
+	assert.Contains(t, body, "vcv-status-state-error")
 	statusClient1.AssertExpectations(t)
 	statusClient2.AssertExpectations(t)
 }
@@ -64,7 +64,7 @@ func TestStatusFragment_MultiVaultAddsSummaryPill(t *testing.T) {
 func TestToggleThemeFragment(t *testing.T) {
 	webFS := fstest.MapFS{
 		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div></div>")},
-		"templates/footer-status.html":         &fstest.MapFile{Data: []byte("<div></div>")},
+		"templates/status-indicator.html":      &fstest.MapFile{Data: []byte("<div></div>")},
 		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{define \"certs-fragment\"}}{{end}}")},
 		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{end}}")},
 		"templates/certs-state.html":           &fstest.MapFile{Data: []byte("{{define \"certs-state\"}}{{end}}")},
@@ -88,7 +88,7 @@ func TestToggleThemeFragment(t *testing.T) {
 func TestGetCertificateDetailsUI(t *testing.T) {
 	webFS := fstest.MapFS{
 		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div>")},
-		"templates/footer-status.html":         &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
+		"templates/status-indicator.html":      &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
 		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{template \"certs-rows\" .}}{{template \"dashboard-fragment\" .}}{{template \"certs-state\" .}}{{template \"certs-pagination\" .}}{{template \"certs-sort\" .}}")},
 		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{range .Rows}}<div class=\"row\">{{.CommonName}}</div>{{end}}{{end}}")},
 		"templates/dashboard-fragment.html":    &fstest.MapFile{Data: []byte("{{define \"dashboard-fragment\"}}{{end}}")},
@@ -151,7 +151,7 @@ func TestGetCertificateDetailsUI(t *testing.T) {
 func TestGetCertificatesFragment(t *testing.T) {
 	webFS := fstest.MapFS{
 		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div>")},
-		"templates/footer-status.html":         &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
+		"templates/status-indicator.html":      &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
 		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{template \"certs-rows\" .}}{{template \"certs-state\" .}}{{template \"certs-pagination\" .}}{{template \"certs-sort\" .}}{{template \"dashboard-fragment\" .}}")},
 		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{range .Rows}}<div class=\"row\">{{.CommonName}}</div>{{end}}{{end}}")},
 		"templates/dashboard-fragment.html":    &fstest.MapFile{Data: []byte("{{define \"dashboard-fragment\"}}{{end}}")},

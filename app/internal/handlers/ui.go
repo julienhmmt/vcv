@@ -27,8 +27,6 @@ import (
 	"vcv/middleware"
 )
 
-const footerVaultPreviewMaxCount int = 3
-
 type certDetailsTemplateData struct {
 	Badges        []certStatusBadgeTemplateData
 	Certificate   certs.DetailedCertificate
@@ -49,65 +47,66 @@ type certDetailsTemplateData struct {
 	UsageSummary  string
 }
 
-type footerStatusTemplateData struct {
-	VersionText      string
-	VaultPills       []footerVaultStatusTemplateData
-	VaultSummaryPill *footerVaultStatusTemplateData
+type statusIndicatorTemplateData struct {
+	Messages    i18n.Messages
+	VersionText string
+	Items       []vaultStatusItem
+	Summary     *vaultStatusItem
 }
 
-type vaultHealthCheckResult struct {
-	index    int
-	instance config.VaultInstance
-	entry    footerVaultHealthCacheEntry
-}
-
-type footerVaultStatusTemplateData struct {
+type vaultStatusItem struct {
 	Text      string
 	Class     string
 	Title     string
 	Connected bool
 }
 
-type footerVaultHealthCache struct {
-	ttl    time.Duration
-	mu     sync.Mutex
-	values map[string]footerVaultHealthCacheEntry
+type vaultHealthCheckResult struct {
+	index    int
+	instance config.VaultInstance
+	entry    vaultHealthCacheEntry
 }
 
-type footerVaultHealthCacheEntry struct {
+type vaultHealthCache struct {
+	ttl    time.Duration
+	mu     sync.Mutex
+	values map[string]vaultHealthCacheEntry
+}
+
+type vaultHealthCacheEntry struct {
 	checkedAt       time.Time
 	connected       bool
 	errText         string
 	isNotConfigured bool
 }
 
-func newFooterVaultHealthCache(ttl time.Duration) *footerVaultHealthCache {
-	return &footerVaultHealthCache{ttl: ttl, values: make(map[string]footerVaultHealthCacheEntry)}
+func newVaultHealthCache(ttl time.Duration) *vaultHealthCache {
+	return &vaultHealthCache{ttl: ttl, values: make(map[string]vaultHealthCacheEntry)}
 }
 
-func (c *footerVaultHealthCache) get(vaultID string) (footerVaultHealthCacheEntry, bool) {
+func (c *vaultHealthCache) get(vaultID string) (vaultHealthCacheEntry, bool) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	entry, ok := c.values[vaultID]
 	if !ok {
-		return footerVaultHealthCacheEntry{}, false
+		return vaultHealthCacheEntry{}, false
 	}
 	if time.Since(entry.checkedAt) > c.ttl {
-		return footerVaultHealthCacheEntry{}, false
+		return vaultHealthCacheEntry{}, false
 	}
 	return entry, true
 }
 
-func (c *footerVaultHealthCache) set(vaultID string, entry footerVaultHealthCacheEntry) {
+func (c *vaultHealthCache) set(vaultID string, entry vaultHealthCacheEntry) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.values[vaultID] = entry
 }
 
-func (c *footerVaultHealthCache) clear() {
+func (c *vaultHealthCache) clear() {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.values = make(map[string]footerVaultHealthCacheEntry)
+	c.values = make(map[string]vaultHealthCacheEntry)
 }
 
 type themeToggleTemplateData struct {
@@ -123,63 +122,41 @@ type indexTemplateData struct {
 }
 
 type certsFragmentTemplateData struct {
-	Rows                  []certRowTemplateData
-	Messages              i18n.Messages
-	ShowVaultMount        bool
-	PageInfoText          string
-	PageCountText         string
-	PageCountHidden       bool
-	PagePrevDisabled      bool
-	PageNextDisabled      bool
-	PageIndex             int
-	SortKey               string
-	SortDirection         string
-	SortCommonActive      bool
-	SortCreatedActive     bool
-	SortExpiresActive     bool
-	SortVaultActive       bool
-	SortPkiActive         bool
-	SortCommonDir         string
-	SortCreatedDir        string
-	SortExpiresDir        string
-	SortVaultDir          string
-	SortPkiDir            string
-	PaginationPrevText    string
-	PaginationNextText    string
-	DashboardTotal        int
-	DashboardValid        int
-	DashboardExpiring     int
-	DashboardExpired      int
-	ChartTotal            int
-	ChartValid            int
-	ChartExpired          int
-	ChartRevoked          int
-	ChartHasData          bool
-	DonutCircumference    string
-	DonutHasValid         bool
-	DonutHasExpired       bool
-	DonutHasRevoked       bool
-	DonutValidDash        string
-	DonutExpiredDash      string
-	DonutRevokedDash      string
-	DonutValidDashArray   string
-	DonutExpiredDashArray string
-	DonutRevokedDashArray string
-	DonutValidOffset      string
-	DonutExpiredOffset    string
-	DonutRevokedOffset    string
-	DualStatusCount       int    `json:"dualStatusCount"`
-	DualStatusNoteText    string `json:"dualStatusNoteText"`
-	AdminDocsTitle        string `json:"adminDocsTitle"`
-	TimelineItems         []expiryTimelineItemTemplateData
+	Rows               []certRowTemplateData
+	Messages           i18n.Messages
+	ShowVaultMount     bool
+	PageInfoText       string
+	PageCountText      string
+	PageCountHidden    bool
+	PagePrevDisabled   bool
+	PageNextDisabled   bool
+	PageIndex          int
+	SortKey            string
+	SortDirection      string
+	SortCommonActive   bool
+	SortCreatedActive  bool
+	SortExpiresActive  bool
+	SortVaultActive    bool
+	SortPkiActive      bool
+	SortCommonDir      string
+	SortCreatedDir     string
+	SortExpiresDir     string
+	SortVaultDir       string
+	SortPkiDir         string
+	PaginationPrevText string
+	PaginationNextText string
+	DashboardTotal     int
+	DashboardValid     int
+	DashboardExpiring  int
+	DashboardExpired   int
+	AdminDocsTitle     string `json:"adminDocsTitle"`
 }
 
-type expiryTimelineItemTemplateData struct {
-	ID        string
-	Name      string
-	DotClass  string
-	Days      int
-	DaysLabel string
+type dashboardStatsTemplateData struct {
+	Total    int
+	Valid    int
+	Expiring int
+	Expired  int
 }
 
 type certRowTemplateData struct {
@@ -235,7 +212,7 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 			logger.Get().Error().Err(err).Msg("failed to parse index.html")
 		}
 	}
-	vaultHealthCache := newFooterVaultHealthCache(30 * time.Second)
+	vaultHealthCache := newVaultHealthCache(30 * time.Second)
 	vaultDisplayNames := buildVaultDisplayNames(vaultInstances)
 	showVaultMount := shouldShowVaultMount(vaultInstances)
 
@@ -361,9 +338,9 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 		}
 		totalCount := len(vaultInstances)
 
-		var summaryPill *footerVaultStatusTemplateData
+		var summary *vaultStatusItem
 		if totalCount == 0 {
-			summaryPill = &footerVaultStatusTemplateData{Text: messages.FooterVaultNotConfigured, Class: "vcv-footer-pill", Title: vault.ErrVaultNotConfigured.Error()}
+			summary = &vaultStatusItem{Text: messages.FooterVaultNotConfigured, Class: "vcv-status-state-neutral", Title: vault.ErrVaultNotConfigured.Error()}
 		} else {
 			text := ""
 			if totalCount > 1 {
@@ -381,30 +358,34 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 				text = name
 			}
 
-			class := "vcv-footer-pill vcv-footer-pill-summary"
+			var class string
 			if connectedCount == totalCount {
-				class += " vcv-footer-pill-ok"
+				class = "vcv-status-state-ok"
 			} else {
-				class += " vcv-footer-pill-error"
+				class = "vcv-status-state-error"
 			}
 
-			summaryPill = &footerVaultStatusTemplateData{Text: text, Class: class, Title: text}
+			summary = &vaultStatusItem{Text: text, Class: class, Title: text}
 		}
 
-		data := footerStatusTemplateData{VersionText: interpolatePlaceholder(messages.FooterVersion, "version", version.Version), VaultSummaryPill: summaryPill}
+		data := statusIndicatorTemplateData{
+			Messages:    messages,
+			VersionText: interpolatePlaceholder(messages.FooterVersion, "version", version.Version),
+			Summary:     summary,
+		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
-		if err := templates.ExecuteTemplate(w, "footer-status.html", data); err != nil {
+		if err := templates.ExecuteTemplate(w, "status-indicator.html", data); err != nil {
 			requestID := middleware.GetRequestID(r.Context())
 			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
-				Msg("failed to render footer status template")
+				Msg("failed to render status indicator template")
 			return
 		}
 		requestID := middleware.GetRequestID(r.Context())
 		logger.HTTPEvent(r.Method, r.URL.Path, http.StatusOK, 0).
 			Str("request_id", requestID).
-			Msg("rendered footer status")
+			Msg("rendered status indicator")
 	})
 	renderVaultStatus := func(w http.ResponseWriter, r *http.Request) bool {
 		if templates == nil {
@@ -416,36 +397,44 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 
 		results := checkVaultsHealth(r.Context(), vaultInstances, vaultStatusClients, vaultHealthCache)
 
-		vaultPills := make([]footerVaultStatusTemplateData, 0, len(results))
+		items := make([]vaultStatusItem, 0, len(results))
 		if len(results) == 0 {
-			vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: messages.FooterVaultNotConfigured, Class: "vcv-footer-pill", Title: vault.ErrVaultNotConfigured.Error()})
-		} else {
-			for _, res := range results {
-				name := strings.TrimSpace(res.instance.DisplayName)
-				if name == "" {
-					name = strings.TrimSpace(res.instance.ID)
-				}
-				if name == "" {
-					name = "Vault"
-				}
-				title := ""
-				cssClass := "vcv-footer-pill"
-				if !res.entry.connected {
-					if res.entry.isNotConfigured {
-						title = messages.FooterVaultNotConfigured
-					} else {
-						cssClass = "vcv-footer-pill vcv-footer-pill-error"
-						title = res.entry.errText
-					}
+			items = append(items, vaultStatusItem{Text: messages.FooterVaultNotConfigured, Title: vault.ErrVaultNotConfigured.Error()})
+		}
+		for _, res := range results {
+			title := ""
+			cssClass := ""
+			if !res.entry.connected {
+				if res.entry.isNotConfigured {
+					title = messages.FooterVaultNotConfigured
 				} else {
-					cssClass = "vcv-footer-pill vcv-footer-pill-ok"
-					title = messages.FooterVaultConnected
+					cssClass = "vcv-status-state-error"
+					title = res.entry.errText
 				}
-				vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: name, Class: cssClass, Title: title, Connected: res.entry.connected})
+			} else {
+				cssClass = "vcv-status-state-ok"
+				title = messages.FooterVaultConnected
 			}
+			name := strings.TrimSpace(res.instance.DisplayName)
+			if name == "" {
+				name = strings.TrimSpace(res.instance.ID)
+			}
+			if name == "" {
+				name = "Vault"
+			}
+			items = append(items, vaultStatusItem{
+				Text:      name,
+				Class:     cssClass,
+				Title:     title,
+				Connected: res.entry.connected,
+			})
 		}
 
-		data := footerStatusTemplateData{VaultPills: vaultPills}
+		data := statusIndicatorTemplateData{
+			Messages: messages,
+			Items:    items,
+		}
+
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.WriteHeader(http.StatusOK)
 		if err := templates.ExecuteTemplate(w, "vault-status-fragment.html", data); err != nil {
@@ -731,13 +720,6 @@ func resolveSortState(state certsQueryState) (string, string) {
 		return key, "asc"
 	}
 	return requested, "asc"
-}
-
-func resolveSortDirAttribute(activeKey, activeDir, buttonKey string) string {
-	if activeKey != buttonKey {
-		return ""
-	}
-	return activeDir
 }
 
 func shouldResetPageIndex(triggerID string, pageAction string) bool {
@@ -1040,22 +1022,24 @@ func buildCertRows(items []certs.Certificate, messages i18n.Messages, thresholds
 		hasExpired := !certificate.ExpiresAt.IsZero() && !certificate.ExpiresAt.After(now)
 		if hasExpired {
 			daysSinceExpiry := int(math.Abs(float64(daysRemaining)))
-			if daysSinceExpiry == 0 {
+			switch daysSinceExpiry {
+			case 0:
 				daysRemainingText = messages.ExpiredToday
-			} else if daysSinceExpiry == 1 {
+			case 1:
 				daysRemainingText = interpolatePlaceholder(messages.ExpiredDaysSingular, "days", "1")
-			} else {
+			default:
 				daysRemainingText = interpolatePlaceholder(messages.ExpiredDays, "days", fmt.Sprintf("%d", daysSinceExpiry))
 			}
 			daysRemainingClass = "vcv-days-remaining vcv-days-critical"
 			expiresCellClass = "vcv-expires-cell vcv-expires-cell-critical"
 			expiresDateClass = "vcv-expires-date vcv-expires-date-critical"
 		} else if isExpiringSoon {
-			if daysRemaining == 0 {
+			switch daysRemaining {
+			case 0:
 				daysRemainingText = messages.ExpiringToday
-			} else if daysRemaining == 1 {
+			case 1:
 				daysRemainingText = interpolatePlaceholder(messages.DaysRemainingSingular, "days", "1")
-			} else {
+			default:
 				daysRemainingText = interpolatePlaceholder(messages.DaysRemaining, "days", fmt.Sprintf("%d", daysRemaining))
 			}
 			level := resolveExpirationLevel(daysRemaining, thresholds)
@@ -1085,8 +1069,8 @@ func buildCertRows(items []certs.Certificate, messages i18n.Messages, thresholds
 	return rows
 }
 
-func checkVaultsHealth(ctx context.Context, instances []config.VaultInstance, statusClients map[string]vault.Client, cache *footerVaultHealthCache) []vaultHealthCheckResult {
-	if len(instances) == 0 || len(statusClients) == 0 {
+func checkVaultsHealth(ctx context.Context, instances []config.VaultInstance, clients map[string]vault.Client, cache *vaultHealthCache) []vaultHealthCheckResult {
+	if len(instances) == 0 || len(clients) == 0 {
 		return []vaultHealthCheckResult{}
 	}
 
@@ -1100,9 +1084,9 @@ func checkVaultsHealth(ctx context.Context, instances []config.VaultInstance, st
 			continue
 		}
 
-		client, ok := statusClients[instance.ID]
+		client, ok := clients[instance.ID]
 		if !ok || client == nil {
-			entry := footerVaultHealthCacheEntry{checkedAt: time.Now(), connected: false, errText: "missing vault status client"}
+			entry := vaultHealthCacheEntry{checkedAt: time.Now(), connected: false, errText: "missing vault status client"}
 			resultChan <- vaultHealthCheckResult{index: idx, instance: instance, entry: entry}
 			continue
 		}
@@ -1115,7 +1099,7 @@ func checkVaultsHealth(ctx context.Context, instances []config.VaultInstance, st
 			defer cancel()
 
 			vaultErr := cl.CheckConnection(checkCtx)
-			e := footerVaultHealthCacheEntry{checkedAt: time.Now(), connected: vaultErr == nil}
+			e := vaultHealthCacheEntry{checkedAt: time.Now(), connected: vaultErr == nil}
 			if vaultErr != nil {
 				e.errText = vaultErr.Error()
 				e.isNotConfigured = errors.Is(vaultErr, vault.ErrVaultNotConfigured)
@@ -1203,8 +1187,6 @@ func renderCertsFragment(w http.ResponseWriter, templates *template.Template, ce
 func buildCertsFragmentData(certificates []certs.Certificate, expirationThresholds config.ExpirationThresholds, messages i18n.Messages, queryState certsQueryState, vaultDisplayNames map[string]string, showVaultMount bool) certsFragmentTemplateData {
 	filteredByMount := filterCertificatesByMounts(certificates, queryState.SelectedMounts)
 	dashboardStats := computeDashboardStats(filteredByMount, expirationThresholds)
-	chartData := computeStatusChartData(filteredByMount, messages)
-	timelineItems := computeExpiryTimelineItems(filteredByMount, expirationThresholds, messages)
 	sortKey, sortDirection := resolveSortState(queryState)
 	visible := applyCertificateFilters(filteredByMount, queryState, sortKey, sortDirection)
 	pageIndex := resolvePageIndex(queryState, len(visible), queryState.PageSize)
@@ -1215,7 +1197,39 @@ func buildCertsFragmentData(certificates []certs.Certificate, expirationThreshol
 	}
 	pageIndex = applyPageAction(queryState.PageAction, pageIndex, totalPages)
 	pageVisible, _ := paginateCertificates(visible, pageIndex, queryState.PageSize)
-	return certsFragmentTemplateData{ChartExpired: chartData.Expired, ChartHasData: chartData.Total > 0, ChartRevoked: chartData.Revoked, ChartTotal: chartData.Total, ChartValid: chartData.Valid, DashboardExpired: dashboardStats.Expired, DashboardExpiring: dashboardStats.ExpiringSoon, DashboardTotal: dashboardStats.Total, DashboardValid: dashboardStats.Valid, DonutCircumference: chartData.Circumference, DonutExpiredDash: chartData.ExpiredDash, DonutExpiredDashArray: chartData.ExpiredDashArray, DonutExpiredOffset: chartData.ExpiredOffset, DonutHasExpired: chartData.Expired > 0, DonutHasRevoked: chartData.Revoked > 0, DonutHasValid: chartData.Valid > 0, DonutRevokedDash: chartData.RevokedDash, DonutRevokedDashArray: chartData.RevokedDashArray, DonutRevokedOffset: chartData.RevokedOffset, DonutValidDash: chartData.ValidDash, DonutValidDashArray: chartData.ValidDashArray, DonutValidOffset: chartData.ValidOffset, DualStatusCount: chartData.DualStatusCount, DualStatusNoteText: chartData.DualStatusNoteText, AdminDocsTitle: messages.AdminDocsTitle, Messages: messages, ShowVaultMount: showVaultMount, PageCountHidden: len(visible) == 0, PageCountText: fmt.Sprintf("%d", len(visible)), PageIndex: pageIndex, PageInfoText: buildPaginationInfo(messages, queryState.PageSize, pageIndex, totalPages), PageNextDisabled: queryState.PageSize == "all" || pageIndex >= totalPages-1, PagePrevDisabled: queryState.PageSize == "all" || pageIndex <= 0, PaginationNextText: messages.PaginationNext, PaginationPrevText: messages.PaginationPrev, Rows: buildCertRows(pageVisible, messages, expirationThresholds, vaultDisplayNames, showVaultMount, time.Now().UTC()), SortCommonActive: sortKey == "commonName", SortCommonDir: resolveSortDirAttribute(sortKey, sortDirection, "commonName"), SortCreatedActive: sortKey == "createdAt", SortCreatedDir: resolveSortDirAttribute(sortKey, sortDirection, "createdAt"), SortDirection: sortDirection, SortExpiresActive: sortKey == "expiresAt", SortExpiresDir: resolveSortDirAttribute(sortKey, sortDirection, "expiresAt"), SortVaultActive: sortKey == "vault", SortVaultDir: resolveSortDirAttribute(sortKey, sortDirection, "vault"), SortPkiActive: sortKey == "pki", SortPkiDir: resolveSortDirAttribute(sortKey, sortDirection, "pki"), SortKey: sortKey, TimelineItems: timelineItems}
+
+	rows := buildCertRows(pageVisible, messages, expirationThresholds, vaultDisplayNames, showVaultMount, time.Now().UTC())
+
+	return certsFragmentTemplateData{
+		Rows:               rows,
+		Messages:           messages,
+		ShowVaultMount:     showVaultMount,
+		PageInfoText:       buildPaginationInfo(messages, queryState.PageSize, pageIndex, totalPages),
+		PageCountText:      fmt.Sprintf("%d", len(visible)),
+		PageCountHidden:    len(visible) == 0,
+		PagePrevDisabled:   pageIndex <= 0,
+		PageNextDisabled:   pageIndex >= totalPages-1,
+		PageIndex:          pageIndex,
+		SortKey:            sortKey,
+		SortDirection:      sortDirection,
+		SortCommonActive:   sortKey == "commonName",
+		SortCreatedActive:  sortKey == "createdAt",
+		SortExpiresActive:  sortKey == "expiresAt",
+		SortVaultActive:    sortKey == "vault",
+		SortPkiActive:      sortKey == "pki",
+		SortCommonDir:      nextSortDirection(sortKey, sortDirection, "commonName"),
+		SortCreatedDir:     nextSortDirection(sortKey, sortDirection, "createdAt"),
+		SortExpiresDir:     nextSortDirection(sortKey, sortDirection, "expiresAt"),
+		SortVaultDir:       nextSortDirection(sortKey, sortDirection, "vault"),
+		SortPkiDir:         nextSortDirection(sortKey, sortDirection, "pki"),
+		PaginationPrevText: messages.PaginationPrev,
+		PaginationNextText: messages.PaginationNext,
+		DashboardTotal:     dashboardStats.Total,
+		DashboardValid:     dashboardStats.Valid,
+		DashboardExpiring:  dashboardStats.Expiring,
+		DashboardExpired:   dashboardStats.Expired,
+		AdminDocsTitle:     messages.AdminDocsTitle,
+	}
 }
 
 func clampInt(value int, min int, max int) int {
@@ -1228,132 +1242,40 @@ func clampInt(value int, min int, max int) int {
 	return value
 }
 
-func maxInt(left int, right int) int {
-	if left > right {
-		return left
+func maxInt(a, b int) int {
+	if a > b {
+		return a
 	}
-	return right
+	return b
 }
 
-type dashboardStats struct {
-	Total        int
-	Valid        int
-	Expired      int
-	ExpiringSoon int
-}
-
-type statusChartData struct {
-	Total              int
-	Valid              int
-	Expired            int
-	Revoked            int
-	DualStatusCount    int
-	DualStatusNoteText string
-	Circumference      string
-	ValidDash          string
-	ExpiredDash        string
-	RevokedDash        string
-	ValidDashArray     string
-	ExpiredDashArray   string
-	RevokedDashArray   string
-	ValidOffset        string
-	ExpiredOffset      string
-	RevokedOffset      string
-}
-
-func computeDashboardStats(certificates []certs.Certificate, thresholds config.ExpirationThresholds) dashboardStats {
+func computeDashboardStats(certificates []certs.Certificate, thresholds config.ExpirationThresholds) dashboardStatsTemplateData {
+	stats := dashboardStatsTemplateData{}
 	now := time.Now().UTC()
-	stats := dashboardStats{Total: len(certificates)}
-	for _, certificate := range certificates {
-		statuses := certificateStatuses(certificate, now)
-		if containsString(statuses, "valid") {
-			stats.Valid += 1
+	stats.Total = len(certificates)
+	for _, cert := range certificates {
+		if !cert.ExpiresAt.IsZero() && !cert.ExpiresAt.After(now) {
+			stats.Expired++
+			continue
 		}
-		if containsString(statuses, "expired") {
-			stats.Expired += 1
+		if cert.Revoked {
+			continue
 		}
-		if thresholds.Warning > 0 && certificate.ExpiresAt.After(now) {
-			days := daysUntil(certificate.ExpiresAt.UTC(), now)
-			if days >= 0 && days <= thresholds.Warning {
-				stats.ExpiringSoon += 1
-			}
+		days := daysUntil(cert.ExpiresAt.UTC(), now)
+		if thresholds.Warning > 0 && days >= 0 && days <= thresholds.Warning {
+			stats.Expiring++
 		}
+		stats.Valid++
 	}
 	return stats
 }
 
-func computeStatusChartData(certificates []certs.Certificate, messages i18n.Messages) statusChartData {
-	now := time.Now().UTC()
-	chart := statusChartData{}
-	for _, certificate := range certificates {
-		statuses := certificateStatuses(certificate, now)
-		hasRevoked := containsString(statuses, "revoked")
-		hasExpired := containsString(statuses, "expired")
-		if hasRevoked && hasExpired {
-			chart.DualStatusCount += 1
-		}
-		if hasRevoked {
-			chart.Revoked += 1
-			continue
-		}
-		if hasExpired {
-			chart.Expired += 1
-			continue
-		}
-		chart.Valid += 1
+func nextSortDirection(currentKey, currentDir, targetKey string) string {
+	if currentKey != targetKey {
+		return "asc"
 	}
-	chart.Total = chart.Valid + chart.Expired + chart.Revoked
-	if chart.Total == 0 {
-		return chart
+	if currentDir == "asc" {
+		return "desc"
 	}
-	circumference := 2 * math.Pi * 50
-	validDash := (float64(chart.Valid) / float64(chart.Total)) * circumference
-	expiredDash := (float64(chart.Expired) / float64(chart.Total)) * circumference
-	revokedDash := (float64(chart.Revoked) / float64(chart.Total)) * circumference
-	startOffset := circumference / 4
-	chart.Circumference = fmt.Sprintf("%.3f", circumference)
-	chart.ValidDash = fmt.Sprintf("%.3f", validDash)
-	chart.ExpiredDash = fmt.Sprintf("%.3f", expiredDash)
-	chart.RevokedDash = fmt.Sprintf("%.3f", revokedDash)
-	chart.ValidDashArray = fmt.Sprintf("%.3f %.3f", validDash, circumference-validDash)
-	chart.ExpiredDashArray = fmt.Sprintf("%.3f %.3f", expiredDash, circumference-expiredDash)
-	chart.RevokedDashArray = fmt.Sprintf("%.3f %.3f", revokedDash, circumference-revokedDash)
-	chart.ValidOffset = fmt.Sprintf("%.3f", startOffset)
-	chart.ExpiredOffset = fmt.Sprintf("%.3f", startOffset-validDash)
-	chart.RevokedOffset = fmt.Sprintf("%.3f", startOffset-validDash-expiredDash)
-	if chart.DualStatusCount > 0 {
-		note := interpolatePlaceholder(messages.DualStatusNote, "count", fmt.Sprintf("%d", chart.DualStatusCount))
-		chart.DualStatusNoteText = note
-	}
-	return chart
-}
-
-func computeExpiryTimelineItems(certificates []certs.Certificate, thresholds config.ExpirationThresholds, messages i18n.Messages) []expiryTimelineItemTemplateData {
-	if thresholds.Warning <= 0 {
-		return []expiryTimelineItemTemplateData{}
-	}
-	now := time.Now().UTC()
-	items := make([]expiryTimelineItemTemplateData, 0, len(certificates))
-	for _, certificate := range certificates {
-		if !certificate.ExpiresAt.After(now) {
-			continue
-		}
-		days := daysUntil(certificate.ExpiresAt.UTC(), now)
-		if days < 0 || days > thresholds.Warning {
-			continue
-		}
-		dotClass := "vcv-timeline-dot-warning"
-		if thresholds.Critical > 0 && days <= thresholds.Critical {
-			dotClass = "vcv-timeline-dot-critical"
-		}
-		label := interpolatePlaceholder(messages.DaysRemainingShort, "days", fmt.Sprintf("%d", days))
-		items = append(items, expiryTimelineItemTemplateData{ID: certificate.ID, Name: certificate.CommonName, DotClass: dotClass, Days: days, DaysLabel: label})
-	}
-	sort.SliceStable(items, func(left int, right int) bool {
-		return items[left].Days < items[right].Days
-	})
-	if len(items) > 10 {
-		return items[:10]
-	}
-	return items
+	return "asc"
 }

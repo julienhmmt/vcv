@@ -227,42 +227,19 @@ function initVaultConnectionNotifications() {
 			return;
 		}
 		setTimeout(() => {
-			const container = document.getElementById('vcv-footer-vaults');
-			if (!container) {
+			const btn = document.getElementById('vcv-status-btn');
+			if (!btn) {
 				return;
 			}
-			const summaryPill = container.querySelector('.vcv-footer-pill-summary');
-			if (summaryPill) {
-				const isOk = summaryPill.classList.contains('vcv-footer-pill-ok');
-				const isError = summaryPill.classList.contains('vcv-footer-pill-error');
-				if (!isOk && !isError) {
-					return;
-				}
-				const nextState = isOk;
-				if (state.vaultConnected === null) {
-					state.vaultConnected = nextState;
-					return;
-				}
-				if (state.vaultConnected === nextState) {
-					return;
-				}
-				state.vaultConnected = nextState;
-				const messages = state.messages || {};
-				if (nextState) {
-					const restored = messages.vaultConnectionRestored || "Vault connection restored";
-					showSuccessToast(restored);
-					return;
-				}
-				const lost = messages.vaultConnectionLost || "Vault connection lost";
-				showErrorToast(lost);
+			const isOk = btn.classList.contains('vcv-status-state-ok');
+			const isError = btn.classList.contains('vcv-status-state-error');
+			
+			if (!isOk && !isError) {
+				// Neutral or unknown state, don't trigger notifications
 				return;
 			}
-			const connectedCount = container.querySelectorAll('.vcv-footer-pill-ok').length;
-			const disconnectedCount = container.querySelectorAll('.vcv-footer-pill-error').length;
-			if (connectedCount === 0 && disconnectedCount === 0) {
-				return;
-			}
-			const nextState = disconnectedCount === 0;
+			
+			const nextState = isOk;
 			if (state.vaultConnected === null) {
 				state.vaultConnected = nextState;
 				return;
@@ -442,8 +419,6 @@ function applyTranslations() {
     return;
   }
   setText(document.getElementById("certificate-modal-close"), messages.buttonClose);
-  setText(document.getElementById("chart-expiry-title"), messages.chartExpiryTimeline);
-  setText(document.getElementById("chart-status-title"), messages.chartStatusDistribution);
   setText(document.getElementById("dashboard-expired-label"), messages.dashboardExpired);
   setText(document.getElementById("dashboard-expiring-label"), messages.dashboardExpiring);
   setText(document.getElementById("dashboard-total-label"), messages.dashboardTotal);

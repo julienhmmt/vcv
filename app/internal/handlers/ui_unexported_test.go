@@ -251,54 +251,6 @@ func TestResolveSortState(t *testing.T) {
 	}
 }
 
-func TestResolveSortDirAttribute(t *testing.T) {
-	tests := []struct {
-		name      string
-		activeKey string
-		activeDir string
-		buttonKey string
-		expected  string
-	}{
-		{
-			name:      "active key with asc direction",
-			activeKey: "commonName",
-			activeDir: "asc",
-			buttonKey: "commonName",
-			expected:  "asc",
-		},
-		{
-			name:      "active key with desc direction",
-			activeKey: "commonName",
-			activeDir: "desc",
-			buttonKey: "commonName",
-			expected:  "desc",
-		},
-		{
-			name:      "inactive key",
-			activeKey: "commonName",
-			activeDir: "asc",
-			buttonKey: "expiresAt",
-			expected:  "",
-		},
-		{
-			name:      "empty active key",
-			activeKey: "",
-			activeDir: "",
-			buttonKey: "commonName",
-			expected:  "",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := resolveSortDirAttribute(tt.activeKey, tt.activeDir, tt.buttonKey)
-			if result != tt.expected {
-				t.Errorf("expected %q, got %q", tt.expected, result)
-			}
-		})
-	}
-}
-
 func TestShouldResetPageIndex(t *testing.T) {
 	tests := []struct {
 		name       string

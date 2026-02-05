@@ -30,7 +30,7 @@ func newServerWebFS() fs.FS {
 		"index.html":                           &fstest.MapFile{Data: []byte(`<!DOCTYPE html><html lang="{{.Language}}"><head><title>{{.Messages.AppTitle}}</title></head><body>ok</body></html>`)},
 		"assets/app.js":                        &fstest.MapFile{Data: []byte("console.log('ok')")},
 		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div></div>")},
-		"templates/footer-status.html":         &fstest.MapFile{Data: []byte("<div></div>")},
+		"templates/status-indicator.html":      &fstest.MapFile{Data: []byte("<div></div>")},
 		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{template \"certs-rows\" .}}{{template \"dashboard-fragment\" .}}{{template \"certs-state\" .}}{{template \"certs-pagination\" .}}{{template \"certs-sort\" .}}")},
 		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{end}}")},
 		"templates/dashboard-fragment.html":    &fstest.MapFile{Data: []byte("{{define \"dashboard-fragment\"}}{{end}}")},
@@ -135,8 +135,8 @@ func TestBuildRouter_MissingAssets_Returns404(t *testing.T) {
 	multi := &vault.MockClient{}
 	registry := prometheus.NewRegistry()
 	webFS := fstest.MapFS{
-		"index.html":                   &fstest.MapFile{Data: []byte("ok")},
-		"templates/footer-status.html": &fstest.MapFile{Data: []byte("<div></div>")},
+		"index.html":                      &fstest.MapFile{Data: []byte("ok")},
+		"templates/status-indicator.html": &fstest.MapFile{Data: []byte("<div></div>")},
 	}
 	router, err := buildRouter(cfg, primary, map[string]vault.Client{}, multi, registry, webFS, "")
 	assert.NotNil(t, router)

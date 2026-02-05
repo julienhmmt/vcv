@@ -27,6 +27,13 @@
             <h1 class="vcv-title">{{.Messages.AppTitle}} <span class="vcv-title-version">v{{.AppVersionText}}</span></h1>
           </div>
           <div class="vcv-header-actions">
+            <div
+              id="vcv-vault-status"
+              hx-get="/ui/status"
+              hx-trigger="load, every 10s"
+              hx-swap="innerHTML"
+              hx-include="#vcv-lang-select"
+            ></div>
             <button
               id="theme-toggle"
               class="vcv-button vcv-button-icon vcv-theme-toggle"
@@ -216,68 +223,6 @@
             <div class="vcv-card-content">
               <div class="vcv-card-value" id="dashboard-expired">{{.Certs.DashboardExpired}}</div>
               <div class="vcv-card-label" id="dashboard-expired-label">Expired</div>
-            </div>
-          </div>
-        </div>
-        <div class="vcv-dashboard-charts">
-          <div class="vcv-chart-container">
-            <h3 class="vcv-chart-title" id="chart-status-title">Status distribution</h3>
-            <div class="vcv-chart" id="status-chart">
-              {{if not .Certs.ChartHasData}}
-              <div class="vcv-timeline-empty">{{.Messages.NoData}}</div>
-              {{else}}
-              <div class="vcv-donut">
-                <svg viewBox="0 0 120 120" width="140" height="140">
-                  <circle cx="60" cy="60" r="50" fill="none" stroke="#e2e8f0" stroke-width="16" />
-                  {{if .Certs.DonutHasValid}}
-                  <circle cx="60" cy="60" r="50" fill="none" stroke="#10b981" stroke-width="16" stroke-dasharray="{{.Certs.DonutValidDashArray}}" stroke-dashoffset="{{.Certs.DonutValidOffset}}" />
-                  {{end}}
-                  {{if .Certs.DonutHasExpired}}
-                  <circle cx="60" cy="60" r="50" fill="none" stroke="#f59e0b" stroke-width="16" stroke-dasharray="{{.Certs.DonutExpiredDashArray}}" stroke-dashoffset="{{.Certs.DonutExpiredOffset}}" />
-                  {{end}}
-                  {{if .Certs.DonutHasRevoked}}
-                  <circle cx="60" cy="60" r="50" fill="none" stroke="#ef4444" stroke-width="16" stroke-dasharray="{{.Certs.DonutRevokedDashArray}}" stroke-dashoffset="{{.Certs.DonutRevokedOffset}}" />
-                  {{end}}
-                </svg>
-                <div class="vcv-donut-center">
-                  <div class="vcv-donut-value">{{.Certs.ChartTotal}}</div>
-                  <div class="vcv-donut-label">TOTAL</div>
-                </div>
-              </div>
-              <div class="vcv-chart-legend">
-                <div class="vcv-chart-legend-item">
-                  <span class="vcv-chart-legend-dot" style="background: #10b981"></span>
-                  <span>{{.Messages.ChartLegendValid}} ({{.Certs.ChartValid}})</span>
-                </div>
-                <div class="vcv-chart-legend-item">
-                  <span class="vcv-chart-legend-dot" style="background: #f59e0b"></span>
-                  <span>{{.Messages.ChartLegendExpired}} ({{.Certs.ChartExpired}})</span>
-                </div>
-                <div class="vcv-chart-legend-item">
-                  <span class="vcv-chart-legend-dot" style="background: #ef4444"></span>
-                  <span>{{.Messages.ChartLegendRevoked}} ({{.Certs.ChartRevoked}})</span>
-                </div>
-                {{if gt .Certs.DualStatusCount 0}}
-                <div class="vcv-chart-note" style="font-size: 0.75rem; color: #64748b; margin-top: 0.5rem;">{{.Certs.DualStatusNoteText}}</div>
-                {{end}}
-              </div>
-              {{end}}
-            </div>
-          </div>
-          <div class="vcv-chart-container">
-            <h3 class="vcv-chart-title" id="chart-expiry-title">Expiration timeline</h3>
-            <div class="vcv-timeline" id="expiry-timeline">
-              {{if eq (len .Certs.TimelineItems) 0}}
-              <div class="vcv-timeline-empty">{{.Messages.NoCertsExpiringSoon}}</div>
-              {{else}}
-              {{range .Certs.TimelineItems}}
-              <div class="vcv-timeline-item" onclick="openCertificateModal()" hx-get="/ui/certs/{{urlquery .ID}}/details" hx-target="#details-content" hx-swap="innerHTML" hx-include="#vcv-lang-select">
-                <div class="vcv-timeline-dot {{.DotClass}}"></div>
-                <div class="vcv-timeline-name">{{.Name}}</div>
-                <div class="vcv-timeline-days">{{.DaysLabel}}</div>
-              </div>
-              {{end}}
-              {{end}}
             </div>
           </div>
         </div>
@@ -496,13 +441,6 @@
         </div>
       </div>
     </div>
-
-    <footer class="vcv-footer" hx-get="/ui/status" hx-trigger="load, every 10s" hx-target="#vcv-footer-sink" hx-swap="innerHTML" hx-include="#vcv-lang-select">
-      <div id="vcv-footer-vaults" class="vcv-footer-right">
-        <span class="vcv-footer-pill">Vault: …</span>
-      </div>
-    </footer>
-    <div id="vcv-footer-sink" class="vcv-hidden"></div>
 
     <script src="/assets/htmx.min.js"></script>
     <script src="/assets/app-htmx.js"></script>

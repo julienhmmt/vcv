@@ -1,9 +1,0 @@
-<div id="vcv-footer-vaults" class="vcv-footer-right" hx-swap-oob="true">
-  {{- if .VaultSummaryPill -}}
-    <button type="button" class="{{.VaultSummaryPill.Class}}" title="{{.VaultSummaryPill.Title}}" onclick="openVaultStatusModal()" hx-get="/ui/vaults/status" hx-target="#vault-status-content" hx-swap="innerHTML" hx-include="#vcv-lang-select">{{.VaultSummaryPill.Text}}</button>
-  {{- else -}}
-    {{- range .VaultPills -}}
-      <span class="{{.Class}}" title="{{.Title}}">{{.Text}}</span>
-    {{- end -}}
-  {{- end -}}
-</div>

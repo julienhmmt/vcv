@@ -30,11 +30,6 @@ type Messages struct {
 	CacheInvalidateFailed       string `json:"cacheInvalidateFailed"`
 	CacheInvalidated            string `json:"cacheInvalidated"`
 	CertificateInformationTitle string `json:"certificateInformationTitle"`
-	ChartExpiryTimeline         string `json:"chartExpiryTimeline"`
-	ChartLegendExpired          string `json:"chartLegendExpired"`
-	ChartLegendRevoked          string `json:"chartLegendRevoked"`
-	ChartLegendValid            string `json:"chartLegendValid"`
-	ChartStatusDistribution     string `json:"chartStatusDistribution"`
 	ColumnActions               string `json:"columnActions"`
 	ColumnCommonName            string `json:"columnCommonName"`
 	ColumnCreatedAt             string `json:"columnCreatedAt"`
@@ -58,7 +53,6 @@ type Messages struct {
 	DownloadPEMFailed           string `json:"downloadPEMFailed"`
 	DownloadPEMNetworkError     string `json:"downloadPEMNetworkError"`
 	DownloadPEMSuccess          string `json:"downloadPEMSuccess"`
-	DualStatusNote              string `json:"dualStatusNote"`
 	AdminDocsTitle              string `json:"adminDocsTitle"`
 	ExpiryFilter30Days          string `json:"expiryFilter30Days"`
 	ExpiryFilter7Days           string `json:"expiryFilter7Days"`
@@ -102,7 +96,6 @@ type Messages struct {
 	MountSelectorTooltip        string `json:"mountSelectorTooltip"`
 	MountStatsSelected          string `json:"mountStatsSelected"`
 	MountStatsTotal             string `json:"mountStatsTotal"`
-	NoCertsExpiringSoon         string `json:"noCertsExpiringSoon"`
 	NoData                      string `json:"noData"`
 	NotificationCritical        string `json:"notificationCritical"`
 	NotificationWarning         string `json:"notificationWarning"`
@@ -179,11 +172,6 @@ var englishMessages = Messages{
 	CacheInvalidateFailed:       "Failed to clear cache",
 	CacheInvalidated:            "Cache cleared and data refreshed",
 	CertificateInformationTitle: "Certificate information",
-	ChartExpiryTimeline:         "Expiration timeline",
-	ChartLegendExpired:          "Expired",
-	ChartLegendRevoked:          "Revoked",
-	ChartLegendValid:            "Valid",
-	ChartStatusDistribution:     "Status distribution",
 	ColumnActions:               "Actions",
 	ColumnCommonName:            "Common name",
 	ColumnCreatedAt:             "Created at",
@@ -207,7 +195,6 @@ var englishMessages = Messages{
 	DownloadPEMFailed:           "Failed to download certificate PEM ({{status}})",
 	DownloadPEMNetworkError:     "Network error downloading certificate PEM. Please try again.",
 	DownloadPEMSuccess:          "Certificate PEM downloaded successfully",
-	DualStatusNote:              "{{count}} certificate(s) are both expired and revoked",
 	AdminDocsTitle:              "Admin documentation",
 	ExpiryFilter30Days:          "≤ 30 days",
 	ExpiryFilter7Days:           "≤ 7 days",
@@ -251,7 +238,6 @@ var englishMessages = Messages{
 	MountSelectorTooltip:        "Filter certificates by Vault instance and PKI mount",
 	MountStatsSelected:          "Selected",
 	MountStatsTotal:             "Total",
-	NoCertsExpiringSoon:         "No certificates expiring soon",
 	NoData:                      "No data",
 	NotificationCritical:        "{{count}} certificate(s) expiring within {{threshold}} days or less!",
 	NotificationWarning:         "{{count}} certificate(s) expiring within {{threshold}} days or less",
@@ -322,11 +308,6 @@ var frenchMessages = Messages{
 	CacheInvalidateFailed:       "Échec du vidage du cache",
 	CacheInvalidated:            "Cache vidé et données actualisées",
 	CertificateInformationTitle: "Informations du certificat",
-	ChartExpiryTimeline:         "Chronologie des expirations",
-	ChartLegendExpired:          "Expiré",
-	ChartLegendRevoked:          "Révoqué",
-	ChartLegendValid:            "Valide",
-	ChartStatusDistribution:     "Répartition par statut",
 	ColumnActions:               "Actions",
 	ColumnCommonName:            "Nom commun",
 	ColumnCreatedAt:             "Créé le",
@@ -350,7 +331,6 @@ var frenchMessages = Messages{
 	DownloadPEMFailed:           "Échec du téléchargement du certificat PEM ({{status}})",
 	DownloadPEMNetworkError:     "Erreur réseau lors du téléchargement du certificat PEM. Veuillez réessayer.",
 	DownloadPEMSuccess:          "Certificat PEM téléchargé avec succès",
-	DualStatusNote:              "{{count}} certificat(s) sont à la fois expirés et révoqués",
 	AdminDocsTitle:              "Documentation admin",
 	ExpiryFilter30Days:          "≤ 30 jours",
 	ExpiryFilter7Days:           "≤ 7 jours",
@@ -388,13 +368,12 @@ var frenchMessages = Messages{
 	LoadUnexpectedFormat:        "Format de réponse inattendu du serveur",
 	LoadingDetails:              "Chargement des détails du certificat...",
 	ModalDetailsTitle:           "Détails du certificat",
-	ModalVaultStatusTitle:       "Statut du Vault",
+	ModalVaultStatusTitle:       "Statut Vaults",
 	MountSearchPlaceholder:      "Rechercher des vaults ou moteurs PKI...",
 	MountSelectorTitle:          "Vaults et montages PKI",
 	MountSelectorTooltip:        "Filtrer les certificats par instance Vault et montage PKI",
 	MountStatsSelected:          "Sélectionnés",
 	MountStatsTotal:             "Total",
-	NoCertsExpiringSoon:         "Aucun certificat expirant bientôt",
 	NoData:                      "Aucune donnée",
 	NotificationCritical:        "{{count}} certificat(s) expirant dans {{threshold}} jours ou moins !",
 	NotificationWarning:         "{{count}} certificat(s) expirant dans {{threshold}} jours ou moins",
@@ -465,11 +444,6 @@ var spanishMessages = Messages{
 	CacheInvalidateFailed:       "Error al borrar el caché",
 	CacheInvalidated:            "Caché borrado y datos actualizados",
 	CertificateInformationTitle: "Información del certificado",
-	ChartExpiryTimeline:         "Cronología de vencimientos",
-	ChartLegendExpired:          "Vencido",
-	ChartLegendRevoked:          "Revocado",
-	ChartLegendValid:            "Válido",
-	ChartStatusDistribution:     "Distribución por estado",
 	ColumnActions:               "Acciones",
 	ColumnCommonName:            "Nombre común",
 	ColumnCreatedAt:             "Creado el",
@@ -493,7 +467,6 @@ var spanishMessages = Messages{
 	DownloadPEMFailed:           "Error al descargar el certificado PEM ({{status}})",
 	DownloadPEMNetworkError:     "Error de red al descargar el certificado PEM. Por favor intente nuevamente.",
 	DownloadPEMSuccess:          "Certificado PEM descargado exitosamente",
-	DualStatusNote:              "{{count}} certificado(s) están tanto caducados como revocados",
 	AdminDocsTitle:              "Documentación admin",
 	ExpiryFilter30Days:          "≤ 30 días",
 	ExpiryFilter7Days:           "≤ 7 días",
@@ -531,13 +504,12 @@ var spanishMessages = Messages{
 	LoadUnexpectedFormat:        "Formato de respuesta inesperado del servidor",
 	LoadingDetails:              "Cargando detalles del certificado...",
 	ModalDetailsTitle:           "Detalles del certificado",
-	ModalVaultStatusTitle:       "Estado del Vault",
+	ModalVaultStatusTitle:       "Estado Vault",
 	MountSearchPlaceholder:      "Buscar vaults o motores PKI...",
 	MountSelectorTitle:          "Vaults y montajes PKI",
 	MountSelectorTooltip:        "Filtrar certificados por instancia de Vault y montaje PKI",
 	MountStatsSelected:          "Seleccionados",
 	MountStatsTotal:             "Total",
-	NoCertsExpiringSoon:         "Ningún certificado caducando pronto",
 	NoData:                      "Sin datos",
 	NotificationCritical:        "{{count}} certificado(s) caducando en {{threshold}} días o menos!",
 	NotificationWarning:         "{{count}} certificado(s) caducando en {{threshold}} días o menos",
@@ -608,11 +580,6 @@ var germanMessages = Messages{
 	CacheInvalidateFailed:       "Cache konnte nicht geleert werden",
 	CacheInvalidated:            "Cache geleert und Daten aktualisiert",
 	CertificateInformationTitle: "Zertifikatsinformationen",
-	ChartExpiryTimeline:         "Ablauf-Zeitachse",
-	ChartLegendExpired:          "Abgelaufen",
-	ChartLegendRevoked:          "Widerrufen",
-	ChartLegendValid:            "Gültig",
-	ChartStatusDistribution:     "Statusverteilung",
 	ColumnActions:               "Aktionen",
 	ColumnCommonName:            "Allgemeiner Name",
 	ColumnCreatedAt:             "Erstellt am",
@@ -636,7 +603,6 @@ var germanMessages = Messages{
 	DownloadPEMFailed:           "Zertifikat-PEM konnte nicht heruntergeladen werden ({{status}})",
 	DownloadPEMNetworkError:     "Netzwerkfehler beim Herunterladen des Zertifikat-PEM. Bitte versuchen Sie es erneut.",
 	DownloadPEMSuccess:          "Zertifikat-PEM erfolgreich heruntergeladen",
-	DualStatusNote:              "{{count}} Zertifikat(e) sind sowohl abgelaufen als auch widerrufen",
 	AdminDocsTitle:              "Admin-dokumentation",
 	ExpiryFilter30Days:          "≤ 30 Tage",
 	ExpiryFilter7Days:           "≤ 7 Tage",
@@ -680,7 +646,6 @@ var germanMessages = Messages{
 	MountSelectorTooltip:        "Zertifikate nach Vault-Instanz und PKI-Mount filtern",
 	MountStatsSelected:          "Ausgewählt",
 	MountStatsTotal:             "Gesamt",
-	NoCertsExpiringSoon:         "Keine Zertifikate, die bald ablaufen",
 	NoData:                      "Keine Daten",
 	NotificationCritical:        "{{count}} Zertifikat(e) laufen in {{threshold}} Tagen oder weniger ab!",
 	NotificationWarning:         "{{count}} Zertifikat(e) laufen in {{threshold}} Tagen oder weniger ab",
@@ -751,11 +716,6 @@ var italianMessages = Messages{
 	CacheInvalidateFailed:       "Impossibile cancellare la cache",
 	CacheInvalidated:            "Cache cancellata e dati aggiornati",
 	CertificateInformationTitle: "Informazioni sul certificato",
-	ChartExpiryTimeline:         "Cronologia scadenze",
-	ChartLegendExpired:          "Scaduto",
-	ChartLegendRevoked:          "Revocato",
-	ChartLegendValid:            "Valido",
-	ChartStatusDistribution:     "Distribuzione stato",
 	ColumnActions:               "Azioni",
 	ColumnCommonName:            "Nome comune",
 	ColumnCreatedAt:             "Creato il",
@@ -779,7 +739,6 @@ var italianMessages = Messages{
 	DownloadPEMFailed:           "Impossibile scaricare il certificato PEM ({{status}})",
 	DownloadPEMNetworkError:     "Errore di rete durante il download del certificato PEM. Riprova.",
 	DownloadPEMSuccess:          "Certificato PEM scaricato con successo",
-	DualStatusNote:              "{{count}} certificato(i) sono sia scaduti che revocati",
 	AdminDocsTitle:              "Documentazione admin",
 	ExpiryFilter30Days:          "≤ 30 giorni",
 	ExpiryFilter7Days:           "≤ 7 giorni",
@@ -816,13 +775,12 @@ var italianMessages = Messages{
 	LoadSuccess:                 "Certificati caricati correttamente",
 	LoadUnexpectedFormat:        "Formato di risposta inatteso dal server",
 	ModalDetailsTitle:           "Dettagli del certificato",
-	ModalVaultStatusTitle:       "Stato del Vault",
+	ModalVaultStatusTitle:       "Stato Vault",
 	MountSearchPlaceholder:      "Cerca vaults o motori PKI...",
 	MountSelectorTitle:          "Vaults e mount PKI",
 	MountSelectorTooltip:        "Filtra i certificati per istanza Vault e mount PKI",
 	MountStatsSelected:          "Selezionati",
 	MountStatsTotal:             "Totale",
-	NoCertsExpiringSoon:         "Nessun certificato in scadenza a breve",
 	NoData:                      "Nessun dato",
 	NotificationCritical:        "{{count}} certificato/i in scadenza entro {{threshold}} giorni o meno!",
 	NotificationWarning:         "{{count}} certificato/i in scadenza entro {{threshold}} giorni o meno",
