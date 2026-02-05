@@ -62,9 +62,10 @@ type vaultHealthCheckResult struct {
 }
 
 type footerVaultStatusTemplateData struct {
-	Text  string
-	Class string
-	Title string
+	Text      string
+	Class     string
+	Title     string
+	Connected bool
 }
 
 type footerVaultHealthCache struct {
@@ -440,7 +441,7 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 					cssClass = "vcv-footer-pill vcv-footer-pill-ok"
 					title = messages.FooterVaultConnected
 				}
-				vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: name, Class: cssClass, Title: title})
+				vaultPills = append(vaultPills, footerVaultStatusTemplateData{Text: name, Class: cssClass, Title: title, Connected: res.entry.connected})
 			}
 		}
 
@@ -862,7 +863,7 @@ func daysUntil(expiresAt time.Time, now time.Time) int {
 		return -1
 	}
 	diff := expiresAt.Sub(now)
-	return int(math.Ceil(diff.Hours() / 24))
+	return int(math.Floor(diff.Hours() / 24))
 }
 
 func sortCertificates(items []certs.Certificate, sortKey string, sortDirection string) []certs.Certificate {
@@ -994,8 +995,17 @@ func buildPaginationInfo(messages i18n.Messages, pageSize string, pageIndex int,
 	return interpolatePlaceholder(value, "total", fmt.Sprintf("%d", totalPages))
 }
 
-func buildCertRows(items []certs.Certificate, messages i18n.Messages, thresholds config.ExpirationThresholds, vaultDisplayNames map[string]string, showVaultMount bool) []certRowTemplateData {
-	now := time.Now().UTC()
+func resolveExpirationLevel(daysRemaining int, thresholds config.ExpirationThresholds) string {
+	if thresholds.Critical > 0 && daysRemaining <= thresholds.Critical {
+		return "critical"
+	}
+	if thresholds.Warning > 0 && daysRemaining <= thresholds.Warning {
+		return "warning"
+	}
+	return "ok"
+}
+
+func buildCertRows(items []certs.Certificate, messages i18n.Messages, thresholds config.ExpirationThresholds, vaultDisplayNames map[string]string, showVaultMount bool, now time.Time) []certRowTemplateData {
 	rows := make([]certRowTemplateData, 0, len(items))
 	for _, certificate := range items {
 		vaultID, mountName := extractVaultIDAndMountName(certificate.ID)
@@ -1008,35 +1018,51 @@ func buildCertRows(items []certs.Certificate, messages i18n.Messages, thresholds
 		statuses := certificateStatuses(certificate, now)
 		badgeViews := make([]certStatusBadgeTemplateData, 0, len(statuses))
 		rowClasses := make([]string, 0, len(statuses))
+		daysRemaining := daysUntil(certificate.ExpiresAt.UTC(), now)
+		isExpiringSoon := thresholds.Warning > 0 && daysRemaining >= 0 && daysRemaining <= thresholds.Warning
+		isCritical := thresholds.Critical > 0 && daysRemaining >= 0 && daysRemaining <= thresholds.Critical
 		for _, status := range statuses {
 			rowClasses = append(rowClasses, "vcv-row-"+status)
-			badgeViews = append(badgeViews, certStatusBadgeTemplateData{Class: "vcv-badge vcv-badge-" + status, Label: statusLabelForMessages(status, messages)})
+			badgeClass := "vcv-badge vcv-badge-" + status
+			if status == "valid" {
+				if isCritical {
+					badgeClass = "vcv-badge vcv-badge-critical"
+				} else if isExpiringSoon {
+					badgeClass = "vcv-badge vcv-badge-warning"
+				}
+			}
+			badgeViews = append(badgeViews, certStatusBadgeTemplateData{Class: badgeClass, Label: statusLabelForMessages(status, messages)})
 		}
 		daysRemainingText := ""
 		daysRemainingClass := ""
-		daysRemaining := daysUntil(certificate.ExpiresAt.UTC(), now)
+		expiresCellClass := "vcv-expires-cell"
+		expiresDateClass := "vcv-expires-date"
 		hasExpired := !certificate.ExpiresAt.IsZero() && !certificate.ExpiresAt.After(now)
 		if hasExpired {
-			expiredSince := interpolatePlaceholder(messages.ExpiredSince, "date", certificate.ExpiresAt.UTC().Format("2006-01-02"))
-			daysRemainingText = expiredSince
-			daysRemainingClass = "vcv-days-remaining vcv-days-critical"
-		}
-		if thresholds.Warning > 0 && daysRemaining >= 0 && daysRemaining <= thresholds.Warning {
-			if hasExpired {
-				goto appendRow
-			}
-			if thresholds.Critical > 0 && daysRemaining <= thresholds.Critical {
-				daysRemainingClass = "vcv-days-remaining vcv-days-critical"
+			daysSinceExpiry := int(math.Abs(float64(daysRemaining)))
+			if daysSinceExpiry == 0 {
+				daysRemainingText = messages.ExpiredToday
+			} else if daysSinceExpiry == 1 {
+				daysRemainingText = interpolatePlaceholder(messages.ExpiredDaysSingular, "days", "1")
 			} else {
-				daysRemainingClass = "vcv-days-remaining vcv-days-warning"
+				daysRemainingText = interpolatePlaceholder(messages.ExpiredDays, "days", fmt.Sprintf("%d", daysSinceExpiry))
 			}
-			if daysRemaining == 0 || daysRemaining == 1 {
-				daysRemainingText = interpolatePlaceholder(messages.DaysRemainingSingular, "days", fmt.Sprintf("%d", daysRemaining))
+			daysRemainingClass = "vcv-days-remaining vcv-days-critical"
+			expiresCellClass = "vcv-expires-cell vcv-expires-cell-critical"
+			expiresDateClass = "vcv-expires-date vcv-expires-date-critical"
+		} else if isExpiringSoon {
+			if daysRemaining == 0 {
+				daysRemainingText = messages.ExpiringToday
+			} else if daysRemaining == 1 {
+				daysRemainingText = interpolatePlaceholder(messages.DaysRemainingSingular, "days", "1")
 			} else {
 				daysRemainingText = interpolatePlaceholder(messages.DaysRemaining, "days", fmt.Sprintf("%d", daysRemaining))
 			}
+			level := resolveExpirationLevel(daysRemaining, thresholds)
+			daysRemainingClass = "vcv-days-remaining vcv-days-" + level
+			expiresCellClass = "vcv-expires-cell vcv-expires-cell-" + level
+			expiresDateClass = "vcv-expires-date vcv-expires-date-" + level
 		}
-	appendRow:
 		rows = append(rows, certRowTemplateData{
 			ID:                 certificate.ID,
 			CommonName:         certificate.CommonName,
@@ -1044,10 +1070,10 @@ func buildCertRows(items []certs.Certificate, messages i18n.Messages, thresholds
 			MountName:          mountName,
 			ShowVaultMount:     showVaultMount,
 			Sans:               strings.Join(certificate.Sans, ", "),
-			CreatedAt:          formatTime(certificate.CreatedAt),
-			ExpiresAt:          formatTime(certificate.ExpiresAt),
-			ExpiresCellClass:   "vcv-expires-cell",
-			ExpiresDateClass:   "vcv-expires-date",
+			CreatedAt:          formatTimeReadable(certificate.CreatedAt),
+			ExpiresAt:          formatTimeReadable(certificate.ExpiresAt),
+			ExpiresCellClass:   expiresCellClass,
+			ExpiresDateClass:   expiresDateClass,
 			DaysRemainingText:  daysRemainingText,
 			DaysRemainingClass: daysRemainingClass,
 			RowClass:           strings.Join(rowClasses, " "),
@@ -1123,6 +1149,13 @@ func formatTime(value time.Time) string {
 	return value.UTC().Format("2006-01-02 15:04:05")
 }
 
+func formatTimeReadable(value time.Time) string {
+	if value.IsZero() {
+		return ""
+	}
+	return value.UTC().Format("Jan 02, 2006 15:04")
+}
+
 func formatDate(value time.Time) string {
 	if value.IsZero() {
 		return ""
@@ -1182,7 +1215,7 @@ func buildCertsFragmentData(certificates []certs.Certificate, expirationThreshol
 	}
 	pageIndex = applyPageAction(queryState.PageAction, pageIndex, totalPages)
 	pageVisible, _ := paginateCertificates(visible, pageIndex, queryState.PageSize)
-	return certsFragmentTemplateData{ChartExpired: chartData.Expired, ChartHasData: chartData.Total > 0, ChartRevoked: chartData.Revoked, ChartTotal: chartData.Total, ChartValid: chartData.Valid, DashboardExpired: dashboardStats.Expired, DashboardExpiring: dashboardStats.ExpiringSoon, DashboardTotal: dashboardStats.Total, DashboardValid: dashboardStats.Valid, DonutCircumference: chartData.Circumference, DonutExpiredDash: chartData.ExpiredDash, DonutExpiredDashArray: chartData.ExpiredDashArray, DonutExpiredOffset: chartData.ExpiredOffset, DonutHasExpired: chartData.Expired > 0, DonutHasRevoked: chartData.Revoked > 0, DonutHasValid: chartData.Valid > 0, DonutRevokedDash: chartData.RevokedDash, DonutRevokedDashArray: chartData.RevokedDashArray, DonutRevokedOffset: chartData.RevokedOffset, DonutValidDash: chartData.ValidDash, DonutValidDashArray: chartData.ValidDashArray, DonutValidOffset: chartData.ValidOffset, DualStatusCount: chartData.DualStatusCount, DualStatusNoteText: chartData.DualStatusNoteText, AdminDocsTitle: messages.AdminDocsTitle, Messages: messages, ShowVaultMount: showVaultMount, PageCountHidden: len(visible) == 0, PageCountText: fmt.Sprintf("%d", len(visible)), PageIndex: pageIndex, PageInfoText: buildPaginationInfo(messages, queryState.PageSize, pageIndex, totalPages), PageNextDisabled: queryState.PageSize == "all" || pageIndex >= totalPages-1, PagePrevDisabled: queryState.PageSize == "all" || pageIndex <= 0, PaginationNextText: messages.PaginationNext, PaginationPrevText: messages.PaginationPrev, Rows: buildCertRows(pageVisible, messages, expirationThresholds, vaultDisplayNames, showVaultMount), SortCommonActive: sortKey == "commonName", SortCommonDir: resolveSortDirAttribute(sortKey, sortDirection, "commonName"), SortCreatedActive: sortKey == "createdAt", SortCreatedDir: resolveSortDirAttribute(sortKey, sortDirection, "createdAt"), SortDirection: sortDirection, SortExpiresActive: sortKey == "expiresAt", SortExpiresDir: resolveSortDirAttribute(sortKey, sortDirection, "expiresAt"), SortVaultActive: sortKey == "vault", SortVaultDir: resolveSortDirAttribute(sortKey, sortDirection, "vault"), SortPkiActive: sortKey == "pki", SortPkiDir: resolveSortDirAttribute(sortKey, sortDirection, "pki"), SortKey: sortKey, TimelineItems: timelineItems}
+	return certsFragmentTemplateData{ChartExpired: chartData.Expired, ChartHasData: chartData.Total > 0, ChartRevoked: chartData.Revoked, ChartTotal: chartData.Total, ChartValid: chartData.Valid, DashboardExpired: dashboardStats.Expired, DashboardExpiring: dashboardStats.ExpiringSoon, DashboardTotal: dashboardStats.Total, DashboardValid: dashboardStats.Valid, DonutCircumference: chartData.Circumference, DonutExpiredDash: chartData.ExpiredDash, DonutExpiredDashArray: chartData.ExpiredDashArray, DonutExpiredOffset: chartData.ExpiredOffset, DonutHasExpired: chartData.Expired > 0, DonutHasRevoked: chartData.Revoked > 0, DonutHasValid: chartData.Valid > 0, DonutRevokedDash: chartData.RevokedDash, DonutRevokedDashArray: chartData.RevokedDashArray, DonutRevokedOffset: chartData.RevokedOffset, DonutValidDash: chartData.ValidDash, DonutValidDashArray: chartData.ValidDashArray, DonutValidOffset: chartData.ValidOffset, DualStatusCount: chartData.DualStatusCount, DualStatusNoteText: chartData.DualStatusNoteText, AdminDocsTitle: messages.AdminDocsTitle, Messages: messages, ShowVaultMount: showVaultMount, PageCountHidden: len(visible) == 0, PageCountText: fmt.Sprintf("%d", len(visible)), PageIndex: pageIndex, PageInfoText: buildPaginationInfo(messages, queryState.PageSize, pageIndex, totalPages), PageNextDisabled: queryState.PageSize == "all" || pageIndex >= totalPages-1, PagePrevDisabled: queryState.PageSize == "all" || pageIndex <= 0, PaginationNextText: messages.PaginationNext, PaginationPrevText: messages.PaginationPrev, Rows: buildCertRows(pageVisible, messages, expirationThresholds, vaultDisplayNames, showVaultMount, time.Now().UTC()), SortCommonActive: sortKey == "commonName", SortCommonDir: resolveSortDirAttribute(sortKey, sortDirection, "commonName"), SortCreatedActive: sortKey == "createdAt", SortCreatedDir: resolveSortDirAttribute(sortKey, sortDirection, "createdAt"), SortDirection: sortDirection, SortExpiresActive: sortKey == "expiresAt", SortExpiresDir: resolveSortDirAttribute(sortKey, sortDirection, "expiresAt"), SortVaultActive: sortKey == "vault", SortVaultDir: resolveSortDirAttribute(sortKey, sortDirection, "vault"), SortPkiActive: sortKey == "pki", SortPkiDir: resolveSortDirAttribute(sortKey, sortDirection, "pki"), SortKey: sortKey, TimelineItems: timelineItems}
 }
 
 func clampInt(value int, min int, max int) int {
@@ -1239,9 +1272,9 @@ func computeDashboardStats(certificates []certs.Certificate, thresholds config.E
 		if containsString(statuses, "expired") {
 			stats.Expired += 1
 		}
-		if thresholds.Warning > 0 {
+		if thresholds.Warning > 0 && certificate.ExpiresAt.After(now) {
 			days := daysUntil(certificate.ExpiresAt.UTC(), now)
-			if days > 0 && days <= thresholds.Warning {
+			if days >= 0 && days <= thresholds.Warning {
 				stats.ExpiringSoon += 1
 			}
 		}
@@ -1302,8 +1335,11 @@ func computeExpiryTimelineItems(certificates []certs.Certificate, thresholds con
 	now := time.Now().UTC()
 	items := make([]expiryTimelineItemTemplateData, 0, len(certificates))
 	for _, certificate := range certificates {
+		if !certificate.ExpiresAt.After(now) {
+			continue
+		}
 		days := daysUntil(certificate.ExpiresAt.UTC(), now)
-		if days <= 0 || days > thresholds.Warning {
+		if days < 0 || days > thresholds.Warning {
 			continue
 		}
 		dotClass := "vcv-timeline-dot-warning"

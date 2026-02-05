@@ -1,14 +1,14 @@
 <div class="vcv-detail-grid">
   {{range .VaultPills}}
-  <div class="vcv-detail-card" style="box-shadow: none;">
-    <div class="vcv-detail-section-content" style="display: flex; align-items: center; gap: 1rem; padding: 1rem;">
-      <div class="{{.Class}}" style="flex-shrink: 0;"></div>
+  <div class="vcv-detail-card" style="box-shadow: none; border: 1px solid var(--vcv-color-border);">
+    <div class="vcv-detail-section-content" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; background: transparent;">
+      <div style="width: 0.75rem; height: 0.75rem; border-radius: 50%; flex-shrink: 0; background-color: {{if .Connected}}var(--vcv-color-primary){{else}}var(--vcv-color-danger){{end}};"></div>
       <div style="display: flex; flex-direction: column; gap: 0.25rem; flex: 1;">
         <div style="font-weight: 600; color: var(--vcv-color-text-strong);">{{.Text}}</div>
         {{if ne .Title ""}}<div style="font-size: 0.75rem; color: var(--vcv-color-muted);">{{.Title}}</div>{{end}}
       </div>
       <div style="font-size: 1.25rem;">
-        {{if eq .Class "vcv-footer-pill vcv-footer-pill-ok"}}✅{{else}}❌{{end}}
+        {{if .Connected}}✅{{else}}❌{{end}}
       </div>
     </div>
   </div>

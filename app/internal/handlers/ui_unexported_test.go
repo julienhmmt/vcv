@@ -609,13 +609,25 @@ func TestDaysUntil(t *testing.T) {
 			name:      "expires today",
 			expiresAt: now.Add(2 * time.Hour),
 			now:       now,
-			expected:  1,
+			expected:  0,
 		},
 		{
 			name:      "expires in 30 days",
 			expiresAt: now.Add(30 * 24 * time.Hour),
 			now:       now,
 			expected:  30,
+		},
+		{
+			name:      "expired 2 hours ago floors to -1",
+			expiresAt: now.Add(-2 * time.Hour),
+			now:       now,
+			expected:  -1,
+		},
+		{
+			name:      "expired 36 hours ago floors to -2",
+			expiresAt: now.Add(-36 * time.Hour),
+			now:       now,
+			expected:  -2,
 		},
 	}
 
