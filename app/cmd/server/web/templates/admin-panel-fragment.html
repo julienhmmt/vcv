@@ -1,15 +1,15 @@
 <section class="vcv-table-wrapper admin-surface admin-panel-surface">
   {{if .SuccessText}}
-    <div class="admin-alert admin-alert-success">{{.SuccessText}}</div>
+    <div class="admin-alert admin-alert-success" role="status">{{.SuccessText}}</div>
   {{end}}
   {{if .ErrorText}}
-    <div class="admin-alert admin-alert-error">{{.ErrorText}}</div>
+    <div class="admin-alert admin-alert-error" role="alert">{{.ErrorText}}</div>
   {{end}}
 
   <div class="admin-card-header">
     <h2 class="admin-card-title">{{.Messages.AdminSettings}}</h2>
     <div class="admin-actions">
-      <button class="vcv-button vcv-button-secondary" type="button" onclick="openDocumentationModal('admin')">📖 {{.Messages.ButtonDocumentation}}</button>
+      <button class="vcv-button vcv-button-secondary" type="button" onclick="openDocumentationModal('admin')" aria-label="{{.Messages.ButtonDocumentation}}">📖 {{.Messages.ButtonDocumentation}}</button>
       <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/logout" hx-target="#admin-root" hx-swap="innerHTML">{{.Messages.AdminLogout}}</button>
     </div>
   </div>
@@ -17,6 +17,7 @@
   <form id="admin-settings-form" class="admin-form" hx-post="/admin/settings" hx-target="#admin-root" hx-swap="innerHTML">
     <fieldset class="admin-fieldset">
       <legend class="admin-legend">{{.Messages.AdminCertificates}}</legend>
+      <span class="admin-field-hint">{{.Messages.AdminThresholdsHint}}</span>
       <div class="admin-grid">
         <div class="admin-form-row">
           <label class="admin-label" for="settings-expire-critical">{{.Messages.AdminCriticalThreshold}}</label>
@@ -34,7 +35,7 @@
       <div class="admin-grid">
         <div class="admin-form-row admin-form-row-full">
           <label class="admin-label" for="settings-cors-origins">{{.Messages.AdminCORSOrigins}}</label>
-          <textarea class="vcv-input admin-textarea" id="settings-cors-origins" name="cors_origins" rows="3">{{.CorsOriginsText}}</textarea>
+          <textarea class="vcv-input admin-textarea" id="settings-cors-origins" name="cors_origins" rows="3" placeholder="{{.Messages.AdminCORSOriginsHint}}">{{.CorsOriginsText}}</textarea>
         </div>
       </div>
     </fieldset>
@@ -44,12 +45,16 @@
       <div class="admin-section-header">
         <div class="admin-section-hint">{{.Messages.AdminVaultsHint}}</div>
         <div class="admin-actions">
-          <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/vault/add" hx-target="#admin-vaults-list" hx-swap="beforeend">{{.Messages.AdminAddVault}}</button>
+          <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/vault/add" hx-target="#admin-vaults-list" hx-swap="beforeend" hx-on::after-request="var e=document.getElementById('admin-vaults-empty');if(e)e.remove()">{{.Messages.AdminAddVault}}</button>
         </div>
       </div>
       <div id="admin-vaults-list" class="admin-vaults-list">
-        {{range .VaultViews}}
-          {{template "admin-vault-item.html" .}}
+        {{if .VaultViews}}
+          {{range .VaultViews}}
+            {{template "admin-vault-item.html" .}}
+          {{end}}
+        {{else}}
+          <div class="admin-empty-state" id="admin-vaults-empty">{{.Messages.AdminVaultsEmpty}}</div>
         {{end}}
       </div>
     </fieldset>

@@ -138,6 +138,22 @@
   color: var(--vcv-color-muted);
 }
 
+.admin-field-hint {
+  font-size: 0.6875rem;
+  color: var(--vcv-color-muted);
+  line-height: 1.4;
+}
+
+.admin-empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  font-size: 0.875rem;
+  color: var(--vcv-color-muted);
+  border: 1px dashed var(--vcv-color-border);
+  border-radius: 0.75rem;
+  background: var(--vcv-color-surface-muted);
+}
+
 .admin-section-header {
   display: flex;
   align-items: center;

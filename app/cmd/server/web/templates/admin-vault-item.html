@@ -29,6 +29,7 @@
           hx-vals='{"vaultId":"{{.Vault.ID}}"}'
           hx-target="closest details"
           hx-swap="delete"
+          aria-label="{{.Messages.AdminVaultRemove}} {{if .Vault.DisplayName}}{{.Vault.DisplayName}}{{else}}{{.Vault.ID}}{{end}}"
         >
           {{.Messages.AdminVaultRemove}}
         </button>
@@ -50,8 +51,9 @@
         <label class="admin-label">{{.Messages.AdminVaultToken}}</label>
         <div class="admin-token-row">
           <input class="vcv-input admin-input" name="vault_token_{{.Key}}" type="password" value="{{.Vault.Token}}" required />
-          <button class="vcv-button vcv-button-secondary vcv-button-small" type="button" data-vault-key="{{.Key}}" onclick="toggleToken(this)">{{.Messages.AdminVaultTokenReveal}}</button>
+          <button class="vcv-button vcv-button-secondary vcv-button-small" type="button" data-vault-key="{{.Key}}" onclick="toggleToken(this)" aria-label="{{.Messages.AdminVaultTokenReveal}}">{{.Messages.AdminVaultTokenReveal}}</button>
         </div>
+        <span class="admin-field-hint">{{.Messages.AdminVaultTokenHint}}</span>
       </div>
 
       <div class="admin-form-row admin-form-row-full">

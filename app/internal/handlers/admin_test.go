@@ -400,6 +400,36 @@ func TestAdminRoutes_SettingsPost_ErrorsAndSuccess(t *testing.T) {
 	assert.Contains(t, string(fileBytes), "\"tls_server_name\": \"vault.service.consul\"")
 }
 
+func TestAdminSessionStore_LimiterAlwaysEnabled(t *testing.T) {
+	devStore := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
+	require.NotNil(t, devStore.limiter, "limiter must be enabled in dev mode")
+	assert.Equal(t, 5, devStore.limiter.maxAttempts)
+	prodStore := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), true)
+	require.NotNil(t, prodStore.limiter, "limiter must be enabled in prod mode")
+	assert.Equal(t, 5, prodStore.limiter.maxAttempts)
+}
+
+func TestAdminSessionStore_SessionTTL_VariesByEnv(t *testing.T) {
+	devStore := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
+	assert.Equal(t, 12*time.Hour, devStore.sessionTTL)
+	prodStore := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), true)
+	assert.Equal(t, 4*time.Hour, prodStore.sessionTTL)
+}
+
+func TestAdminSessionStore_RateLimiter_BlocksAfterMaxAttempts(t *testing.T) {
+	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
+	for i := 0; i < 5; i++ {
+		req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=wrong"))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.RemoteAddr = "192.0.2.1:12345"
+		assert.True(t, store.allowLoginAttempt(req), "attempt %d should be allowed", i+1)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=wrong"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.RemoteAddr = "192.0.2.1:12345"
+	assert.False(t, store.allowLoginAttempt(req), "6th attempt should be blocked")
+}
+
 func TestAdminRoutes_VaultRemove_PersistsToSettings(t *testing.T) {
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	initial := `{"app":{"env":"dev","port":52000,"logging":{"level":"debug","format":"json","output":"stdout","file_path":""}},"cors":{"allowed_origins":[],"allow_credentials":true},"certificates":{"expiration_thresholds":{"critical":1,"warning":2}},"vaults":[{"id":"v1","address":"https://vault.example.com","token":"tok","pki_mount":"pki","pki_mounts":["pki"],"display_name":"v1","tls_insecure":false,"enabled":true}]}`

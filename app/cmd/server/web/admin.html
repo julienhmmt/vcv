@@ -41,16 +41,13 @@
 
       <section id="admin-login" class="vcv-table-wrapper admin-surface admin-login">
         <h2 class="admin-card-title">Login</h2>
-        <div id="admin-login-error" class="admin-alert admin-alert-error vcv-hidden"></div>
+        <div id="admin-login-error" class="admin-alert admin-alert-error vcv-hidden" role="alert"></div>
         <form id="admin-login-form" class="admin-form">
-          <!-- <div class="admin-form-row"> -->
-            <!-- <label class="admin-label" for="admin-username">Username</label> -->
-            <!-- <input class="vcv-input" id="admin-username" name="username" value="admin" autocomplete="username" required /> -->
             <input type="hidden" id="admin-username" name="username" value="admin" autocomplete="username" required />
-          <!-- </div> -->
           <div class="admin-form-row">
             <label class="admin-label" for="admin-password">Password</label>
-            <input class="vcv-input" id="admin-password" name="password" type="password" autocomplete="current-password" required />
+            <input class="vcv-input" id="admin-password" name="password" type="password" autocomplete="current-password" required aria-label="Password" />
+            <span class="admin-field-hint">Use the bcrypt-hashed password set in VCV_ADMIN_PASSWORD.</span>
           </div>
           <div class="admin-actions">
             <button class="vcv-button vcv-button-primary" type="submit">Login</button>
@@ -59,8 +56,8 @@
       </section>
 
       <section id="admin-panel" class="vcv-hidden">
-        <div id="admin-alert-success" class="admin-alert admin-alert-success vcv-hidden"></div>
-        <div id="admin-alert-error" class="admin-alert admin-alert-error vcv-hidden"></div>
+        <div id="admin-alert-success" class="admin-alert admin-alert-success vcv-hidden" role="status"></div>
+        <div id="admin-alert-error" class="admin-alert admin-alert-error vcv-hidden" role="alert"></div>
 
         <section class="vcv-table-wrapper admin-surface admin-panel-surface">
           <div class="admin-card-header">
@@ -99,6 +96,7 @@
 
             <fieldset class="admin-fieldset">
               <legend class="admin-legend">Certificates</legend>
+              <span class="admin-field-hint">Certificates expiring within these thresholds are flagged in the dashboard.</span>
               <div class="admin-grid">
                 <div class="admin-form-row">
                   <label class="admin-label" for="settings-expire-critical">Critical threshold (days)</label>
@@ -116,7 +114,7 @@
               <div class="admin-grid">
                 <div class="admin-form-row admin-form-row-full">
                   <label class="admin-label" for="settings-cors-origins">Allowed origins (comma-separated)</label>
-                  <textarea class="vcv-input admin-textarea" id="settings-cors-origins" name="corsOrigins" rows="3"></textarea>
+                  <textarea class="vcv-input admin-textarea" id="settings-cors-origins" name="corsOrigins" rows="3" placeholder="e.g. https://example.com, https://other.example.com"></textarea>
                 </div>
                 <!-- <div class="admin-form-row">
                   <label class="admin-label" for="settings-cors-credentials">Allow credentials</label>

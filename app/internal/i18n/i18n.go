@@ -158,6 +158,11 @@ type Messages struct {
 	AdminVaultRemove            string `json:"adminVaultRemove"`
 	AdminVaultTLSTip            string `json:"adminVaultTLSTip"`
 	AdminToggleEnable           string `json:"adminToggleEnable"`
+	AdminLoginHint              string `json:"adminLoginHint"`
+	AdminVaultsEmpty            string `json:"adminVaultsEmpty"`
+	AdminCORSOriginsHint        string `json:"adminCORSOriginsHint"`
+	AdminVaultTokenHint         string `json:"adminVaultTokenHint"`
+	AdminThresholdsHint         string `json:"adminThresholdsHint"`
 }
 
 // Response is the payload returned by the /api/i18n endpoint.
@@ -305,6 +310,11 @@ var englishMessages = Messages{
 	AdminVaultRemove:            "Remove",
 	AdminVaultTLSTip:            "TLS tip: Provide the CA bundle either inline as base64 (preferred) or via a PEM file path / CA directory. If \"TLS CA cert (base64)\" is set, it takes precedence and the file/path fields are ignored. Encode a PEM bundle with: cat /path/to/ca.pem | base64 | tr -d '\\n'. \"TLS server name\" overrides SNI. \"TLS insecure\" disables verification (development only).",
 	AdminToggleEnable:           "Enable",
+	AdminLoginHint:              "Use the bcrypt-hashed password set in VCV_ADMIN_PASSWORD.",
+	AdminVaultsEmpty:            "No Vault instances configured yet. Click \"Add vault\" to get started.",
+	AdminCORSOriginsHint:        "e.g. https://example.com, https://other.example.com",
+	AdminVaultTokenHint:         "Vault access token. This value is stored in the settings file.",
+	AdminThresholdsHint:         "Certificates expiring within these thresholds are flagged in the dashboard.",
 }
 
 var frenchMessages = Messages{
@@ -446,6 +456,11 @@ var frenchMessages = Messages{
 	AdminVaultRemove:            "Supprimer",
 	AdminVaultTLSTip:            "Astuce TLS : Fournissez le bundle CA soit en ligne en base64 (préféré) soit via un chemin de fichier PEM / répertoire CA. Si \"Certificat CA TLS (base64)\" est défini, il a la priorité et les champs fichier/chemin sont ignorés. Encodez un bundle PEM avec : cat /chemin/vers/ca.pem | base64 | tr -d '\\n'. \"Nom du serveur TLS\" remplace SNI. \"TLS non sécurisé\" désactive la vérification (développement uniquement).",
 	AdminToggleEnable:           "Activer",
+	AdminLoginHint:              "Utilisez le mot de passe haché en bcrypt défini dans VCV_ADMIN_PASSWORD.",
+	AdminVaultsEmpty:            "Aucune instance Vault configurée. Cliquez sur « Ajouter un vault » pour commencer.",
+	AdminCORSOriginsHint:        "ex. https://example.com, https://other.example.com",
+	AdminVaultTokenHint:         "Jeton d'accès Vault. Cette valeur est stockée dans le fichier de paramètres.",
+	AdminThresholdsHint:         "Les certificats expirant dans ces seuils sont signalés dans le tableau de bord.",
 }
 
 var spanishMessages = Messages{
@@ -587,6 +602,11 @@ var spanishMessages = Messages{
 	AdminVaultRemove:            "Eliminar",
 	AdminVaultTLSTip:            "Consejo TLS: Proporcione el paquete CA en línea como base64 (preferido) o mediante una ruta de archivo PEM / directorio CA. Si se establece \"Certificado CA TLS (base64)\", tiene prioridad y se ignoran los campos de archivo/ruta. Codifique un paquete PEM con: cat /ruta/a/ca.pem | base64 | tr -d '\\n'. \"Nombre del servidor TLS\" anula SNI. \"TLS inseguro\" deshabilita la verificación (solo desarrollo).",
 	AdminToggleEnable:           "Habilitar",
+	AdminLoginHint:              "Use la contraseña hasheada con bcrypt configurada en VCV_ADMIN_PASSWORD.",
+	AdminVaultsEmpty:            "No hay instancias de Vault configuradas. Haga clic en \"Agregar vault\" para comenzar.",
+	AdminCORSOriginsHint:        "ej. https://example.com, https://other.example.com",
+	AdminVaultTokenHint:         "Token de acceso de Vault. Este valor se almacena en el archivo de configuración.",
+	AdminThresholdsHint:         "Los certificados que expiran dentro de estos umbrales se señalan en el panel.",
 }
 
 var germanMessages = Messages{
@@ -728,6 +748,11 @@ var germanMessages = Messages{
 	AdminVaultRemove:            "Entfernen",
 	AdminVaultTLSTip:            "TLS-Tipp: Geben Sie das CA-Bundle entweder inline als base64 (bevorzugt) oder über einen PEM-Dateipfad / CA-Verzeichnis an. Wenn \"TLS-CA-Zertifikat (base64)\" gesetzt ist, hat es Vorrang und die Datei-/Pfadfelder werden ignoriert. Kodieren Sie ein PEM-Bundle mit: cat /pfad/zu/ca.pem | base64 | tr -d '\\n'. \"TLS-Servername\" überschreibt SNI. \"TLS unsicher\" deaktiviert die Überprüfung (nur Entwicklung).",
 	AdminToggleEnable:           "Aktivieren",
+	AdminLoginHint:              "Verwenden Sie das bcrypt-gehashte Passwort aus VCV_ADMIN_PASSWORD.",
+	AdminVaultsEmpty:            "Noch keine Vault-Instanzen konfiguriert. Klicken Sie auf \"Vault hinzufügen\", um zu beginnen.",
+	AdminCORSOriginsHint:        "z.B. https://example.com, https://other.example.com",
+	AdminVaultTokenHint:         "Vault-Zugriffstoken. Dieser Wert wird in der Einstellungsdatei gespeichert.",
+	AdminThresholdsHint:         "Zertifikate, die innerhalb dieser Schwellenwerte ablaufen, werden im Dashboard markiert.",
 }
 
 var italianMessages = Messages{
@@ -868,6 +893,11 @@ var italianMessages = Messages{
 	AdminVaultRemove:            "Rimuovi",
 	AdminVaultTLSTip:            "Suggerimento TLS: Fornire il bundle CA in linea come base64 (preferito) o tramite un percorso file PEM / directory CA. Se \"Certificato CA TLS (base64)\" è impostato, ha la precedenza e i campi file/percorso vengono ignorati. Codificare un bundle PEM con: cat /percorso/a/ca.pem | base64 | tr -d '\\n'. \"Nome server TLS\" sovrascrive SNI. \"TLS non sicuro\" disabilita la verifica (solo sviluppo).",
 	AdminToggleEnable:           "Abilita",
+	AdminLoginHint:              "Utilizzare la password hashata con bcrypt impostata in VCV_ADMIN_PASSWORD.",
+	AdminVaultsEmpty:            "Nessuna istanza Vault configurata. Fai clic su \"Aggiungi vault\" per iniziare.",
+	AdminCORSOriginsHint:        "es. https://example.com, https://other.example.com",
+	AdminVaultTokenHint:         "Token di accesso Vault. Questo valore viene memorizzato nel file delle impostazioni.",
+	AdminThresholdsHint:         "I certificati in scadenza entro queste soglie vengono segnalati nella dashboard.",
 }
 
 // MessagesForLanguage returns the translations for a given language code.

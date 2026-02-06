@@ -74,10 +74,11 @@ type adminSessionStore struct {
 }
 
 func newAdminSessionStore(password string, secureCookies bool) *adminSessionStore {
-	store := &adminSessionStore{password: password, sessions: make(map[string]time.Time), sessionTTL: 12 * time.Hour, secureCookies: secureCookies}
+	ttl := 12 * time.Hour
 	if secureCookies {
-		store.limiter = newAdminLoginLimiter(10, 5*time.Minute)
+		ttl = 4 * time.Hour
 	}
+	store := &adminSessionStore{password: password, sessions: make(map[string]time.Time), sessionTTL: ttl, secureCookies: secureCookies, limiter: newAdminLoginLimiter(5, 3*time.Minute)}
 	return store
 }
 
@@ -112,20 +113,22 @@ func (l *adminLoginLimiter) allow(now time.Time, key string) bool {
 	return entry.count <= l.maxAttempts
 }
 
-func clientIP(r *http.Request) string {
-	forwarded := strings.TrimSpace(r.Header.Get("X-Forwarded-For"))
-	if forwarded != "" {
-		parts := strings.Split(forwarded, ",")
-		if len(parts) > 0 {
-			value := strings.TrimSpace(parts[0])
-			if value != "" {
-				return value
+func clientIP(r *http.Request, trustProxy bool) string {
+	if trustProxy {
+		forwarded := strings.TrimSpace(r.Header.Get("X-Forwarded-For"))
+		if forwarded != "" {
+			parts := strings.Split(forwarded, ",")
+			if len(parts) > 0 {
+				value := strings.TrimSpace(parts[0])
+				if value != "" {
+					return value
+				}
 			}
 		}
-	}
-	realIP := strings.TrimSpace(r.Header.Get("X-Real-IP"))
-	if realIP != "" {
-		return realIP
+		realIP := strings.TrimSpace(r.Header.Get("X-Real-IP"))
+		if realIP != "" {
+			return realIP
+		}
 	}
 	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
 	if err == nil {
@@ -138,7 +141,7 @@ func (s *adminSessionStore) allowLoginAttempt(r *http.Request) bool {
 	if s.limiter == nil {
 		return true
 	}
-	return s.limiter.allow(time.Now(), clientIP(r))
+	return s.limiter.allow(time.Now(), clientIP(r, s.secureCookies))
 }
 
 func (s *adminSessionStore) pruneSessions(now time.Time) {
