@@ -6,7 +6,7 @@ Wants=network-online.target
 
 [Container]
 ContainerName=vcv
-Image=docker.io/jhmmt/vcv:1.5
+Image=docker.io/jhmmt/vcv:1.6
 PublishPort=30008:52000
 Network=bridge
 ## Volumes

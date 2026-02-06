@@ -33,7 +33,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: vcv
-          image: jhmmt/vcv:1.5
+          image: jhmmt/vcv:1.6
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
