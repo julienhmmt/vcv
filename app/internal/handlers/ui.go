@@ -122,35 +122,36 @@ type indexTemplateData struct {
 }
 
 type certsFragmentTemplateData struct {
-	Rows               []certRowTemplateData
-	Messages           i18n.Messages
-	ShowVaultMount     bool
-	PageInfoText       string
-	PageCountText      string
-	PageCountHidden    bool
-	PagePrevDisabled   bool
-	PageNextDisabled   bool
-	PageIndex          int
-	SortKey            string
-	SortDirection      string
-	SortCommonActive   bool
-	SortCreatedActive  bool
-	SortExpiresActive  bool
-	SortVaultActive    bool
-	SortPkiActive      bool
-	SortCommonDir      string
-	SortCreatedDir     string
-	SortExpiresDir     string
-	SortVaultDir       string
-	SortPkiDir         string
-	PaginationPrevText string
-	PaginationNextText string
-	DashboardTotal     int
-	DashboardValid     int
-	DashboardExpiring  int
-	DashboardExpired   int
-	DashboardRevoked   int
-	AdminDocsTitle     string `json:"adminDocsTitle"`
+	Rows                []certRowTemplateData
+	Messages            i18n.Messages
+	ShowVaultMount      bool
+	PageInfoText        string
+	PageCountText       string
+	PageCountHidden     bool
+	PagePrevDisabled    bool
+	PageNextDisabled    bool
+	PageIndex           int
+	SortKey             string
+	SortDirection       string
+	SortCommonActive    bool
+	SortCreatedActive   bool
+	SortExpiresActive   bool
+	SortVaultActive     bool
+	SortPkiActive       bool
+	SortCommonDir       string
+	SortCreatedDir      string
+	SortExpiresDir      string
+	SortVaultDir        string
+	SortPkiDir          string
+	PaginationPrevText  string
+	PaginationNextText  string
+	DashboardTotal      int
+	DashboardValid      int
+	DashboardExpiring   int
+	DashboardExpired    int
+	DashboardRevoked    int
+	DashboardCertsLabel string
+	AdminDocsTitle      string `json:"adminDocsTitle"`
 }
 
 type dashboardStatsTemplateData struct {
@@ -1211,35 +1212,36 @@ func buildCertsFragmentData(certificates []certs.Certificate, expirationThreshol
 	rows := buildCertRows(pageVisible, messages, expirationThresholds, vaultDisplayNames, showVaultMount, time.Now().UTC())
 
 	return certsFragmentTemplateData{
-		Rows:               rows,
-		Messages:           messages,
-		ShowVaultMount:     showVaultMount,
-		PageInfoText:       buildPaginationInfo(messages, queryState.PageSize, pageIndex, totalPages),
-		PageCountText:      fmt.Sprintf("%d", len(visible)),
-		PageCountHidden:    len(visible) == 0,
-		PagePrevDisabled:   pageIndex <= 0,
-		PageNextDisabled:   pageIndex >= totalPages-1,
-		PageIndex:          pageIndex,
-		SortKey:            sortKey,
-		SortDirection:      sortDirection,
-		SortCommonActive:   sortKey == "commonName",
-		SortCreatedActive:  sortKey == "createdAt",
-		SortExpiresActive:  sortKey == "expiresAt",
-		SortVaultActive:    sortKey == "vault",
-		SortPkiActive:      sortKey == "pki",
-		SortCommonDir:      nextSortDirection(sortKey, sortDirection, "commonName"),
-		SortCreatedDir:     nextSortDirection(sortKey, sortDirection, "createdAt"),
-		SortExpiresDir:     nextSortDirection(sortKey, sortDirection, "expiresAt"),
-		SortVaultDir:       nextSortDirection(sortKey, sortDirection, "vault"),
-		SortPkiDir:         nextSortDirection(sortKey, sortDirection, "pki"),
-		PaginationPrevText: messages.PaginationPrev,
-		PaginationNextText: messages.PaginationNext,
-		DashboardTotal:     dashboardStats.Total,
-		DashboardValid:     dashboardStats.Valid,
-		DashboardExpiring:  dashboardStats.Expiring,
-		DashboardExpired:   dashboardStats.Expired,
-		DashboardRevoked:   dashboardStats.Revoked,
-		AdminDocsTitle:     messages.AdminDocsTitle,
+		Rows:                rows,
+		Messages:            messages,
+		ShowVaultMount:      showVaultMount,
+		PageInfoText:        buildPaginationInfo(messages, queryState.PageSize, pageIndex, totalPages),
+		PageCountText:       fmt.Sprintf("%d", len(visible)),
+		PageCountHidden:     len(visible) == 0,
+		PagePrevDisabled:    pageIndex <= 0,
+		PageNextDisabled:    pageIndex >= totalPages-1,
+		PageIndex:           pageIndex,
+		SortKey:             sortKey,
+		SortDirection:       sortDirection,
+		SortCommonActive:    sortKey == "commonName",
+		SortCreatedActive:   sortKey == "createdAt",
+		SortExpiresActive:   sortKey == "expiresAt",
+		SortVaultActive:     sortKey == "vault",
+		SortPkiActive:       sortKey == "pki",
+		SortCommonDir:       nextSortDirection(sortKey, sortDirection, "commonName"),
+		SortCreatedDir:      nextSortDirection(sortKey, sortDirection, "createdAt"),
+		SortExpiresDir:      nextSortDirection(sortKey, sortDirection, "expiresAt"),
+		SortVaultDir:        nextSortDirection(sortKey, sortDirection, "vault"),
+		SortPkiDir:          nextSortDirection(sortKey, sortDirection, "pki"),
+		PaginationPrevText:  messages.PaginationPrev,
+		PaginationNextText:  messages.PaginationNext,
+		DashboardTotal:      dashboardStats.Total,
+		DashboardValid:      dashboardStats.Valid,
+		DashboardExpiring:   dashboardStats.Expiring,
+		DashboardExpired:    dashboardStats.Expired,
+		DashboardRevoked:    dashboardStats.Revoked,
+		DashboardCertsLabel: messages.DashboardCertsLabel,
+		AdminDocsTitle:      messages.AdminDocsTitle,
 	}
 }
 

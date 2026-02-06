@@ -36,8 +36,10 @@ type Messages struct {
 	ColumnExpiresAt             string `json:"columnExpiresAt"`
 	ColumnSAN                   string `json:"columnSan"`
 	ColumnStatus                string `json:"columnStatus"`
+	DashboardCertsLabel         string `json:"dashboardCertsLabel"`
 	DashboardExpired            string `json:"dashboardExpired"`
 	DashboardExpiring           string `json:"dashboardExpiring"`
+	DashboardFilterHint         string `json:"dashboardFilterHint"`
 	DashboardRevoked            string `json:"dashboardRevoked"`
 	DashboardTotal              string `json:"dashboardTotal"`
 	DashboardValid              string `json:"dashboardValid"`
@@ -179,8 +181,10 @@ var englishMessages = Messages{
 	ColumnExpiresAt:             "Expires at",
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Status",
+	DashboardCertsLabel:         "certs",
 	DashboardExpired:            "Expired",
 	DashboardExpiring:           "Expiring soon",
+	DashboardFilterHint:         "Click a status to filter the table",
 	DashboardRevoked:            "Revoked",
 	DashboardTotal:              "Total certificates",
 	DashboardValid:              "Valid",
@@ -316,8 +320,10 @@ var frenchMessages = Messages{
 	ColumnExpiresAt:             "Expire le",
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Statut",
+	DashboardCertsLabel:         "certs",
 	DashboardExpired:            "Expirés",
 	DashboardExpiring:           "Expirant bientôt",
+	DashboardFilterHint:         "Cliquez sur un statut pour filtrer le tableau",
 	DashboardRevoked:            "Révoqués",
 	DashboardTotal:              "Total des certificats",
 	DashboardValid:              "Valides",
@@ -453,8 +459,10 @@ var spanishMessages = Messages{
 	ColumnExpiresAt:             "Caduca el",
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Estado",
+	DashboardCertsLabel:         "certs",
 	DashboardExpired:            "Caducados",
 	DashboardExpiring:           "Caducando pronto",
+	DashboardFilterHint:         "Haga clic en un estado para filtrar la tabla",
 	DashboardRevoked:            "Revocados",
 	DashboardTotal:              "Total de certificados",
 	DashboardValid:              "Válidos",
@@ -590,8 +598,10 @@ var germanMessages = Messages{
 	ColumnExpiresAt:             "Gültig bis",
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Status",
+	DashboardCertsLabel:         "Zert.",
 	DashboardExpired:            "Abgelaufen",
 	DashboardExpiring:           "Laufen bald ab",
+	DashboardFilterHint:         "Klicken Sie auf einen Status, um die Tabelle zu filtern",
 	DashboardRevoked:            "Widerrufen",
 	DashboardTotal:              "Zertifikate gesamt",
 	DashboardValid:              "Gültig",
@@ -727,8 +737,10 @@ var italianMessages = Messages{
 	ColumnExpiresAt:             "Scade il",
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Stato",
+	DashboardCertsLabel:         "cert.",
 	DashboardExpired:            "Scaduti",
 	DashboardExpiring:           "In scadenza",
+	DashboardFilterHint:         "Clicca su uno stato per filtrare la tabella",
 	DashboardRevoked:            "Revocati",
 	DashboardTotal:              "Certificati totali",
 	DashboardValid:              "Validi",

@@ -205,42 +205,39 @@
               <div class="vcv-donut{{if eq $total 0}} vcv-donut-empty{{end}}"></div>
               <div class="vcv-donut-center">
                 <span class="vcv-donut-center-value" id="dashboard-total">{{.Certs.DashboardTotal}}</span>
-                <span class="vcv-donut-center-label">certs</span>
+                <span class="vcv-donut-center-label" id="dashboard-donut-label">{{.Messages.DashboardCertsLabel}}</span>
               </div>
             </div>
           </div>
-          <div class="vcv-dashboard-cards">
-            <div class="vcv-card vcv-card-valid vcv-card-clickable" data-status="valid" onclick="filterByDashboardCard('valid')">
-              <div class="vcv-card-icon">✓</div>
-              <div class="vcv-card-content">
-                <div class="vcv-card-value" id="dashboard-valid">{{.Certs.DashboardValid}}</div>
-                <div class="vcv-card-label" id="dashboard-valid-label">Valid</div>
-              </div>
+          <div class="vcv-dashboard-stats">
+            <div class="vcv-stat vcv-stat-valid vcv-stat-clickable" data-status="valid" onclick="filterByDashboardCard('valid')">
+              <span class="vcv-stat-dot"></span>
+              <span class="vcv-stat-value" id="dashboard-valid">{{.Certs.DashboardValid}}</span>
+              <span class="vcv-stat-label" id="dashboard-valid-label">Valid</span>
             </div>
-            <div class="vcv-card vcv-card-expiring vcv-card-clickable" data-status="expiring" onclick="filterByDashboardCard('expiring')">
-              <div class="vcv-card-icon">⏰</div>
-              <div class="vcv-card-content">
-                <div class="vcv-card-value" id="dashboard-expiring">{{.Certs.DashboardExpiring}}</div>
-                <div class="vcv-card-label" id="dashboard-expiring-label">Expiring Soon</div>
-              </div>
+            <span class="vcv-stat-sep"></span>
+            <div class="vcv-stat vcv-stat-expiring vcv-stat-clickable" data-status="expiring" onclick="filterByDashboardCard('expiring')">
+              <span class="vcv-stat-dot"></span>
+              <span class="vcv-stat-value" id="dashboard-expiring">{{.Certs.DashboardExpiring}}</span>
+              <span class="vcv-stat-label" id="dashboard-expiring-label">Expiring</span>
             </div>
-            <div class="vcv-card vcv-card-expired vcv-card-clickable" data-status="expired" onclick="filterByDashboardCard('expired')">
-              <div class="vcv-card-icon">✗</div>
-              <div class="vcv-card-content">
-                <div class="vcv-card-value" id="dashboard-expired">{{.Certs.DashboardExpired}}</div>
-                <div class="vcv-card-label" id="dashboard-expired-label">Expired</div>
-              </div>
+            <span class="vcv-stat-sep"></span>
+            <div class="vcv-stat vcv-stat-expired vcv-stat-clickable" data-status="expired" onclick="filterByDashboardCard('expired')">
+              <span class="vcv-stat-dot"></span>
+              <span class="vcv-stat-value" id="dashboard-expired">{{.Certs.DashboardExpired}}</span>
+              <span class="vcv-stat-label" id="dashboard-expired-label">Expired</span>
             </div>
-            <div class="vcv-card vcv-card-revoked vcv-card-clickable" data-status="revoked" onclick="filterByDashboardCard('revoked')">
-              <div class="vcv-card-icon">⊘</div>
-              <div class="vcv-card-content">
-                <div class="vcv-card-value" id="dashboard-revoked">{{.Certs.DashboardRevoked}}</div>
-                <div class="vcv-card-label" id="dashboard-revoked-label">Revoked</div>
-              </div>
+            <span class="vcv-stat-sep"></span>
+            <div class="vcv-stat vcv-stat-revoked vcv-stat-clickable" data-status="revoked" onclick="filterByDashboardCard('revoked')">
+              <span class="vcv-stat-dot"></span>
+              <span class="vcv-stat-value" id="dashboard-revoked">{{.Certs.DashboardRevoked}}</span>
+              <span class="vcv-stat-label" id="dashboard-revoked-label">Revoked</span>
             </div>
           </div>
         </div>
+        <div class="vcv-dashboard-hint" id="dashboard-filter-hint">Click a status to filter the table</div>
       </div>
+      <div id="vcv-donut-tooltip" class="vcv-donut-tooltip vcv-hidden"></div>
 
       <input id="vcv-page" name="page" type="hidden" value="{{.Certs.PageIndex}}" />
       <input id="vcv-sort-key" name="sortKey" type="hidden" value="{{.Certs.SortKey}}" />

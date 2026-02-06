@@ -207,6 +207,7 @@ function initUrlSync() {
     syncDashboardCardFromStatusFilter();
     await loadMessages();
     applyTranslations();
+    renderDonutChart();
     renderMountSelector();
     setMountsHiddenField();
     refreshHtmxCertsTable();
@@ -422,8 +423,9 @@ function applyTranslations() {
   setText(document.getElementById("certificate-modal-close"), messages.buttonClose);
   setText(document.getElementById("dashboard-expired-label"), messages.dashboardExpired);
   setText(document.getElementById("dashboard-expiring-label"), messages.dashboardExpiring);
+  setText(document.getElementById("dashboard-filter-hint"), messages.dashboardFilterHint);
   setText(document.getElementById("dashboard-revoked-label"), messages.dashboardRevoked);
-  setText(document.getElementById("dashboard-total-label"), messages.dashboardTotal);
+  setText(document.getElementById("dashboard-donut-label"), messages.dashboardCertsLabel);
   setText(document.getElementById("dashboard-valid-label"), messages.dashboardValid);
   setText(document.getElementById("mount-close"), messages.buttonClose);
   setText(document.getElementById("mount-deselect-all"), messages.deselectAll);
@@ -555,6 +557,97 @@ function getCertsHtmxValues() {
   };
 }
 
+function showDonutTooltip(event, text) {
+  const tooltip = document.getElementById("vcv-donut-tooltip");
+  if (!tooltip) {
+    return;
+  }
+  tooltip.textContent = text;
+  tooltip.classList.remove("vcv-hidden");
+  tooltip.style.left = (event.clientX + 10) + "px";
+  tooltip.style.top = (event.clientY - 30) + "px";
+}
+
+function moveDonutTooltip(event) {
+  const tooltip = document.getElementById("vcv-donut-tooltip");
+  if (!tooltip) {
+    return;
+  }
+  tooltip.style.left = (event.clientX + 10) + "px";
+  tooltip.style.top = (event.clientY - 30) + "px";
+}
+
+function hideDonutTooltip() {
+  const tooltip = document.getElementById("vcv-donut-tooltip");
+  if (!tooltip) {
+    return;
+  }
+  tooltip.classList.add("vcv-hidden");
+}
+
+function renderDonutChart() {
+  const chartEl = document.getElementById("dashboard-chart");
+  if (!chartEl) {
+    return;
+  }
+  const style = getComputedStyle(chartEl);
+  const valid = parseInt(style.getPropertyValue("--chart-valid"), 10) || 0;
+  const expiring = parseInt(style.getPropertyValue("--chart-expiring"), 10) || 0;
+  const expired = parseInt(style.getPropertyValue("--chart-expired"), 10) || 0;
+  const revoked = parseInt(style.getPropertyValue("--chart-revoked"), 10) || 0;
+  const total = valid + expiring + expired + revoked;
+  const donutEl = chartEl.querySelector(".vcv-donut");
+  if (!donutEl || total === 0) {
+    return;
+  }
+  const messages = state.messages || {};
+  const segments = [
+    { value: valid, color: "var(--vcv-color-primary)", label: messages.dashboardValid || "Valid", status: "valid" },
+    { value: expiring, color: "var(--vcv-color-warning)", label: messages.dashboardExpiring || "Expiring", status: "expiring" },
+    { value: expired, color: "var(--vcv-color-danger)", label: messages.dashboardExpired || "Expired", status: "expired" },
+    { value: revoked, color: "var(--vcv-color-revoked)", label: messages.dashboardRevoked || "Revoked", status: "revoked" },
+  ].filter((s) => s.value > 0);
+  if (segments.length === 0) {
+    return;
+  }
+  const size = 100;
+  const cx = size / 2;
+  const cy = size / 2;
+  const outerR = 48;
+  const innerR = 27;
+  let currentAngle = 0;
+  const paths = segments.map((seg) => {
+    const pct = Math.round((seg.value / total) * 100);
+    const safeLabel = seg.label.replace(/'/g, "&#39;");
+    const tooltipText = `${safeLabel}: ${seg.value} (${pct}%)`;
+    const sweep = (seg.value / total) * 360;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + sweep;
+    currentAngle = endAngle;
+    const hoverAttrs = `onmouseenter="showDonutTooltip(event,'${tooltipText}')" onmousemove="moveDonutTooltip(event)" onmouseleave="hideDonutTooltip()" onclick="filterByDashboardCard('${seg.status}')" style="cursor:pointer"`;
+    if (sweep >= 359.99) {
+      return `<circle class="vcv-donut-segment" cx="${cx}" cy="${cy}" r="${(outerR + innerR) / 2}" fill="none" stroke="${seg.color}" stroke-width="${outerR - innerR}" ${hoverAttrs}></circle>`;
+    }
+    const startRad = ((startAngle - 90) * Math.PI) / 180;
+    const endRad = ((endAngle - 90) * Math.PI) / 180;
+    const x1o = cx + outerR * Math.cos(startRad);
+    const y1o = cy + outerR * Math.sin(startRad);
+    const x2o = cx + outerR * Math.cos(endRad);
+    const y2o = cy + outerR * Math.sin(endRad);
+    const x2i = cx + innerR * Math.cos(endRad);
+    const y2i = cy + innerR * Math.sin(endRad);
+    const x1i = cx + innerR * Math.cos(startRad);
+    const y1i = cy + innerR * Math.sin(startRad);
+    const largeArc = sweep > 180 ? 1 : 0;
+    const d = `M ${x1o} ${y1o} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2o} ${y2o} L ${x2i} ${y2i} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1i} ${y1i} Z`;
+    return `<path class="vcv-donut-segment" d="${d}" fill="${seg.color}" ${hoverAttrs}></path>`;
+  });
+  donutEl.style.background = "none";
+  donutEl.style.mask = "none";
+  donutEl.style.webkitMask = "none";
+  donutEl.innerHTML = `<svg class="vcv-donut-svg" viewBox="0 0 ${size} ${size}">${paths.join("")}</svg>`;
+}
+
 function syncDashboardCardFromStatusFilter() {
   const statusSelect = document.getElementById("vcv-status-filter");
   const currentStatus = statusSelect ? statusSelect.value : "all";
@@ -578,13 +671,13 @@ function filterByDashboardCard(status) {
 }
 
 function updateActiveDashboardCard(activeStatus) {
-  const cards = document.querySelectorAll(".vcv-card-clickable");
-  cards.forEach((card) => {
-    const cardStatus = card.getAttribute("data-status") || "";
-    if (cardStatus === activeStatus) {
-      card.classList.add("vcv-card-active");
+  const stats = document.querySelectorAll(".vcv-stat-clickable");
+  stats.forEach((stat) => {
+    const statStatus = stat.getAttribute("data-status") || "";
+    if (statStatus === activeStatus) {
+      stat.classList.add("vcv-stat-active");
     } else {
-      card.classList.remove("vcv-card-active");
+      stat.classList.remove("vcv-stat-active");
     }
   });
 }
@@ -1029,6 +1122,12 @@ function initEventHandlers() {
       syncDashboardCardFromStatusFilter();
     });
   }
+  document.body.addEventListener("htmx:oobAfterSwap", (evt) => {
+    const target = evt.detail && evt.detail.target;
+    if (target && target.id === "dashboard-chart") {
+      renderDonutChart();
+    }
+  });
 }
 
 function dismissNotifications() {
@@ -1057,6 +1156,7 @@ async function main() {
     // Load remaining non-critical startup data
     await messagesPromise;
     applyTranslations();
+    renderDonutChart();
     await loadConfig();
     applyCertsStateFromUrl();
     syncDashboardCardFromStatusFilter();
@@ -1087,3 +1187,6 @@ window.openDocumentationModal = openDocumentationModal;
 window.closeDocumentationModal = closeDocumentationModal;
 window.dismissNotifications = dismissNotifications;
 window.filterByDashboardCard = filterByDashboardCard;
+window.showDonutTooltip = showDonutTooltip;
+window.moveDonutTooltip = moveDonutTooltip;
+window.hideDonutTooltip = hideDonutTooltip;
