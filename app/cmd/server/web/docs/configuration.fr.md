@@ -1,8 +1,10 @@
-# Documentation de configuration
+# Référence de configuration
 
 ## 📋 Vue d'ensemble
 
-VaultCertsViewer est configuré via un fichier `settings.json`. Ce panneau d'administration vous permet de gérer le fichier `settings.json` directement depuis l'interface web.
+VaultCertsViewer (VCV) est configuré principalement via un fichier `settings.json`. Le panneau d'administration vous permet de gérer ce fichier directement depuis l'interface web. Les variables d'environnement sont supportées comme solution de repli lorsqu'aucun `settings.json` n'est trouvé.
+
+VCV utilise une architecture de rendu côté serveur propulsée par [HTMX](https://htmx.org/). Tous les filtrages, tris et paginations sont gérés côté serveur pour des performances optimales.
 
 > **⚠️ Important :** Après avoir enregistré les modifications, un redémarrage du serveur peut être nécessaire pour que tous les changements prennent effet.
 
@@ -27,7 +29,7 @@ Vous pouvez également utiliser le service 'bcrypt' de <https://tools.hommet.net
 
 **Nom d'utilisateur par défaut :** `admin` (non modifiable, à titre indicatif)
 **Durée de session :** 12 heures (non modifiable, à titre indicatif)
-**Limitation de débit :** 10 tentatives par 5 minutes (non modifiable, à titre indicatif)
+**Limitation de débit de connexion :** 10 tentatives par 5 minutes (non modifiable, à titre indicatif)
 
 ## 📁 Paramètres de l'application
 
@@ -45,6 +47,15 @@ Définit l'environnement de l'application. Affecte les fonctionnalités de sécu
 Port d'écoute du serveur HTTP.
 
 **Par défaut :** `52000`
+
+### Chemin du fichier de configuration
+
+La variable d'environnement `SETTINGS_PATH` spécifie le chemin vers le fichier `settings.json`. Si non définie, VCV recherche les fichiers dans cet ordre :
+
+1. `settings.<env>.json` (ex : `settings.dev.json`)
+2. `settings.json`
+3. `./settings.json`
+4. `/etc/vcv/settings.json`
 
 ### Journalisation (app.logging)
 
@@ -113,7 +124,7 @@ VaultCertsViewer prend en charge la surveillance de plusieurs instances Vault si
 - **Display name** : Nom lisible affiché dans l'interface (optionnel)
 - **Address** : URL du serveur Vault (ex : `https://vault.example.com:8200`)
 - **Token** : Token Vault en lecture seule avec accès PKI (requis)
-- **PKI mounts** : Liste séparée par des virgules des chemins de montage PKI (ex : `pki,pki2,pki-prod`)
+- **PKI mounts** : Tableau de chemins de montage PKI (ex : `["pki", "pki2", "pki-prod"]`)
 - **Enabled** : Si cette instance Vault est active
 
 ### Configuration TLS
@@ -168,14 +179,15 @@ Vous devez remplacer 'pki' et 'pki2' par les chemins de montage PKI de votre Vau
 VaultCertsViewer implémente un cache pour améliorer les performances :
 
 - **TTL du cache des certificats :** 15 minutes (réduit les appels API Vault)
-- **Cache des vérifications de santé :** 30 secondes (pour les indicateurs de statut du footer)
+- **Cache des vérifications de santé :** 30 secondes (pour l'indicateur de statut dans l'en-tête)
 - **Récupération parallèle :** Plusieurs Vaults sont interrogés simultanément
+- **Invalidation du cache :** Utilisez le bouton de rafraîchissement (↻) dans l'en-tête ou `POST /api/cache/invalidate` pour vider le cache des certificats
 
 Avec plusieurs Vaults, la récupération parallèle offre des temps de chargement **3 à 10× plus rapides** par rapport aux requêtes séquentielles.
 
 ## 📊 Surveillance & Métriques
 
-### Métriques prometheus
+### Métriques Prometheus
 
 Disponibles sur l'endpoint `/metrics` :
 
@@ -191,19 +203,35 @@ Disponibles sur l'endpoint `/metrics` :
 
 Toutes les métriques incluent les labels : `vault_id`, `vault_name`, `pki_mount`
 
-### Endpoints de Santé
+### Endpoints santé & API
 
 - `/api/health` - Vérification de santé basique (retourne toujours 200 OK)
 - `/api/ready` - Sonde de disponibilité (vérifie l'état de l'application)
 - `/api/status` - Statut détaillé incluant toutes les connexions Vault
 - `/api/version` - Informations de version de l'application
+- `/api/config` - Configuration de l'application (seuils d'expiration, liste des vaults)
+- `/api/i18n` - Traductions pour la langue courante
+- `/api/certs` - Liste des certificats (JSON)
+- `/api/certs/{id}/details` - Détails d'un certificat (JSON)
+- `/api/certs/{id}/pem` - Contenu PEM d'un certificat (JSON)
+- `/api/certs/{id}/pem/download` - Téléchargement du fichier PEM d'un certificat
+- `POST /api/cache/invalidate` - Invalidation du cache des certificats
+
+### Limitation de débit
+
+En mode `prod`, la limitation de débit de l'API est activée à **300 requêtes par minute** par client. Les chemins suivants sont exemptés :
+
+- `/api/health`, `/api/ready`, `/metrics`
+- `/assets/*` (fichiers statiques)
 
 ## 🔒 Bonnes pratiques de sécurité
 
 - Toujours utiliser l'environnement `prod` en production
 - Protéger le fichier `settings.json` (contient des tokens sensibles)
 - Utiliser des tokens Vault en lecture seule avec permissions minimales
-- Activer la limitation de débit en production (automatique en mode `prod`)
+- La limitation de débit est automatique en mode `prod` (300 req/min)
+- La protection CSRF est activée sur toutes les requêtes modifiant l'état
+- Les en-têtes de sécurité (X-Content-Type-Options, X-Frame-Options, etc.) sont définis automatiquement
 - Exécuter le conteneur avec `--read-only` et `--cap-drop=ALL`
 
 ## 📝 Exemple settings.json

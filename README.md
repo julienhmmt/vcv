@@ -465,7 +465,7 @@ If you do enable it, you can adjust the "soon" window directly in PromQL (e.g. 1
 
 If you set `VCV_ADMIN_PASSWORD`, an admin panel is enabled at `/admin`.
 
-- The password can be provided as plaintext or as a **bcrypt hash**.
+- The password must be a **bcrypt hash** (prefix `$2a$`, `$2b$`, or `$2y$`). Plaintext passwords are rejected and the admin panel will not be enabled.
 - The admin panel edits the configured settings file, so the mounted `settings.json` must be writable.
 
 The administration panel is a list of every Vault connected and their PKI engines. You will be able to update, add or delete vaults and pki engines.

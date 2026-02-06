@@ -451,7 +451,7 @@ Si vous l’activez, vous pouvez adapter librement la fenêtre « bientôt » 
 
 Si vous définissez `VCV_ADMIN_PASSWORD`, un panneau d’administration est activé sur `/admin`.
 
-- Le mot de passe peut être fourni en clair ou sous forme de **hash bcrypt**.
+- Le mot de passe doit être un **hash bcrypt** (préfixe `$2a$`, `$2b$` ou `$2y$`). Les mots de passe en clair sont rejetés et le panneau d'administration ne sera pas activé.
 - Le panneau admin modifie le fichier de settings configuré, donc `settings.json` doit être monté en écriture.
 
 Le panneau d'administration vous permet d'afficher la liste des vaults et des moteurs PKI associés. En plus de l'affichage, vous pourrez modifier, ajouter et supprimer des points de connexion à tous les vaults dont vous disposez.

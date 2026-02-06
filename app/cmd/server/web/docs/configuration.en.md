@@ -1,8 +1,10 @@
-# Configuration documentation
+# Configuration reference
 
 ## 📋 Overview
 
-VaultCertsViewer is configured through a `settings.json` file. This admin panel allows you to manage the `settings.json` file directly from the web interface.
+VaultCertsViewer (VCV) is configured primarily through a `settings.json` file. The admin panel allows you to manage this file directly from the web interface. Environment variables are supported as a legacy fallback when no `settings.json` is found.
+
+VCV uses a server-side rendered architecture powered by [HTMX](https://htmx.org/). All filtering, sorting, and pagination are handled server-side for optimal performance.
 
 > **⚠️ Important:** After saving changes, a server restart may be required for all settings to take effect.
 
@@ -25,9 +27,9 @@ export VCV_ADMIN_PASSWORD='$2a$10$...'
 
 You can also use the 'bcrypt' service of <https://tools.hommet.net/bcrypt> to generate a bcrypt hash (no data is stored).
 
-**Default username:** `admin` (no editable, default value)
-**Session duration:** 12 hours (no editable, default value)
-**Rate limiting:** 10 attempts per 5 minutes (no editable, default value)
+**Default username:** `admin` (not editable, default value)
+**Session duration:** 12 hours (not editable, default value)
+**Login rate limiting:** 10 attempts per 5 minutes (not editable, default value)
 
 ## 📁 Application settings
 
@@ -45,6 +47,15 @@ Defines the application environment. Affects security features and logging behav
 HTTP server listening port.
 
 **Default:** `52000`
+
+### Settings file path
+
+The `SETTINGS_PATH` environment variable specifies the path to the `settings.json` file. If not set, VCV searches for files in this order:
+
+1. `settings.<env>.json` (e.g., `settings.dev.json`)
+2. `settings.json`
+3. `./settings.json`
+4. `/etc/vcv/settings.json`
 
 ### Logging (app.logging)
 
@@ -113,7 +124,7 @@ VaultCertsViewer supports monitoring multiple Vault instances simultaneously. Ea
 - **Display name**: Human-readable name shown in the UI (optional)
 - **Address**: Vault server URL (e.g., `https://vault.example.com:8200`)
 - **Token**: Read-only Vault token with PKI access (required)
-- **PKI mounts**: Comma-separated list of PKI mount paths (e.g., `pki,pki2,pki-prod`)
+- **PKI mounts**: Array of PKI mount paths (e.g., `["pki", "pki2", "pki-prod"]`)
 - **Enabled**: Whether this Vault instance is active
 
 ### TLS configuration
@@ -168,8 +179,9 @@ You must replace 'pki' and 'pki2' with the PKI mount paths of your Vault. Add as
 VaultCertsViewer implements caching to improve performance:
 
 - **Certificate cache TTL:** 15 minutes (reduces Vault API calls)
-- **Health check cache:** 30 seconds (for footer status indicators)
+- **Health check cache:** 30 seconds (for header status indicator)
 - **Parallel fetching:** Multiple Vaults are queried simultaneously
+- **Cache invalidation:** Use the refresh button (↻) in the header or `POST /api/cache/invalidate` to clear the certificate cache
 
 With multiple Vaults, parallel fetching provides **3-10× faster** loading times compared to sequential queries.
 
@@ -191,19 +203,35 @@ Available at `/metrics` endpoint:
 
 All metrics include labels: `vault_id`, `vault_name`, `pki_mount`
 
-### Health endpoints
+### Health & API endpoints
 
 - `/api/health` - Basic health check (always returns 200 OK)
 - `/api/ready` - Readiness probe (checks application state)
 - `/api/status` - Detailed status including all Vault connections
 - `/api/version` - Application version information
+- `/api/config` - Application configuration (expiration thresholds, vault list)
+- `/api/i18n` - Translations for the current language
+- `/api/certs` - Certificate list (JSON)
+- `/api/certs/{id}/details` - Certificate details (JSON)
+- `/api/certs/{id}/pem` - Certificate PEM content (JSON)
+- `/api/certs/{id}/pem/download` - Download certificate PEM file
+- `POST /api/cache/invalidate` - Invalidate the certificate cache
+
+### Rate limiting
+
+In `prod` mode, API rate limiting is enabled at **300 requests per minute** per client. The following paths are exempt:
+
+- `/api/health`, `/api/ready`, `/metrics`
+- `/assets/*` (static files)
 
 ## 🔒 Security best practices
 
 - Always use `prod` environment in production
 - Protect `settings.json` file (contains sensitive tokens)
 - Use read-only Vault tokens with minimal permissions
-- Enable rate limiting in production (automatic in `prod` mode)
+- Rate limiting is automatic in `prod` mode (300 req/min)
+- CSRF protection is enabled on all state-changing requests
+- Security headers (X-Content-Type-Options, X-Frame-Options, etc.) are set automatically
 - Run container with `--read-only` and `--cap-drop=ALL`
 
 ## 📝 Example settings.json
