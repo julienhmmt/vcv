@@ -197,10 +197,14 @@
             </div>
           </div>
         </div>
-        <div class="vcv-dashboard-hint" id="dashboard-filter-hint">Click a status to filter the table</div>
+        <div class="vcv-dashboard-actions">
+          <span class="vcv-dashboard-hint" id="dashboard-filter-hint">Click a status to filter the table</span>
+          <button type="button" id="vcv-clear-filter" class="vcv-button vcv-button-small vcv-clear-filter vcv-hidden" onclick="clearStatusFilter()">✕ <span id="dashboard-clear-filter-text">Clear filter</span></button>
+        </div>
       </div>
       <div id="vcv-donut-tooltip" class="vcv-donut-tooltip vcv-hidden"></div>
 
+      <input id="vcv-status-filter" name="status" type="hidden" value="all" />
       <input id="vcv-page" name="page" type="hidden" value="{{.Certs.PageIndex}}" />
       <input id="vcv-sort-key" name="sortKey" type="hidden" value="{{.Certs.SortKey}}" />
       <input id="vcv-sort-dir" name="sortDir" type="hidden" value="{{.Certs.SortDirection}}" />
@@ -299,8 +303,8 @@
                   <span class="vcv-sort-indicator" aria-hidden="true"></span>
                 </button>
               </th>
-              <th>Status</th>
-              <th>Actions</th>
+              <th class="vcv-col-status">Status</th>
+              <th class="vcv-col-actions">Actions</th>
             </tr>
           </thead>
           <tbody

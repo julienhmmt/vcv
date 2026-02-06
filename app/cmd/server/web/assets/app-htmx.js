@@ -423,6 +423,7 @@ function applyTranslations() {
   setText(document.getElementById("certificate-modal-close"), messages.buttonClose);
   setText(document.getElementById("dashboard-expired-label"), messages.dashboardExpired);
   setText(document.getElementById("dashboard-expiring-label"), messages.dashboardExpiring);
+  setText(document.getElementById("dashboard-clear-filter-text"), messages.dashboardClearFilter);
   setText(document.getElementById("dashboard-filter-hint"), messages.dashboardFilterHint);
   setText(document.getElementById("dashboard-revoked-label"), messages.dashboardRevoked);
   setText(document.getElementById("dashboard-donut-label"), messages.dashboardCertsLabel);
@@ -434,7 +435,6 @@ function applyTranslations() {
   setText(document.getElementById("mount-stats-selected-label"), messages.mountStatsSelected);
   setText(document.getElementById("mount-stats-total-label"), messages.mountStatsTotal);
   setText(document.getElementById("vcv-page-size-label"), messages.paginationPageSizeLabel);
-  setText(document.getElementById("vcv-status-filter-label"), messages.statusFilterTitle);
   const searchInput = document.getElementById("vcv-search");
   if (searchInput && typeof messages.searchPlaceholder === "string" && messages.searchPlaceholder !== "") {
     searchInput.setAttribute("placeholder", messages.searchPlaceholder);
@@ -442,14 +442,6 @@ function applyTranslations() {
   const mountSearchInput = document.getElementById("mount-search");
   if (mountSearchInput && typeof messages.mountSearchPlaceholder === "string" && messages.mountSearchPlaceholder !== "") {
     mountSearchInput.setAttribute("placeholder", messages.mountSearchPlaceholder);
-  }
-  const statusSelect = document.getElementById("vcv-status-filter");
-  if (statusSelect) {
-    setText(statusSelect.querySelector("option[value='all']"), messages.statusFilterAll);
-    setText(statusSelect.querySelector("option[value='expired']"), messages.statusFilterExpired);
-    setText(statusSelect.querySelector("option[value='expiring']"), messages.statusFilterExpiring);
-    setText(statusSelect.querySelector("option[value='revoked']"), messages.statusFilterRevoked);
-    setText(statusSelect.querySelector("option[value='valid']"), messages.statusFilterValid);
   }
   const expirySelect = document.getElementById("vcv-expiry-filter");
   if (expirySelect) {
@@ -657,6 +649,7 @@ function syncDashboardCardFromStatusFilter() {
   const statusSelect = document.getElementById("vcv-status-filter");
   const currentStatus = statusSelect ? statusSelect.value : "all";
   updateActiveDashboardCard(currentStatus);
+  toggleClearFilterButton(currentStatus);
 }
 
 function filterByDashboardCard(status) {
@@ -672,6 +665,41 @@ function filterByDashboardCard(status) {
     pageInput.value = "0";
   }
   updateActiveDashboardCard(nextValue);
+  toggleClearFilterButton(nextValue);
+  refreshHtmxCertsTable();
+  updateFilterBadge();
+}
+
+function toggleClearFilterButton(status) {
+  const btn = document.getElementById("vcv-clear-filter");
+  const hint = document.getElementById("dashboard-filter-hint");
+  if (!btn) {
+    return;
+  }
+  if (status === "all") {
+    btn.classList.add("vcv-hidden");
+    if (hint) {
+      hint.classList.remove("vcv-hidden");
+    }
+  } else {
+    btn.classList.remove("vcv-hidden");
+    if (hint) {
+      hint.classList.add("vcv-hidden");
+    }
+  }
+}
+
+function clearStatusFilter() {
+  const statusSelect = document.getElementById("vcv-status-filter");
+  if (statusSelect) {
+    statusSelect.value = "all";
+  }
+  const pageInput = document.getElementById("vcv-page");
+  if (pageInput) {
+    pageInput.value = "0";
+  }
+  updateActiveDashboardCard("all");
+  toggleClearFilterButton("all");
   refreshHtmxCertsTable();
   updateFilterBadge();
 }
@@ -1127,12 +1155,6 @@ function initEventHandlers() {
   document.querySelectorAll(".vcv-sort").forEach((button) => {
     button.addEventListener("click", handleSortClick);
   });
-  const statusSelect = document.getElementById("vcv-status-filter");
-  if (statusSelect) {
-    statusSelect.addEventListener("change", () => {
-      syncDashboardCardFromStatusFilter();
-    });
-  }
   document.body.addEventListener("htmx:oobAfterSwap", (evt) => {
     const target = evt.detail && evt.detail.target;
     if (target && target.id === "dashboard-chart") {
@@ -1199,10 +1221,6 @@ function initFilterBadgeListeners() {
   if (searchInput) {
     searchInput.addEventListener("input", updateFilterBadge);
   }
-  const statusSelect = document.getElementById("vcv-status-filter");
-  if (statusSelect) {
-    statusSelect.addEventListener("change", updateFilterBadge);
-  }
   const expirySelect = document.getElementById("vcv-expiry-filter");
   if (expirySelect) {
     expirySelect.addEventListener("change", updateFilterBadge);
@@ -1262,6 +1280,7 @@ window.closeDocumentationModal = closeDocumentationModal;
 window.dismissNotifications = dismissNotifications;
 window.toggleFilterBar = toggleFilterBar;
 window.filterByDashboardCard = filterByDashboardCard;
+window.clearStatusFilter = clearStatusFilter;
 window.showDonutTooltip = showDonutTooltip;
 window.moveDonutTooltip = moveDonutTooltip;
 window.hideDonutTooltip = hideDonutTooltip;

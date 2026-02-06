@@ -38,6 +38,7 @@ type Messages struct {
 	ColumnSAN                   string `json:"columnSan"`
 	ColumnStatus                string `json:"columnStatus"`
 	DashboardCertsLabel         string `json:"dashboardCertsLabel"`
+	DashboardClearFilter        string `json:"dashboardClearFilter"`
 	DashboardExpired            string `json:"dashboardExpired"`
 	DashboardExpiring           string `json:"dashboardExpiring"`
 	DashboardFilterHint         string `json:"dashboardFilterHint"`
@@ -184,6 +185,7 @@ var englishMessages = Messages{
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Status",
 	DashboardCertsLabel:         "certs",
+	DashboardClearFilter:        "Clear filter",
 	DashboardExpired:            "Expired",
 	DashboardExpiring:           "Expiring soon",
 	DashboardFilterHint:         "Click a status to filter the table",
@@ -324,6 +326,7 @@ var frenchMessages = Messages{
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Statut",
 	DashboardCertsLabel:         "certs",
+	DashboardClearFilter:        "Effacer le filtre",
 	DashboardExpired:            "Expirés",
 	DashboardExpiring:           "Expirant bientôt",
 	DashboardFilterHint:         "Cliquez sur un statut pour filtrer le tableau",
@@ -464,6 +467,7 @@ var spanishMessages = Messages{
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Estado",
 	DashboardCertsLabel:         "certs",
+	DashboardClearFilter:        "Borrar filtro",
 	DashboardExpired:            "Caducados",
 	DashboardExpiring:           "Caducando pronto",
 	DashboardFilterHint:         "Haga clic en un estado para filtrar la tabla",
@@ -604,6 +608,7 @@ var germanMessages = Messages{
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Status",
 	DashboardCertsLabel:         "Zert.",
+	DashboardClearFilter:        "Filter löschen",
 	DashboardExpired:            "Abgelaufen",
 	DashboardExpiring:           "Laufen bald ab",
 	DashboardFilterHint:         "Klicken Sie auf einen Status, um die Tabelle zu filtern",
@@ -744,6 +749,7 @@ var italianMessages = Messages{
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Stato",
 	DashboardCertsLabel:         "cert.",
+	DashboardClearFilter:        "Cancella filtro",
 	DashboardExpired:            "Scaduti",
 	DashboardExpiring:           "In scadenza",
 	DashboardFilterHint:         "Clicca su uno stato per filtrare la tabella",
