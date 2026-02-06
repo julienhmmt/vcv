@@ -483,6 +483,11 @@ function applyTranslations() {
     themeToggle.setAttribute("title", messages.buttonToggleTheme || "Toggle theme");
     themeToggle.setAttribute("aria-label", messages.buttonToggleTheme || "Toggle theme");
   }
+  const filterToggle = document.getElementById("vcv-filter-toggle");
+  if (filterToggle) {
+    filterToggle.setAttribute("title", messages.buttonToggleFilters || "Toggle filters");
+    filterToggle.setAttribute("aria-label", messages.buttonToggleFilters || "Toggle filters");
+  }
   const langSelect = document.getElementById("vcv-lang-select");
   if (langSelect) {
     langSelect.setAttribute("aria-label", messages.labelLanguage || "Language");
@@ -668,6 +673,7 @@ function filterByDashboardCard(status) {
   }
   updateActiveDashboardCard(nextValue);
   refreshHtmxCertsTable();
+  updateFilterBadge();
 }
 
 function updateActiveDashboardCard(activeStatus) {
@@ -927,6 +933,7 @@ function toggleMount(mountKey) {
   }
   renderMountModalList();
   refreshHtmxCertsTable();
+  updateFilterBadge();
 }
 
 function selectAllMounts() {
@@ -934,6 +941,7 @@ function selectAllMounts() {
   renderMountSelector();
   renderMountModalList();
   refreshHtmxCertsTable();
+  updateFilterBadge();
 }
 
 function deselectAllMounts() {
@@ -941,6 +949,7 @@ function deselectAllMounts() {
   renderMountSelector();
   renderMountModalList();
   refreshHtmxCertsTable();
+  updateFilterBadge();
 }
 
 function selectAllVaultMounts(vaultId, event) {
@@ -959,6 +968,7 @@ function selectAllVaultMounts(vaultId, event) {
   renderMountSelector();
   renderMountModalList();
   refreshHtmxCertsTable();
+  updateFilterBadge();
 }
 
 function deselectAllVaultMounts(vaultId, event) {
@@ -970,6 +980,7 @@ function deselectAllVaultMounts(vaultId, event) {
   renderMountSelector();
   renderMountModalList();
   refreshHtmxCertsTable();
+  updateFilterBadge();
 }
 
 function openCertificateModal() {
@@ -1137,6 +1148,67 @@ function dismissNotifications() {
   }
 }
 
+function toggleFilterBar() {
+  const filterBar = document.getElementById("vcv-filter-bar");
+  const toggleBtn = document.getElementById("vcv-filter-toggle");
+  if (!filterBar) {
+    return;
+  }
+  const isOpen = filterBar.classList.toggle("vcv-filter-bar-open");
+  if (toggleBtn) {
+    toggleBtn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  }
+}
+
+function countActiveFilters() {
+  let count = 0;
+  const search = document.getElementById("vcv-search");
+  if (search && search.value.trim() !== "") {
+    count++;
+  }
+  const status = document.getElementById("vcv-status-filter");
+  if (status && status.value !== "all") {
+    count++;
+  }
+  const expiry = document.getElementById("vcv-expiry-filter");
+  if (expiry && expiry.value !== "all") {
+    count++;
+  }
+  if (state.availableMounts.length > 0 && state.selectedMounts.length < state.availableMounts.length) {
+    count++;
+  }
+  return count;
+}
+
+function updateFilterBadge() {
+  const badge = document.getElementById("vcv-filter-badge");
+  if (!badge) {
+    return;
+  }
+  const count = countActiveFilters();
+  if (count > 0) {
+    badge.textContent = String(count);
+    badge.classList.remove("vcv-hidden");
+  } else {
+    badge.classList.add("vcv-hidden");
+  }
+}
+
+function initFilterBadgeListeners() {
+  const searchInput = document.getElementById("vcv-search");
+  if (searchInput) {
+    searchInput.addEventListener("input", updateFilterBadge);
+  }
+  const statusSelect = document.getElementById("vcv-status-filter");
+  if (statusSelect) {
+    statusSelect.addEventListener("change", updateFilterBadge);
+  }
+  const expirySelect = document.getElementById("vcv-expiry-filter");
+  if (expirySelect) {
+    expirySelect.addEventListener("change", updateFilterBadge);
+  }
+}
+
 async function main() {
   // Sync language first to ensure all subsequent loads (messages, config, etc.) use correct language
   initLanguageFromURL();
@@ -1153,6 +1225,7 @@ async function main() {
     initUrlSync();
     initModalHandlers();
     initVaultConnectionNotifications();
+    initFilterBadgeListeners();
     // Load remaining non-critical startup data
     await messagesPromise;
     applyTranslations();
@@ -1162,6 +1235,7 @@ async function main() {
     syncDashboardCardFromStatusFilter();
     renderMountSelector();
     setMountsHiddenField();
+    updateFilterBadge();
   } else {
     // Admin page or other pages
     initModalHandlers();
@@ -1186,6 +1260,7 @@ window.closeCertificateModal = closeCertificateModal;
 window.openDocumentationModal = openDocumentationModal;
 window.closeDocumentationModal = closeDocumentationModal;
 window.dismissNotifications = dismissNotifications;
+window.toggleFilterBar = toggleFilterBar;
 window.filterByDashboardCard = filterByDashboardCard;
 window.showDonutTooltip = showDonutTooltip;
 window.moveDonutTooltip = moveDonutTooltip;

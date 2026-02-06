@@ -27,6 +27,7 @@ type Messages struct {
 	ButtonDocumentation         string `json:"buttonDocumentation"`
 	ButtonDownloadPEM           string `json:"buttonDownloadPEM"`
 	ButtonRefresh               string `json:"buttonRefresh"`
+	ButtonToggleFilters         string `json:"buttonToggleFilters"`
 	CacheInvalidateFailed       string `json:"cacheInvalidateFailed"`
 	CacheInvalidated            string `json:"cacheInvalidated"`
 	CertificateInformationTitle string `json:"certificateInformationTitle"`
@@ -172,6 +173,7 @@ var englishMessages = Messages{
 	ButtonDocumentation:         "Documentation",
 	ButtonDownloadPEM:           "Download PEM",
 	ButtonRefresh:               "Refresh",
+	ButtonToggleFilters:         "Toggle filters",
 	CacheInvalidateFailed:       "Failed to clear cache",
 	CacheInvalidated:            "Cache cleared and data refreshed",
 	CertificateInformationTitle: "Certificate information",
@@ -311,6 +313,7 @@ var frenchMessages = Messages{
 	ButtonDocumentation:         "Documentation",
 	ButtonDownloadPEM:           "Télécharger PEM",
 	ButtonRefresh:               "Rafraîchir",
+	ButtonToggleFilters:         "Afficher/masquer les filtres",
 	CacheInvalidateFailed:       "Échec du vidage du cache",
 	CacheInvalidated:            "Cache vidé et données actualisées",
 	CertificateInformationTitle: "Informations du certificat",
@@ -450,6 +453,7 @@ var spanishMessages = Messages{
 	ButtonDocumentation:         "Documentación",
 	ButtonDownloadPEM:           "Descargar PEM",
 	ButtonRefresh:               "Actualizar",
+	ButtonToggleFilters:         "Mostrar/ocultar filtros",
 	CacheInvalidateFailed:       "Error al borrar el caché",
 	CacheInvalidated:            "Caché borrado y datos actualizados",
 	CertificateInformationTitle: "Información del certificado",
@@ -589,6 +593,7 @@ var germanMessages = Messages{
 	ButtonDocumentation:         "Dokumentation",
 	ButtonDownloadPEM:           "PEM herunterladen",
 	ButtonRefresh:               "Aktualisieren",
+	ButtonToggleFilters:         "Filter ein-/ausblenden",
 	CacheInvalidateFailed:       "Cache konnte nicht geleert werden",
 	CacheInvalidated:            "Cache geleert und Daten aktualisiert",
 	CertificateInformationTitle: "Zertifikatsinformationen",
@@ -728,6 +733,7 @@ var italianMessages = Messages{
 	ButtonDocumentation:         "Documentazione",
 	ButtonDownloadPEM:           "Scarica PEM",
 	ButtonRefresh:               "Aggiorna",
+	ButtonToggleFilters:         "Mostra/nascondi filtri",
 	CacheInvalidateFailed:       "Impossibile cancellare la cache",
 	CacheInvalidated:            "Cache cancellata e dati aggiornati",
 	CertificateInformationTitle: "Informazioni sul certificato",

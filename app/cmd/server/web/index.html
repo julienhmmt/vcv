@@ -23,7 +23,7 @@
     <div class="vcv-layout" hx-indicator="#vcv-loading-indicator">
       <header class="vcv-header">
         <div class="vcv-header-bar">
-          <div class="vcv-header-left">
+          <div class="vcv-header-brand">
             <h1 class="vcv-title">{{.Messages.AppTitle}} <span class="vcv-title-version">v{{.AppVersionText}}</span></h1>
           </div>
           <div class="vcv-header-actions">
@@ -34,6 +34,19 @@
               hx-swap="innerHTML"
               hx-include="#vcv-lang-select"
             ></div>
+            <button
+              id="refresh-btn"
+              class="vcv-button vcv-button-icon"
+              type="button"
+              title="Refresh certificates"
+              hx-post="/ui/certs/refresh"
+              hx-target="#vcv-certs-body"
+              hx-swap="innerHTML"
+              hx-sync="#vcv-certs-body:replace"
+              hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            >
+              <span class="vcv-refresh-icon">↻</span>
+            </button>
             <button
               id="theme-toggle"
               class="vcv-button vcv-button-icon vcv-theme-toggle"
@@ -59,7 +72,7 @@
             >
               <span id="vcv-documentation-icon" aria-hidden="true">📖</span>
             </button>
-            <form action="/" method="GET">
+            <form action="/" method="GET" class="vcv-lang-form">
               <select id="vcv-lang-select" name="lang" class="vcv-select vcv-lang-select" aria-label="{{.Messages.LabelLanguage}}" onchange="this.form.submit()">
                 <option value="de" {{if eq .Language "de"}}selected{{end}}>DE</option>
                 <option value="en" {{if eq .Language "en"}}selected{{end}}>EN</option>
@@ -71,80 +84,29 @@
           </div>
         </div>
 
-        <div class="vcv-toolbar">
-          <div class="vcv-filters">
-            <div class="vcv-filter-group">
-              <div id="mount-selector" class="vcv-mount-filter"></div>
-              <input id="vcv-mounts" name="mounts" type="hidden" value="__all__" />
+        <div id="vcv-filter-bar" class="vcv-filter-bar">
+          <div class="vcv-filter-bar-inner">
+            <div class="vcv-filter-bar-row">
+              <div class="vcv-filter-item vcv-filter-item-mount">
+                <div id="mount-selector" class="vcv-mount-filter"></div>
+                <input id="vcv-mounts" name="mounts" type="hidden" value="__all__" />
+              </div>
+              <div class="vcv-filter-item vcv-filter-item-search">
+                <input
+                  id="vcv-search"
+                  class="vcv-input"
+                  type="search"
+                  placeholder="{{.Messages.SearchPlaceholder}}"
+                  name="search"
+                  hx-get="/ui/certs"
+                  hx-trigger="input changed delay:300ms"
+                  hx-target="#vcv-certs-body"
+                  hx-swap="innerHTML"
+                  hx-sync="#vcv-certs-body:replace"
+                  hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+                />
+              </div>
             </div>
-            <div class="vcv-filter-group vcv-filter-group-search">
-              <input
-                id="vcv-search"
-                class="vcv-input"
-                type="search"
-                placeholder="{{.Messages.SearchPlaceholder}}"
-                name="search"
-                hx-get="/ui/certs"
-                hx-trigger="input changed delay:300ms"
-                hx-target="#vcv-certs-body"
-                hx-swap="innerHTML"
-                hx-sync="#vcv-certs-body:replace"
-                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
-              />
-            </div>
-            <div class="vcv-filter-group">
-              <label id="vcv-status-filter-label" class="vcv-filter-label" for="vcv-status-filter">{{.Messages.StatusFilterTitle}}</label>
-              <select
-                id="vcv-status-filter"
-                class="vcv-select"
-                name="status"
-                hx-get="/ui/certs"
-                hx-trigger="change"
-                hx-target="#vcv-certs-body"
-                hx-swap="innerHTML"
-                hx-sync="#vcv-certs-body:replace"
-                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
-              >
-                <option value="all" {{if eq .Messages.StatusFilterAll ""}}selected{{end}}>{{.Messages.StatusFilterAll}}</option>
-                <option value="valid">{{.Messages.StatusFilterValid}}</option>
-                <option value="expiring">{{.Messages.StatusFilterExpiring}}</option>
-                <option value="expired">{{.Messages.StatusFilterExpired}}</option>
-                <option value="revoked">{{.Messages.StatusFilterRevoked}}</option>
-              </select>
-            </div>
-            <div class="vcv-filter-group">
-              <select
-                id="vcv-expiry-filter"
-                class="vcv-select"
-                name="expiry"
-                hx-get="/ui/certs"
-                hx-trigger="change"
-                hx-target="#vcv-certs-body"
-                hx-swap="innerHTML"
-                hx-sync="#vcv-certs-body:replace"
-                hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
-              >
-                <option value="all">{{.Messages.ExpiryFilterAll}}</option>
-                <option value="7">{{.Messages.ExpiryFilter7Days}}</option>
-                <option value="30">{{.Messages.ExpiryFilter30Days}}</option>
-                <option value="90">{{.Messages.ExpiryFilter90Days}}</option>
-              </select>
-            </div>
-          </div>
-          <div class="vcv-toolbar-actions">
-            <button
-              id="refresh-btn"
-              class="vcv-button vcv-button-icon"
-              type="button"
-              title="Refresh certificates"
-              hx-post="/ui/certs/refresh"
-              hx-target="#vcv-certs-body"
-              hx-swap="innerHTML"
-              hx-sync="#vcv-certs-body:replace"
-              hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
-            >
-              <span class="vcv-refresh-icon">↻</span>
-            </button>
           </div>
         </div>
       </header>
@@ -254,7 +216,7 @@
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
           >
             <option value="25">25</option>
             <option value="50">50</option>
@@ -271,7 +233,7 @@
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             hx-vals='{"pageAction":"prev"}'
             {{if .Certs.PagePrevDisabled}}disabled{{end}}
           >
@@ -287,7 +249,7 @@
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
             hx-vals='{"pageAction":"next"}'
             {{if .Certs.PageNextDisabled}}disabled{{end}}
           >
@@ -298,6 +260,14 @@
 
       <div class="vcv-table-wrapper">
         <table class="vcv-table">
+          <colgroup>
+            <col class="vcv-col-cn" />
+            <col class="vcv-col-san" />
+            <col class="vcv-col-date" />
+            <col class="vcv-col-date" />
+            <col class="vcv-col-status" />
+            <col class="vcv-col-actions" />
+          </colgroup>
           <thead>
             <tr>
               <th>
@@ -337,7 +307,7 @@
             id="vcv-certs-body"
             hx-get="/ui/certs"
             hx-swap="innerHTML"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-expiry-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
           >
             {{if eq (len .Certs.Rows) 0}}
             <tr>
@@ -346,22 +316,28 @@
             {{else}}
             {{range .Certs.Rows}}
             <tr class="{{.RowClass}}">
-              <td>
-                <div><b>{{.CommonName}}</b></div>
+              <td class="vcv-col-cn">
+                <div class="vcv-cn-name">{{.CommonName}}</div>
                 {{if .ShowVaultMount}}<div class="vcv-cert-meta"><span class="vcv-cert-meta-item">{{.VaultName}}</span><span class="vcv-cert-meta-sep">·</span><span class="vcv-cert-meta-item">{{.MountName}}</span></div>{{end}}
               </td>
-              <td><code>{{.Sans}}</code></td>
-              <td><i>{{.CreatedAt}}</i></td>
-              <td class="{{.ExpiresCellClass}}">
-                <div class="{{.ExpiresDateClass}}">{{.ExpiresAt}}</div>
+              <td class="vcv-col-san"><span class="vcv-san-value" title="{{.Sans}}">{{.Sans}}</span></td>
+              <td class="vcv-col-date">
+                <div class="vcv-date-primary">{{.CreatedAtDate}}</div>
+                <div class="vcv-date-secondary">{{.CreatedAtTime}} UTC</div>
+              </td>
+              <td class="vcv-col-date {{.ExpiresCellClass}}">
+                <div class="{{.ExpiresDateClass}}">{{.ExpiresAtDate}}</div>
+                <div class="vcv-date-secondary">{{.ExpiresAtTime}} UTC</div>
                 {{if .DaysRemainingText}}<div class="{{.DaysRemainingClass}}">{{.DaysRemainingText}}</div>{{end}}
               </td>
-              <td>
+              <td class="vcv-col-status">
                 {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
               </td>
-              <td>
-                <button type="button" class="vcv-button vcv-button-small" onclick="openCertificateModal()" hx-get="/ui/certs/{{urlquery .ID}}/details" hx-target="#details-content" hx-swap="innerHTML" hx-include="#vcv-lang-select">{{.ButtonDetailsText}}</button>
-                <a class="vcv-button vcv-button-small vcv-button-primary" href="/api/certs/{{urlquery .ID}}/pem/download">{{.ButtonDownloadPEM}}</a>
+              <td class="vcv-col-actions">
+                <div class="vcv-actions-group">
+                  <button type="button" class="vcv-button vcv-button-small" onclick="openCertificateModal()" hx-get="/ui/certs/{{urlquery .ID}}/details" hx-target="#details-content" hx-swap="innerHTML" hx-include="#vcv-lang-select" title="{{.ButtonDetailsText}}">{{.ButtonDetailsText}}</button>
+                  <a class="vcv-button vcv-button-small vcv-button-primary" href="/api/certs/{{urlquery .ID}}/pem/download" title="{{.ButtonDownloadPEM}}">PEM</a>
+                </div>
               </td>
             </tr>
             {{end}}

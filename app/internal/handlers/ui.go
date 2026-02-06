@@ -170,7 +170,11 @@ type certRowTemplateData struct {
 	ShowVaultMount     bool
 	Sans               string
 	CreatedAt          string
+	CreatedAtDate      string
+	CreatedAtTime      string
 	ExpiresAt          string
+	ExpiresAtDate      string
+	ExpiresAtTime      string
 	ExpiresCellClass   string
 	ExpiresDateClass   string
 	DaysRemainingText  string
@@ -1066,7 +1070,11 @@ func buildCertRows(items []certs.Certificate, messages i18n.Messages, thresholds
 			ShowVaultMount:     showVaultMount,
 			Sans:               strings.Join(certificate.Sans, ", "),
 			CreatedAt:          formatTimeReadable(certificate.CreatedAt),
+			CreatedAtDate:      formatDateCompact(certificate.CreatedAt),
+			CreatedAtTime:      formatClock(certificate.CreatedAt),
 			ExpiresAt:          formatTimeReadable(certificate.ExpiresAt),
+			ExpiresAtDate:      formatDateCompact(certificate.ExpiresAt),
+			ExpiresAtTime:      formatClock(certificate.ExpiresAt),
 			ExpiresCellClass:   expiresCellClass,
 			ExpiresDateClass:   expiresDateClass,
 			DaysRemainingText:  daysRemainingText,
@@ -1149,6 +1157,13 @@ func formatTimeReadable(value time.Time) string {
 		return ""
 	}
 	return value.UTC().Format("Jan 02, 2006 15:04")
+}
+
+func formatDateCompact(value time.Time) string {
+	if value.IsZero() {
+		return ""
+	}
+	return value.UTC().Format("02 Jan 2006")
 }
 
 func formatDate(value time.Time) string {
