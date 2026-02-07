@@ -344,7 +344,8 @@ body {
 /* Header */
 .vcv-header {
   background: var(--vcv-color-surface);
-  border-bottom: 1px solid var(--vcv-color-border);
+  border: 1px solid var(--vcv-color-border);
+  border-radius: var(--vcv-radius-lg);
   margin-bottom: 1.5rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -403,6 +404,7 @@ body {
 .vcv-filter-bar {
   border-top: 1px solid var(--vcv-color-border);
   background: var(--vcv-color-surface-muted);
+  border-radius: 0 0 var(--vcv-radius-lg) var(--vcv-radius-lg);
 }
 
 .vcv-filter-bar-inner {
