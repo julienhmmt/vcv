@@ -114,44 +114,52 @@
 
       <!-- Mount selector modal -->
       <div id="mount-modal" class="vcv-modal-backdrop vcv-hidden" role="dialog" aria-modal="true" aria-labelledby="mount-modal-title">
-        <div class="vcv-modal vcv-modal-lg">
-          <div class="vcv-modal-header">
-            <div class="vcv-modal-header-content">
+        <div class="vcv-modal vcv-modal-lg vcv-mount-modal">
+          <div class="vcv-modal-header vcv-mount-modal-header">
+            <div class="vcv-mount-modal-header-left">
               <h2 class="vcv-modal-title" id="mount-modal-title">PKI Engines</h2>
-              <div class="vcv-mount-stats" id="mount-stats">
-                <span class="vcv-mount-stats-item">
-                  <span class="vcv-mount-stats-label" id="mount-stats-selected-label">Selected:</span>
-                  <span class="vcv-mount-stats-value" id="mount-stats-selected">0</span>
-                </span>
-                <span class="vcv-mount-stats-separator">/</span>
-                <span class="vcv-mount-stats-item">
-                  <span class="vcv-mount-stats-label" id="mount-stats-total-label">Total:</span>
-                  <span class="vcv-mount-stats-value" id="mount-stats-total">0</span>
-                </span>
-              </div>
+              <span class="vcv-mount-counter-pill" id="mount-stats">
+                <span id="mount-stats-selected">0</span>
+                <span class="vcv-mount-counter-sep">/</span>
+                <span id="mount-stats-total">0</span>
+                <span class="vcv-mount-counter-label" id="mount-stats-selected-label">Selected</span>
+              </span>
             </div>
-            <button type="button" class="vcv-modal-close" onclick="VCV.closeMountModal()">×</button>
+            <div class="vcv-mount-modal-header-right">
+              <button id="mount-select-all" type="button" class="vcv-mount-link-btn" onclick="VCV.selectAllMounts()">Select all</button>
+              <span class="vcv-mount-header-divider"></span>
+              <button id="mount-deselect-all" type="button" class="vcv-mount-link-btn" onclick="VCV.deselectAllMounts()">Deselect all</button>
+              <button type="button" class="vcv-modal-close" onclick="VCV.closeMountModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
           </div>
-          <div class="vcv-modal-search">
+          <div class="vcv-mount-modal-search-bar">
+            <svg class="vcv-mount-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
             <input
               type="search"
               id="mount-search"
-              class="vcv-input vcv-mount-search-input"
+              class="vcv-mount-search-field"
               placeholder="{{.Messages.MountSearchPlaceholder}}"
               oninput="VCV.filterMountList(this.value)"
             />
           </div>
-          <div class="vcv-modal-content">
+          <div class="vcv-modal-content vcv-mount-modal-body">
             <div id="mount-modal-list" class="vcv-mount-modal-list"></div>
           </div>
-          <div class="vcv-modal-actions">
-            <button id="mount-deselect-all" type="button" class="vcv-button vcv-button-secondary" onclick="VCV.deselectAllMounts()">
-              Deselect All
-            </button>
-            <button id="mount-select-all" type="button" class="vcv-button vcv-button-secondary" onclick="VCV.selectAllMounts()">
-              Select All
-            </button>
-            <button id="mount-close" type="button" class="vcv-button" onclick="VCV.closeMountModal()">
+          <div class="vcv-mount-modal-footer">
+            <div class="vcv-mount-footer-stats">
+              <span class="vcv-mount-footer-stat">
+                <span class="vcv-mount-footer-stat-label" id="mount-footer-vaults-label">Vaults</span>
+                <span class="vcv-mount-footer-stat-value" id="mount-footer-vaults-value">0 / 0</span>
+              </span>
+              <span class="vcv-mount-footer-divider"></span>
+              <span class="vcv-mount-footer-stat">
+                <span class="vcv-mount-footer-stat-label" id="mount-footer-mounts-label">PKI mounts</span>
+                <span class="vcv-mount-footer-stat-value" id="mount-footer-mounts-value">0 / 0</span>
+              </span>
+            </div>
+            <button id="mount-close" type="button" class="vcv-button vcv-mount-done-btn" onclick="VCV.closeMountModal()">
               Close
             </button>
           </div>

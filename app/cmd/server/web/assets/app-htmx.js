@@ -483,7 +483,8 @@ function applyTranslations() {
   setText(document.getElementById("mount-modal-title"), messages.mountSelectorTitle);
   setText(document.getElementById("mount-select-all"), messages.selectAll);
   setText(document.getElementById("mount-stats-selected-label"), messages.mountStatsSelected);
-  setText(document.getElementById("mount-stats-total-label"), messages.mountStatsTotal);
+  setText(document.getElementById("mount-footer-vaults-label"), messages.mountStatsVaults);
+  setText(document.getElementById("mount-footer-mounts-label"), messages.mountStatsMounts);
   setText(document.getElementById("vcv-page-size-label"), messages.paginationPageSizeLabel);
   const searchInput = document.getElementById("vcv-search");
   if (searchInput && typeof messages.searchPlaceholder === "string" && messages.searchPlaceholder !== "") {
@@ -839,11 +840,17 @@ function renderMountSelector() {
   if (!container) {
     return;
   }
-  const label = typeof state.messages.mountSelectorTitle === "string" && state.messages.mountSelectorTitle !== "" ? state.messages.mountSelectorTitle : "PKI Engines";
-  const tooltip = typeof state.messages.mountSelectorTooltip === "string" && state.messages.mountSelectorTooltip !== "" ? state.messages.mountSelectorTooltip : "Filter certificates by Vault instance and PKI mount";
+  const label = typeof state.messages.mountSelectorTitle === "string" && state.messages.mountSelectorTitle !== "" ? state.messages.mountSelectorTitle : "Sources";
+  const tooltip = typeof state.messages.mountSelectorTooltip === "string" && state.messages.mountSelectorTooltip !== "" ? state.messages.mountSelectorTooltip : "Select which certificate sources to display";
+  const filterIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg>';
+  const selected = state.selectedMounts.length;
+  const total = state.availableMounts.length;
+  const allSelected = total > 0 && selected === total;
+  const badge = total > 0 && !allSelected ? ` <span class="vcv-mount-trigger-badge">${selected}/${total}</span>` : "";
   container.innerHTML = `
     <button type="button" class="vcv-button vcv-button-ghost vcv-mount-trigger" onclick="VCV.openMountModal()" title="${tooltip}">
-      <span class="vcv-mount-trigger-label">${label}</span>
+      ${filterIcon}
+      <span class="vcv-mount-trigger-label">${label}</span>${badge}
     </button>
   `;
 }
@@ -851,11 +858,36 @@ function renderMountSelector() {
 function updateMountStats() {
   const selectedEl = document.getElementById("mount-stats-selected");
   const totalEl = document.getElementById("mount-stats-total");
+  const selected = state.selectedMounts.length;
+  const total = state.availableMounts.length;
   if (selectedEl) {
-    selectedEl.textContent = state.selectedMounts.length;
+    selectedEl.textContent = selected;
   }
   if (totalEl) {
-    totalEl.textContent = state.availableMounts.length;
+    totalEl.textContent = total;
+  }
+  const groups = Array.isArray(state.vaultMountGroups) ? state.vaultMountGroups : [];
+  const selectedSet = new Set(state.selectedMounts);
+  const totalVaults = groups.length;
+  let selectedVaults = 0;
+  let totalMounts = 0;
+  let selectedMountsCount = 0;
+  groups.forEach((group) => {
+    const mounts = Array.isArray(group.mounts) ? group.mounts : [];
+    totalMounts += mounts.length;
+    const groupSelected = mounts.filter((m) => selectedSet.has(buildVaultMountKey(group.id, m))).length;
+    selectedMountsCount += groupSelected;
+    if (groupSelected > 0) {
+      selectedVaults++;
+    }
+  });
+  const vaultsValueEl = document.getElementById("mount-footer-vaults-value");
+  const mountsValueEl = document.getElementById("mount-footer-mounts-value");
+  if (vaultsValueEl) {
+    vaultsValueEl.textContent = `${selectedVaults} / ${totalVaults}`;
+  }
+  if (mountsValueEl) {
+    mountsValueEl.textContent = `${selectedMountsCount} / ${totalMounts}`;
   }
 }
 
@@ -867,16 +899,25 @@ function toggleVaultSection(vaultId) {
   section.classList.toggle("vcv-collapsed");
 }
 
+function buildMountChip(mountName, key, isSelected, vaultId) {
+  const activeClass = isSelected ? " vcv-mount-chip-active" : "";
+  const checkedAttr = isSelected ? " checked" : "";
+  const checkSvg = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  const dataAttrs = vaultId ? ` data-vault="${vaultId}" data-mount="${mountName}"` : ` data-mount="${mountName}"`;
+  return `<label class="vcv-mount-chip${activeClass}"${dataAttrs}><input type="checkbox"${checkedAttr} onchange="VCV.toggleMount('${key}')" /><span class="vcv-mount-chip-check">${checkSvg}</span><span class="vcv-mount-chip-label">${mountName}</span></label>`;
+}
+
 function renderMountModalList() {
   const listContainer = document.getElementById("mount-modal-list");
   if (!listContainer) {
     return;
   }
   const messages = state.messages || {};
+  const selectAllLabel = typeof messages.selectAll === "string" && messages.selectAll !== "" ? messages.selectAll : "All";
   const deselectAllLabel = typeof messages.deselectAll === "string" && messages.deselectAll !== "" ? messages.deselectAll : "None";
   const groups = Array.isArray(state.vaultMountGroups) ? state.vaultMountGroups : [];
-  const selectAllLabel = typeof messages.selectAll === "string" && messages.selectAll !== "" ? messages.selectAll : "All";
   const selectedSet = new Set(state.selectedMounts);
+  const chevronSvg = '<span class="vcv-mount-modal-section-chevron"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></span>';
   if (groups.length > 0) {
     const content = groups
       .map((group) => {
@@ -884,77 +925,65 @@ function renderMountModalList() {
         const mounts = Array.isArray(group.mounts) ? group.mounts : [];
         const selectedCount = mounts.filter((m) => selectedSet.has(buildVaultMountKey(group.id, m))).length;
         const totalCount = mounts.length;
-        const countBadge = `<span class="vcv-badge vcv-badge-neutral" style="font-size: 0.75rem; padding: 0.125rem 0.5rem;">${selectedCount}/${totalCount}</span>`;
-        const options = mounts
+        const countBadge = `<span class="vcv-badge vcv-badge-neutral" style="font-size:0.6875rem;padding:0.0625rem 0.4375rem;border-radius:999px;">${selectedCount}/${totalCount}</span>`;
+        const chips = mounts
           .map((mountName) => {
             const key = buildVaultMountKey(group.id, mountName);
-            const checkedAttr = selectedSet.has(key) ? "checked" : "";
-            const selectedClass = selectedSet.has(key) ? " vcv-mount-option-selected" : "";
-            return `<label class="vcv-mount-option${selectedClass}" data-vault="${group.id}" data-mount="${mountName}"><input type="checkbox" ${checkedAttr} onchange="VCV.toggleMount('${key}')" /><span class="vcv-mount-name">${mountName}</span></label>`;
+            return buildMountChip(mountName, key, selectedSet.has(key), group.id);
           })
           .join("");
-        const headerActions = `<div class="vcv-mount-modal-section-actions"><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="VCV.selectAllVaultMounts('${group.id}', event)">${selectAllLabel}</button><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="VCV.deselectAllVaultMounts('${group.id}', event)">${deselectAllLabel}</button></div>`;
-        return `<div class="vcv-mount-modal-section" data-vault-section="${group.id}"><div class="vcv-mount-modal-section-header" onclick="VCV.toggleVaultSection('${group.id}')"><div class="vcv-mount-modal-section-title">${title} ${countBadge}</div>${headerActions}</div><div class="vcv-mount-modal-section-options">${options}</div></div>`;
+        const headerActions = `<div class="vcv-mount-modal-section-actions"><button type="button" class="vcv-mount-link-btn" onclick="VCV.selectAllVaultMounts('${group.id}', event)">${selectAllLabel}</button><button type="button" class="vcv-mount-link-btn" onclick="VCV.deselectAllVaultMounts('${group.id}', event)">${deselectAllLabel}</button></div>`;
+        return `<div class="vcv-mount-modal-section" data-vault-section="${group.id}"><div class="vcv-mount-modal-section-header" onclick="VCV.toggleVaultSection('${group.id}')">${chevronSvg}<div class="vcv-mount-modal-section-title">${title} ${countBadge}</div>${headerActions}</div><div class="vcv-mount-modal-section-options">${chips}</div></div>`;
       })
       .join("");
     listContainer.innerHTML = content;
     updateMountStats();
     return;
   }
-  const items = state.availableMounts.map((mount) => {
-    const isSelected = selectedSet.has(mount);
-    const checkedAttr = isSelected ? "checked" : "";
-    const selectedClass = isSelected ? "selected" : "";
-    return `<label class="vcv-mount-modal-option ${selectedClass}" data-mount="${mount}"><input type="checkbox" ${checkedAttr} onchange="VCV.toggleMount('${mount}')" /><span class="vcv-mount-modal-name">${mount}</span></label>`;
+  const chips = state.availableMounts.map((mount) => {
+    return buildMountChip(mount, mount, selectedSet.has(mount), "");
   });
   const emptyText = typeof messages.noData === "string" && messages.noData !== "" ? messages.noData : "No data";
-  listContainer.innerHTML = items.join("") || `<p class="vcv-empty">${emptyText}</p>`;
+  listContainer.innerHTML = chips.join("") || `<p class="vcv-empty">${emptyText}</p>`;
   updateMountStats();
 }
 
 function filterMountList(searchTerm) {
   const term = searchTerm.toLowerCase().trim();
   const sections = document.querySelectorAll(".vcv-mount-modal-section");
-  const options = document.querySelectorAll(".vcv-mount-option, .vcv-mount-modal-option");
-  
+  const chips = document.querySelectorAll(".vcv-mount-chip");
   if (term === "") {
     sections.forEach((section) => section.classList.remove("vcv-hidden"));
-    options.forEach((option) => option.classList.remove("vcv-hidden"));
+    chips.forEach((chip) => chip.classList.remove("vcv-hidden"));
     return;
   }
-  
   sections.forEach((section) => {
     const vaultId = section.getAttribute("data-vault-section") || "";
     const vaultMatches = vaultId.toLowerCase().includes(term);
-    const sectionOptions = section.querySelectorAll(".vcv-mount-option");
-    let hasVisibleOptions = false;
-    
-    sectionOptions.forEach((option) => {
-      const mountName = option.getAttribute("data-mount") || "";
-      const mountMatches = mountName.toLowerCase().includes(term);
-      
-      if (vaultMatches || mountMatches) {
-        option.classList.remove("vcv-hidden");
-        hasVisibleOptions = true;
+    const sectionChips = section.querySelectorAll(".vcv-mount-chip");
+    let hasVisible = false;
+    sectionChips.forEach((chip) => {
+      const mountName = chip.getAttribute("data-mount") || "";
+      if (vaultMatches || mountName.toLowerCase().includes(term)) {
+        chip.classList.remove("vcv-hidden");
+        hasVisible = true;
       } else {
-        option.classList.add("vcv-hidden");
+        chip.classList.add("vcv-hidden");
       }
     });
-    
-    if (vaultMatches || hasVisibleOptions) {
+    if (vaultMatches || hasVisible) {
       section.classList.remove("vcv-hidden");
     } else {
       section.classList.add("vcv-hidden");
     }
   });
-  
-  options.forEach((option) => {
-    if (!option.closest(".vcv-mount-modal-section")) {
-      const mountName = option.getAttribute("data-mount") || "";
+  chips.forEach((chip) => {
+    if (!chip.closest(".vcv-mount-modal-section")) {
+      const mountName = chip.getAttribute("data-mount") || "";
       if (mountName.toLowerCase().includes(term)) {
-        option.classList.remove("vcv-hidden");
+        chip.classList.remove("vcv-hidden");
       } else {
-        option.classList.add("vcv-hidden");
+        chip.classList.add("vcv-hidden");
       }
     }
   });
