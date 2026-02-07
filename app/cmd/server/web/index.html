@@ -159,12 +159,12 @@
       </div>
 
       <!-- Dashboard -->
-      {{$total := add .Certs.DashboardValid .Certs.DashboardExpiring .Certs.DashboardExpired .Certs.DashboardRevoked}}
+      {{$total := add .Certs.DashboardValid .Certs.DashboardWarning .Certs.DashboardCritical .Certs.DashboardExpired .Certs.DashboardRevoked}}
       <main id="vcv-main-content">
       <div id="vcv-dashboard" class="vcv-dashboard">
         <div class="vcv-dashboard-row">
           <div id="dashboard-chart" class="vcv-dashboard-donut"
-            style="--chart-valid: {{.Certs.DashboardValid}}; --chart-expiring: {{.Certs.DashboardExpiring}}; --chart-expired: {{.Certs.DashboardExpired}}; --chart-revoked: {{.Certs.DashboardRevoked}}; --chart-total: {{$total}};">
+            style="--chart-valid: {{.Certs.DashboardValid}}; --chart-warning: {{.Certs.DashboardWarning}}; --chart-critical: {{.Certs.DashboardCritical}}; --chart-expired: {{.Certs.DashboardExpired}}; --chart-revoked: {{.Certs.DashboardRevoked}}; --chart-total: {{$total}};">
             <div class="vcv-donut-wrapper">
               <div class="vcv-donut{{if eq $total 0}} vcv-donut-empty{{end}}"></div>
               <div class="vcv-donut-center">
@@ -175,27 +175,44 @@
           </div>
           <div class="vcv-dashboard-stats">
             <div class="vcv-stat vcv-stat-valid vcv-stat-clickable" data-status="valid" onclick="VCV.filterByDashboardCard('valid')">
-              <span class="vcv-stat-dot"></span>
+              <div class="vcv-stat-header">
+                <span class="vcv-stat-dot"></span>
+                <span class="vcv-stat-label" id="dashboard-valid-label">{{.Messages.DashboardValid}}</span>
+              </div>
               <span class="vcv-stat-value" id="dashboard-valid">{{.Certs.DashboardValid}}</span>
-              <span class="vcv-stat-label" id="dashboard-valid-label">Valid</span>
+              <span class="vcv-stat-desc" id="dashboard-valid-desc">{{.Messages.DashboardValidDesc}}</span>
             </div>
-            <span class="vcv-stat-sep"></span>
-            <div class="vcv-stat vcv-stat-expiring vcv-stat-clickable" data-status="expiring" onclick="VCV.filterByDashboardCard('expiring')">
-              <span class="vcv-stat-dot"></span>
-              <span class="vcv-stat-value" id="dashboard-expiring">{{.Certs.DashboardExpiring}}</span>
-              <span class="vcv-stat-label" id="dashboard-expiring-label">Expiring</span>
+            <div class="vcv-stat vcv-stat-warning vcv-stat-clickable" data-status="warning" onclick="VCV.filterByDashboardCard('warning')">
+              <div class="vcv-stat-header">
+                <span class="vcv-stat-dot"></span>
+                <span class="vcv-stat-label" id="dashboard-warning-label">{{.Messages.DashboardWarning}}</span>
+              </div>
+              <span class="vcv-stat-value" id="dashboard-warning">{{.Certs.DashboardWarning}}</span>
+              <span class="vcv-stat-desc" id="dashboard-warning-desc">{{.Messages.DashboardWarningDesc}}</span>
             </div>
-            <span class="vcv-stat-sep"></span>
+            <div class="vcv-stat vcv-stat-critical vcv-stat-clickable" data-status="critical" onclick="VCV.filterByDashboardCard('critical')">
+              <div class="vcv-stat-header">
+                <span class="vcv-stat-dot"></span>
+                <span class="vcv-stat-label" id="dashboard-critical-label">{{.Messages.DashboardCritical}}</span>
+              </div>
+              <span class="vcv-stat-value" id="dashboard-critical">{{.Certs.DashboardCritical}}</span>
+              <span class="vcv-stat-desc" id="dashboard-critical-desc">{{.Messages.DashboardCriticalDesc}}</span>
+            </div>
             <div class="vcv-stat vcv-stat-expired vcv-stat-clickable" data-status="expired" onclick="VCV.filterByDashboardCard('expired')">
-              <span class="vcv-stat-dot"></span>
+              <div class="vcv-stat-header">
+                <span class="vcv-stat-dot"></span>
+                <span class="vcv-stat-label" id="dashboard-expired-label">{{.Messages.DashboardExpired}}</span>
+              </div>
               <span class="vcv-stat-value" id="dashboard-expired">{{.Certs.DashboardExpired}}</span>
-              <span class="vcv-stat-label" id="dashboard-expired-label">Expired</span>
+              <span class="vcv-stat-desc" id="dashboard-expired-desc">{{.Messages.DashboardExpiredDesc}}</span>
             </div>
-            <span class="vcv-stat-sep"></span>
             <div class="vcv-stat vcv-stat-revoked vcv-stat-clickable" data-status="revoked" onclick="VCV.filterByDashboardCard('revoked')">
-              <span class="vcv-stat-dot"></span>
+              <div class="vcv-stat-header">
+                <span class="vcv-stat-dot"></span>
+                <span class="vcv-stat-label" id="dashboard-revoked-label">{{.Messages.DashboardRevoked}}</span>
+              </div>
               <span class="vcv-stat-value" id="dashboard-revoked">{{.Certs.DashboardRevoked}}</span>
-              <span class="vcv-stat-label" id="dashboard-revoked-label">Revoked</span>
+              <span class="vcv-stat-desc" id="dashboard-revoked-desc">{{.Messages.DashboardRevokedDesc}}</span>
             </div>
           </div>
         </div>
@@ -353,16 +370,24 @@
       </div>
       <div class="vcv-legend">
         <div class="vcv-legend-item">
-          <span class="vcv-badge vcv-badge-valid">Valid</span>
-          <span class="vcv-legend-text">Not expired and not revoked.</span>
+          <span class="vcv-badge vcv-badge-valid">{{.Messages.StatusLabelValid}}</span>
+          <span class="vcv-legend-text">{{.Messages.DashboardValidDesc}}</span>
         </div>
         <div class="vcv-legend-item">
-          <span class="vcv-badge vcv-badge-expired">Expired</span>
-          <span class="vcv-legend-text">Past the expiration date.</span>
+          <span class="vcv-badge vcv-badge-warning">{{.Messages.DashboardWarning}}</span>
+          <span class="vcv-legend-text">{{.Messages.DashboardWarningDesc}}</span>
         </div>
         <div class="vcv-legend-item">
-          <span class="vcv-badge vcv-badge-revoked">Revoked</span>
-          <span class="vcv-legend-text">Explicitly revoked in Vault.</span>
+          <span class="vcv-badge vcv-badge-critical">{{.Messages.DashboardCritical}}</span>
+          <span class="vcv-legend-text">{{.Messages.DashboardCriticalDesc}}</span>
+        </div>
+        <div class="vcv-legend-item">
+          <span class="vcv-badge vcv-badge-expired">{{.Messages.DashboardExpired}}</span>
+          <span class="vcv-legend-text">{{.Messages.DashboardExpiredDesc}}</span>
+        </div>
+        <div class="vcv-legend-item">
+          <span class="vcv-badge vcv-badge-revoked">{{.Messages.StatusLabelRevoked}}</span>
+          <span class="vcv-legend-text">{{.Messages.DashboardRevokedDesc}}</span>
         </div>
       </div>
       </main>

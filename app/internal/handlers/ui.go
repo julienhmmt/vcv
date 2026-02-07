@@ -147,7 +147,8 @@ type certsFragmentTemplateData struct {
 	PaginationNextText  string
 	DashboardTotal      int
 	DashboardValid      int
-	DashboardExpiring   int
+	DashboardWarning    int
+	DashboardCritical   int
 	DashboardExpired    int
 	DashboardRevoked    int
 	DashboardCertsLabel string
@@ -157,7 +158,8 @@ type certsFragmentTemplateData struct {
 type dashboardStatsTemplateData struct {
 	Total    int
 	Valid    int
-	Expiring int
+	Warning  int
+	Critical int
 	Expired  int
 	Revoked  int
 }
@@ -811,12 +813,31 @@ func applyCertificateFilters(items []certs.Certificate, state certsQueryState, s
 			}
 		}
 		statuses := certificateStatuses(certificate, now)
-		if state.StatusFilter == "expiring" {
+		if state.StatusFilter == "valid" {
+			if !containsString(statuses, "valid") {
+				continue
+			}
+			days := daysUntil(certificate.ExpiresAt.UTC(), now)
+			if thresholds.Warning > 0 && days >= 0 && days <= thresholds.Warning {
+				continue
+			}
+		} else if state.StatusFilter == "warning" {
 			if !containsString(statuses, "valid") {
 				continue
 			}
 			days := daysUntil(certificate.ExpiresAt.UTC(), now)
 			if thresholds.Warning <= 0 || days < 0 || days > thresholds.Warning {
+				continue
+			}
+			if thresholds.Critical > 0 && days <= thresholds.Critical {
+				continue
+			}
+		} else if state.StatusFilter == "critical" {
+			if !containsString(statuses, "valid") {
+				continue
+			}
+			days := daysUntil(certificate.ExpiresAt.UTC(), now)
+			if thresholds.Critical <= 0 || days < 0 || days > thresholds.Critical {
 				continue
 			}
 		} else if state.StatusFilter != "all" && !containsString(statuses, state.StatusFilter) {
@@ -1019,7 +1040,17 @@ func buildCertRows(items []certs.Certificate, messages i18n.Messages, thresholds
 		isExpiringSoon := thresholds.Warning > 0 && daysRemaining >= 0 && daysRemaining <= thresholds.Warning
 		isCritical := thresholds.Critical > 0 && daysRemaining >= 0 && daysRemaining <= thresholds.Critical
 		for _, status := range statuses {
-			rowClasses = append(rowClasses, "vcv-row-"+status)
+			if status == "valid" {
+				if isCritical {
+					rowClasses = append(rowClasses, "vcv-row-critical")
+				} else if isExpiringSoon {
+					rowClasses = append(rowClasses, "vcv-row-warning")
+				} else {
+					rowClasses = append(rowClasses, "vcv-row-valid")
+				}
+			} else {
+				rowClasses = append(rowClasses, "vcv-row-"+status)
+			}
 			badgeClass := "vcv-badge vcv-badge-" + status
 			if status == "valid" {
 				if isCritical {
@@ -1045,9 +1076,9 @@ func buildCertRows(items []certs.Certificate, messages i18n.Messages, thresholds
 			default:
 				daysRemainingText = interpolatePlaceholder(messages.ExpiredDays, "days", fmt.Sprintf("%d", daysSinceExpiry))
 			}
-			daysRemainingClass = "vcv-days-remaining vcv-days-critical"
-			expiresCellClass = "vcv-expires-cell vcv-expires-cell-critical"
-			expiresDateClass = "vcv-expires-date vcv-expires-date-critical"
+			daysRemainingClass = "vcv-days-remaining vcv-days-expired"
+			expiresCellClass = "vcv-expires-cell vcv-expires-cell-expired"
+			expiresDateClass = "vcv-expires-date vcv-expires-date-expired"
 		} else if isExpiringSoon {
 			switch daysRemaining {
 			case 0:
@@ -1252,7 +1283,8 @@ func buildCertsFragmentData(certificates []certs.Certificate, expirationThreshol
 		PaginationNextText:  messages.PaginationNext,
 		DashboardTotal:      dashboardStats.Total,
 		DashboardValid:      dashboardStats.Valid,
-		DashboardExpiring:   dashboardStats.Expiring,
+		DashboardWarning:    dashboardStats.Warning,
+		DashboardCritical:   dashboardStats.Critical,
 		DashboardExpired:    dashboardStats.Expired,
 		DashboardRevoked:    dashboardStats.Revoked,
 		DashboardCertsLabel: messages.DashboardCertsLabel,
@@ -1291,8 +1323,12 @@ func computeDashboardStats(certificates []certs.Certificate, thresholds config.E
 			continue
 		}
 		days := daysUntil(cert.ExpiresAt.UTC(), now)
+		if thresholds.Critical > 0 && days >= 0 && days <= thresholds.Critical {
+			stats.Critical++
+			continue
+		}
 		if thresholds.Warning > 0 && days >= 0 && days <= thresholds.Warning {
-			stats.Expiring++
+			stats.Warning++
 			continue
 		}
 		stats.Valid++

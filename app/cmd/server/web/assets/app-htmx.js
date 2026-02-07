@@ -466,12 +466,18 @@ function applyTranslations() {
   }
   setText(document.getElementById("certificate-modal-close"), messages.buttonClose);
   setText(document.getElementById("dashboard-expired-label"), messages.dashboardExpired);
-  setText(document.getElementById("dashboard-expiring-label"), messages.dashboardExpiring);
+  setText(document.getElementById("dashboard-expired-desc"), messages.dashboardExpiredDesc);
+  setText(document.getElementById("dashboard-warning-label"), messages.dashboardWarning);
+  setText(document.getElementById("dashboard-warning-desc"), messages.dashboardWarningDesc);
+  setText(document.getElementById("dashboard-critical-label"), messages.dashboardCritical);
+  setText(document.getElementById("dashboard-critical-desc"), messages.dashboardCriticalDesc);
   setText(document.getElementById("dashboard-clear-filter-text"), messages.dashboardClearFilter);
   setText(document.getElementById("dashboard-filter-hint"), messages.dashboardFilterHint);
   setText(document.getElementById("dashboard-revoked-label"), messages.dashboardRevoked);
+  setText(document.getElementById("dashboard-revoked-desc"), messages.dashboardRevokedDesc);
   setText(document.getElementById("dashboard-donut-label"), messages.dashboardCertsLabel);
   setText(document.getElementById("dashboard-valid-label"), messages.dashboardValid);
+  setText(document.getElementById("dashboard-valid-desc"), messages.dashboardValidDesc);
   setText(document.getElementById("mount-close"), messages.buttonClose);
   setText(document.getElementById("mount-deselect-all"), messages.deselectAll);
   setText(document.getElementById("mount-modal-title"), messages.mountSelectorTitle);
@@ -633,10 +639,11 @@ function renderDonutChart() {
   }
   const style = getComputedStyle(chartEl);
   const valid = parseInt(style.getPropertyValue("--chart-valid"), 10) || 0;
-  const expiring = parseInt(style.getPropertyValue("--chart-expiring"), 10) || 0;
+  const warning = parseInt(style.getPropertyValue("--chart-warning"), 10) || 0;
+  const critical = parseInt(style.getPropertyValue("--chart-critical"), 10) || 0;
   const expired = parseInt(style.getPropertyValue("--chart-expired"), 10) || 0;
   const revoked = parseInt(style.getPropertyValue("--chart-revoked"), 10) || 0;
-  const total = valid + expiring + expired + revoked;
+  const total = valid + warning + critical + expired + revoked;
   const donutEl = chartEl.querySelector(".vcv-donut");
   if (!donutEl || total === 0) {
     return;
@@ -644,8 +651,9 @@ function renderDonutChart() {
   const messages = state.messages || {};
   const segments = [
     { value: valid, color: "var(--vcv-color-primary)", label: messages.dashboardValid || "Valid", status: "valid" },
-    { value: expiring, color: "var(--vcv-color-warning)", label: messages.dashboardExpiring || "Expiring", status: "expiring" },
-    { value: expired, color: "var(--vcv-color-danger)", label: messages.dashboardExpired || "Expired", status: "expired" },
+    { value: warning, color: "var(--vcv-color-warning)", label: messages.dashboardWarning || "Expiring soon", status: "warning" },
+    { value: critical, color: "var(--vcv-color-danger)", label: messages.dashboardCritical || "Expires very soon", status: "critical" },
+    { value: expired, color: "var(--vcv-color-expired)", label: messages.dashboardExpired || "Expired", status: "expired" },
     { value: revoked, color: "var(--vcv-color-revoked)", label: messages.dashboardRevoked || "Revoked", status: "revoked" },
   ].filter((s) => s.value > 0);
   if (segments.length === 0) {

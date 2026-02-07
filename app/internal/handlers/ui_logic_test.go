@@ -25,6 +25,7 @@ func TestBuildCertRows_BadgeLogic(t *testing.T) {
 		expectedClass     string
 		expectedLabel     string
 		expectedDaysClass string
+		expectedRowClass  string
 	}{
 		{
 			name: "Valid and Safe (far future)",
@@ -35,6 +36,7 @@ func TestBuildCertRows_BadgeLogic(t *testing.T) {
 			expectedClass:     "vcv-badge vcv-badge-valid",
 			expectedLabel:     messages.StatusLabelValid,
 			expectedDaysClass: "",
+			expectedRowClass:  "vcv-row-valid",
 		},
 		{
 			name: "Valid but Warning (soon expiring)",
@@ -45,6 +47,7 @@ func TestBuildCertRows_BadgeLogic(t *testing.T) {
 			expectedClass:     "vcv-badge vcv-badge-warning",
 			expectedLabel:     messages.StatusLabelValid,
 			expectedDaysClass: "vcv-days-remaining vcv-days-warning",
+			expectedRowClass:  "vcv-row-warning",
 		},
 		{
 			name: "Valid but Critical (very soon expiring)",
@@ -55,6 +58,7 @@ func TestBuildCertRows_BadgeLogic(t *testing.T) {
 			expectedClass:     "vcv-badge vcv-badge-critical",
 			expectedLabel:     messages.StatusLabelValid,
 			expectedDaysClass: "vcv-days-remaining vcv-days-critical",
+			expectedRowClass:  "vcv-row-critical",
 		},
 		{
 			name: "Expiring today",
@@ -65,6 +69,7 @@ func TestBuildCertRows_BadgeLogic(t *testing.T) {
 			expectedClass:     "vcv-badge vcv-badge-critical",
 			expectedLabel:     messages.StatusLabelValid,
 			expectedDaysClass: "vcv-days-remaining vcv-days-critical",
+			expectedRowClass:  "vcv-row-critical",
 		},
 		{
 			name: "Expired",
@@ -74,7 +79,8 @@ func TestBuildCertRows_BadgeLogic(t *testing.T) {
 			},
 			expectedClass:     "vcv-badge vcv-badge-expired",
 			expectedLabel:     messages.StatusLabelExpired,
-			expectedDaysClass: "vcv-days-remaining vcv-days-critical",
+			expectedDaysClass: "vcv-days-remaining vcv-days-expired",
+			expectedRowClass:  "vcv-row-expired",
 		},
 		{
 			name: "Expired today",
@@ -84,7 +90,8 @@ func TestBuildCertRows_BadgeLogic(t *testing.T) {
 			},
 			expectedClass:     "vcv-badge vcv-badge-expired",
 			expectedLabel:     messages.StatusLabelExpired,
-			expectedDaysClass: "vcv-days-remaining vcv-days-critical",
+			expectedDaysClass: "vcv-days-remaining vcv-days-expired",
+			expectedRowClass:  "vcv-row-expired",
 		},
 		{
 			name: "Revoked",
@@ -96,6 +103,7 @@ func TestBuildCertRows_BadgeLogic(t *testing.T) {
 			expectedClass:     "vcv-badge vcv-badge-revoked",
 			expectedLabel:     messages.StatusLabelRevoked,
 			expectedDaysClass: "",
+			expectedRowClass:  "vcv-row-revoked",
 		},
 		{
 			name: "Revoked and expiring soon (badge stays revoked)",
@@ -107,6 +115,7 @@ func TestBuildCertRows_BadgeLogic(t *testing.T) {
 			expectedClass:     "vcv-badge vcv-badge-revoked",
 			expectedLabel:     messages.StatusLabelRevoked,
 			expectedDaysClass: "vcv-days-remaining vcv-days-critical",
+			expectedRowClass:  "vcv-row-revoked",
 		},
 	}
 
@@ -122,6 +131,7 @@ func TestBuildCertRows_BadgeLogic(t *testing.T) {
 			if tt.expectedDaysClass != "" {
 				assert.Equal(t, tt.expectedDaysClass, row.DaysRemainingClass)
 			}
+			assert.Equal(t, tt.expectedRowClass, row.RowClass)
 		})
 	}
 }

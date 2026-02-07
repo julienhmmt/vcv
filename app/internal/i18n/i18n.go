@@ -39,12 +39,18 @@ type Messages struct {
 	ColumnStatus                string `json:"columnStatus"`
 	DashboardCertsLabel         string `json:"dashboardCertsLabel"`
 	DashboardClearFilter        string `json:"dashboardClearFilter"`
+	DashboardCritical           string `json:"dashboardCritical"`
+	DashboardCriticalDesc       string `json:"dashboardCriticalDesc"`
 	DashboardExpired            string `json:"dashboardExpired"`
-	DashboardExpiring           string `json:"dashboardExpiring"`
+	DashboardExpiredDesc        string `json:"dashboardExpiredDesc"`
+	DashboardWarning            string `json:"dashboardWarning"`
+	DashboardWarningDesc        string `json:"dashboardWarningDesc"`
 	DashboardFilterHint         string `json:"dashboardFilterHint"`
 	DashboardRevoked            string `json:"dashboardRevoked"`
+	DashboardRevokedDesc        string `json:"dashboardRevokedDesc"`
 	DashboardTotal              string `json:"dashboardTotal"`
 	DashboardValid              string `json:"dashboardValid"`
+	DashboardValidDesc          string `json:"dashboardValidDesc"`
 	DaysRemaining               string `json:"daysRemaining"`
 	DaysRemainingShort          string `json:"daysRemainingShort"`
 	DaysRemainingSingular       string `json:"daysRemainingSingular"`
@@ -191,12 +197,18 @@ var englishMessages = Messages{
 	ColumnStatus:                "Status",
 	DashboardCertsLabel:         "certs",
 	DashboardClearFilter:        "Clear filter",
+	DashboardCritical:           "Expires very soon",
+	DashboardCriticalDesc:       "Valid certificates expiring within the critical threshold",
 	DashboardExpired:            "Expired",
-	DashboardExpiring:           "Expiring soon",
+	DashboardExpiredDesc:        "Certificates past their expiration date",
+	DashboardWarning:            "Expiring soon",
+	DashboardWarningDesc:        "Valid certificates expiring within the warning threshold",
 	DashboardFilterHint:         "Click a status to filter the table",
 	DashboardRevoked:            "Revoked",
+	DashboardRevokedDesc:        "Certificates explicitly revoked in Vault",
 	DashboardTotal:              "Total certificates",
 	DashboardValid:              "Valid",
+	DashboardValidDesc:          "Certificates not expiring within the warning threshold",
 	DaysRemaining:               "{{days}} days remaining",
 	DaysRemainingShort:          "{{days}}d",
 	DaysRemainingSingular:       "{{days}} day remaining",
@@ -337,12 +349,18 @@ var frenchMessages = Messages{
 	ColumnStatus:                "Statut",
 	DashboardCertsLabel:         "certs",
 	DashboardClearFilter:        "Effacer le filtre",
+	DashboardCritical:           "Expire très bientôt",
+	DashboardCriticalDesc:       "Certificats valides expirant dans le seuil critique",
 	DashboardExpired:            "Expirés",
-	DashboardExpiring:           "Expirant bientôt",
+	DashboardExpiredDesc:        "Certificats ayant dépassé leur date d'expiration",
+	DashboardWarning:            "Expire bientôt",
+	DashboardWarningDesc:        "Certificats valides expirant dans le seuil d'avertissement",
 	DashboardFilterHint:         "Cliquez sur un statut pour filtrer le tableau",
 	DashboardRevoked:            "Révoqués",
+	DashboardRevokedDesc:        "Certificats explicitement révoqués dans Vault",
 	DashboardTotal:              "Total des certificats",
 	DashboardValid:              "Valides",
+	DashboardValidDesc:          "Certificats n'expirant pas dans le seuil d'avertissement",
 	DaysRemaining:               "{{days}} jours restants",
 	DaysRemainingShort:          "{{days}}j",
 	DaysRemainingSingular:       "{{days}} jour restant",
@@ -483,12 +501,18 @@ var spanishMessages = Messages{
 	ColumnStatus:                "Estado",
 	DashboardCertsLabel:         "certs",
 	DashboardClearFilter:        "Borrar filtro",
+	DashboardCritical:           "Caduca muy pronto",
+	DashboardCriticalDesc:       "Certificados válidos que caducan dentro del umbral crítico",
 	DashboardExpired:            "Caducados",
-	DashboardExpiring:           "Caducando pronto",
+	DashboardExpiredDesc:        "Certificados que han superado su fecha de caducidad",
+	DashboardWarning:            "Caduca pronto",
+	DashboardWarningDesc:        "Certificados válidos que caducan dentro del umbral de advertencia",
 	DashboardFilterHint:         "Haga clic en un estado para filtrar la tabla",
 	DashboardRevoked:            "Revocados",
+	DashboardRevokedDesc:        "Certificados explícitamente revocados en Vault",
 	DashboardTotal:              "Total de certificados",
 	DashboardValid:              "Válidos",
+	DashboardValidDesc:          "Certificados que no caducan dentro del umbral de advertencia",
 	DaysRemaining:               "{{days}} días restantes",
 	DaysRemainingShort:          "{{days}}d",
 	DaysRemainingSingular:       "{{days}} día restante",
@@ -629,12 +653,18 @@ var germanMessages = Messages{
 	ColumnStatus:                "Status",
 	DashboardCertsLabel:         "Zert.",
 	DashboardClearFilter:        "Filter löschen",
+	DashboardCritical:           "Läuft sehr bald ab",
+	DashboardCriticalDesc:       "Gültige Zertifikate, die innerhalb des kritischen Schwellenwerts ablaufen",
 	DashboardExpired:            "Abgelaufen",
-	DashboardExpiring:           "Laufen bald ab",
+	DashboardExpiredDesc:        "Zertifikate, deren Ablaufdatum überschritten ist",
+	DashboardWarning:            "Läuft bald ab",
+	DashboardWarningDesc:        "Gültige Zertifikate, die innerhalb des Warnschwellenwerts ablaufen",
 	DashboardFilterHint:         "Klicken Sie auf einen Status, um die Tabelle zu filtern",
 	DashboardRevoked:            "Widerrufen",
+	DashboardRevokedDesc:        "Zertifikate, die explizit in Vault widerrufen wurden",
 	DashboardTotal:              "Zertifikate gesamt",
 	DashboardValid:              "Gültig",
+	DashboardValidDesc:          "Zertifikate, die nicht innerhalb des Warnschwellenwerts ablaufen",
 	DaysRemaining:               "{{days}} verbleibende Tage",
 	DaysRemainingShort:          "{{days}}T",
 	DaysRemainingSingular:       "{{days}} verbleibender Tag",
@@ -775,12 +805,18 @@ var italianMessages = Messages{
 	ColumnStatus:                "Stato",
 	DashboardCertsLabel:         "cert.",
 	DashboardClearFilter:        "Cancella filtro",
+	DashboardCritical:           "Scade molto presto",
+	DashboardCriticalDesc:       "Certificati validi in scadenza entro la soglia critica",
 	DashboardExpired:            "Scaduti",
-	DashboardExpiring:           "In scadenza",
+	DashboardExpiredDesc:        "Certificati che hanno superato la data di scadenza",
+	DashboardWarning:            "In scadenza",
+	DashboardWarningDesc:        "Certificati validi in scadenza entro la soglia di avviso",
 	DashboardFilterHint:         "Clicca su uno stato per filtrare la tabella",
 	DashboardRevoked:            "Revocati",
+	DashboardRevokedDesc:        "Certificati esplicitamente revocati in Vault",
 	DashboardTotal:              "Certificati totali",
 	DashboardValid:              "Validi",
+	DashboardValidDesc:          "Certificati che non scadono entro la soglia di avviso",
 	DaysRemaining:               "{{days}} giorni rimanenti",
 	DaysRemainingShort:          "{{days}}g",
 	DaysRemainingSingular:       "{{days}} giorno rimanente",
