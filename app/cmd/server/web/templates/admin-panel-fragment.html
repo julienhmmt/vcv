@@ -1,13 +1,13 @@
-<section class="vcv-table-wrapper admin-surface admin-panel-surface">
+<section class="admin-panel-surface">
   {{if .SuccessText}}
-    <div class="admin-alert admin-alert-success" role="status">{{.SuccessText}}</div>
+    <div class="admin-alert admin-alert-success" role="status">✅ {{.SuccessText}}</div>
   {{end}}
   {{if .ErrorText}}
-    <div class="admin-alert admin-alert-error" role="alert">{{.ErrorText}}</div>
+    <div class="admin-alert admin-alert-error" role="alert">⚠️ {{.ErrorText}}</div>
   {{end}}
 
   <div class="admin-card-header">
-    <h2 class="admin-card-title">{{.Messages.AdminSettings}}</h2>
+    <h2 class="admin-card-title"><span class="admin-card-title-icon">⚙️</span> {{.Messages.AdminSettings}}</h2>
     <div class="admin-actions">
       <button class="vcv-button vcv-button-secondary" type="button" onclick="VCV.openDocumentationModal('admin')" aria-label="{{.Messages.ButtonDocumentation}}">📖 {{.Messages.ButtonDocumentation}}</button>
       <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/logout" hx-target="#admin-root" hx-swap="innerHTML">{{.Messages.AdminLogout}}</button>
@@ -16,7 +16,7 @@
 
   <form id="admin-settings-form" class="admin-form" hx-post="/admin/settings" hx-target="#admin-root" hx-swap="innerHTML">
     <fieldset class="admin-fieldset">
-      <legend class="admin-legend">{{.Messages.AdminCertificates}}</legend>
+      <legend class="admin-legend"><span class="admin-legend-icon">🔒</span> {{.Messages.AdminCertificates}}</legend>
       <span class="admin-field-hint">{{.Messages.AdminThresholdsHint}}</span>
       <div class="admin-grid">
         <div class="admin-form-row">
@@ -31,7 +31,7 @@
     </fieldset>
 
     <fieldset class="admin-fieldset">
-      <legend class="admin-legend">{{.Messages.AdminCORS}}</legend>
+      <legend class="admin-legend"><span class="admin-legend-icon">🌐</span> {{.Messages.AdminCORS}}</legend>
       <div class="admin-grid">
         <div class="admin-form-row admin-form-row-full">
           <label class="admin-label" for="settings-cors-origins">{{.Messages.AdminCORSOrigins}}</label>
@@ -41,11 +41,11 @@
     </fieldset>
 
     <fieldset class="admin-fieldset">
-      <legend class="admin-legend">{{.Messages.AdminVaults}}</legend>
+      <legend class="admin-legend"><span class="admin-legend-icon">🏛️</span> {{.Messages.AdminVaults}}</legend>
       <div class="admin-section-header">
         <div class="admin-section-hint">{{.Messages.AdminVaultsHint}}</div>
         <div class="admin-actions">
-          <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/vault/add" hx-target="#admin-vaults-list" hx-swap="beforeend" hx-on::after-request="var e=document.getElementById('admin-vaults-empty');if(e)e.remove()">{{.Messages.AdminAddVault}}</button>
+          <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/vault/add" hx-target="#admin-vaults-list" hx-swap="beforeend" hx-on::after-request="var e=document.getElementById('admin-vaults-empty');if(e)e.remove()">+ {{.Messages.AdminAddVault}}</button>
         </div>
       </div>
       <div id="admin-vaults-list" class="admin-vaults-list">
@@ -54,7 +54,7 @@
             {{template "admin-vault-item.html" .}}
           {{end}}
         {{else}}
-          <div class="admin-empty-state" id="admin-vaults-empty">{{.Messages.AdminVaultsEmpty}}</div>
+          <div class="admin-empty-state" id="admin-vaults-empty"><div class="admin-empty-state-icon">🏛️</div>{{.Messages.AdminVaultsEmpty}}</div>
         {{end}}
       </div>
     </fieldset>

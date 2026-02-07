@@ -19,6 +19,13 @@
             <h1 class="vcv-title">{{.Messages.AdminTitle}}</h1>
           </div>
           <div class="vcv-header-actions">
+            <div
+              id="vcv-vault-status"
+              hx-get="/ui/status"
+              hx-trigger="load, every 10s"
+              hx-swap="innerHTML"
+              hx-include="#vcv-lang-select"
+            ></div>
             <button
               id="theme-toggle"
               class="vcv-button vcv-button-icon vcv-theme-toggle"
@@ -49,6 +56,52 @@
       </header>
 
       <div id="admin-root" hx-get="/admin/panel" hx-trigger="load" hx-swap="innerHTML"></div>
+
+      <footer class="vcv-footer" aria-label="Footer">
+        <div class="vcv-footer-bottom">
+          <div class="vcv-footer-brand">
+            <div class="vcv-footer-title">
+              VaultCertsViewer
+              <span class="vcv-footer-version">v{{.AppVersionText}}</span>
+            </div>
+            <div class="vcv-footer-meta">
+              <span>License: <a class="vcv-footer-inline-link" href="https://github.com/julienhmmt/vcv/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a></span>
+              <span class="vcv-footer-divider">•</span>
+              <span>Imagined and designed by <a href="https://j.hommet.net" target="_blank" rel="noopener">Julien HOMMET</a>, developed by AI.</span>
+            </div>
+          </div>
+          <div class="vcv-footer-links" aria-label="External links">
+            <a class="vcv-footer-link" href="https://hub.docker.com/r/jhmmt/vcv" target="_blank" rel="noopener">
+              <img class="vcv-footer-icon" src="/assets/docker.svg" alt="Docker Hub" />
+              Docker Hub
+            </a>
+            <a class="vcv-footer-link" href="https://github.com/julienhmmt/vcv" target="_blank" rel="noopener">
+              <img class="vcv-footer-icon" src="/assets/github.svg" alt="GitHub" />
+              Source code on GitHub
+            </a>
+            <a class="vcv-footer-link" href="https://j.hommet.net/vcv" target="_blank" rel="noopener">More info</a>
+            <a class="vcv-footer-link" href="https://vcv.hommet.net" target="_blank" rel="noopener">Demo</a>
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <!-- Vault status modal -->
+    <div id="vault-status-modal" class="vcv-modal-backdrop vcv-hidden" role="dialog" aria-modal="true" aria-labelledby="vault-status-modal-title">
+      <div class="vcv-modal">
+        <div class="vcv-modal-header">
+          <h2 class="vcv-modal-title" id="vault-status-modal-title">{{.Messages.ModalVaultStatusTitle}}</h2>
+          <button type="button" class="vcv-modal-close" onclick="VCV.closeVaultStatusModal()">×</button>
+        </div>
+        <div class="vcv-modal-content">
+          <div id="vault-status-content" class="vcv-details-content">
+          </div>
+        </div>
+        <div class="vcv-modal-actions">
+          <button id="vault-status-refresh" type="button" class="vcv-button vcv-button-secondary" hx-post="/ui/vaults/refresh" hx-target="#vault-status-content" hx-swap="innerHTML" hx-include="#vcv-lang-select" onclick="VCV.handleVaultRefresh(event)">{{.Messages.ButtonRefresh}}</button>
+          <button id="vault-status-modal-close" type="button" class="vcv-button" onclick="VCV.closeVaultStatusModal()">{{.Messages.ButtonClose}}</button>
+        </div>
+      </div>
     </div>
 
     <!-- Documentation modal -->

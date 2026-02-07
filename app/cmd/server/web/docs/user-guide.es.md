@@ -12,8 +12,8 @@ VaultCertsViewer (VCV) es una interfaz web ligera diseñada para visualizar y mo
 - **Búsqueda y filtrado**: Busque por nombre común (CN) o nombres alternativos del sujeto (SAN). Filtre por estado mediante las tarjetas del panel de control.
 - **Ordenación**: Ordene la tabla de certificados por nombre común, fecha de creación, fecha de vencimiento, nombre del Vault o punto de montaje PKI. Haga clic en un encabezado de columna para alternar entre orden ascendente/descendente.
 - **Paginación**: Paginación del lado del servidor con tamaños de página configurables (25, 50, 100 o Todos).
-- **Vista detallada**: Acceda a los metadatos completos del certificado en un modal: emisor, sujeto, algoritmo de clave, uso de clave, huellas digitales (SHA-1, SHA-256) y contenido PEM.
-- **Descarga PEM**: Descargue archivos PEM directamente desde la tabla o el modal de detalles.
+- **Vista detallada**: Acceda a los metadatos completos del certificado en un modal organizado: identidad (sujeto, emisor, número de serie, SANs), fechas de validez con estado de expiración, y detalles técnicos (algoritmo de clave, uso de clave, huellas digitales SHA-1/SHA-256).
+- **Descarga PEM**: Descargue archivos PEM directamente desde la tabla.
 - **Estado de Vault**: Un indicador en el encabezado (icono de escudo con punto de estado) muestra el estado de conexión en tiempo real de sus instancias de Vault. Haga clic para abrir un modal detallado con información de salud por vault y un botón de actualización.
 - **Notificaciones de vencimiento**: Un banner en la parte superior de la página advierte sobre certificados que vencen dentro de los umbrales configurados (crítico / advertencia).
 - **Notificaciones toast**: Mensajes toast en tiempo real para cambios de conexión de Vault, errores y retroalimentación del usuario.
@@ -44,7 +44,7 @@ La tabla de certificados se actualiza automáticamente al alternar montajes.
 
 ### Detalles del certificado
 
-Haga clic en el botón «Detalles» en cualquier fila para abrir un modal con los metadatos completos del certificado: insignias de estado, cuenta regresiva de vencimiento, emisor, sujeto, SANs, número de serie, algoritmo de clave, huellas digitales, uso de clave y contenido PEM.
+Haga clic en el botón «Detalles» en cualquier fila para abrir un modal con los metadatos completos del certificado, organizados en tres secciones: identidad (sujeto, emisor, número de serie, SANs), validez (fechas de creación/expiración con cuenta regresiva), y detalles técnicos (algoritmo de clave, uso de clave, huellas digitales SHA-1/SHA-256).
 
 ### Estado de Vault
 

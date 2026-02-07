@@ -1,17 +1,27 @@
-<section class="vcv-table-wrapper admin-surface admin-login">
-  <h2 class="admin-card-title">{{.Messages.AdminLogin}}</h2>
-  {{if .ErrorText}}
-    <div class="admin-alert admin-alert-error" role="alert">{{.ErrorText}}</div>
-  {{end}}
-  <form class="admin-form" hx-post="/admin/login" hx-target="#admin-root" hx-swap="innerHTML">
-    <input type="hidden" id="admin-username" name="username" value="admin" />
-    <div class="admin-form-row">
-      <label class="admin-label" for="admin-password">{{.Messages.AdminPassword}}</label>
-      <input class="vcv-input" id="admin-password" name="password" type="password" autocomplete="current-password" required aria-label="{{.Messages.AdminPassword}}" />
-      <span class="admin-field-hint">{{.Messages.AdminLoginHint}}</span>
+<div class="admin-login-wrapper">
+  <div class="admin-login">
+    <div class="admin-login-card">
+      <div class="admin-login-header">
+        <div class="admin-login-icon">🔐</div>
+        <h2 class="admin-login-title">{{.Messages.AdminLogin}}</h2>
+        <p class="admin-login-subtitle">{{.Messages.AdminLoginHint}}</p>
+      </div>
+      <div class="admin-login-body">
+        {{if .ErrorText}}
+          <div class="admin-alert admin-alert-error" role="alert">⚠️ {{.ErrorText}}</div>
+        {{end}}
+        <form class="admin-form" hx-post="/admin/login" hx-target="#admin-root" hx-swap="innerHTML">
+          <input type="hidden" id="admin-username" name="username" value="admin" />
+          <div class="admin-form-row">
+            <label class="admin-label" for="admin-password">{{.Messages.AdminPassword}}</label>
+            <input class="vcv-input" id="admin-password" name="password" type="password" autocomplete="current-password" required aria-label="{{.Messages.AdminPassword}}" autofocus />
+          </div>
+          <button class="vcv-button vcv-button-primary vcv-button-full" type="submit">{{.Messages.AdminLogin}}</button>
+        </form>
+      </div>
+      <div class="admin-login-footer">
+        <p class="admin-login-footer-text"><a href="/">← {{.Messages.AdminBackToVCV}}</a></p>
+      </div>
     </div>
-    <div class="admin-actions">
-      <button class="vcv-button vcv-button-primary" type="submit">{{.Messages.AdminLogin}}</button>
-    </div>
-  </form>
-</section>
+  </div>
+</div>

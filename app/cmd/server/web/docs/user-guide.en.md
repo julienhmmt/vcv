@@ -12,8 +12,8 @@ VaultCertsViewer (VCV) is a lightweight web interface designed to visualize and 
 - **Search & filter**: Search by Common Name (CN) or Subject Alternative Names (SAN). Filter by status via the dashboard cards.
 - **Sorting**: Sort the certificate table by Common Name, Created date, Expiry date, Vault name, or PKI mount. Click a column header to toggle ascending/descending.
 - **Pagination**: Server-side pagination with configurable page sizes (25, 50, 100, or All).
-- **Detailed view**: Access full certificate metadata in a modal including issuer, subject, key algorithm, key usage, fingerprints (SHA-1, SHA-256), and PEM content.
-- **PEM download**: Download certificate PEM files directly from the table or the detail modal.
+- **Detailed view**: Access full certificate metadata in a clean, organized modal: identity (subject, issuer, serial number, SANs), validity dates with expiry status, and technical details (key algorithm, key usage, fingerprints SHA-1/SHA-256).
+- **PEM download**: Download certificate PEM files directly from the table.
 - **Vault status**: A header indicator (shield icon with status dot) shows the live connection status of your Vault instances. Click it to open a detailed status modal with per-vault health information and a refresh button.
 - **Expiration notifications**: A banner at the top of the page warns about certificates expiring within the configured thresholds (critical / warning).
 - **Toast notifications**: Real-time toast messages for Vault connection changes, errors, and user feedback.
@@ -44,7 +44,7 @@ The certificate table updates automatically as you toggle mounts.
 
 ### Certificate details
 
-Click the "Details" button on any row to open a modal with full certificate metadata: status badges, expiry countdown, issuer, subject, SANs, serial number, key algorithm, fingerprints, key usage, and PEM content.
+Click the "Details" button on any row to open a modal with full certificate metadata organized in three sections: identity (subject, issuer, serial number, SANs), validity (created/expires dates with expiry countdown), and technical details (key algorithm, key usage, SHA-1/SHA-256 fingerprints).
 
 ### Vault status
 

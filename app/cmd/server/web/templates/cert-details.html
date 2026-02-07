@@ -1,111 +1,75 @@
-<div class="vcv-detail-hero">
-  <div class="vcv-detail-hero-top">
-    <div>
-      <div class="vcv-detail-hero-eyebrow">{{.Messages.CertificateInformationTitle}}</div>
-      <div class="vcv-detail-hero-title-row">
-        <h3 class="vcv-detail-hero-title">{{.Certificate.CommonName}}</h3>
-        <div class="vcv-pill-group vcv-pill-group-compact">
-          {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
-        </div>
-      </div>
-      <div class="vcv-detail-hero-meta">
-        <span class="vcv-detail-hero-meta-item">{{.Messages.LabelIssuer}}: {{.Certificate.Issuer}}</span>
-        <span class="vcv-detail-hero-sep">•</span>
-        <span class="vcv-detail-hero-meta-item">{{.Messages.LabelSubject}}: {{.Certificate.Subject}}</span>
-      </div>
+<div class="vcv-cd-header">
+  <div class="vcv-cd-title-row">
+    <h3 class="vcv-cd-cn">{{.Certificate.CommonName}}</h3>
+    <div class="vcv-cd-badges">
+      {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
     </div>
   </div>
-
-  <div class="vcv-detail-summary-grid">
-    <div class="vcv-detail-summary-card vcv-detail-summary-card-expiry vcv-detail-summary-card-expiry-{{.ExpiryTone}}" title="{{.ExpiryHint}}">
-      <div class="vcv-detail-summary-label">{{.Messages.ColumnExpiresAt}}</div>
-      <div class="vcv-detail-summary-value">
-        <div class="vcv-detail-datetime-date">{{.ExpiresAtDate}}</div>
-        <div class="vcv-detail-datetime-time">{{.ExpiresAtTime}}</div>
-        {{if .DaysLabel}}<div class="vcv-detail-summary-badge vcv-detail-summary-badge-{{.ExpiryTone}}">{{.DaysLabel}}</div>{{end}}
-      </div>
-    </div>
-    <div class="vcv-detail-summary-card vcv-detail-summary-card-key">
-      <div class="vcv-detail-summary-label">{{.Messages.LabelKeyAlgorithm}}</div>
-      <div class="vcv-detail-summary-value">{{.KeySummary}}</div>
-    </div>
-    <div class="vcv-detail-summary-card vcv-detail-summary-card-usage">
-      <div class="vcv-detail-summary-label">{{.Messages.LabelUsage}}</div>
-      <div class="vcv-detail-summary-value">{{.UsageSummary}}</div>
-    </div>
-    <div class="vcv-detail-summary-card vcv-detail-summary-card-issuer">
-      <div class="vcv-detail-summary-label">{{.Messages.LabelIssuer}}</div>
-      <div class="vcv-detail-summary-value vcv-detail-summary-value-ellipsis" title="{{.Certificate.Issuer}}">{{.Certificate.Issuer}}</div>
-    </div>
-    <div class="vcv-detail-summary-card vcv-detail-summary-card-subject">
-      <div class="vcv-detail-summary-label">{{.Messages.LabelSubject}}</div>
-      <div class="vcv-detail-summary-value vcv-detail-summary-value-ellipsis" title="{{.Certificate.Subject}}">{{.Certificate.Subject}}</div>
-    </div>
-  </div>
-
-  <div class="vcv-detail-hero-bottom">
-    <div class="vcv-detail-hero-bottom-left">
-      {{if .Certificate.Sans}}
-      <div class="vcv-detail-sans">
-        <div class="vcv-detail-sans-label">{{.Messages.ColumnSAN}}</div>
-        <div class="vcv-detail-sans-chips">
-          {{range .Certificate.Sans}}<span class="vcv-detail-chip"><code>{{.}}</code></span>{{end}}
-        </div>
-      </div>
-      {{end}}
-    </div>
-    <div class="vcv-detail-meta-grid">
-      <div class="vcv-detail-meta-item vcv-detail-meta-item-serial">
-        <div class="vcv-detail-label">{{.Messages.LabelSerialNumber}}</div>
-        <div class="vcv-detail-value"><code>{{.Certificate.SerialNumber}}</code></div>
-      </div>
-      <div class="vcv-detail-meta-item">
-        <div class="vcv-detail-label">{{.Messages.ColumnCreatedAt}}</div>
-        <div class="vcv-detail-value">
-          <div class="vcv-detail-datetime-date">{{.CreatedAtDate}}</div>
-          <div class="vcv-detail-datetime-time">{{.CreatedAtTime}}</div>
-        </div>
-      </div>
-      <div class="vcv-detail-meta-item">
-        <div class="vcv-detail-label">{{.Messages.ColumnExpiresAt}}</div>
-        <div class="vcv-detail-value">
-          <div class="vcv-detail-datetime-date">{{.ExpiresAtDate}}</div>
-          <div class="vcv-detail-datetime-time">{{.ExpiresAtTime}}</div>
-        </div>
-      </div>
-    </div>
-  </div>
+  {{if .DaysLabel}}<div class="vcv-cd-expiry-hint vcv-cd-expiry-hint-{{.ExpiryTone}}">{{.DaysLabel}}</div>{{end}}
 </div>
 
-<div class="vcv-detail-grid">
-  <div class="vcv-detail-card">
-    <div class="vcv-detail-section-header">{{.Messages.TechnicalDetailsTitle}}</div>
-    <div class="vcv-detail-section-content">
-      <div class="vcv-detail-row">
-        <div class="vcv-detail-label">{{.Messages.LabelKeyAlgorithm}}</div>
-        <div class="vcv-detail-value">{{.KeySummary}}</div>
+<div class="vcv-cd-sections">
+  <section class="vcv-cd-section">
+    <div class="vcv-cd-section-title">{{.Messages.CertificateInformationTitle}}</div>
+    <dl class="vcv-cd-props">
+      <div class="vcv-cd-prop">
+        <dt>{{.Messages.LabelSubject}}</dt>
+        <dd title="{{.Certificate.Subject}}">{{.Certificate.Subject}}</dd>
       </div>
-      <div class="vcv-detail-row">
-        <div class="vcv-detail-label">{{.Messages.LabelFingerprintSHA1}}</div>
-        <div class="vcv-detail-value"><code>{{.Certificate.FingerprintSHA1}}</code></div>
+      <div class="vcv-cd-prop">
+        <dt>{{.Messages.LabelIssuer}}</dt>
+        <dd title="{{.Certificate.Issuer}}">{{.Certificate.Issuer}}</dd>
       </div>
-      <div class="vcv-detail-row">
-        <div class="vcv-detail-label">{{.Messages.LabelFingerprintSHA256}}</div>
-        <div class="vcv-detail-value"><code>{{.Certificate.FingerprintSHA256}}</code></div>
+      <div class="vcv-cd-prop">
+        <dt>{{.Messages.LabelSerialNumber}}</dt>
+        <dd><code>{{.Certificate.SerialNumber}}</code></dd>
       </div>
-      <div class="vcv-detail-row">
-        <div class="vcv-detail-label">{{.Messages.LabelUsage}}</div>
-        <div class="vcv-detail-value">{{.UsageSummary}}</div>
+      {{if .Certificate.Sans}}
+      <div class="vcv-cd-prop vcv-cd-prop-full">
+        <dt>{{.Messages.ColumnSAN}}</dt>
+        <dd>
+          <div class="vcv-cd-san-list">
+            {{range .Certificate.Sans}}<span class="vcv-cd-san-chip"><code>{{.}}</code></span>{{end}}
+          </div>
+        </dd>
       </div>
-    </div>
-  </div>
+      {{end}}
+    </dl>
+  </section>
 
-  <div class="vcv-detail-card">
-    <div class="vcv-detail-section-header">{{.Messages.LabelPEM}}</div>
-    <div class="vcv-detail-section-content">
-      <div class="vcv-detail-row">
-        <div class="vcv-detail-value"><pre>{{.Certificate.PEM}}</pre></div>
+  <section class="vcv-cd-section">
+    <div class="vcv-cd-section-title">{{.Messages.ColumnCreatedAt}} / {{.Messages.ColumnExpiresAt}}</div>
+    <dl class="vcv-cd-props">
+      <div class="vcv-cd-prop">
+        <dt>{{.Messages.ColumnCreatedAt}}</dt>
+        <dd>{{.CreatedAtDate}} <span class="vcv-cd-time">{{.CreatedAtTime}} UTC</span></dd>
       </div>
-    </div>
-  </div>
+      <div class="vcv-cd-prop">
+        <dt>{{.Messages.ColumnExpiresAt}}</dt>
+        <dd class="vcv-cd-expiry-value vcv-cd-expiry-value-{{.ExpiryTone}}">{{.ExpiresAtDate}} <span class="vcv-cd-time">{{.ExpiresAtTime}} UTC</span></dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="vcv-cd-section">
+    <div class="vcv-cd-section-title">{{.Messages.TechnicalDetailsTitle}}</div>
+    <dl class="vcv-cd-props">
+      <div class="vcv-cd-prop">
+        <dt>{{.Messages.LabelKeyAlgorithm}}</dt>
+        <dd>{{.KeySummary}}</dd>
+      </div>
+      <div class="vcv-cd-prop">
+        <dt>{{.Messages.LabelUsage}}</dt>
+        <dd>{{.UsageSummary}}</dd>
+      </div>
+      <div class="vcv-cd-prop vcv-cd-prop-full">
+        <dt>{{.Messages.LabelFingerprintSHA1}}</dt>
+        <dd><code class="vcv-cd-fingerprint">{{.Certificate.FingerprintSHA1}}</code></dd>
+      </div>
+      <div class="vcv-cd-prop vcv-cd-prop-full">
+        <dt>{{.Messages.LabelFingerprintSHA256}}</dt>
+        <dd><code class="vcv-cd-fingerprint">{{.Certificate.FingerprintSHA256}}</code></dd>
+      </div>
+    </dl>
+  </section>
 </div>

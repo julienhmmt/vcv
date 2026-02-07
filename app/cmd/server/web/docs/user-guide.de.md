@@ -12,8 +12,8 @@ VaultCertsViewer (VCV) ist eine leichtgewichtige Web-Schnittstelle zur Visualisi
 - **Suchen & Filtern**: Suche nach Common Name (CN) oder Subject Alternative Names (SAN). Filtern nach Status über die Dashboard-Karten.
 - **Sortierung**: Sortieren Sie die Zertifikatstabelle nach Common Name, Erstellungsdatum, Ablaufdatum, Vault-Name oder PKI-Mount. Klicken Sie auf eine Spaltenüberschrift, um zwischen auf-/absteigender Sortierung umzuschalten.
 - **Paginierung**: Serverseitige Paginierung mit konfigurierbaren Seitengrößen (25, 50, 100 oder Alle).
-- **Detailansicht**: Zugriff auf vollständige Zertifikatsmetadaten in einem Modal: Aussteller, Betreff, Schlüsselalgorithmus, Schlüsselverwendung, Fingerabdrücke (SHA-1, SHA-256) und PEM-Inhalt.
-- **PEM-Download**: Laden Sie Zertifikats-PEM-Dateien direkt aus der Tabelle oder dem Detail-Modal herunter.
+- **Detailansicht**: Zugriff auf vollständige Zertifikatsmetadaten in einem übersichtlichen Modal: Identität (Betreff, Aussteller, Seriennummer, SANs), Gültigkeitsdaten mit Ablaufstatus und technische Details (Schlüsselalgorithmus, Schlüsselverwendung, Fingerabdrücke SHA-1/SHA-256).
+- **PEM-Download**: Laden Sie Zertifikats-PEM-Dateien direkt aus der Tabelle herunter.
 - **Vault-Status**: Ein Indikator im Header (Schild-Symbol mit Statuspunkt) zeigt den Live-Verbindungsstatus Ihrer Vault-Instanzen. Klicken Sie darauf, um ein detailliertes Status-Modal mit Gesundheitsinformationen pro Vault und einer Aktualisierungsschaltfläche zu öffnen.
 - **Ablaufbenachrichtigungen**: Ein Banner oben auf der Seite warnt vor Zertifikaten, die innerhalb der konfigurierten Schwellenwerte ablaufen (kritisch / Warnung).
 - **Toast-Benachrichtigungen**: Echtzeit-Toast-Nachrichten bei Vault-Verbindungsänderungen, Fehlern und Benutzer-Feedback.
@@ -44,7 +44,7 @@ Die Zertifikatstabelle wird automatisch aktualisiert, wenn Sie Mounts umschalten
 
 ### Zertifikatsdetails
 
-Klicken Sie auf die Schaltfläche „Details" in einer Zeile, um ein Modal mit den vollständigen Zertifikatsmetadaten zu öffnen: Status-Badges, Ablauf-Countdown, Aussteller, Betreff, SANs, Seriennummer, Schlüsselalgorithmus, Fingerabdrücke, Schlüsselverwendung und PEM-Inhalt.
+Klicken Sie auf die Schaltfläche „Details" in einer Zeile, um ein Modal mit den vollständigen Zertifikatsmetadaten zu öffnen, organisiert in drei Abschnitten: Identität (Betreff, Aussteller, Seriennummer, SANs), Gültigkeit (Erstellungs-/Ablaufdaten mit Countdown) und technische Details (Schlüsselalgorithmus, Schlüsselverwendung, SHA-1/SHA-256-Fingerabdrücke).
 
 ### Vault-Status
 

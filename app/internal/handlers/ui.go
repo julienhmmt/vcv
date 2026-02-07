@@ -502,9 +502,20 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 		messages := i18n.MessagesForLanguage(language)
 		now := time.Now()
 		statuses := certificateStatuses(details.Certificate, now)
+		daysRemaining := daysUntil(details.ExpiresAt.UTC(), now)
+		isExpiringSoon := expirationThresholds.Warning > 0 && daysRemaining >= 0 && daysRemaining <= expirationThresholds.Warning
+		isCritical := expirationThresholds.Critical > 0 && daysRemaining >= 0 && daysRemaining <= expirationThresholds.Critical
 		badgeViews := make([]certStatusBadgeTemplateData, 0, len(statuses))
 		for _, status := range statuses {
-			badgeViews = append(badgeViews, certStatusBadgeTemplateData{Class: "vcv-badge vcv-badge-" + status, Label: statusLabelForMessages(status, messages)})
+			badgeClass := "vcv-badge vcv-badge-" + status
+			if status == "valid" {
+				if isCritical {
+					badgeClass = "vcv-badge vcv-badge-critical"
+				} else if isExpiringSoon {
+					badgeClass = "vcv-badge vcv-badge-warning"
+				}
+			}
+			badgeViews = append(badgeViews, certStatusBadgeTemplateData{Class: badgeClass, Label: statusLabelForMessages(status, messages)})
 		}
 		createdAtText := formatTime(details.CreatedAt)
 		createdAtDate := formatDate(details.CreatedAt)
@@ -516,10 +527,9 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 		expiryTone := "neutral"
 		expiryHint := ""
 		expiryState := "scheduled"
-		daysRemaining := daysUntil(details.ExpiresAt.UTC(), now)
 		hasExpired := !details.ExpiresAt.IsZero() && !details.ExpiresAt.After(now)
 		if hasExpired {
-			expiryTone = "critical"
+			expiryTone = "expired"
 			expiryState = "expired"
 			daysLabel = interpolatePlaceholder(messages.ExpiredSince, "date", details.ExpiresAt.UTC().Format("2006-01-02"))
 		} else if daysRemaining >= 0 {

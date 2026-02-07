@@ -27,6 +27,7 @@ import (
 	"vcv/internal/httputil"
 	"vcv/internal/i18n"
 	"vcv/internal/logger"
+	"vcv/internal/version"
 	"vcv/middleware"
 )
 
@@ -569,8 +570,9 @@ func newVaultKey() (string, error) {
 }
 
 type adminPageTemplateData struct {
-	Language i18n.Language
-	Messages i18n.Messages
+	AppVersionText string
+	Language       i18n.Language
+	Messages       i18n.Messages
 }
 
 func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, env config.Environment) {
@@ -592,8 +594,9 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 		language := i18n.ResolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
 		data := adminPageTemplateData{
-			Language: language,
-			Messages: messages,
+			AppVersionText: version.Version,
+			Language:       language,
+			Messages:       messages,
 		}
 		if err := renderAdminTemplate(w, templates, "admin-page.html", data); err != nil {
 			requestID := middleware.GetRequestID(r.Context())

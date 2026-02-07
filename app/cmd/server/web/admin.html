@@ -39,29 +39,42 @@
         </div>
       </header>
 
-      <section id="admin-login" class="vcv-table-wrapper admin-surface admin-login">
-        <h2 class="admin-card-title">Login</h2>
-        <div id="admin-login-error" class="admin-alert admin-alert-error vcv-hidden" role="alert"></div>
-        <form id="admin-login-form" class="admin-form">
-            <input type="hidden" id="admin-username" name="username" value="admin" autocomplete="username" required />
-          <div class="admin-form-row">
-            <label class="admin-label" for="admin-password">Password</label>
-            <input class="vcv-input" id="admin-password" name="password" type="password" autocomplete="current-password" required aria-label="Password" />
-            <span class="admin-field-hint">Use the bcrypt-hashed password set in VCV_ADMIN_PASSWORD.</span>
+      <section id="admin-login">
+        <div class="admin-login-wrapper">
+          <div class="admin-login">
+            <div class="admin-login-card">
+              <div class="admin-login-header">
+                <div class="admin-login-icon">🔐</div>
+                <h2 class="admin-login-title">VaultCertsViewer Admin</h2>
+                <p class="admin-login-subtitle">Enter the admin password to manage settings.</p>
+              </div>
+              <div class="admin-login-body">
+                <div id="admin-login-error" class="admin-alert admin-alert-error vcv-hidden" role="alert"></div>
+                <form id="admin-login-form" class="admin-form">
+                  <input type="hidden" id="admin-username" name="username" value="admin" autocomplete="username" required />
+                  <div class="admin-form-row">
+                    <label class="admin-label" for="admin-password">Password</label>
+                    <input class="vcv-input" id="admin-password" name="password" type="password" autocomplete="current-password" required aria-label="Password" autofocus />
+                    <span class="admin-field-hint">Use the bcrypt-hashed password set in VCV_ADMIN_PASSWORD.</span>
+                  </div>
+                  <button class="vcv-button vcv-button-primary vcv-button-full" type="submit">Login</button>
+                </form>
+              </div>
+              <div class="admin-login-footer">
+                <p class="admin-login-footer-text"><a href="/">← Back to VCV</a></p>
+              </div>
+            </div>
           </div>
-          <div class="admin-actions">
-            <button class="vcv-button vcv-button-primary" type="submit">Login</button>
-          </div>
-        </form>
+        </div>
       </section>
 
       <section id="admin-panel" class="vcv-hidden">
         <div id="admin-alert-success" class="admin-alert admin-alert-success vcv-hidden" role="status"></div>
         <div id="admin-alert-error" class="admin-alert admin-alert-error vcv-hidden" role="alert"></div>
 
-        <section class="vcv-table-wrapper admin-surface admin-panel-surface">
+        <section class="admin-panel-surface">
           <div class="admin-card-header">
-            <h2 class="admin-card-title">Settings</h2>
+            <h2 class="admin-card-title"><span class="admin-card-title-icon">⚙️</span> Settings</h2>
             <div class="admin-actions">
               <button class="vcv-button vcv-button-secondary" id="admin-logout" type="button">Logout</button>
             </div>
@@ -69,7 +82,7 @@
 
           <form id="admin-settings-form" class="admin-form">
             <fieldset class="admin-fieldset">
-              <legend class="admin-legend">App</legend>
+              <legend class="admin-legend"><span class="admin-legend-icon">📋</span> App</legend>
               <div class="admin-grid">
                 <div class="admin-form-row">
                   <label class="admin-label" for="settings-app-port">Port</label>
@@ -95,7 +108,7 @@
             </fieldset>
 
             <fieldset class="admin-fieldset">
-              <legend class="admin-legend">Certificates</legend>
+              <legend class="admin-legend"><span class="admin-legend-icon">🔒</span> Certificates</legend>
               <span class="admin-field-hint">Certificates expiring within these thresholds are flagged in the dashboard.</span>
               <div class="admin-grid">
                 <div class="admin-form-row">
@@ -110,23 +123,22 @@
             </fieldset>
 
             <fieldset class="admin-fieldset">
-              <legend class="admin-legend">CORS</legend>
+              <legend class="admin-legend"><span class="admin-legend-icon">🌐</span> CORS</legend>
               <div class="admin-grid">
                 <div class="admin-form-row admin-form-row-full">
                   <label class="admin-label" for="settings-cors-origins">Allowed origins (comma-separated)</label>
                   <textarea class="vcv-input admin-textarea" id="settings-cors-origins" name="corsOrigins" rows="3" placeholder="e.g. https://example.com, https://other.example.com"></textarea>
                 </div>
-                <!-- <div class="admin-form-row">
-                  <label class="admin-label" for="settings-cors-credentials">Allow credentials</label>
-                  <input id="settings-cors-credentials" name="corsCredentials" type="checkbox" />
-                </div> -->
               </div>
             </fieldset>
 
             <fieldset class="admin-fieldset">
-              <legend class="admin-legend">Vaults</legend>
-              <div class="admin-actions admin-actions-space">
-                <button class="vcv-button vcv-button-secondary" id="admin-add-vault" type="button">Add vault</button>
+              <legend class="admin-legend"><span class="admin-legend-icon">🏛️</span> Vaults</legend>
+              <div class="admin-section-header">
+                <div class="admin-section-hint">Configure your Vault instances below.</div>
+                <div class="admin-actions">
+                  <button class="vcv-button vcv-button-secondary" id="admin-add-vault" type="button">+ Add vault</button>
+                </div>
               </div>
               <div id="admin-vaults-list" class="admin-vaults-list"></div>
             </fieldset>

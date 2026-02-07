@@ -1,11 +1,15 @@
 <details class="admin-vault-accordion" id="admin-vault-{{.Key}}" {{if .Open}}open{{end}}>
   <summary class="admin-vault-summary">
-    <span class="admin-vault-summary-title">
-      {{if .Vault.DisplayName}}{{.Vault.DisplayName}}{{else}}{{.Vault.ID}}{{end}}
+    <span class="admin-vault-summary-left">
+      <span class="admin-vault-summary-icon">🏛️</span>
+      <span class="admin-vault-summary-title">
+        {{if .Vault.DisplayName}}{{.Vault.DisplayName}}{{else}}{{.Vault.ID}}{{end}}
+      </span>
     </span>
     <span class="admin-vault-summary-meta">
       {{if .Vault.ID}}<span class="vcv-badge vcv-badge-neutral">{{.Vault.ID}}</span>{{end}}
       {{if .Vault.Address}}<span class="admin-vault-summary-address">{{.Vault.Address}}</span>{{end}}
+      <span class="admin-vault-summary-chevron">▶</span>
     </span>
   </summary>
 
