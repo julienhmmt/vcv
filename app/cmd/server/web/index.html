@@ -368,29 +368,56 @@
           </tbody>
         </table>
       </div>
-      <div class="vcv-legend">
-        <div class="vcv-legend-item">
-          <span class="vcv-badge vcv-badge-valid">{{.Messages.StatusLabelValid}}</span>
-          <span class="vcv-legend-text">{{.Messages.DashboardValidDesc}}</span>
-        </div>
-        <div class="vcv-legend-item">
-          <span class="vcv-badge vcv-badge-warning">{{.Messages.DashboardWarning}}</span>
-          <span class="vcv-legend-text">{{.Messages.DashboardWarningDesc}}</span>
-        </div>
-        <div class="vcv-legend-item">
-          <span class="vcv-badge vcv-badge-critical">{{.Messages.DashboardCritical}}</span>
-          <span class="vcv-legend-text">{{.Messages.DashboardCriticalDesc}}</span>
-        </div>
-        <div class="vcv-legend-item">
-          <span class="vcv-badge vcv-badge-expired">{{.Messages.DashboardExpired}}</span>
-          <span class="vcv-legend-text">{{.Messages.DashboardExpiredDesc}}</span>
-        </div>
-        <div class="vcv-legend-item">
-          <span class="vcv-badge vcv-badge-revoked">{{.Messages.StatusLabelRevoked}}</span>
-          <span class="vcv-legend-text">{{.Messages.DashboardRevokedDesc}}</span>
-        </div>
-      </div>
       </main>
+      <footer class="vcv-footer" aria-label="Footer">
+        <div class="vcv-footer-legend">
+          <div class="vcv-legend-item">
+            <span class="vcv-badge vcv-badge-valid">{{.Messages.StatusLabelValid}}</span>
+            <span class="vcv-legend-text">{{.Messages.DashboardValidDesc}}</span>
+          </div>
+          <div class="vcv-legend-item">
+            <span class="vcv-badge vcv-badge-warning">{{.Messages.DashboardWarning}}</span>
+            <span class="vcv-legend-text">{{.Messages.DashboardWarningDesc}}</span>
+          </div>
+          <div class="vcv-legend-item">
+            <span class="vcv-badge vcv-badge-critical">{{.Messages.DashboardCritical}}</span>
+            <span class="vcv-legend-text">{{.Messages.DashboardCriticalDesc}}</span>
+          </div>
+          <div class="vcv-legend-item">
+            <span class="vcv-badge vcv-badge-expired">{{.Messages.DashboardExpired}}</span>
+            <span class="vcv-legend-text">{{.Messages.DashboardExpiredDesc}}</span>
+          </div>
+          <div class="vcv-legend-item">
+            <span class="vcv-badge vcv-badge-revoked">{{.Messages.StatusLabelRevoked}}</span>
+            <span class="vcv-legend-text">{{.Messages.DashboardRevokedDesc}}</span>
+          </div>
+        </div>
+        <div class="vcv-footer-bottom">
+          <div class="vcv-footer-brand">
+            <div class="vcv-footer-title">
+              VaultCertsViewer
+              <span class="vcv-footer-version">v{{.AppVersionText}}</span>
+            </div>
+            <div class="vcv-footer-meta">
+              <span>License: <a class="vcv-footer-inline-link" href="https://github.com/julienhmmt/vcv/blob/main/LICENSE" target="_blank" rel="noopener">MIT</a></span>
+              <span class="vcv-footer-divider">•</span>
+              <span>Imagined by <a href="https://j.hommet.net" target="_blank" rel="noopener">Julien HOMMET</a>, developed by AI.</span>
+            </div>
+          </div>
+          <div class="vcv-footer-links" aria-label="External links">
+            <a class="vcv-footer-link" href="https://hub.docker.com/r/jhmmt/vcv" target="_blank" rel="noopener">
+              <img class="vcv-footer-icon" src="/assets/docker.svg" alt="Docker Hub" />
+              Docker Hub
+            </a>
+            <a class="vcv-footer-link" href="https://github.com/julienhmmt/vcv" target="_blank" rel="noopener">
+              <img class="vcv-footer-icon" src="/assets/github.svg" alt="GitHub" />
+              Source code on GitHub
+            </a>
+            <a class="vcv-footer-link" href="https://j.hommet.net/vcv" target="_blank" rel="noopener">More info</a>
+            <a class="vcv-footer-link" href="https://vcv.hommet.net" target="_blank" rel="noopener">Demo</a>
+          </div>
+        </div>
+      </footer>
     </div>
 
     <!-- Toast container -->
