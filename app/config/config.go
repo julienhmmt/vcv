@@ -85,22 +85,22 @@ type CertificateSettings struct {
 	ExpirationThresholds ExpirationThresholds `json:"expiration_thresholds"`
 }
 
-// Load reads configuration from environment variables.
-func Load() Config {
+// Load reads configuration from environment variables or settings file.
+func Load() (Config, error) {
 	_ = godotenv.Load()
 	settings, settingsPath, settingsErr := loadSettingsFile()
 	if settingsErr == nil && settings != nil {
 		cfg := buildConfigFromSettings(*settings)
 		vaults, normalizeErr := normalizeVaultInstances(settings.Vaults)
 		if normalizeErr != nil {
-			panic(fmt.Sprintf("invalid settings file %s: %v", settingsPath, normalizeErr))
+			return Config{}, fmt.Errorf("invalid settings file %s: %w", settingsPath, normalizeErr)
 		}
 		cfg.Vaults = vaults
 		if len(vaults) > 0 {
 			cfg.Vault = convertVaultInstanceToLegacy(vaults[0])
 		}
 		applyLoggingEnv(cfg)
-		return cfg
+		return cfg, nil
 	}
 
 	env := parseEnv(getEnv("APP_ENV", "dev"))
@@ -124,7 +124,7 @@ func Load() Config {
 		cfg.Vault = convertVaultInstanceToLegacy(vaultInstances[0])
 	}
 
-	return cfg
+	return cfg, nil
 }
 
 func loadSettingsFile() (*SettingsFile, string, error) {

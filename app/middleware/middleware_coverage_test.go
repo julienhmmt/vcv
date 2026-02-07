@@ -3,9 +3,12 @@ package middleware
 import (
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	"vcv/internal/httputil"
 )
 
 func TestBodyLimit(t *testing.T) {
@@ -89,7 +92,7 @@ func TestRateLimit_MaxEntries(t *testing.T) {
 	// Create requests from different IPs to trigger pruning
 	for i := 0; i < 10; i++ {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
-		req.RemoteAddr = "192.0.2." + string(rune('1'+i)) + ":1234"
+		req.RemoteAddr = "192.0.2." + strconv.Itoa(i+1) + ":1234"
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
 	}
@@ -127,27 +130,27 @@ func TestShouldSkipRateLimit(t *testing.T) {
 func TestClientIP_XForwardedFor(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("X-Forwarded-For", "203.0.113.1, 198.51.100.1")
-	ip := clientIP(req)
+	ip := httputil.ClientIP(req, true)
 	if ip != "203.0.113.1" {
-		t.Errorf("clientIP with X-Forwarded-For = %q, want %q", ip, "203.0.113.1")
+		t.Errorf("ClientIP with X-Forwarded-For = %q, want %q", ip, "203.0.113.1")
 	}
 }
 
 func TestClientIP_XRealIP(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("X-Real-IP", "203.0.113.2")
-	ip := clientIP(req)
+	ip := httputil.ClientIP(req, true)
 	if ip != "203.0.113.2" {
-		t.Errorf("clientIP with X-Real-IP = %q, want %q", ip, "203.0.113.2")
+		t.Errorf("ClientIP with X-Real-IP = %q, want %q", ip, "203.0.113.2")
 	}
 }
 
 func TestClientIP_RemoteAddr(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.RemoteAddr = "203.0.113.3:1234"
-	ip := clientIP(req)
+	ip := httputil.ClientIP(req, true)
 	if ip != "203.0.113.3" {
-		t.Errorf("clientIP with RemoteAddr = %q, want %q", ip, "203.0.113.3")
+		t.Errorf("ClientIP with RemoteAddr = %q, want %q", ip, "203.0.113.3")
 	}
 }
 

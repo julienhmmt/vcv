@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"html/template"
 	"io/fs"
-	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,6 +24,7 @@ import (
 
 	"vcv/config"
 	vcverrors "vcv/internal/errors"
+	"vcv/internal/httputil"
 	"vcv/internal/i18n"
 	"vcv/internal/logger"
 	"vcv/middleware"
@@ -113,35 +113,11 @@ func (l *adminLoginLimiter) allow(now time.Time, key string) bool {
 	return entry.count <= l.maxAttempts
 }
 
-func clientIP(r *http.Request, trustProxy bool) string {
-	if trustProxy {
-		forwarded := strings.TrimSpace(r.Header.Get("X-Forwarded-For"))
-		if forwarded != "" {
-			parts := strings.Split(forwarded, ",")
-			if len(parts) > 0 {
-				value := strings.TrimSpace(parts[0])
-				if value != "" {
-					return value
-				}
-			}
-		}
-		realIP := strings.TrimSpace(r.Header.Get("X-Real-IP"))
-		if realIP != "" {
-			return realIP
-		}
-	}
-	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
-	if err == nil {
-		return host
-	}
-	return strings.TrimSpace(r.RemoteAddr)
-}
-
 func (s *adminSessionStore) allowLoginAttempt(r *http.Request) bool {
 	if s.limiter == nil {
 		return true
 	}
-	return s.limiter.allow(time.Now(), clientIP(r, s.secureCookies))
+	return s.limiter.allow(time.Now(), httputil.ClientIP(r, s.secureCookies))
 }
 
 func (s *adminSessionStore) pruneSessions(now time.Time) {
@@ -214,6 +190,9 @@ func (s *adminSessionStore) login(w http.ResponseWriter, r *http.Request) {
 	}
 	expiresAt := time.Now().Add(s.sessionTTL)
 	s.mu.Lock()
+	if oldCookie, cookieErr := r.Cookie(adminCookieName); cookieErr == nil && oldCookie.Value != "" {
+		delete(s.sessions, oldCookie.Value)
+	}
 	s.pruneSessions(time.Now())
 	s.sessions[token] = expiresAt
 	s.mu.Unlock()
@@ -239,6 +218,9 @@ func (s *adminSessionStore) loginFromForm(w http.ResponseWriter, r *http.Request
 	}
 	expiresAt := time.Now().Add(s.sessionTTL)
 	s.mu.Lock()
+	if oldCookie, cookieErr := r.Cookie(adminCookieName); cookieErr == nil && oldCookie.Value != "" {
+		delete(s.sessions, oldCookie.Value)
+	}
 	s.pruneSessions(time.Now())
 	s.sessions[token] = expiresAt
 	s.mu.Unlock()
@@ -402,7 +384,7 @@ func shouldFallbackToDirectWrite(err error) bool {
 
 func validateSettings(settings config.SettingsFile) error {
 	seen := make(map[string]struct{})
-	for _, vault := range settings.Vaults {
+	for i, vault := range settings.Vaults {
 		id := strings.TrimSpace(vault.ID)
 		address := strings.TrimSpace(vault.Address)
 		token := strings.TrimSpace(vault.Token)
@@ -424,9 +406,9 @@ func validateSettings(settings config.SettingsFile) error {
 		}
 		if len(vault.PKIMounts) == 0 {
 			if strings.TrimSpace(vault.PKIMount) == "" {
-				vault.PKIMount = "pki"
+				settings.Vaults[i].PKIMount = "pki"
 			}
-			vault.PKIMounts = []string{vault.PKIMount}
+			settings.Vaults[i].PKIMounts = []string{settings.Vaults[i].PKIMount}
 		}
 	}
 	return nil
@@ -454,7 +436,9 @@ func (s *adminSettingsStore) putSettings(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if err := s.save(settings); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		log := logger.Get()
+		log.Error().Err(err).Msg("failed to save admin settings")
+		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)

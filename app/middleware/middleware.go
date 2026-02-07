@@ -4,14 +4,15 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/base64"
-	"net"
 	"net/http"
 	"net/url"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"vcv/internal/httputil"
 	"vcv/internal/logger"
 )
 
@@ -123,10 +124,10 @@ func CORS(config CORSConfig) func(http.Handler) http.Handler {
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
 			}
 			if r.Method == http.MethodOptions {
-				w.Header().Set("Access-Control-Allow-Methods", joinStrings(config.AllowedMethods))
-				w.Header().Set("Access-Control-Allow-Headers", joinStrings(config.AllowedHeaders))
+				w.Header().Set("Access-Control-Allow-Methods", strings.Join(config.AllowedMethods, ", "))
+				w.Header().Set("Access-Control-Allow-Headers", strings.Join(config.AllowedHeaders, ", "))
 				if config.MaxAge > 0 {
-					w.Header().Set("Access-Control-Max-Age", itoa(config.MaxAge))
+					w.Header().Set("Access-Control-Max-Age", strconv.Itoa(config.MaxAge))
 				}
 				w.WriteHeader(http.StatusNoContent)
 				return
@@ -157,35 +158,10 @@ func GetRequestID(ctx context.Context) string {
 	return ""
 }
 
-// joinStrings joins strings with comma separator.
-func joinStrings(s []string) string {
-	if len(s) == 0 {
-		return ""
-	}
-	result := s[0]
-	for i := 1; i < len(s); i++ {
-		result += ", " + s[i]
-	}
-	return result
-}
-
-// itoa converts int to string without importing strconv.
-func itoa(n int) string {
-	if n == 0 {
-		return "0"
-	}
-	var digits []byte
-	for n > 0 {
-		digits = append([]byte{byte('0' + n%10)}, digits...)
-		n /= 10
-	}
-	return string(digits)
-}
-
 func generateRequestID() string {
 	buf := make([]byte, 16)
 	if _, err := rand.Read(buf); err != nil {
-		return itoa(int(time.Now().UnixNano() % 1000000000))
+		return strconv.Itoa(int(time.Now().UnixNano() % 1000000000))
 	}
 	return base64.RawURLEncoding.EncodeToString(buf)
 }
@@ -328,10 +304,10 @@ func RateLimit(config RateLimitConfig) func(http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
-			allowed, retryAfter := limiter.allow(time.Now(), clientIP(r))
+			allowed, retryAfter := limiter.allow(time.Now(), httputil.ClientIP(r, true))
 			if !allowed {
 				if retryAfter > 0 {
-					w.Header().Set("Retry-After", itoa(retryAfter))
+					w.Header().Set("Retry-After", strconv.Itoa(retryAfter))
 				}
 				http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 				return
@@ -405,28 +381,6 @@ func (l *rateLimiter) prune(now time.Time) {
 		}
 		delete(l.entries, oldestKey)
 	}
-}
-
-func clientIP(r *http.Request) string {
-	forwarded := strings.TrimSpace(r.Header.Get("X-Forwarded-For"))
-	if forwarded != "" {
-		parts := strings.Split(forwarded, ",")
-		if len(parts) > 0 {
-			value := strings.TrimSpace(parts[0])
-			if value != "" {
-				return value
-			}
-		}
-	}
-	realIP := strings.TrimSpace(r.Header.Get("X-Real-IP"))
-	if realIP != "" {
-		return realIP
-	}
-	host, _, err := net.SplitHostPort(strings.TrimSpace(r.RemoteAddr))
-	if err == nil {
-		return host
-	}
-	return strings.TrimSpace(r.RemoteAddr)
 }
 
 // SecurityHeaders adds security-related HTTP headers to all responses.

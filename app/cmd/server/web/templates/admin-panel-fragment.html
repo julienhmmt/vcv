@@ -9,7 +9,7 @@
   <div class="admin-card-header">
     <h2 class="admin-card-title">{{.Messages.AdminSettings}}</h2>
     <div class="admin-actions">
-      <button class="vcv-button vcv-button-secondary" type="button" onclick="openDocumentationModal('admin')" aria-label="{{.Messages.ButtonDocumentation}}">📖 {{.Messages.ButtonDocumentation}}</button>
+      <button class="vcv-button vcv-button-secondary" type="button" onclick="VCV.openDocumentationModal('admin')" aria-label="{{.Messages.ButtonDocumentation}}">📖 {{.Messages.ButtonDocumentation}}</button>
       <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/logout" hx-target="#admin-root" hx-swap="innerHTML">{{.Messages.AdminLogout}}</button>
     </div>
   </div>

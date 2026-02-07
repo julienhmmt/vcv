@@ -1,10 +1,10 @@
 package i18n
 
 import (
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
+	"vcv/internal/logger"
 )
 
 // Language represents a supported UI language.
@@ -984,7 +984,7 @@ func ResolveLanguage(r *http.Request) Language {
 	// 1. Check query parameter
 	if lang := r.URL.Query().Get("lang"); lang != "" {
 		if l, ok := GetLanguage(lang); ok {
-			log.Printf("[i18n] Language resolved from query param: %s", lang)
+			logger.Get().Debug().Str("source", "query_param").Str("lang", lang).Msg("language resolved")
 			return l
 		}
 	}
@@ -997,7 +997,7 @@ func ResolveLanguage(r *http.Request) Language {
 			headerLanguage := parsed.Query().Get("lang")
 			if headerLanguage != "" {
 				if language, ok := GetLanguage(headerLanguage); ok {
-					log.Printf("[i18n] Language resolved from HX-Current-URL: %s", headerLanguage)
+					logger.Get().Debug().Str("source", "hx_current_url").Str("lang", headerLanguage).Msg("language resolved")
 					return language
 				}
 			}
@@ -1007,7 +1007,7 @@ func ResolveLanguage(r *http.Request) Language {
 	// 3. Check cookie
 	if cookie, err := r.Cookie("lang"); err == nil {
 		if l, ok := GetLanguage(cookie.Value); ok {
-			log.Printf("[i18n] Language resolved from cookie: %s", cookie.Value)
+			logger.Get().Debug().Str("source", "cookie").Str("lang", cookie.Value).Msg("language resolved")
 			return l
 		}
 	}
@@ -1015,6 +1015,6 @@ func ResolveLanguage(r *http.Request) Language {
 	// 4. Use Accept-Language header
 	acceptLang := r.Header.Get("Accept-Language")
 	lang := FromAcceptLanguage(acceptLang)
-	log.Printf("[i18n] Language resolved from Accept-Language header (%s): %s", acceptLang, string(lang))
+	logger.Get().Debug().Str("source", "accept_language").Str("header", acceptLang).Str("lang", string(lang)).Msg("language resolved")
 	return lang
 }

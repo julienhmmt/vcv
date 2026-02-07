@@ -5,6 +5,6 @@ vcv
 # App logs
 vcv.log
 # test coverage
-coverage.out
+*.out
 # test logs
 test-offline.log

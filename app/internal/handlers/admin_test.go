@@ -430,6 +430,108 @@ func TestAdminSessionStore_RateLimiter_BlocksAfterMaxAttempts(t *testing.T) {
 	assert.False(t, store.allowLoginAttempt(req), "6th attempt should be blocked")
 }
 
+func TestAdminSessionStore_PruneSessions_RemovesExpired(t *testing.T) {
+	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
+	now := time.Now()
+	store.sessions["expired1"] = now.Add(-10 * time.Minute)
+	store.sessions["expired2"] = now.Add(-5 * time.Minute)
+	store.sessions["valid1"] = now.Add(10 * time.Minute)
+	store.pruneSessions(now)
+	assert.Len(t, store.sessions, 1)
+	_, ok := store.sessions["valid1"]
+	assert.True(t, ok)
+}
+
+func TestAdminSessionStore_PruneSessions_EvictsOldestWhenOverLimit(t *testing.T) {
+	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
+	now := time.Now()
+	for i := 0; i < adminMaxSessions+5; i++ {
+		token := "tok" + strings.Repeat("x", i)
+		store.sessions[token] = now.Add(time.Duration(i) * time.Minute)
+	}
+	store.pruneSessions(now)
+	assert.LessOrEqual(t, len(store.sessions), adminMaxSessions)
+}
+
+func TestAdminSessionStore_Verify_WrongUsername(t *testing.T) {
+	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
+	assert.False(t, store.verify("notadmin", "secret"))
+}
+
+func TestAdminSessionStore_Verify_EmptyPassword(t *testing.T) {
+	store := newAdminSessionStore("", false)
+	assert.False(t, store.verify("admin", "anything"))
+}
+
+func TestAdminSessionStore_Login_BadJSON(t *testing.T) {
+	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", strings.NewReader("not json"))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	store.login(rec, req)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestAdminSessionStore_Login_WrongPassword(t *testing.T) {
+	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
+	payload, _ := json.Marshal(map[string]string{"username": "admin", "password": "wrong"})
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	store.login(rec, req)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+}
+
+func TestAdminSessionStore_Login_SessionFixation(t *testing.T) {
+	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
+	store.sessions["old-token"] = time.Now().Add(1 * time.Hour)
+	payload, _ := json.Marshal(map[string]string{"username": "admin", "password": "secret"})
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", bytes.NewReader(payload))
+	req.Header.Set("Content-Type", "application/json")
+	req.AddCookie(&http.Cookie{Name: adminCookieName, Value: "old-token"})
+	rec := httptest.NewRecorder()
+	store.login(rec, req)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	_, oldExists := store.sessions["old-token"]
+	assert.False(t, oldExists, "old session should be deleted")
+}
+
+func TestAdminSettingsStore_PutSettings_BadJSON(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	store := &adminSettingsStore{path: path}
+	req := httptest.NewRequest(http.MethodPut, "/api/admin/settings", strings.NewReader("not json"))
+	rec := httptest.NewRecorder()
+	store.putSettings(rec, req)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+}
+
+func TestAdminSessionStore_LoginFromForm_WrongPassword(t *testing.T) {
+	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
+	req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=wrong"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	rec := httptest.NewRecorder()
+	ok, msg := store.loginFromForm(rec, req)
+	assert.False(t, ok)
+	assert.Equal(t, "Invalid credentials", msg)
+}
+
+func TestAdminSessionStore_LoginFromForm_RateLimited(t *testing.T) {
+	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
+	for i := 0; i < 6; i++ {
+		req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=wrong"))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.RemoteAddr = "10.0.0.1:1234"
+		store.allowLoginAttempt(req)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.RemoteAddr = "10.0.0.1:1234"
+	rec := httptest.NewRecorder()
+	ok, msg := store.loginFromForm(rec, req)
+	assert.False(t, ok)
+	assert.Equal(t, "Too many attempts", msg)
+}
+
 func TestAdminRoutes_VaultRemove_PersistsToSettings(t *testing.T) {
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	initial := `{"app":{"env":"dev","port":52000,"logging":{"level":"debug","format":"json","output":"stdout","file_path":""}},"cors":{"allowed_origins":[],"allow_credentials":true},"certificates":{"expiration_thresholds":{"critical":1,"warning":2}},"vaults":[{"id":"v1","address":"https://vault.example.com","token":"tok","pki_mount":"pki","pki_mounts":["pki"],"display_name":"v1","tls_insecure":false,"enabled":true}]}`

@@ -1,3 +1,5 @@
+"use strict";
+(function () {
 const MOUNTS_ALL_SENTINEL = "__all__";
 
 const state = {
@@ -58,7 +60,6 @@ function applyCertsStateFromUrl() {
   const langParam = params.get("lang");
   const langSelect = document.getElementById("vcv-lang-select");
   if (langParam && langSelect && langSelect.value !== langParam) {
-    console.log(`[VCV] URL lang param detected: ${langParam}. Updating select.`);
     langSelect.value = langParam;
   }
 
@@ -142,6 +143,44 @@ function initHtmxErrorHandler() {
   
 }
 
+let activeFocusTrap = null;
+let previouslyFocusedElement = null;
+
+function trapFocus(modal) {
+  previouslyFocusedElement = document.activeElement;
+  const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  if (focusable.length === 0) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  activeFocusTrap = function (e) {
+    if (e.key !== "Tab") return;
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  };
+  modal.addEventListener("keydown", activeFocusTrap);
+  first.focus();
+}
+
+function releaseFocusTrap(modal) {
+  if (activeFocusTrap) {
+    modal.removeEventListener("keydown", activeFocusTrap);
+    activeFocusTrap = null;
+  }
+  if (previouslyFocusedElement && typeof previouslyFocusedElement.focus === "function") {
+    previouslyFocusedElement.focus();
+    previouslyFocusedElement = null;
+  }
+}
+
 function initModalHandlers() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
@@ -151,7 +190,6 @@ function initModalHandlers() {
       closeVaultStatusModal();
     }
   });
-
   const backdrops = document.querySelectorAll(".vcv-modal-backdrop");
   backdrops.forEach((backdrop) => {
     backdrop.addEventListener("click", (event) => {
@@ -160,6 +198,19 @@ function initModalHandlers() {
         closeMountModal();
         closeDocumentationModal();
         closeVaultStatusModal();
+      }
+    });
+  });
+}
+
+function initDashboardKeyboard() {
+  document.querySelectorAll(".vcv-stat-clickable").forEach((stat) => {
+    stat.setAttribute("tabindex", "0");
+    stat.setAttribute("role", "button");
+    stat.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        stat.click();
       }
     });
   });
@@ -201,7 +252,6 @@ function initUrlSync() {
   });
 
   window.addEventListener('popstate', async function() {
-    console.log("[VCV] popstate detected. Syncing UI state.");
     state.suppressUrlUpdateUntilNextSuccess = true;
     applyCertsStateFromUrl();
     syncDashboardCardFromStatusFilter();
@@ -334,17 +384,17 @@ function showSuccessToast(message) {
 function showToast(message, type = 'info', duration = 5000) {
   const toastContainer = document.getElementById('toast-container');
   if (!toastContainer) return;
-  
   const toast = document.createElement('div');
   toast.className = `vcv-toast vcv-toast-${type}`;
-  toast.innerHTML = `
-    <span>${message}</span>
-    <button class="vcv-toast-close" onclick="this.parentElement.remove()">×</button>
-  `;
-  
+  const span = document.createElement('span');
+  span.textContent = message;
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'vcv-toast-close';
+  closeBtn.textContent = '\u00d7';
+  closeBtn.addEventListener('click', () => toast.remove());
+  toast.appendChild(span);
+  toast.appendChild(closeBtn);
   toastContainer.appendChild(toast);
-  
-  // Auto-remove after duration
   if (duration > 0) {
     setTimeout(() => {
       if (toast.parentElement) {
@@ -358,17 +408,14 @@ function getCurrentLanguage() {
   const params = new URLSearchParams(window.location.search || "");
   const langParam = params.get("lang");
   if (langParam) {
-    console.log(`[VCV] Detected language from URL: ${langParam}`);
     return langParam;
   }
   const langSelect = document.getElementById("vcv-lang-select");
   if (langSelect && langSelect.value) {
-    console.log(`[VCV] Detected language from select: ${langSelect.value}`);
     return langSelect.value;
   }
   const htmlLang = document.documentElement.lang;
   if (htmlLang) {
-    console.log(`[VCV] Detected language from html tag: ${htmlLang}`);
     return htmlLang;
   }
   return "en";
@@ -376,7 +423,6 @@ function getCurrentLanguage() {
 
 async function loadMessages() {
   const lang = getCurrentLanguage();
-  console.log(`[VCV] Loading messages for: ${lang}`);
   try {
     const url = `/api/i18n?lang=${encodeURIComponent(lang)}`;
     const response = await fetch(url);
@@ -390,12 +436,10 @@ async function loadMessages() {
     }
     state.messages = payload.messages;
     window.vcvMessages = payload.messages;
-    console.log(`[VCV] Messages loaded. Server reported language: ${payload.language}`);
     
     // Sync language select with what the server actually returned
     const langSelect = document.getElementById("vcv-lang-select");
     if (langSelect && payload.language && langSelect.value !== payload.language) {
-      console.log(`[VCV] Syncing language select: ${langSelect.value} -> ${payload.language}`);
       langSelect.value = payload.language;
     }
     
@@ -607,42 +651,65 @@ function renderDonutChart() {
   if (segments.length === 0) {
     return;
   }
+  const SVG_NS = "http://www.w3.org/2000/svg";
   const size = 100;
   const cx = size / 2;
   const cy = size / 2;
   const outerR = 48;
   const innerR = 27;
   let currentAngle = 0;
-  const paths = segments.map((seg) => {
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("class", "vcv-donut-svg");
+  svg.setAttribute("viewBox", `0 0 ${size} ${size}`);
+  segments.forEach((seg) => {
     const pct = Math.round((seg.value / total) * 100);
-    const safeLabel = seg.label.replace(/'/g, "&#39;");
-    const tooltipText = `${safeLabel}: ${seg.value} (${pct}%)`;
+    const tooltipText = `${seg.label}: ${seg.value} (${pct}%)`;
     const sweep = (seg.value / total) * 360;
     const startAngle = currentAngle;
     const endAngle = currentAngle + sweep;
     currentAngle = endAngle;
-    const hoverAttrs = `onmouseenter="showDonutTooltip(event,'${tooltipText}')" onmousemove="moveDonutTooltip(event)" onmouseleave="hideDonutTooltip()" onclick="filterByDashboardCard('${seg.status}')" style="cursor:pointer"`;
+    let el;
     if (sweep >= 359.99) {
-      return `<circle class="vcv-donut-segment" cx="${cx}" cy="${cy}" r="${(outerR + innerR) / 2}" fill="none" stroke="${seg.color}" stroke-width="${outerR - innerR}" ${hoverAttrs}></circle>`;
+      el = document.createElementNS(SVG_NS, "circle");
+      el.setAttribute("cx", String(cx));
+      el.setAttribute("cy", String(cy));
+      el.setAttribute("r", String((outerR + innerR) / 2));
+      el.setAttribute("fill", "none");
+      el.setAttribute("stroke", seg.color);
+      el.setAttribute("stroke-width", String(outerR - innerR));
+    } else {
+      const startRad = ((startAngle - 90) * Math.PI) / 180;
+      const endRad = ((endAngle - 90) * Math.PI) / 180;
+      const x1o = cx + outerR * Math.cos(startRad);
+      const y1o = cy + outerR * Math.sin(startRad);
+      const x2o = cx + outerR * Math.cos(endRad);
+      const y2o = cy + outerR * Math.sin(endRad);
+      const x2i = cx + innerR * Math.cos(endRad);
+      const y2i = cy + innerR * Math.sin(endRad);
+      const x1i = cx + innerR * Math.cos(startRad);
+      const y1i = cy + innerR * Math.sin(startRad);
+      const largeArc = sweep > 180 ? 1 : 0;
+      const d = `M ${x1o} ${y1o} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2o} ${y2o} L ${x2i} ${y2i} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1i} ${y1i} Z`;
+      el = document.createElementNS(SVG_NS, "path");
+      el.setAttribute("d", d);
+      el.setAttribute("fill", seg.color);
     }
-    const startRad = ((startAngle - 90) * Math.PI) / 180;
-    const endRad = ((endAngle - 90) * Math.PI) / 180;
-    const x1o = cx + outerR * Math.cos(startRad);
-    const y1o = cy + outerR * Math.sin(startRad);
-    const x2o = cx + outerR * Math.cos(endRad);
-    const y2o = cy + outerR * Math.sin(endRad);
-    const x2i = cx + innerR * Math.cos(endRad);
-    const y2i = cy + innerR * Math.sin(endRad);
-    const x1i = cx + innerR * Math.cos(startRad);
-    const y1i = cy + innerR * Math.sin(startRad);
-    const largeArc = sweep > 180 ? 1 : 0;
-    const d = `M ${x1o} ${y1o} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2o} ${y2o} L ${x2i} ${y2i} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x1i} ${y1i} Z`;
-    return `<path class="vcv-donut-segment" d="${d}" fill="${seg.color}" ${hoverAttrs}></path>`;
+    el.setAttribute("class", "vcv-donut-segment");
+    el.style.cursor = "pointer";
+    const title = document.createElementNS(SVG_NS, "title");
+    title.textContent = tooltipText;
+    el.appendChild(title);
+    el.addEventListener("mouseenter", (e) => showDonutTooltip(e, tooltipText));
+    el.addEventListener("mousemove", (e) => moveDonutTooltip(e));
+    el.addEventListener("mouseleave", () => hideDonutTooltip());
+    el.addEventListener("click", () => filterByDashboardCard(seg.status));
+    svg.appendChild(el);
   });
   donutEl.style.background = "none";
   donutEl.style.mask = "none";
   donutEl.style.webkitMask = "none";
-  donutEl.innerHTML = `<svg class="vcv-donut-svg" viewBox="0 0 ${size} ${size}">${paths.join("")}</svg>`;
+  donutEl.textContent = "";
+  donutEl.appendChild(svg);
 }
 
 function syncDashboardCardFromStatusFilter() {
@@ -767,7 +834,7 @@ function renderMountSelector() {
   const label = typeof state.messages.mountSelectorTitle === "string" && state.messages.mountSelectorTitle !== "" ? state.messages.mountSelectorTitle : "PKI Engines";
   const tooltip = typeof state.messages.mountSelectorTooltip === "string" && state.messages.mountSelectorTooltip !== "" ? state.messages.mountSelectorTooltip : "Filter certificates by Vault instance and PKI mount";
   container.innerHTML = `
-    <button type="button" class="vcv-button vcv-button-ghost vcv-mount-trigger" onclick="openMountModal()" title="${tooltip}">
+    <button type="button" class="vcv-button vcv-button-ghost vcv-mount-trigger" onclick="VCV.openMountModal()" title="${tooltip}">
       <span class="vcv-mount-trigger-label">${label}</span>
     </button>
   `;
@@ -815,11 +882,11 @@ function renderMountModalList() {
             const key = buildVaultMountKey(group.id, mountName);
             const checkedAttr = selectedSet.has(key) ? "checked" : "";
             const selectedClass = selectedSet.has(key) ? " vcv-mount-option-selected" : "";
-            return `<label class="vcv-mount-option${selectedClass}" data-vault="${group.id}" data-mount="${mountName}"><input type="checkbox" ${checkedAttr} onchange="toggleMount('${key}')" /><span class="vcv-mount-name">${mountName}</span></label>`;
+            return `<label class="vcv-mount-option${selectedClass}" data-vault="${group.id}" data-mount="${mountName}"><input type="checkbox" ${checkedAttr} onchange="VCV.toggleMount('${key}')" /><span class="vcv-mount-name">${mountName}</span></label>`;
           })
           .join("");
-        const headerActions = `<div class="vcv-mount-modal-section-actions"><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="selectAllVaultMounts('${group.id}', event)">${selectAllLabel}</button><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="deselectAllVaultMounts('${group.id}', event)">${deselectAllLabel}</button></div>`;
-        return `<div class="vcv-mount-modal-section" data-vault-section="${group.id}"><div class="vcv-mount-modal-section-header" onclick="toggleVaultSection('${group.id}')"><div class="vcv-mount-modal-section-title">${title} ${countBadge}</div>${headerActions}</div><div class="vcv-mount-modal-section-options">${options}</div></div>`;
+        const headerActions = `<div class="vcv-mount-modal-section-actions"><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="VCV.selectAllVaultMounts('${group.id}', event)">${selectAllLabel}</button><button type="button" class="vcv-button vcv-button-small vcv-button-secondary" onclick="VCV.deselectAllVaultMounts('${group.id}', event)">${deselectAllLabel}</button></div>`;
+        return `<div class="vcv-mount-modal-section" data-vault-section="${group.id}"><div class="vcv-mount-modal-section-header" onclick="VCV.toggleVaultSection('${group.id}')"><div class="vcv-mount-modal-section-title">${title} ${countBadge}</div>${headerActions}</div><div class="vcv-mount-modal-section-options">${options}</div></div>`;
       })
       .join("");
     listContainer.innerHTML = content;
@@ -830,7 +897,7 @@ function renderMountModalList() {
     const isSelected = selectedSet.has(mount);
     const checkedAttr = isSelected ? "checked" : "";
     const selectedClass = isSelected ? "selected" : "";
-    return `<label class="vcv-mount-modal-option ${selectedClass}" data-mount="${mount}"><input type="checkbox" ${checkedAttr} onchange="toggleMount('${mount}')" /><span class="vcv-mount-modal-name">${mount}</span></label>`;
+    return `<label class="vcv-mount-modal-option ${selectedClass}" data-mount="${mount}"><input type="checkbox" ${checkedAttr} onchange="VCV.toggleMount('${mount}')" /><span class="vcv-mount-modal-name">${mount}</span></label>`;
   });
   const emptyText = typeof messages.noData === "string" && messages.noData !== "" ? messages.noData : "No data";
   listContainer.innerHTML = items.join("") || `<p class="vcv-empty">${emptyText}</p>`;
@@ -897,9 +964,7 @@ function openMountModal() {
   renderMountModalList();
   updateMountStats();
   modal.classList.remove("vcv-hidden");
-  if (searchInput) {
-    setTimeout(() => searchInput.focus(), 100);
-  }
+  trapFocus(modal);
 }
 
 function closeMountModal() {
@@ -907,6 +972,7 @@ function closeMountModal() {
   if (!modal) {
     return;
   }
+  releaseFocusTrap(modal);
   modal.classList.add("vcv-hidden");
 }
 
@@ -916,6 +982,7 @@ function openVaultStatusModal() {
     return;
   }
   modal.classList.remove("vcv-hidden");
+  trapFocus(modal);
 }
 
 function closeVaultStatusModal() {
@@ -923,6 +990,7 @@ function closeVaultStatusModal() {
   if (!modal) {
     return;
   }
+  releaseFocusTrap(modal);
   modal.classList.add("vcv-hidden");
 }
 
@@ -1017,6 +1085,7 @@ function openCertificateModal() {
     return;
   }
   modal.classList.remove("vcv-hidden");
+  trapFocus(modal);
 }
 
 function closeCertificateModal() {
@@ -1024,6 +1093,7 @@ function closeCertificateModal() {
   if (!modal) {
     return;
   }
+  releaseFocusTrap(modal);
   modal.classList.add("vcv-hidden");
 }
 
@@ -1047,6 +1117,7 @@ function openDocumentationModal(type = "user") {
   
   modal.classList.remove("vcv-hidden");
   loadDocumentation(type);
+  trapFocus(modal);
 }
 
 function closeDocumentationModal() {
@@ -1054,6 +1125,7 @@ function closeDocumentationModal() {
   if (!modal) {
     return;
   }
+  releaseFocusTrap(modal);
   modal.classList.add("vcv-hidden");
 }
 
@@ -1073,8 +1145,6 @@ async function loadDocumentation(type = null) {
   `;
 
   const lang = getCurrentLanguage() || "en";
-  console.log(`[VCV] Loading documentation (${docType}) for language: ${lang}`);
-  
   try {
     const endpoint = docType === "admin" ? "/ui/docs/configuration" : "/ui/docs/user-guide";
     const response = await fetch(`${endpoint}?lang=${lang}&_=${Date.now()}`);
@@ -1147,7 +1217,8 @@ async function loadConfig() {
     state.availableMounts = data.pkiMounts;
     state.selectedMounts = [...data.pkiMounts];
     applyTranslations();
-  } catch {
+  } catch (err) {
+    console.error("[VCV] Failed to load config:", err);
   }
 }
 
@@ -1242,6 +1313,7 @@ async function main() {
   if (isCertsPage) {
     initUrlSync();
     initModalHandlers();
+    initDashboardKeyboard();
     initVaultConnectionNotifications();
     initFilterBadgeListeners();
     // Load remaining non-critical startup data
@@ -1264,23 +1336,30 @@ async function main() {
 
 main();
 
-window.openMountModal = openMountModal;
-window.closeMountModal = closeMountModal;
-window.toggleMount = toggleMount;
-window.selectAllMounts = selectAllMounts;
-window.deselectAllMounts = deselectAllMounts;
-window.selectAllVaultMounts = selectAllVaultMounts;
-window.deselectAllVaultMounts = deselectAllVaultMounts;
-window.filterMountList = filterMountList;
-window.toggleVaultSection = toggleVaultSection;
-window.openCertificateModal = openCertificateModal;
-window.closeCertificateModal = closeCertificateModal;
-window.openDocumentationModal = openDocumentationModal;
-window.closeDocumentationModal = closeDocumentationModal;
-window.dismissNotifications = dismissNotifications;
-window.toggleFilterBar = toggleFilterBar;
-window.filterByDashboardCard = filterByDashboardCard;
-window.clearStatusFilter = clearStatusFilter;
-window.showDonutTooltip = showDonutTooltip;
-window.moveDonutTooltip = moveDonutTooltip;
-window.hideDonutTooltip = hideDonutTooltip;
+window.VCV = {
+  openMountModal: openMountModal,
+  closeMountModal: closeMountModal,
+  toggleMount: toggleMount,
+  selectAllMounts: selectAllMounts,
+  deselectAllMounts: deselectAllMounts,
+  selectAllVaultMounts: selectAllVaultMounts,
+  deselectAllVaultMounts: deselectAllVaultMounts,
+  filterMountList: filterMountList,
+  toggleVaultSection: toggleVaultSection,
+  openCertificateModal: openCertificateModal,
+  closeCertificateModal: closeCertificateModal,
+  openDocumentationModal: openDocumentationModal,
+  closeDocumentationModal: closeDocumentationModal,
+  dismissNotifications: dismissNotifications,
+  toggleFilterBar: toggleFilterBar,
+  filterByDashboardCard: filterByDashboardCard,
+  clearStatusFilter: clearStatusFilter,
+  showDonutTooltip: showDonutTooltip,
+  moveDonutTooltip: moveDonutTooltip,
+  hideDonutTooltip: hideDonutTooltip,
+  applyThemeFromStorage: applyThemeFromStorage,
+  openVaultStatusModal: openVaultStatusModal,
+  closeVaultStatusModal: closeVaultStatusModal,
+  handleVaultRefresh: handleVaultRefresh,
+};
+})();

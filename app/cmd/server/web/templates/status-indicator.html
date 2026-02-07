@@ -5,7 +5,7 @@
   class="vcv-button vcv-button-ghost vcv-status-indicator {{.Summary.Class}}" 
   title="{{.Summary.Title}}" 
   aria-label="{{.Messages.ModalVaultStatusTitle}}: {{.Summary.Text}}"
-  onclick="openVaultStatusModal()" 
+  onclick="VCV.openVaultStatusModal()" 
   hx-get="/ui/vaults/status" 
   hx-target="#vault-status-content" 
   hx-swap="innerHTML" 

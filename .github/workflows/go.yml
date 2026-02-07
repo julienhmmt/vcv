@@ -59,9 +59,19 @@ jobs:
       run: go build -v ./...
       working-directory: app
 
-    - name: Test
-      run: go test -v ./...
+    - name: Test with coverage
+      run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
       working-directory: app
       env:
         GO_TEST_ENVIRONMENT: 1
         LOG_LEVEL: INFO
+
+    - name: Check coverage threshold
+      run: |
+        TOTAL=$(go tool cover -func=coverage.out | grep ^total: | awk '{print $3}' | tr -d '%')
+        echo "Total coverage: ${TOTAL}%"
+        if [ "$(echo "$TOTAL < 80" | bc)" -eq 1 ]; then
+          echo "::error::Coverage ${TOTAL}% is below 80% threshold"
+          exit 1
+        fi
+      working-directory: app

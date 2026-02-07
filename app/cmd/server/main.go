@@ -127,7 +127,11 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 }
 
 func main() {
-	cfg := config.Load()
+	cfg, cfgErr := config.Load()
+	if cfgErr != nil {
+		fmt.Fprintf(os.Stderr, "Failed to load configuration: %v\n", cfgErr)
+		os.Exit(1)
+	}
 
 	// Initialize structured logger from config
 	logger.Init(cfg.LogLevel)

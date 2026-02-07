@@ -20,7 +20,7 @@
   </td>
   <td class="vcv-col-actions">
     <div class="vcv-actions-group">
-      <button type="button" class="vcv-button vcv-button-small" onclick="openCertificateModal()" hx-get="/ui/certs/{{urlquery .ID}}/details" hx-target="#details-content" hx-swap="innerHTML" hx-include="#vcv-lang-select" title="{{.ButtonDetailsText}}">{{.ButtonDetailsText}}</button>
+      <button type="button" class="vcv-button vcv-button-small" onclick="VCV.openCertificateModal()" hx-get="/ui/certs/{{urlquery .ID}}/details" hx-target="#details-content" hx-swap="innerHTML" hx-include="#vcv-lang-select" title="{{.ButtonDetailsText}}">{{.ButtonDetailsText}}</button>
       <a class="vcv-button vcv-button-small vcv-button-primary" href="/api/certs/{{urlquery .ID}}/pem/download" title="{{.ButtonDownloadPEM}}">PEM</a>
     </div>
   </td>

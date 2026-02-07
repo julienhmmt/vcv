@@ -8,7 +8,10 @@ import (
 
 func TestLoadDefaults(t *testing.T) {
 	clearEnv(t)
-	cfg := Load()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if cfg.Port == "" {
 		t.Fatalf("expected default port, got empty")
 	}
@@ -34,7 +37,10 @@ func TestLoadFromEnv(t *testing.T) {
 	_ = os.Setenv("CORS_ALLOWED_ORIGINS", "http://example.com")
 	_ = os.Setenv("CORS_ALLOW_CREDENTIALS", "true")
 
-	cfg := Load()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	if cfg.Env != EnvProd {
 		t.Fatalf("expected prod env, got %s", cfg.Env)
@@ -60,7 +66,10 @@ func TestLoadFromVaultAddrsEnv(t *testing.T) {
 	_ = os.Setenv("VAULT_ADDRS", "prod@http://vault-1:8200#token1#pki,stg@http://vault-2:8200#token2#pki2")
 	_ = os.Setenv("VAULT_TLS_INSECURE", "true")
 
-	cfg := Load()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	if len(cfg.Vaults) != 2 {
 		t.Fatalf("expected 2 vaults, got %d", len(cfg.Vaults))
@@ -113,7 +122,10 @@ func TestLoadFromSettingsFile(t *testing.T) {
 		t.Fatalf("failed to write settings.dev.json: %v", err)
 	}
 
-	cfg := Load()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	if cfg.Env != EnvDev {
 		t.Fatalf("expected env to be dev, got %s", cfg.Env)
@@ -163,7 +175,10 @@ func TestLoadFromSettingsFile_PrimarySkipsDisabledVaults(t *testing.T) {
 		t.Fatalf("failed to write settings.dev.json: %v", err)
 	}
 
-	cfg := Load()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if len(cfg.Vaults) != 1 {
 		t.Fatalf("expected 1 enabled vault after filtering, got %d", len(cfg.Vaults))
 	}
@@ -190,7 +205,10 @@ func TestLoadFromSettingsFile_AllDisabledDoesNotPanic(t *testing.T) {
 		t.Fatalf("failed to write settings.dev.json: %v", err)
 	}
 
-	cfg := Load()
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 	if len(cfg.Vaults) != 0 {
 		t.Fatalf("expected 0 enabled vaults, got %d", len(cfg.Vaults))
 	}

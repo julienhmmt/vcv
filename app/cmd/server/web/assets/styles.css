@@ -7,6 +7,31 @@
   box-sizing: border-box;
 }
 
+.vcv-skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+.vcv-skip-link:focus {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  background: var(--vcv-color-primary);
+  color: var(--vcv-color-on-accent);
+  border-radius: 0.375rem;
+  font-weight: 600;
+  text-decoration: none;
+  z-index: 9999;
+}
+
 :root {
   --vcv-color-bg: #f8fafc;
   --vcv-color-surface: #ffffff;

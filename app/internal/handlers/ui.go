@@ -749,7 +749,7 @@ func resolvePageIndex(state certsQueryState, total int, pageSize string) int {
 	if size <= 0 {
 		size = 25
 	}
-	totalPages := maxInt(1, int((total+size-1)/size))
+	totalPages := maxInt(1, (total+size-1)/size)
 	return clampInt(state.PageIndex, 0, totalPages-1)
 }
 
@@ -775,7 +775,7 @@ func paginateCertificates(items []certs.Certificate, pageIndex int, pageSize str
 	if size <= 0 {
 		size = 25
 	}
-	totalPages := maxInt(1, int((len(items)+size-1)/size))
+	totalPages := maxInt(1, (len(items)+size-1)/size)
 	pageIndex = clampInt(pageIndex, 0, totalPages-1)
 	start := pageIndex * size
 	end := start + size
