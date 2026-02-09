@@ -1,12 +1,15 @@
 package metrics
 
 import (
+	"bytes"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/testutil"
-	dto "github.com/prometheus/client_model/go"
+	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -239,43 +242,82 @@ func gatherGauge(registry *prometheus.Registry, name string, labels map[string]s
 	if err != nil {
 		return 0, err
 	}
-	for _, mf := range families {
-		if mf.GetName() != name {
+
+	for _, f := range families {
+		if f.GetName() != name {
 			continue
 		}
-		for _, m := range mf.Metric {
-			if !matchLabels(m, labels) {
-				continue
-			}
-			return m.GetGauge().GetValue(), nil
+		// Convert family to text format
+		var buf bytes.Buffer
+		encoder := expfmt.NewEncoder(&buf, expfmt.FmtText)
+		if err := encoder.Encode(f); err != nil {
+			return 0, err
+		}
+		// Parse the text format to find matching labels
+		value, err := parseGaugeValue(buf.String(), labels)
+		if err == nil {
+			return value, nil
 		}
 	}
-	return 0, nil
+	return 0, fmt.Errorf("metric %s not found", name)
 }
 
-func matchLabels(metric *dto.Metric, labels map[string]string) bool {
+// parseGaugeValue extracts gauge value from exposition format text for matching labels.
+// Example format: vcv_certificates_total{vault_id="__all__",pki="__all__",status="valid"} 2
+func parseGaugeValue(output string, labels map[string]string) (float64, error) {
+	lines := strings.Split(output, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		// Check if all labels match
+		if !matchLabelsInLine(line, labels) {
+			continue
+		}
+		// Extract value after the last quote/brace
+		parts := strings.Fields(line)
+		if len(parts) >= 2 {
+			var value float64
+			if _, err := fmt.Sscanf(parts[len(parts)-1], "%f", &value); err == nil {
+				return value, nil
+			}
+		}
+	}
+	return 0, fmt.Errorf("metric not found")
+}
+
+// matchLabelsInLine checks if a Prometheus exposition line matches all expected labels.
+func matchLabelsInLine(line string, labels map[string]string) bool {
 	if len(labels) == 0 {
 		return true
 	}
-	for _, lp := range metric.Label {
-		key := lp.GetName()
-		val := lp.GetValue()
-		if expected, ok := labels[key]; ok {
-			if expected != val {
-				return false
-			}
-		}
+	// Extract label section from braces if present
+	start := strings.Index(line, "{")
+	end := strings.Index(line, "}")
+	if start == -1 || end == -1 {
+		// No labels in line, match if we expect no labels
+		return len(labels) == 0
 	}
-	// Ensure no expected label is missing
-	for expectedKey := range labels {
-		found := false
-		for _, lp := range metric.Label {
-			if lp.GetName() == expectedKey {
-				found = true
-				break
-			}
+	labelSection := line[start+1 : end]
+
+	// Parse each label=value pair
+	found := make(map[string]string)
+	pairs := strings.Split(labelSection, ",")
+	for _, pair := range pairs {
+		pair = strings.TrimSpace(pair)
+		kv := strings.SplitN(pair, "=", 2)
+		if len(kv) != 2 {
+			continue
 		}
-		if !found {
+		key := strings.TrimSpace(kv[0])
+		val := strings.Trim(kv[1], `"`)
+		found[key] = val
+	}
+
+	// Check all expected labels match
+	for key, expectedVal := range labels {
+		if found[key] != expectedVal {
 			return false
 		}
 	}
