@@ -26,7 +26,6 @@ func TestSecurityHeaders(t *testing.T) {
 	}{
 		{"X-Content-Type-Options", "nosniff"},
 		{"X-Frame-Options", "DENY"},
-		{"X-XSS-Protection", "1; mode=block"},
 		{"Referrer-Policy", "strict-origin-when-cross-origin"},
 	}
 
@@ -39,9 +38,9 @@ func TestSecurityHeaders(t *testing.T) {
 		})
 	}
 
-	csp := rec.Header().Get("Content-Security-Policy")
-	if csp == "" {
-		t.Error("expected Content-Security-Policy header to be set")
+	permissionsPolicy := rec.Header().Get("Permissions-Policy")
+	if permissionsPolicy == "" {
+		t.Error("expected Permissions-Policy header to be set")
 	}
 }
 
