@@ -1,8 +1,0 @@
-http:
-  middlewares:
-    compression:
-      compress:
-        includedContentTypes:
-          - application/json
-          - text/html
-          - text/plain
