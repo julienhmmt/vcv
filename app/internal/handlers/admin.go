@@ -507,6 +507,7 @@ func buildAdminPanelData(settings config.SettingsFile, successText string, error
 		connected bool
 	}
 	results := make([]bool, len(checks))
+	resultChan := make(chan checkResult, len(checks))
 	var wg sync.WaitGroup
 	for i, check := range checks {
 		if !check.enabled || check.client == nil {
@@ -514,16 +515,26 @@ func buildAdminPanelData(settings config.SettingsFile, successText string, error
 			continue
 		}
 		wg.Add(1)
-		go func(idx int, client vault.Client) {
+		go func(idx int, client vault.Client, vaultID string) {
 			defer wg.Done()
-			checkCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			checkCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
-			if err := client.CheckConnection(checkCtx); err == nil {
-				results[idx] = true
+			if err := client.CheckConnection(checkCtx); err != nil {
+				logger.Get().Debug().
+					Err(err).
+					Str("vault_id", vaultID).
+					Msg("vault connection check failed")
+				resultChan <- checkResult{index: idx, connected: false}
+			} else {
+				resultChan <- checkResult{index: idx, connected: true}
 			}
-		}(i, check.client)
+		}(i, check.client, check.vault.ID)
 	}
 	wg.Wait()
+	close(resultChan)
+	for res := range resultChan {
+		results[res.index] = res.connected
+	}
 
 	// Build view data with results
 	views := make([]adminVaultViewData, 0, len(checks))

@@ -7,7 +7,7 @@
       </span>
     </span>
     <span class="admin-vault-summary-meta">
-      <span class="admin-vault-status-pill {{.StatusClass}}"><span class="admin-vault-status-icon" aria-hidden="true">✔</span>{{.StatusText}}</span>
+      <span class="admin-vault-status-pill {{.StatusClass}}"><span class="admin-vault-status-icon" aria-hidden="true" data-status="{{.StatusClass}}"></span>{{.StatusText}}</span>
       {{if .Vault.Address}}<span class="admin-vault-summary-address">{{.Vault.Address}}</span>{{end}}
       <span class="admin-vault-summary-chevron">▶</span>
     </span>

@@ -715,8 +715,3 @@ func TestBuildAdminPanelData_NilVaultClients(t *testing.T) {
 	assert.Equal(t, "vcv-status-disconnected", view.StatusClass)
 	assert.Equal(t, "Disconnected", view.StatusText)
 }
-
-// vaultClient interface for testing (subset of vault.Client)
-type vaultClient interface {
-	CheckConnection(ctx context.Context) error
-}

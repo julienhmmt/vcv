@@ -453,6 +453,7 @@
   white-space: nowrap;
   flex-shrink: 0;
   line-height: 1;
+  position: relative;
 }
 
 .admin-vault-status-icon {
@@ -466,6 +467,18 @@
   color: var(--vcv-color-surface);
   font-size: 0.675rem;
   font-weight: 700;
+}
+
+.admin-vault-status-icon[data-status="vcv-status-connected"]::before {
+  content: "✓";
+}
+
+.admin-vault-status-icon[data-status="vcv-status-disconnected"]::before {
+  content: "✕";
+}
+
+.admin-vault-status-icon[data-status="vcv-status-disabled"]::before {
+  content: "−";
 }
 
 /* Connected state - green */
