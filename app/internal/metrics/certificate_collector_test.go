@@ -249,7 +249,7 @@ func gatherGauge(registry *prometheus.Registry, name string, labels map[string]s
 		}
 		// Convert family to text format
 		var buf bytes.Buffer
-		encoder := expfmt.NewEncoder(&buf, expfmt.FmtText)
+		encoder := expfmt.NewEncoder(&buf, expfmt.NewFormat(expfmt.TypeTextPlain))
 		if err := encoder.Encode(f); err != nil {
 			return 0, err
 		}
