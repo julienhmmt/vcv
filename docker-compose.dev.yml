@@ -5,7 +5,7 @@
 # for future multi-Vault support when VCV supports VAULT_ADDRS or similar
 services:
   vault:
-    image: hashicorp/vault:1.21.1
+    image: hashicorp/vault:1.21.3
     container_name: vault
     ports:
       - "8200:8200/tcp"
@@ -22,7 +22,7 @@ services:
       - ./vault-dev-init.sh:/vault-dev-init.sh:ro
 
   vault-dev-2:
-    image: hashicorp/vault:1.21.1
+    image: hashicorp/vault:1.21.3
     container_name: vault-dev-2
     ports:
       - "8201:8200/tcp"
@@ -38,7 +38,7 @@ services:
       - ./vault-dev-init-2.sh:/vault-dev-init-2.sh:ro
 
   vault-dev-3:
-    image: hashicorp/vault:1.21.1
+    image: hashicorp/vault:1.21.3
     container_name: vault-dev-3
     ports:
       - "8202:8200/tcp"
@@ -54,7 +54,7 @@ services:
       - ./vault-dev-init-3.sh:/vault-dev-init-3.sh:ro
 
   vault-dev-4:
-    image: hashicorp/vault:1.21.1
+    image: hashicorp/vault:1.21.3
     container_name: vault-dev-4
     ports:
       - "8203:8200/tcp"
@@ -70,7 +70,7 @@ services:
       - ./vault-dev-init-4.sh:/vault-dev-init-4.sh:ro
 
   vault-dev-5:
-    image: hashicorp/vault:1.21.1
+    image: hashicorp/vault:1.21.3
     container_name: vault-dev-5
     ports:
       - "8204:8200/tcp"
@@ -86,7 +86,7 @@ services:
       - ./vault-dev-init-5.sh:/vault-dev-init-5.sh:ro
 
   openbao-dev-1:
-    image: docker.io/openbao/openbao:2.4.4
+    image: docker.io/openbao/openbao:2.5.0
     container_name: openbao-dev-1
     ports:
       - "1337:1337/tcp"
