@@ -792,7 +792,7 @@ var germanMessages = Messages{
 	AdminMetrics:                "Metriken",
 	AdminMetricsHint:            "Prometheus-Metrikensammelverhalten konfigurieren.",
 	AdminMetricsPerCertificate:  "Metriken pro Zertifikat (⚠️ hohe Kardinalität)",
-	AdminMetricsEnhanced:        "Erweiterte Metriken ()",
+	AdminMetricsEnhanced:        "Erweiterte Metriken (Zertifikate nach Ablaufzeit kategorisieren)",
 }
 
 var italianMessages = Messages{

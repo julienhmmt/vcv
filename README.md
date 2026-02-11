@@ -2,31 +2,33 @@
 
 ![GitHub Release](https://img.shields.io/github/v/release/julienhmmt/vcv?display_name=release&style=for-the-badge) ![GitHub License](https://img.shields.io/github/license/julienhmmt/vcv?style=for-the-badge)
 
-
-VaultCertsViewer (vcv) is a lightweight web UI that lists and inspects certificates stored in one or more Hashicorp Vault or OpenBao PKI (the Hashicorp Vault fork) mounts, especially their expiration dates and SANs.
+VaultCertsViewer (vcv) is a lightweight web UI that lists and inspects certificates stored in one or more HashiCorp Vault or OpenBao PKI mounts, especially their expiration dates and SANs.
 
 VaultCertsViewer can simultaneously monitor multiple PKI engines through a single interface, with a modal selector to choose which mounts to display. With its `settings.json` file configuration, VCV can connect to multiple Vault/OpenBao instances and PKI mounts.
 
-**OpenBao compatible**: VCV works seamlessly with both Hashicorp Vault and OpenBao, as they share the same PKI API. Tested with OpenBao 2.4 and Vault 1.21 (as of 01/2026).
+**OpenBao compatible**: VCV works seamlessly with both HashiCorp Vault and OpenBao, as they share the same PKI API. Tested with OpenBao 2.4+ and Vault 1.20+ (as of 02/2026).
 
-## ✨ What it does
+## ✨ What it does?
 
-- Discovers all certificates in one or more Vault PKI mounts and shows them in a searchable, filterable table.
-- Multi-PKI engine support: Select which mounts to display via an intuitive modal interface with real-time certificate count badges.
-- Shows common names (CN) and SANs.
-- Displays status distribution (valid / expired / revoked) and upcoming expirations.
-- Highlights certificates expiring soon (7/30 days) and shows details (CN, SAN, fingerprints, issuer, validity).
-- Lets you pick UI language (en, fr, es, de, it) and theme (light/dark).
-- Real-time Vault connection status with toast notifications when connection is lost/restored.
+- Discovers all certificates in one or more Vault/OpenBao PKI mounts and shows them in a searchable, filterable table.
+- Multi-Vault support: connect to multiple Vault/OpenBao instances simultaneously.
+- Multi-PKI engine support: enable or disable which PKI engines to display.
+- Shows common names (CN) and SANs, their creation and **expiration** dates, and their status (valid / expired / revoked).
+- Highlights certificates expiring soon with configurable thresholds (default: 7 days critical, 30 days warning).
+- UI language (en, fr, es, de, it) and theme (light/dark) selectors.
+- Admin panel: web-based configuration management (optional, bcrypt-protected).
+- Prometheus metrics: see [PROMETHEUS_METRICS.md](PROMETHEUS_METRICS.md).
 
-## 🎯 Why it exists
+## 🎯 Why it exists?
 
-The native Vault/OpenBao UI is heavy and not convenient for quickly checking certificate expirations and details. VaultCertsViewer gives platform / security / ops teams a fast, **read-only** view of the Vault/OpenBao PKI inventory with only the essential information.
+The native Vault/OpenBao UI is heavy and not convenient for quickly checking certificate expirations and details.
 
-## 👥 Who should use it
+VaultCertsViewer gives platform and security teams a fast, **read-only** view of the Vault/OpenBao certificates inventory with only the essential information.
+
+## 👥 Who should use it?
 
 - Teams operating Vault/OpenBao PKI who need visibility on their certificates.
-- Operators who want a ready-to-use browser view alongside Vault/OpenBao CLI or Web UI.
+- Operators who want a ready-to-use browser view of their certificates.
 
 ## 🚀 How to deploy and use for Hashicorp Vault
 
@@ -86,18 +88,16 @@ This dedicated token limits permissions to certificate listing/reading, can be r
 
 VaultCertsViewer can monitor multiple PKI engines simultaneously through a single web interface:
 
-- **Mount selection**: Click the mount selector button in the header to open a modal showing all available PKI engines
+- **Mount selection**: Click the "Certificates sources" button in the header to open a modal showing all available PKI engines
 - **Real-time counts**: Each mount displays a badge showing the number of certificates it contains
-- **Flexible configuration**: Specify mounts using comma-separated values in `VAULT_PKI_MOUNTS` (e.g., `pki,pki2,pki-prod`)
-- **Independent views**: Select or deselect any combination of mounts to customize your certificate view
+- **Flexible configuration**: Specify mounts using comma-separated values in `settings.json` (e.g., `pki,pki2,pki-prod`) or via the admin interface.
+- **Multi-Vault support**: Connect to multiple Vault/OpenBao instances simultaneously via `settings.json`
 - **Dashboard**: All selected mounts are aggregated in the same table, dashboard, and metrics
 - **Real-time search**: Instant filtering as you type in the search box with 300ms debouncing
 - **Status filtering**: Quick filters for valid/expired/revoked certificates
-- **Expiry timeline**: Visual timeline showing certificate expiration distribution
+- **Partitioning**: Visualize certificate partitioning by expiration date
 - **Pagination**: Configurable page size (25/50/75/100/all) with navigation controls
-- **Sort options**: Sort by common name, expiration date, or serial number
-
-This approach eliminates the need to deploy multiple vcv instances when you have several PKI engines to monitor.
+- **Sort options**: Sort by vault, PKI mount, common name, creation or expiration date
 
 ### 🐳 docker-compose
 
@@ -135,9 +135,9 @@ docker run -d \
 
 ## 🔐 Vault/OpenBao TLS configuration
 
-VCV supports configuring Vault/OpenBao TLS verification and custom CA bundles either through `settings.json` (recommended) or environment variables (legacy fallback).
+VCV supports configuring Vault/OpenBao TLS verification and custom CA bundles either through `settings.json`.
 
-Per Vault instance (`vaults[]`), you can configure:
+Per Vault or OpenBao instance (`vaults[]`), you can configure:
 
 - **`tls_ca_cert_base64`**: base64-encoded PEM CA bundle (preferred)
 - **`tls_ca_cert`**: file path to a PEM CA bundle
@@ -154,17 +154,27 @@ Notes:
 
 - Base64 is not encryption. Treat your `settings.json` as sensitive.
 - The base64 value must encode the PEM bytes (one or multiple `-----BEGIN CERTIFICATE-----` blocks). Both standard and raw base64 encodings are accepted.
-- To encode a certificate with base64, do this: `cat path-to-cert.pem | base64 | tr -d '\n'`, get the result and type it into the field.
+- To encode a certificate with base64: `cat path-to-cert.pem | base64 | tr -d '\n'`
 
-The administration panel (`/admin`, enabled by `VCV_ADMIN_PASSWORD`) lets you set these TLS fields per Vault.
+## 🛠️ Administration panel
 
-`VCV_ADMIN_PASSWORD` must be a **bcrypt hash** (prefix `$2a$`, `$2b$`, or `$2y$`). If it is missing or not a bcrypt hash, the admin routes are disabled.
+An administration panel lets you configure some settings of the application. It is accessible via the `/admin` route and is protected by a password. To enable the administration panel, you must set the `VCV_ADMIN_PASSWORD` environment variable.
+
+The following settings can be configured in the administration panel:
+
+- Certificate expiration thresholds
+- CORS
+- Vault/OpenBao instances (address, port, token, TLS, PKI mounts)
+
+The environment variable `VCV_ADMIN_PASSWORD` must contains a **bcrypt hash** (prefix `$2a$`, `$2b$`, or `$2y$`).
+
+If the variable is missing or not a bcrypt hash, the admin route is disabled and the `/admin` page is not accessible.
 
 ## ⏱️ Certificate expiration thresholds
 
 By default, VaultCertsViewer alerts on certificates expiring within **7 days** (critical) and **30 days** (warning). You can customize these thresholds in `settings.json` under `certificates.expiration_thresholds`.
 
-```text
+```json
 "certificates": {
   "expiration_thresholds": {
     "critical": 14,
@@ -173,13 +183,9 @@ By default, VaultCertsViewer alerts on certificates expiring within **7 days** (
 }
 ```
 
-Legacy environment variables (`VCV_EXPIRE_CRITICAL`, `VCV_EXPIRE_WARNING`) are still supported as a fallback.
-
 These values control:
 
-- The notification banner at the top of the page
 - The color coding in the certificate table (red for critical, yellow for warning)
-- The timeline visualization on the dashboard
 - The "expiring soon" count in the dashboard
 
 ## 🌍 Translations
@@ -217,165 +223,32 @@ Metrics are exposed at `/metrics` endpoint. Expiration thresholds are configurab
 
 **Configuration:**
 
-- `VCV_METRICS_PER_CERTIFICATE=true` - Enable per-certificate metrics
-- `VCV_METRICS_ENHANCED=true` - Enable enhanced metrics (default: enabled)
+Enhanced metrics can be configured via `settings.json` file or the admin panel:
 
-📖 **[Complete Metrics Reference](PROMETHEUS_METRICS.md)** - Detailed documentation with queries and alert examples
+```json
+{
+  "metrics": {
+    "per_certificate": false,
+    "enhanced_metrics": true
+  }
+}
+```
 
-To scrape metrics, add this to your Prometheus config:
+Complete metrics reference: [Complete metrics reference](PROMETHEUS_METRICS.md).
+
+Example of metrics can be found in [METRICS_EXAMPLE.txt](METRICS_EXAMPLE.txt).
+
+To scrape metrics, add this to your Prometheus configuration (example with VCV running on port 52000):
 
 ```yaml
 scrape_configs:
   - job_name: vcv
     static_configs:
-      - targets: ['localhost:52000']
+      - targets: ['<your-vcv-host>:52000']
     metrics_path: /metrics
 ```
 
-Example scrape output (truncated):
-
-```bash
-$ curl -v http://localhost:52000/metrics
-...
-# HELP vcv_cache_size Number of items currently cached
-# TYPE vcv_cache_size gauge
-vcv_cache_size 0
-# HELP vcv_certificate_exporter_last_scrape_duration_seconds Duration of the last certificate scrape in seconds
-# TYPE vcv_certificate_exporter_last_scrape_duration_seconds gauge
-vcv_certificate_exporter_last_scrape_duration_seconds 0.000118208
-# HELP vcv_certificate_exporter_last_scrape_success Whether the last scrape succeeded (1) or failed (0)
-# TYPE vcv_certificate_exporter_last_scrape_success gauge
-vcv_certificate_exporter_last_scrape_success 1
-# HELP vcv_certificates_expired_count Number of expired certificates
-# TYPE vcv_certificates_expired_count gauge
-vcv_certificates_expired_count 30
-# HELP vcv_certificates_expiring_soon_count Number of certificates expiring soon within threshold window
-# TYPE vcv_certificates_expiring_soon_count gauge
-vcv_certificates_expiring_soon_count{level="critical",pki="__all__",vault_id="__all__"} 17
-vcv_certificates_expiring_soon_count{level="critical",pki="pki",vault_id="vault-main"} 3
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_blockchain",vault_id="vault-dev-3"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_cloud",vault_id="vault-dev-3"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_corporate",vault_id="vault-dev-2"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_dev",vault_id="vault-main"} 1
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_dmz",vault_id="vault-dev-5"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_edge",vault_id="vault-dev-3"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_external",vault_id="vault-dev-2"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_internal",vault_id="vault-dev-5"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_iot",vault_id="vault-dev-3"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_lab",vault_id="vault-dev-4"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_partners",vault_id="vault-dev-2"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_perf",vault_id="vault-dev-4"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_production",vault_id="vault-main"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_qa",vault_id="vault-dev-4"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_shared",vault_id="vault-dev-5"} 0
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_stage",vault_id="vault-main"} 1
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_vault2",vault_id="vault-dev-2"} 2
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_vault3",vault_id="vault-dev-3"} 2
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_vault4",vault_id="vault-dev-4"} 4
-vcv_certificates_expiring_soon_count{level="critical",pki="pki_vault5",vault_id="vault-dev-5"} 4
-vcv_certificates_expiring_soon_count{level="warning",pki="__all__",vault_id="__all__"} 45
-vcv_certificates_expiring_soon_count{level="warning",pki="pki",vault_id="vault-main"} 7
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_blockchain",vault_id="vault-dev-3"} 0
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_cloud",vault_id="vault-dev-3"} 0
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_corporate",vault_id="vault-dev-2"} 0
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_dev",vault_id="vault-main"} 2
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_dmz",vault_id="vault-dev-5"} 5
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_edge",vault_id="vault-dev-3"} 0
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_external",vault_id="vault-dev-2"} 0
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_internal",vault_id="vault-dev-5"} 5
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_iot",vault_id="vault-dev-3"} 0
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_lab",vault_id="vault-dev-4"} 0
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_partners",vault_id="vault-dev-2"} 0
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_perf",vault_id="vault-dev-4"} 0
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_production",vault_id="vault-main"} 0
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_qa",vault_id="vault-dev-4"} 6
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_shared",vault_id="vault-dev-5"} 0
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_stage",vault_id="vault-main"} 2
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_vault2",vault_id="vault-dev-2"} 5
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_vault3",vault_id="vault-dev-3"} 5
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_vault4",vault_id="vault-dev-4"} 4
-vcv_certificates_expiring_soon_count{level="warning",pki="pki_vault5",vault_id="vault-dev-5"} 4
-# HELP vcv_certificates_last_fetch_timestamp_seconds Timestamp of last successful certificates fetch
-# TYPE vcv_certificates_last_fetch_timestamp_seconds gauge
-vcv_certificates_last_fetch_timestamp_seconds 1.765985686e+09
-# HELP vcv_certificates_total Total certificates grouped by status
-# TYPE vcv_certificates_total gauge
-vcv_certificates_total{pki="__all__",status="expired",vault_id="__all__"} 30
-vcv_certificates_total{pki="__all__",status="revoked",vault_id="__all__"} 14
-vcv_certificates_total{pki="__all__",status="valid",vault_id="__all__"} 85
-vcv_certificates_total{pki="pki",status="expired",vault_id="vault-main"} 3
-vcv_certificates_total{pki="pki",status="revoked",vault_id="vault-main"} 0
-vcv_certificates_total{pki="pki",status="valid",vault_id="vault-main"} 12
-vcv_certificates_total{pki="pki_blockchain",status="expired",vault_id="vault-dev-3"} 0
-vcv_certificates_total{pki="pki_blockchain",status="revoked",vault_id="vault-dev-3"} 1
-vcv_certificates_total{pki="pki_blockchain",status="valid",vault_id="vault-dev-3"} 1
-vcv_certificates_total{pki="pki_cloud",status="expired",vault_id="vault-dev-3"} 0
-vcv_certificates_total{pki="pki_cloud",status="revoked",vault_id="vault-dev-3"} 1
-vcv_certificates_total{pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 1
-vcv_certificates_total{pki="pki_corporate",status="expired",vault_id="vault-dev-2"} 0
-vcv_certificates_total{pki="pki_corporate",status="revoked",vault_id="vault-dev-2"} 1
-vcv_certificates_total{pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 1
-vcv_certificates_total{pki="pki_dev",status="expired",vault_id="vault-main"} 1
-vcv_certificates_total{pki="pki_dev",status="revoked",vault_id="vault-main"} 2
-vcv_certificates_total{pki="pki_dev",status="valid",vault_id="vault-main"} 5
-vcv_certificates_total{pki="pki_dmz",status="expired",vault_id="vault-dev-5"} 0
-vcv_certificates_total{pki="pki_dmz",status="revoked",vault_id="vault-dev-5"} 0
-vcv_certificates_total{pki="pki_dmz",status="valid",vault_id="vault-dev-5"} 6
-vcv_certificates_total{pki="pki_edge",status="expired",vault_id="vault-dev-3"} 0
-vcv_certificates_total{pki="pki_edge",status="revoked",vault_id="vault-dev-3"} 1
-vcv_certificates_total{pki="pki_edge",status="valid",vault_id="vault-dev-3"} 1
-vcv_certificates_total{pki="pki_external",status="expired",vault_id="vault-dev-2"} 0
-vcv_certificates_total{pki="pki_external",status="revoked",vault_id="vault-dev-2"} 1
-vcv_certificates_total{pki="pki_external",status="valid",vault_id="vault-dev-2"} 1
-vcv_certificates_total{pki="pki_internal",status="expired",vault_id="vault-dev-5"} 0
-vcv_certificates_total{pki="pki_internal",status="revoked",vault_id="vault-dev-5"} 1
-vcv_certificates_total{pki="pki_internal",status="valid",vault_id="vault-dev-5"} 6
-vcv_certificates_total{pki="pki_iot",status="expired",vault_id="vault-dev-3"} 0
-vcv_certificates_total{pki="pki_iot",status="revoked",vault_id="vault-dev-3"} 1
-vcv_certificates_total{pki="pki_iot",status="valid",vault_id="vault-dev-3"} 1
-vcv_certificates_total{pki="pki_lab",status="expired",vault_id="vault-dev-4"} 0
-vcv_certificates_total{pki="pki_lab",status="revoked",vault_id="vault-dev-4"} 0
-vcv_certificates_total{pki="pki_lab",status="valid",vault_id="vault-dev-4"} 7
-vcv_certificates_total{pki="pki_partners",status="expired",vault_id="vault-dev-2"} 0
-vcv_certificates_total{pki="pki_partners",status="revoked",vault_id="vault-dev-2"} 1
-vcv_certificates_total{pki="pki_partners",status="valid",vault_id="vault-dev-2"} 1
-vcv_certificates_total{pki="pki_perf",status="expired",vault_id="vault-dev-4"} 0
-vcv_certificates_total{pki="pki_perf",status="revoked",vault_id="vault-dev-4"} 0
-vcv_certificates_total{pki="pki_perf",status="valid",vault_id="vault-dev-4"} 1
-vcv_certificates_total{pki="pki_production",status="expired",vault_id="vault-main"} 0
-vcv_certificates_total{pki="pki_production",status="revoked",vault_id="vault-main"} 0
-vcv_certificates_total{pki="pki_production",status="valid",vault_id="vault-main"} 1
-vcv_certificates_total{pki="pki_qa",status="expired",vault_id="vault-dev-4"} 0
-vcv_certificates_total{pki="pki_qa",status="revoked",vault_id="vault-dev-4"} 0
-vcv_certificates_total{pki="pki_qa",status="valid",vault_id="vault-dev-4"} 7
-vcv_certificates_total{pki="pki_shared",status="expired",vault_id="vault-dev-5"} 0
-vcv_certificates_total{pki="pki_shared",status="revoked",vault_id="vault-dev-5"} 0
-vcv_certificates_total{pki="pki_shared",status="valid",vault_id="vault-dev-5"} 6
-vcv_certificates_total{pki="pki_stage",status="expired",vault_id="vault-main"} 1
-vcv_certificates_total{pki="pki_stage",status="revoked",vault_id="vault-main"} 0
-vcv_certificates_total{pki="pki_stage",status="valid",vault_id="vault-main"} 5
-vcv_certificates_total{pki="pki_vault2",status="expired",vault_id="vault-dev-2"} 5
-vcv_certificates_total{pki="pki_vault2",status="revoked",vault_id="vault-dev-2"} 1
-vcv_certificates_total{pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 6
-vcv_certificates_total{pki="pki_vault3",status="expired",vault_id="vault-dev-3"} 5
-vcv_certificates_total{pki="pki_vault3",status="revoked",vault_id="vault-dev-3"} 1
-vcv_certificates_total{pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 6
-vcv_certificates_total{pki="pki_vault4",status="expired",vault_id="vault-dev-4"} 7
-vcv_certificates_total{pki="pki_vault4",status="revoked",vault_id="vault-dev-4"} 1
-vcv_certificates_total{pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 5
-vcv_certificates_total{pki="pki_vault5",status="expired",vault_id="vault-dev-5"} 8
-vcv_certificates_total{pki="pki_vault5",status="revoked",vault_id="vault-dev-5"} 1
-vcv_certificates_total{pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 5
-# HELP vcv_vault_connected Vault connection status (1=connected,0=disconnected)
-# TYPE vcv_vault_connected gauge
-vcv_vault_connected{vault_id="__all__"} 0
-vcv_vault_connected{vault_id="vault-dev-2"} 1
-vcv_vault_connected{vault_id="vault-dev-3"} 1
-vcv_vault_connected{vault_id="vault-dev-4"} 1
-vcv_vault_connected{vault_id="vault-dev-5"} 1
-vcv_vault_connected{vault_id="vault-dev-6"} 0
-vcv_vault_connected{vault_id="vault-main"} 1
-```
+Do not forget to update the `targets` with your VCV host and port.
 
 ## 🛎️ Alerting with AlertManager
 
@@ -460,18 +333,13 @@ Example alert rules (multi-vault friendly):
     description: "{{ $value }} certificates are expiring within the warning threshold (vault={{ $labels.vault_id }}, pki={{ $labels.pki }})."
 ```
 
-To enable the per-certificate metric `vcv_certificate_expiry_timestamp_seconds`, set `VCV_METRICS_PER_CERTIFICATE=true`.
+### Security Features
 
-If you do enable it, you can adjust the "soon" window directly in PromQL (e.g. 14 days) without changing the exporter.
-
-## 🔐 Admin
-
-If you set `VCV_ADMIN_PASSWORD`, an admin panel is enabled at `/admin`.
-
-- The password must be a **bcrypt hash** (prefix `$2a$`, `$2b$`, or `$2y$`). Plaintext passwords are rejected and the admin panel will not be enabled.
-- The admin panel edits the configured settings file, so the mounted `settings.json` must be writable.
-
-The administration panel is a list of every Vault connected and their PKI engines. You will be able to update, add or delete vaults and pki engines.
+- **Rate limiting**: Enabled in production mode (300 requests/minute, exempting health/ready/metrics endpoints)
+- **CSRF protection**: All state-changing requests require CSRF tokens
+- **Security headers**: Includes HSTS, X-Frame-Options, X-Content-Type-Options, CSP
+- **Request ID tracking**: All requests include unique IDs for log correlation
+- **Body size limits**: 1MB maximum request body size
 
 ## 🔎 More details
 
@@ -479,11 +347,3 @@ The administration panel is a list of every Vault connected and their PKI engine
 - French overview: [README.fr.md](README.fr.md)
 - Docker hub: [jhmmt/vcv](https://hub.docker.com/r/jhmmt/vcv)
 - Source code: [github.com/julienhmmt/vcv](https://github.com/julienhmmt/vcv)
-
-## 🖼️ Picture of the app
-
-![VaultCertsViewer v1.4](img/VaultCertsViewer-v1.4.png)
-
-![VaultCertsViewer v1.4 - Light Mode](img/VaultCertsViewer-v1.4-light.png)
-
-![VaultCertsViewer v1.4 - Dark Mode](img/VaultCertsViewer-v1.4-dark.png)

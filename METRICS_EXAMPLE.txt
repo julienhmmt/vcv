@@ -1,0 +1,635 @@
+# curl -v http://vcv:52000/metrics
+# enhanced metrics are enabled in settings.json:
+# "metrics": {
+#     "per_certificate": true,
+#     "enhanced_metrics": true
+#   }
+
+# HELP go_gc_duration_seconds A summary of the wall-time pause (stop-the-world) duration in garbage collection cycles.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 0.000279375
+go_gc_duration_seconds{quantile="0.25"} 0.000279375
+go_gc_duration_seconds{quantile="0.5"} 0.001281708
+go_gc_duration_seconds{quantile="0.75"} 0.001281708
+go_gc_duration_seconds{quantile="1"} 0.001281708
+go_gc_duration_seconds_sum 0.001561083
+go_gc_duration_seconds_count 2
+# HELP go_gc_gogc_percent Heap size target percentage configured by the user, otherwise 100. This value is set by the GOGC environment variable, and the runtime/debug.SetGCPercent function. Sourced from /gc/gogc:percent.
+# TYPE go_gc_gogc_percent gauge
+go_gc_gogc_percent 100
+# HELP go_gc_gomemlimit_bytes Go runtime memory limit configured by the user, otherwise math.MaxInt64. This value is set by the GOMEMLIMIT environment variable, and the runtime/debug.SetMemoryLimit function. Sourced from /gc/gomemlimit:bytes.
+# TYPE go_gc_gomemlimit_bytes gauge
+go_gc_gomemlimit_bytes 9.223372036854776e+18
+# HELP go_goroutines Number of goroutines that currently exist.
+# TYPE go_goroutines gauge
+go_goroutines 27
+# HELP go_info Information about the Go environment.
+# TYPE go_info gauge
+go_info{version="go1.26.0"} 1
+# HELP go_memstats_alloc_bytes Number of bytes allocated in heap and currently in use. Equals to /memory/classes/heap/objects:bytes.
+# TYPE go_memstats_alloc_bytes gauge
+go_memstats_alloc_bytes 2.45488e+06
+# HELP go_memstats_alloc_bytes_total Total number of bytes allocated in heap until now, even if released already. Equals to /gc/heap/allocs:bytes.
+# TYPE go_memstats_alloc_bytes_total counter
+go_memstats_alloc_bytes_total 4.53696e+06
+# HELP go_memstats_buck_hash_sys_bytes Number of bytes used by the profiling bucket hash table. Equals to /memory/classes/profiling/buckets:bytes.
+# TYPE go_memstats_buck_hash_sys_bytes gauge
+go_memstats_buck_hash_sys_bytes 1.44531e+06
+# HELP go_memstats_frees_total Total number of heap objects frees. Equals to /gc/heap/frees:objects + /gc/heap/tiny/allocs:objects.
+# TYPE go_memstats_frees_total counter
+go_memstats_frees_total 25212
+# HELP go_memstats_gc_sys_bytes Number of bytes used for garbage collection system metadata. Equals to /memory/classes/metadata/other:bytes.
+# TYPE go_memstats_gc_sys_bytes gauge
+go_memstats_gc_sys_bytes 3.150576e+06
+# HELP go_memstats_heap_alloc_bytes Number of heap bytes allocated and currently in use, same as go_memstats_alloc_bytes. Equals to /memory/classes/heap/objects:bytes.
+# TYPE go_memstats_heap_alloc_bytes gauge
+go_memstats_heap_alloc_bytes 2.45488e+06
+# HELP go_memstats_heap_idle_bytes Number of heap bytes waiting to be used. Equals to /memory/classes/heap/released:bytes + /memory/classes/heap/free:bytes.
+# TYPE go_memstats_heap_idle_bytes gauge
+go_memstats_heap_idle_bytes 3.19488e+06
+# HELP go_memstats_heap_inuse_bytes Number of heap bytes that are in use. Equals to /memory/classes/heap/objects:bytes + /memory/classes/heap/unused:bytes
+# TYPE go_memstats_heap_inuse_bytes gauge
+go_memstats_heap_inuse_bytes 4.34176e+06
+# HELP go_memstats_heap_objects Number of currently allocated objects. Equals to /gc/heap/objects:objects.
+# TYPE go_memstats_heap_objects gauge
+go_memstats_heap_objects 30998
+# HELP go_memstats_heap_released_bytes Number of heap bytes released to OS. Equals to /memory/classes/heap/released:bytes.
+# TYPE go_memstats_heap_released_bytes gauge
+go_memstats_heap_released_bytes 2.58048e+06
+# HELP go_memstats_heap_sys_bytes Number of heap bytes obtained from system. Equals to /memory/classes/heap/objects:bytes + /memory/classes/heap/unused:bytes + /memory/classes/heap/released:bytes + /memory/classes/heap/free:bytes.
+# TYPE go_memstats_heap_sys_bytes gauge
+go_memstats_heap_sys_bytes 7.53664e+06
+# HELP go_memstats_last_gc_time_seconds Number of seconds since 1970 of last garbage collection.
+# TYPE go_memstats_last_gc_time_seconds gauge
+go_memstats_last_gc_time_seconds 1.7708210795089984e+09
+# HELP go_memstats_mallocs_total Total number of heap objects allocated, both live and gc-ed. Semantically a counter version for go_memstats_heap_objects gauge. Equals to /gc/heap/allocs:objects + /gc/heap/tiny/allocs:objects.
+# TYPE go_memstats_mallocs_total counter
+go_memstats_mallocs_total 56210
+# HELP go_memstats_mcache_inuse_bytes Number of bytes in use by mcache structures. Equals to /memory/classes/metadata/mcache/inuse:bytes.
+# TYPE go_memstats_mcache_inuse_bytes gauge
+go_memstats_mcache_inuse_bytes 4592
+# HELP go_memstats_mcache_sys_bytes Number of bytes used for mcache structures obtained from system. Equals to /memory/classes/metadata/mcache/inuse:bytes + /memory/classes/metadata/mcache/free:bytes.
+# TYPE go_memstats_mcache_sys_bytes gauge
+go_memstats_mcache_sys_bytes 16072
+# HELP go_memstats_mspan_inuse_bytes Number of bytes in use by mspan structures. Equals to /memory/classes/metadata/mspan/inuse:bytes.
+# TYPE go_memstats_mspan_inuse_bytes gauge
+go_memstats_mspan_inuse_bytes 84320
+# HELP go_memstats_mspan_sys_bytes Number of bytes used for mspan structures obtained from system. Equals to /memory/classes/metadata/mspan/inuse:bytes + /memory/classes/metadata/mspan/free:bytes.
+# TYPE go_memstats_mspan_sys_bytes gauge
+go_memstats_mspan_sys_bytes 97920
+# HELP go_memstats_next_gc_bytes Number of heap bytes when next garbage collection will take place. Equals to /gc/heap/goal:bytes.
+# TYPE go_memstats_next_gc_bytes gauge
+go_memstats_next_gc_bytes 5.009754e+06
+# HELP go_memstats_other_sys_bytes Number of bytes used for other system allocations. Equals to /memory/classes/other:bytes.
+# TYPE go_memstats_other_sys_bytes gauge
+go_memstats_other_sys_bytes 375570
+# HELP go_memstats_stack_inuse_bytes Number of bytes obtained from system for stack allocator in non-CGO environments. Equals to /memory/classes/heap/stacks:bytes.
+# TYPE go_memstats_stack_inuse_bytes gauge
+go_memstats_stack_inuse_bytes 851968
+# HELP go_memstats_stack_sys_bytes Number of bytes obtained from system for stack allocator. Equals to /memory/classes/heap/stacks:bytes + /memory/classes/os-stacks:bytes.
+# TYPE go_memstats_stack_sys_bytes gauge
+go_memstats_stack_sys_bytes 851968
+# HELP go_memstats_sys_bytes Number of bytes obtained from system. Equals to /memory/classes/total:byte.
+# TYPE go_memstats_sys_bytes gauge
+go_memstats_sys_bytes 1.3474056e+07
+# HELP go_sched_gomaxprocs_threads The current runtime.GOMAXPROCS setting, or the number of operating system threads that can execute user-level Go code simultaneously. Sourced from /sched/gomaxprocs:threads.
+# TYPE go_sched_gomaxprocs_threads gauge
+go_sched_gomaxprocs_threads 2
+# HELP go_threads Number of OS threads created.
+# TYPE go_threads gauge
+go_threads 9
+# HELP vcv_cache_size Number of items currently cached
+# TYPE vcv_cache_size gauge
+vcv_cache_size 6
+# HELP vcv_certificate_days_until_expiry Days remaining until certificate expiration (negative if expired)
+# TYPE vcv_certificate_days_until_expiry gauge
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao:04:78:d2:0d:95:04:3e:6f:d2:66:2f:3a:5b:03:df:57:58:a0:75:aa",common_name="warning-expiry.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao:0a:9c:20:a1:24:87:69:f5:eb:9b:75:b8:e7:44:2d:6d:11:32:7b:fd",common_name="longterm.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao:13:ff:fd:04:6a:f9:d8:cf:05:c3:ad:e2:2e:4d:ba:93:2f:c7:e1:66",common_name="expired.openbao-production.local",pki="pki_openbao",status="expired",vault_id="openbao-dev-1"} 0
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao:17:11:d2:25:14:52:ea:72:9c:81:27:ee:62:7e:6b:d1:fa:7d:91:39",common_name="critical-expiry.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao:24:f4:a5:ca:90:b4:68:24:a1:0a:a1:b4:9b:2e:69:4d:e4:85:e1:71",common_name="openbao-vcv.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao:27:51:3a:7b:fe:47:26:52:e2:2d:e2:89:f2:0b:41:8e:99:6c:b8:01",common_name="admin.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao:4d:46:0e:fd:6d:14:fc:fb:94:d2:55:91:9b:1f:e1:f5:d1:7e:57:e1",common_name="monitor-expiry.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao:61:3a:71:f7:4b:87:93:61:4d:bf:a1:22:23:60:df:e3:a3:f7:2b:1a",common_name="api.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao:69:d2:ec:fb:1e:f9:26:5d:99:61:f0:7c:12:6b:bc:f9:73:8d:6b:78",common_name="web.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao:76:e0:0f:d9:e3:f2:82:83:fc:60:83:a8:f3:1c:77:7d:5f:e8:12:23",common_name="expiring-soon.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao_dev:37:2f:d5:9d:24:b1:f6:a2:04:ba:bd:01:ec:dd:36:11:5a:3c:94:0c",common_name="dev-expiring.openbao-dev.local",pki="pki_openbao_dev",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao_dev:3c:32:09:a1:00:f1:14:8f:d4:87:52:de:92:e4:fa:e4:68:9a:fe:a3",common_name="openbao-vcv-dev.local",pki="pki_openbao_dev",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao_dev:63:63:77:41:8c:8e:54:bc:7d:f9:8e:4b:66:c2:80:4a:4f:a3:28:a4",common_name="microservice.openbao-dev.local",pki="pki_openbao_dev",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao_dev:66:95:8a:15:bc:88:0b:9d:e1:1b:41:b3:82:bd:c5:ba:62:b7:3b:1e",common_name="longterm.openbao-dev.local",pki="pki_openbao_dev",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao_dev:75:c8:0f:8e:76:1f:fc:4e:21:43:dc:15:ff:b8:17:05:c5:ad:f9:a4",common_name="web.openbao-dev.local",pki="pki_openbao_dev",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao_prod:7f:83:59:0d:27:2d:24:3a:14:eb:84:34:cf:42:65:e8:4c:70:67",common_name="openbao-vcv-prod.local",pki="pki_openbao_prod",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao_stage:18:b0:95:23:9a:8f:88:28:b4:da:80:6f:ad:87:9f:13:80:89:af:40",common_name="openbao-vcv-stage.local",pki="pki_openbao_stage",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao_stage:1e:32:6b:6d:12:e0:ab:58:96:18:bc:52:12:bc:33:4d:c7:97:9d:a6",common_name="web.openbao-staging.local",pki="pki_openbao_stage",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao_stage:41:3a:bc:48:f4:85:d6:16:4e:03:aa:23:83:69:53:81:eb:54:d5:c5",common_name="loadbalancer.openbao-staging.local",pki="pki_openbao_stage",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao_stage:5b:31:c4:a5:6d:3e:83:f8:73:b6:19:ee:b0:a3:18:d7:7f:d8:61:4a",common_name="longterm.openbao-staging.local",pki="pki_openbao_stage",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="openbao-dev-1|pki_openbao_stage:72:bd:8e:27:b9:bd:2c:4f:1e:f2:6b:61:75:42:7f:7d:c8:7d:b8:8e",common_name="stage-expiring.openbao-staging.local",pki="pki_openbao_stage",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_corporate:05:3b:46:53:f4:be:b4:da:fc:00:de:b5:f3:9d:90:0f:a7:53:c5:b4",common_name="vcv-stage.local",pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_corporate:10:77:57:dc:0b:16:f9:fc:f4:34:73:b0:38:8e:1e:c3:3a:5b:6d:bf",common_name="expire-2m.staging.local",pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_corporate:24:35:9c:97:f9:6e:0e:f1:35:53:15:a7:22:c9:4f:f2:f7:c2:36:b1",common_name="expire-1d.staging.local",pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_corporate:37:77:fb:e5:1d:ce:07:1d:88:f6:31:fc:1f:b3:c5:0d:65:62:a3:04",common_name="expire-31d.staging.local",pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 31
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_corporate:4a:c6:39:69:83:f8:b9:06:53:7b:fc:19:19:cc:b3:24:3a:68:83:c6",common_name="expire-20d.staging.local",pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 20
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_corporate:66:8f:08:ec:35:9e:dc:7a:80:37:9d:de:30:48:82:f2:61:38:71:7b",common_name="expire-4d.staging.local",pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 4
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_external:43:d2:2d:4b:b6:87:ed:43:15:dd:d4:1e:51:36:bc:20:21:b1:5a:28",common_name="vcv-production.local",pki="pki_external",status="valid",vault_id="vault-dev-2"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_vault2:03:5a:38:33:b7:b4:f6:e2:6e:70:51:ff:91:a0:e2:fb:54:c3:c0:1a",common_name="expire-4d.development.local",pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 4
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_vault2:0d:ba:93:81:5a:fa:e1:ae:df:e6:0d:f4:37:98:24:4a:e6:8c:71:d9",common_name="vcv-dev.local",pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_vault2:1c:35:ea:1d:10:75:cd:10:9f:41:ff:5e:e7:da:7d:a8:c4:fb:85",common_name="expire-20d.development.local",pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 20
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_vault2:3e:75:f8:ea:76:c0:74:bf:55:74:ed:37:d0:b7:be:e0:0a:3a:e4:47",common_name="expire-2m.development.local",pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_vault2:5d:57:42:85:d1:aa:17:e7:f0:73:73:70:68:fc:b1:27:b4:d1:28:45",common_name="expire-31d.development.local",pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 31
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_vault2:64:04:88:6e:3a:66:28:42:23:7b:78:19:f1:ff:20:14:57:5f:32:ed",common_name="revoked2.dev.local",pki="pki_vault2",status="revoked",vault_id="vault-dev-2"} 30
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_vault2:67:1c:e5:28:22:b7:5d:13:4c:b6:a2:64:82:68:32:15:80:71:29:97",common_name="expire-1d.development.local",pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-2|pki_vault2:76:ae:b7:ec:5e:d6:68:89:46:30:19:6d:75:a0:47:1d:63:e7:59:29",common_name="revoked.dev.local",pki="pki_vault2",status="revoked",vault_id="vault-dev-2"} 30
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_cloud:11:cf:35:bd:ee:df:67:89:4e:0f:e6:3e:f2:e8:d4:92:c8:c0:48:90",common_name="expire-1d.staging.local",pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_cloud:37:42:23:d2:e0:dc:a3:6a:fc:5f:b7:88:f5:41:8c:db:3d:89:94:39",common_name="expire-4d.staging.local",pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 4
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_cloud:49:97:85:ce:9e:40:bb:2b:b3:2d:94:a8:34:51:12:e5:83:91:26:3f",common_name="vcv-stage.local",pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_cloud:5d:a4:a7:6b:ee:56:3b:e4:99:90:10:c7:e2:0b:8b:be:9b:f5:c7:8a",common_name="expire-2m.staging.local",pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_cloud:7d:fa:7b:05:ca:c6:df:2f:00:34:20:a1:d6:95:72:a7:a2:d1:2b:6b",common_name="expire-31d.staging.local",pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 31
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_cloud:d0:74:c1:26:11:72:a8:1d:ad:89:0c:4d:5a:1b:27:26:74:88:a1",common_name="expire-20d.staging.local",pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 20
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_edge:3c:99:90:22:f1:24:c0:fb:49:c6:1e:04:33:43:75:ce:e9:dc:cd:01",common_name="vcv-production.local",pki="pki_edge",status="valid",vault_id="vault-dev-3"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_vault3:16:34:4b:d0:42:17:e3:be:d9:6b:61:ef:a6:07:4e:ad:ae:ff:1a:d6",common_name="revoked.dev.local",pki="pki_vault3",status="revoked",vault_id="vault-dev-3"} 30
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_vault3:1a:99:ad:31:e8:e0:78:e4:df:e4:39:6c:3c:63:e3:71:4b:7b:0a:95",common_name="revoked2.dev.local",pki="pki_vault3",status="revoked",vault_id="vault-dev-3"} 30
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_vault3:1b:ec:76:1a:22:7d:61:0c:95:fa:fa:5a:a7:f7:b2:95:06:79:a6:04",common_name="expire-1d.development.local",pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_vault3:1f:32:0b:82:78:d3:58:63:23:d4:a0:1f:af:68:60:09:b6:d7:19:dc",common_name="expire-20d.development.local",pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 20
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_vault3:34:b5:e7:d9:f6:ad:38:6a:08:21:9d:c8:4f:65:3b:92:d7:16:20:fb",common_name="expire-31d.development.local",pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 31
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_vault3:50:a9:f8:cc:02:ce:2c:da:60:79:57:05:b2:d4:e9:91:62:4c:96:05",common_name="vcv-dev.local",pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_vault3:64:ac:66:e5:35:97:41:e8:01:3f:ec:d5:a6:32:22:06:d9:23:06:3f",common_name="expire-4d.development.local",pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 4
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-3|pki_vault3:65:57:31:5d:43:f3:f1:cb:8c:d7:d6:d7:82:db:ce:ef:2f:6d:5a:4c",common_name="expire-2m.development.local",pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_lab:30:56:cf:9a:8a:e3:58:61:d4:03:77:c1:cd:d0:a8:e2:70:c1:36:42",common_name="expire-20d.staging.local",pki="pki_lab",status="valid",vault_id="vault-dev-4"} 20
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_lab:41:3e:9a:0b:21:05:55:23:80:ff:1b:a0:2d:e8:e5:aa:de:78:56:35",common_name="expire-4d.staging.local",pki="pki_lab",status="valid",vault_id="vault-dev-4"} 4
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_lab:59:65:e4:a4:48:2b:8c:17:3b:31:f5:45:67:6e:8d:4a:08:d9:9a:68",common_name="expire-1d.staging.local",pki="pki_lab",status="valid",vault_id="vault-dev-4"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_lab:5e:34:90:a6:2a:33:12:be:d8:52:3e:2c:47:bd:db:c9:a8:40:a3:bc",common_name="expire-2m.staging.local",pki="pki_lab",status="valid",vault_id="vault-dev-4"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_lab:71:a0:e9:56:fd:8c:e2:69:f6:6d:93:5b:c0:56:4d:df:3f:e5:0c:6f",common_name="expire-31d.staging.local",pki="pki_lab",status="valid",vault_id="vault-dev-4"} 31
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_lab:7c:ed:a8:0f:45:c9:13:b9:cd:2d:4b:54:a0:66:4f:51:ee:d4:3a:ae",common_name="vcv-stage.local",pki="pki_lab",status="valid",vault_id="vault-dev-4"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_qa:3b:66:75:e6:3e:09:51:cf:45:16:f8:2f:08:a5:07:b8:c8:f6:90:1d",common_name="vcv-production.local",pki="pki_qa",status="valid",vault_id="vault-dev-4"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_vault4:04:0b:66:be:b9:86:a8:9d:96:cc:63:f4:ec:62:8c:d7:3e:bb:49:e0",common_name="expire-20d.development.local",pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 20
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_vault4:04:d0:f5:20:5a:34:b7:20:39:fe:1e:7a:a4:f7:c5:8b:60:0f:15:53",common_name="revoked.dev.local",pki="pki_vault4",status="revoked",vault_id="vault-dev-4"} 30
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_vault4:16:2b:1c:ab:20:01:c0:60:4e:0a:5d:92:07:de:b7:a3:90:46:f4:bd",common_name="expire-4d.development.local",pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 4
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_vault4:1c:d8:07:88:06:e6:c3:c8:e0:19:39:d9:b3:f1:11:84:64:be:cb:b6",common_name="expire-1d.development.local",pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_vault4:44:8c:a9:e7:49:55:44:85:3c:60:0f:94:79:f4:87:10:51:fb:d8:48",common_name="vcv-dev.local",pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_vault4:62:57:b7:57:80:3c:8a:fc:5a:db:36:42:95:c7:e9:8b:69:3f:59:65",common_name="expire-2m.development.local",pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_vault4:64:3c:06:df:3b:5c:42:41:9a:91:2d:68:a1:12:0e:1a:b0:16:55:f3",common_name="expire-31d.development.local",pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 31
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-4|pki_vault4:6a:90:96:be:9a:98:00:68:b6:5a:6b:02:2f:b9:82:1a:c0:d6:52:f5",common_name="revoked2.dev.local",pki="pki_vault4",status="revoked",vault_id="vault-dev-4"} 30
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_dmz:66:32:d8:e3:65:12:6b:79:ca:ee:ea:b1:14:a0:77:54:78:8e:fa:4a",common_name="vcv-production.local",pki="pki_dmz",status="valid",vault_id="vault-dev-5"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_internal:22:20:00:4e:be:28:ce:2d:ab:64:0e:a2:27:4c:6e:e4:55:36:10:de",common_name="expire-20d.staging.local",pki="pki_internal",status="valid",vault_id="vault-dev-5"} 20
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_internal:22:22:9c:f2:b1:b5:22:22:39:70:08:05:c5:75:da:74:e1:24:ca:7a",common_name="expire-4d.staging.local",pki="pki_internal",status="valid",vault_id="vault-dev-5"} 4
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_internal:22:af:89:9d:96:46:c0:5a:1f:42:37:0c:be:c2:15:d6:80:45:4a:dd",common_name="expire-1d.staging.local",pki="pki_internal",status="valid",vault_id="vault-dev-5"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_internal:37:59:fb:c2:fe:1b:6f:66:12:1c:52:e8:48:99:22:ea:03:c6:2e:89",common_name="expire-31d.staging.local",pki="pki_internal",status="valid",vault_id="vault-dev-5"} 31
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_internal:5b:ce:91:9e:d0:79:3e:fd:2f:6d:e8:34:f7:8a:d7:ff:f5:30:3c:54",common_name="expire-2m.staging.local",pki="pki_internal",status="valid",vault_id="vault-dev-5"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_internal:68:38:3f:c2:9d:4c:f1:53:b1:6e:80:48:86:4c:20:76:70:ce:11:2e",common_name="vcv-stage.local",pki="pki_internal",status="valid",vault_id="vault-dev-5"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_vault5:06:b6:87:b5:7c:fb:b0:d3:0a:af:e5:df:a3:91:46:27:8a:06:7f",common_name="expire-4d.development.local",pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 4
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_vault5:33:fa:06:7f:f8:dd:bf:1e:b7:e4:a5:bf:b5:8f:a0:46:41:fc:e0:b6",common_name="expire-1d.development.local",pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_vault5:42:fe:8d:d4:ab:bc:7f:de:8a:ce:da:2b:9b:5e:f5:c5:25:60:f3:aa",common_name="revoked.dev.local",pki="pki_vault5",status="revoked",vault_id="vault-dev-5"} 30
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_vault5:4f:78:b8:de:2e:63:1a:f2:bc:13:0b:ec:c7:50:e3:6c:17:5a:32:f2",common_name="expire-20d.development.local",pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 20
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_vault5:63:aa:c3:03:fb:25:fa:89:36:55:ad:23:7c:73:53:72:57:ab:1a:b9",common_name="vcv-dev.local",pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_vault5:6e:27:20:f3:20:fe:b1:51:a9:f3:02:dd:b5:45:2a:2a:eb:1f:09:20",common_name="expire-2m.development.local",pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_vault5:7b:4b:9f:84:eb:3e:d2:a8:73:57:80:1f:76:72:01:61:14:91:fb:18",common_name="expire-31d.development.local",pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 31
+vcv_certificate_days_until_expiry{certificate_id="vault-dev-5|pki_vault5:e0:5e:af:25:65:7b:e4:cf:fc:01:0f:34:73:a2:b3:b4:57:e5:97",common_name="revoked2.dev.local",pki="pki_vault5",status="revoked",vault_id="vault-dev-5"} 30
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:11:af:a3:f7:3a:3a:f3:cc:06:ba:d3:bc:b4:41:14:94:c1:2b:24:1e",common_name="expiring-week-2.production.local",pki="pki",status="valid",vault_id="vault-main"} 10
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:12:45:6b:b5:6c:3b:e2:8c:22:07:1d:37:7c:62:76:a0:45:71:61:83",common_name="expire-4d.production.local",pki="pki",status="valid",vault_id="vault-main"} 4
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:13:71:e8:49:c4:54:b5:3b:ad:58:9f:34:85:09:39:36:6d:a9:62:9a",common_name="vcv.local",pki="pki",status="valid",vault_id="vault-main"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:2d:94:4c:30:9d:b3:74:c7:ce:96:1d:04:21:df:9c:bb:14:9d:50:bc",common_name="expired-2.production.local",pki="pki",status="expired",vault_id="vault-main"} 0
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:3a:e0:6b:6f:d8:09:f2:60:81:01:07:23:8c:fb:17:25:5b:46:63:51",common_name="expiring-soon-1.production.local",pki="pki",status="valid",vault_id="vault-main"} 2
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:3e:b1:61:18:8c:ed:69:04:32:1f:92:36:b8:2d:6f:cf:b0:6e:2d:b0",common_name="expire-2m.production.local",pki="pki",status="valid",vault_id="vault-main"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:43:7f:e3:29:d2:7c:67:92:ff:ae:d7:20:9b:59:aa:c7:a0:77:c7:0f",common_name="expired-1.production.local",pki="pki",status="expired",vault_id="vault-main"} 0
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:44:81:91:b8:cc:bd:16:d2:4f:f4:1c:3d:27:59:f2:6b:60:13:65:f1",common_name="expire-31d.production.local",pki="pki",status="valid",vault_id="vault-main"} 31
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:4f:0d:32:90:c3:ba:c9:95:56:5e:3f:51:c3:f1:10:b8:52:24:d3:6a",common_name="expiring-soon-2.production.local",pki="pki",status="valid",vault_id="vault-main"} 3
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:50:5f:73:56:95:b1:a7:ed:6f:e1:e1:43:c3:51:ea:7c:c0:6f:b8:11",common_name="expiring-week-1.production.local",pki="pki",status="valid",vault_id="vault-main"} 7
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:56:c1:8d:74:2d:8f:08:fc:f7:f8:87:a1:e9:a9:29:26:c9:71:70:b5",common_name="expire-20d.production.local",pki="pki",status="valid",vault_id="vault-main"} 20
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:6d:62:7e:6d:71:cc:77:3c:61:ab:b3:97:e6:36:6f:db:b0:51:8a:08",common_name="expire-1d.production.local",pki="pki",status="valid",vault_id="vault-main"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:7a:54:95:0f:4f:a9:62:2f:62:ea:4f:8e:68:d4:0c:14:85:5d:3c:6e",common_name="expiring-month-1.production.local",pki="pki",status="valid",vault_id="vault-main"} 30
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:7f:f4:da:72:f8:91:6c:de:75:b9:3c:d5:9f:6a:e4:2d:bc:73:8c:38",common_name="expiring-month-2.production.local",pki="pki",status="valid",vault_id="vault-main"} 21
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki:cc:6c:ee:45:c6:83:91:b6:33:5c:e9:a6:d7:60:7d:fb:ff:ce:a6",common_name="expiring-soon-3.production.local",pki="pki",status="valid",vault_id="vault-main"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_dev:19:f8:91:eb:c9:fc:df:c1:17:4c:5f:da:02:07:3a:ed:5c:45:00:52",common_name="expire-1d.development.local",pki="pki_dev",status="valid",vault_id="vault-main"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_dev:2d:a4:f2:23:a0:7a:80:69:7e:db:ff:0d:89:6c:56:4d:a4:df:7d:33",common_name="vcv-dev.local",pki="pki_dev",status="valid",vault_id="vault-main"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_dev:53:1f:f5:42:a8:c2:05:e1:cc:fe:f9:38:e5:9f:e5:e1:ce:e4:05:5a",common_name="expire-31d.development.local",pki="pki_dev",status="valid",vault_id="vault-main"} 31
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_dev:5b:25:a4:38:08:c3:f1:96:36:75:4c:84:24:3b:04:92:9e:5b:fa:b6",common_name="expire-4d.development.local",pki="pki_dev",status="valid",vault_id="vault-main"} 4
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_dev:69:43:0f:b6:29:33:05:1a:ff:dd:cc:92:eb:d1:81:ce:bf:80:f1:51",common_name="expire-20d.development.local",pki="pki_dev",status="valid",vault_id="vault-main"} 20
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_dev:69:fb:57:ba:40:be:1e:a8:c4:0c:b1:2e:2e:18:c9:ca:02:db:52:c4",common_name="revoked2.dev.local",pki="pki_dev",status="revoked",vault_id="vault-main"} 30
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_dev:77:da:43:df:f9:cb:0e:be:ec:64:ec:f3:40:ac:62:29:e4:80:07:99",common_name="revoked.dev.local",pki="pki_dev",status="revoked",vault_id="vault-main"} 30
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_dev:78:17:48:d7:e5:08:6e:b5:55:b1:1b:19:08:1f:d8:54:9b:59:42:20",common_name="expire-2m.development.local",pki="pki_dev",status="valid",vault_id="vault-main"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_production:45:ed:1c:e2:fa:6a:6d:db:c3:d7:b2:32:bb:bd:1e:aa:7e:1f:38:af",common_name="vcv-production.local",pki="pki_production",status="valid",vault_id="vault-main"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_stage:11:c8:f4:0c:40:46:97:aa:e1:c3:26:eb:66:0c:b1:84:1b:14:c4:ed",common_name="expire-1d.staging.local",pki="pki_stage",status="valid",vault_id="vault-main"} 1
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_stage:19:d5:c4:3c:50:12:f8:80:32:6f:33:11:a9:af:0c:3a:96:b9:0c:44",common_name="expire-20d.staging.local",pki="pki_stage",status="valid",vault_id="vault-main"} 20
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_stage:1a:35:7c:76:c6:c2:12:3a:84:03:20:fc:f1:b8:3b:0f:45:aa:4e:e8",common_name="expire-31d.staging.local",pki="pki_stage",status="valid",vault_id="vault-main"} 31
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_stage:2e:02:f3:89:e6:b1:3a:fb:e2:76:fe:38:71:68:d0:8d:6a:75:4f:42",common_name="expire-4d.staging.local",pki="pki_stage",status="valid",vault_id="vault-main"} 4
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_stage:30:f5:96:df:29:a4:3b:8d:23:4c:ac:08:7d:6e:dc:a1:94:be:d2:e0",common_name="vcv-stage.local",pki="pki_stage",status="valid",vault_id="vault-main"} 365
+vcv_certificate_days_until_expiry{certificate_id="vault-main|pki_stage:69:da:9e:55:21:2e:f6:84:84:9c:42:4b:6b:24:26:a4:0e:f3:08:c4",common_name="expire-2m.staging.local",pki="pki_stage",status="valid",vault_id="vault-main"} 1
+# HELP vcv_certificate_expiry_timestamp_seconds Certificate expiration timestamp in seconds since epoch
+# TYPE vcv_certificate_expiry_timestamp_seconds gauge
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao:04:78:d2:0d:95:04:3e:6f:d2:66:2f:3a:5b:03:df:57:58:a0:75:aa",common_name="warning-expiry.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1.770864251e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao:0a:9c:20:a1:24:87:69:f5:eb:9b:75:b8:e7:44:2d:6d:11:32:7b:fd",common_name="longterm.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1.770864254e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao:13:ff:fd:04:6a:f9:d8:cf:05:c3:ad:e2:2e:4d:ba:93:2f:c7:e1:66",common_name="expired.openbao-production.local",pki="pki_openbao",status="expired",vault_id="openbao-dev-1"} 1.770821053e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao:17:11:d2:25:14:52:ea:72:9c:81:27:ee:62:7e:6b:d1:fa:7d:91:39",common_name="critical-expiry.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1.770864251e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao:24:f4:a5:ca:90:b4:68:24:a1:0a:a1:b4:9b:2e:69:4d:e4:85:e1:71",common_name="openbao-vcv.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1.770907451e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao:27:51:3a:7b:fe:47:26:52:e2:2d:e2:89:f2:0b:41:8e:99:6c:b8:01",common_name="admin.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1.770864251e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao:4d:46:0e:fd:6d:14:fc:fb:94:d2:55:91:9b:1f:e1:f5:d1:7e:57:e1",common_name="monitor-expiry.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1.770864251e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao:61:3a:71:f7:4b:87:93:61:4d:bf:a1:22:23:60:df:e3:a3:f7:2b:1a",common_name="api.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1.770864251e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao:69:d2:ec:fb:1e:f9:26:5d:99:61:f0:7c:12:6b:bc:f9:73:8d:6b:78",common_name="web.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1.770864251e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao:76:e0:0f:d9:e3:f2:82:83:fc:60:83:a8:f3:1c:77:7d:5f:e8:12:23",common_name="expiring-soon.openbao-production.local",pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 1.770864251e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao_dev:37:2f:d5:9d:24:b1:f6:a2:04:ba:bd:01:ec:dd:36:11:5a:3c:94:0c",common_name="dev-expiring.openbao-dev.local",pki="pki_openbao_dev",status="valid",vault_id="openbao-dev-1"} 1.770864254e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao_dev:3c:32:09:a1:00:f1:14:8f:d4:87:52:de:92:e4:fa:e4:68:9a:fe:a3",common_name="openbao-vcv-dev.local",pki="pki_openbao_dev",status="valid",vault_id="openbao-dev-1"} 1.770907451e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao_dev:63:63:77:41:8c:8e:54:bc:7d:f9:8e:4b:66:c2:80:4a:4f:a3:28:a4",common_name="microservice.openbao-dev.local",pki="pki_openbao_dev",status="valid",vault_id="openbao-dev-1"} 1.770864254e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao_dev:66:95:8a:15:bc:88:0b:9d:e1:1b:41:b3:82:bd:c5:ba:62:b7:3b:1e",common_name="longterm.openbao-dev.local",pki="pki_openbao_dev",status="valid",vault_id="openbao-dev-1"} 1.770864254e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao_dev:75:c8:0f:8e:76:1f:fc:4e:21:43:dc:15:ff:b8:17:05:c5:ad:f9:a4",common_name="web.openbao-dev.local",pki="pki_openbao_dev",status="valid",vault_id="openbao-dev-1"} 1.770864254e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao_prod:7f:83:59:0d:27:2d:24:3a:14:eb:84:34:cf:42:65:e8:4c:70:67",common_name="openbao-vcv-prod.local",pki="pki_openbao_prod",status="valid",vault_id="openbao-dev-1"} 1.770907451e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao_stage:18:b0:95:23:9a:8f:88:28:b4:da:80:6f:ad:87:9f:13:80:89:af:40",common_name="openbao-vcv-stage.local",pki="pki_openbao_stage",status="valid",vault_id="openbao-dev-1"} 1.770907451e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao_stage:1e:32:6b:6d:12:e0:ab:58:96:18:bc:52:12:bc:33:4d:c7:97:9d:a6",common_name="web.openbao-staging.local",pki="pki_openbao_stage",status="valid",vault_id="openbao-dev-1"} 1.770864254e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao_stage:41:3a:bc:48:f4:85:d6:16:4e:03:aa:23:83:69:53:81:eb:54:d5:c5",common_name="loadbalancer.openbao-staging.local",pki="pki_openbao_stage",status="valid",vault_id="openbao-dev-1"} 1.770864254e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao_stage:5b:31:c4:a5:6d:3e:83:f8:73:b6:19:ee:b0:a3:18:d7:7f:d8:61:4a",common_name="longterm.openbao-staging.local",pki="pki_openbao_stage",status="valid",vault_id="openbao-dev-1"} 1.770864254e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="openbao-dev-1|pki_openbao_stage:72:bd:8e:27:b9:bd:2c:4f:1e:f2:6b:61:75:42:7f:7d:c8:7d:b8:8e",common_name="stage-expiring.openbao-staging.local",pki="pki_openbao_stage",status="valid",vault_id="openbao-dev-1"} 1.770864254e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_corporate:05:3b:46:53:f4:be:b4:da:fc:00:de:b5:f3:9d:90:0f:a7:53:c5:b4",common_name="vcv-stage.local",pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_corporate:10:77:57:dc:0b:16:f9:fc:f4:34:73:b0:38:8e:1e:c3:3a:5b:6d:bf",common_name="expire-2m.staging.local",pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 1.770821173e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_corporate:24:35:9c:97:f9:6e:0e:f1:35:53:15:a7:22:c9:4f:f2:f7:c2:36:b1",common_name="expire-1d.staging.local",pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 1.770907453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_corporate:37:77:fb:e5:1d:ce:07:1d:88:f6:31:fc:1f:b3:c5:0d:65:62:a3:04",common_name="expire-31d.staging.local",pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 1.773499453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_corporate:4a:c6:39:69:83:f8:b9:06:53:7b:fc:19:19:cc:b3:24:3a:68:83:c6",common_name="expire-20d.staging.local",pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 1.772549053e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_corporate:66:8f:08:ec:35:9e:dc:7a:80:37:9d:de:30:48:82:f2:61:38:71:7b",common_name="expire-4d.staging.local",pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 1.771166653e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_external:43:d2:2d:4b:b6:87:ed:43:15:dd:d4:1e:51:36:bc:20:21:b1:5a:28",common_name="vcv-production.local",pki="pki_external",status="valid",vault_id="vault-dev-2"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_vault2:03:5a:38:33:b7:b4:f6:e2:6e:70:51:ff:91:a0:e2:fb:54:c3:c0:1a",common_name="expire-4d.development.local",pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 1.771166653e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_vault2:0d:ba:93:81:5a:fa:e1:ae:df:e6:0d:f4:37:98:24:4a:e6:8c:71:d9",common_name="vcv-dev.local",pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_vault2:1c:35:ea:1d:10:75:cd:10:9f:41:ff:5e:e7:da:7d:a8:c4:fb:85",common_name="expire-20d.development.local",pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 1.772549053e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_vault2:3e:75:f8:ea:76:c0:74:bf:55:74:ed:37:d0:b7:be:e0:0a:3a:e4:47",common_name="expire-2m.development.local",pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 1.770821173e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_vault2:5d:57:42:85:d1:aa:17:e7:f0:73:73:70:68:fc:b1:27:b4:d1:28:45",common_name="expire-31d.development.local",pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 1.773499453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_vault2:64:04:88:6e:3a:66:28:42:23:7b:78:19:f1:ff:20:14:57:5f:32:ed",common_name="revoked2.dev.local",pki="pki_vault2",status="revoked",vault_id="vault-dev-2"} 1.773413054e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_vault2:67:1c:e5:28:22:b7:5d:13:4c:b6:a2:64:82:68:32:15:80:71:29:97",common_name="expire-1d.development.local",pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 1.770907453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-2|pki_vault2:76:ae:b7:ec:5e:d6:68:89:46:30:19:6d:75:a0:47:1d:63:e7:59:29",common_name="revoked.dev.local",pki="pki_vault2",status="revoked",vault_id="vault-dev-2"} 1.773413054e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_cloud:11:cf:35:bd:ee:df:67:89:4e:0f:e6:3e:f2:e8:d4:92:c8:c0:48:90",common_name="expire-1d.staging.local",pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 1.770907453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_cloud:37:42:23:d2:e0:dc:a3:6a:fc:5f:b7:88:f5:41:8c:db:3d:89:94:39",common_name="expire-4d.staging.local",pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 1.771166653e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_cloud:49:97:85:ce:9e:40:bb:2b:b3:2d:94:a8:34:51:12:e5:83:91:26:3f",common_name="vcv-stage.local",pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_cloud:5d:a4:a7:6b:ee:56:3b:e4:99:90:10:c7:e2:0b:8b:be:9b:f5:c7:8a",common_name="expire-2m.staging.local",pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 1.770821173e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_cloud:7d:fa:7b:05:ca:c6:df:2f:00:34:20:a1:d6:95:72:a7:a2:d1:2b:6b",common_name="expire-31d.staging.local",pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 1.773499453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_cloud:d0:74:c1:26:11:72:a8:1d:ad:89:0c:4d:5a:1b:27:26:74:88:a1",common_name="expire-20d.staging.local",pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 1.772549053e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_edge:3c:99:90:22:f1:24:c0:fb:49:c6:1e:04:33:43:75:ce:e9:dc:cd:01",common_name="vcv-production.local",pki="pki_edge",status="valid",vault_id="vault-dev-3"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_vault3:16:34:4b:d0:42:17:e3:be:d9:6b:61:ef:a6:07:4e:ad:ae:ff:1a:d6",common_name="revoked.dev.local",pki="pki_vault3",status="revoked",vault_id="vault-dev-3"} 1.773413054e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_vault3:1a:99:ad:31:e8:e0:78:e4:df:e4:39:6c:3c:63:e3:71:4b:7b:0a:95",common_name="revoked2.dev.local",pki="pki_vault3",status="revoked",vault_id="vault-dev-3"} 1.773413054e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_vault3:1b:ec:76:1a:22:7d:61:0c:95:fa:fa:5a:a7:f7:b2:95:06:79:a6:04",common_name="expire-1d.development.local",pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 1.770907452e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_vault3:1f:32:0b:82:78:d3:58:63:23:d4:a0:1f:af:68:60:09:b6:d7:19:dc",common_name="expire-20d.development.local",pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 1.772549053e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_vault3:34:b5:e7:d9:f6:ad:38:6a:08:21:9d:c8:4f:65:3b:92:d7:16:20:fb",common_name="expire-31d.development.local",pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 1.773499453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_vault3:50:a9:f8:cc:02:ce:2c:da:60:79:57:05:b2:d4:e9:91:62:4c:96:05",common_name="vcv-dev.local",pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_vault3:64:ac:66:e5:35:97:41:e8:01:3f:ec:d5:a6:32:22:06:d9:23:06:3f",common_name="expire-4d.development.local",pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 1.771166653e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-3|pki_vault3:65:57:31:5d:43:f3:f1:cb:8c:d7:d6:d7:82:db:ce:ef:2f:6d:5a:4c",common_name="expire-2m.development.local",pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 1.770821172e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_lab:30:56:cf:9a:8a:e3:58:61:d4:03:77:c1:cd:d0:a8:e2:70:c1:36:42",common_name="expire-20d.staging.local",pki="pki_lab",status="valid",vault_id="vault-dev-4"} 1.772549054e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_lab:41:3e:9a:0b:21:05:55:23:80:ff:1b:a0:2d:e8:e5:aa:de:78:56:35",common_name="expire-4d.staging.local",pki="pki_lab",status="valid",vault_id="vault-dev-4"} 1.771166654e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_lab:59:65:e4:a4:48:2b:8c:17:3b:31:f5:45:67:6e:8d:4a:08:d9:9a:68",common_name="expire-1d.staging.local",pki="pki_lab",status="valid",vault_id="vault-dev-4"} 1.770907453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_lab:5e:34:90:a6:2a:33:12:be:d8:52:3e:2c:47:bd:db:c9:a8:40:a3:bc",common_name="expire-2m.staging.local",pki="pki_lab",status="valid",vault_id="vault-dev-4"} 1.770821173e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_lab:71:a0:e9:56:fd:8c:e2:69:f6:6d:93:5b:c0:56:4d:df:3f:e5:0c:6f",common_name="expire-31d.staging.local",pki="pki_lab",status="valid",vault_id="vault-dev-4"} 1.773499454e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_lab:7c:ed:a8:0f:45:c9:13:b9:cd:2d:4b:54:a0:66:4f:51:ee:d4:3a:ae",common_name="vcv-stage.local",pki="pki_lab",status="valid",vault_id="vault-dev-4"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_qa:3b:66:75:e6:3e:09:51:cf:45:16:f8:2f:08:a5:07:b8:c8:f6:90:1d",common_name="vcv-production.local",pki="pki_qa",status="valid",vault_id="vault-dev-4"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_vault4:04:0b:66:be:b9:86:a8:9d:96:cc:63:f4:ec:62:8c:d7:3e:bb:49:e0",common_name="expire-20d.development.local",pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 1.772549053e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_vault4:04:d0:f5:20:5a:34:b7:20:39:fe:1e:7a:a4:f7:c5:8b:60:0f:15:53",common_name="revoked.dev.local",pki="pki_vault4",status="revoked",vault_id="vault-dev-4"} 1.773413054e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_vault4:16:2b:1c:ab:20:01:c0:60:4e:0a:5d:92:07:de:b7:a3:90:46:f4:bd",common_name="expire-4d.development.local",pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 1.771166653e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_vault4:1c:d8:07:88:06:e6:c3:c8:e0:19:39:d9:b3:f1:11:84:64:be:cb:b6",common_name="expire-1d.development.local",pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 1.770907453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_vault4:44:8c:a9:e7:49:55:44:85:3c:60:0f:94:79:f4:87:10:51:fb:d8:48",common_name="vcv-dev.local",pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_vault4:62:57:b7:57:80:3c:8a:fc:5a:db:36:42:95:c7:e9:8b:69:3f:59:65",common_name="expire-2m.development.local",pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 1.770821173e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_vault4:64:3c:06:df:3b:5c:42:41:9a:91:2d:68:a1:12:0e:1a:b0:16:55:f3",common_name="expire-31d.development.local",pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 1.773499453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-4|pki_vault4:6a:90:96:be:9a:98:00:68:b6:5a:6b:02:2f:b9:82:1a:c0:d6:52:f5",common_name="revoked2.dev.local",pki="pki_vault4",status="revoked",vault_id="vault-dev-4"} 1.773413054e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_dmz:66:32:d8:e3:65:12:6b:79:ca:ee:ea:b1:14:a0:77:54:78:8e:fa:4a",common_name="vcv-production.local",pki="pki_dmz",status="valid",vault_id="vault-dev-5"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_internal:22:20:00:4e:be:28:ce:2d:ab:64:0e:a2:27:4c:6e:e4:55:36:10:de",common_name="expire-20d.staging.local",pki="pki_internal",status="valid",vault_id="vault-dev-5"} 1.772549053e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_internal:22:22:9c:f2:b1:b5:22:22:39:70:08:05:c5:75:da:74:e1:24:ca:7a",common_name="expire-4d.staging.local",pki="pki_internal",status="valid",vault_id="vault-dev-5"} 1.771166653e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_internal:22:af:89:9d:96:46:c0:5a:1f:42:37:0c:be:c2:15:d6:80:45:4a:dd",common_name="expire-1d.staging.local",pki="pki_internal",status="valid",vault_id="vault-dev-5"} 1.770907453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_internal:37:59:fb:c2:fe:1b:6f:66:12:1c:52:e8:48:99:22:ea:03:c6:2e:89",common_name="expire-31d.staging.local",pki="pki_internal",status="valid",vault_id="vault-dev-5"} 1.773499453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_internal:5b:ce:91:9e:d0:79:3e:fd:2f:6d:e8:34:f7:8a:d7:ff:f5:30:3c:54",common_name="expire-2m.staging.local",pki="pki_internal",status="valid",vault_id="vault-dev-5"} 1.770821173e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_internal:68:38:3f:c2:9d:4c:f1:53:b1:6e:80:48:86:4c:20:76:70:ce:11:2e",common_name="vcv-stage.local",pki="pki_internal",status="valid",vault_id="vault-dev-5"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_vault5:06:b6:87:b5:7c:fb:b0:d3:0a:af:e5:df:a3:91:46:27:8a:06:7f",common_name="expire-4d.development.local",pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 1.771166653e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_vault5:33:fa:06:7f:f8:dd:bf:1e:b7:e4:a5:bf:b5:8f:a0:46:41:fc:e0:b6",common_name="expire-1d.development.local",pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 1.770907453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_vault5:42:fe:8d:d4:ab:bc:7f:de:8a:ce:da:2b:9b:5e:f5:c5:25:60:f3:aa",common_name="revoked.dev.local",pki="pki_vault5",status="revoked",vault_id="vault-dev-5"} 1.773413054e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_vault5:4f:78:b8:de:2e:63:1a:f2:bc:13:0b:ec:c7:50:e3:6c:17:5a:32:f2",common_name="expire-20d.development.local",pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 1.772549053e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_vault5:63:aa:c3:03:fb:25:fa:89:36:55:ad:23:7c:73:53:72:57:ab:1a:b9",common_name="vcv-dev.local",pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_vault5:6e:27:20:f3:20:fe:b1:51:a9:f3:02:dd:b5:45:2a:2a:eb:1f:09:20",common_name="expire-2m.development.local",pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 1.770821173e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_vault5:7b:4b:9f:84:eb:3e:d2:a8:73:57:80:1f:76:72:01:61:14:91:fb:18",common_name="expire-31d.development.local",pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 1.773499453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-dev-5|pki_vault5:e0:5e:af:25:65:7b:e4:cf:fc:01:0f:34:73:a2:b3:b4:57:e5:97",common_name="revoked2.dev.local",pki="pki_vault5",status="revoked",vault_id="vault-dev-5"} 1.773413054e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:11:af:a3:f7:3a:3a:f3:cc:06:ba:d3:bc:b4:41:14:94:c1:2b:24:1e",common_name="expiring-week-2.production.local",pki="pki",status="valid",vault_id="vault-main"} 1.771685048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:12:45:6b:b5:6c:3b:e2:8c:22:07:1d:37:7c:62:76:a0:45:71:61:83",common_name="expire-4d.production.local",pki="pki",status="valid",vault_id="vault-main"} 1.771166652e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:13:71:e8:49:c4:54:b5:3b:ad:58:9f:34:85:09:39:36:6d:a9:62:9a",common_name="vcv.local",pki="pki",status="valid",vault_id="vault-main"} 1.802357047e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:2d:94:4c:30:9d:b3:74:c7:ce:96:1d:04:21:df:9c:bb:14:9d:50:bc",common_name="expired-2.production.local",pki="pki",status="expired",vault_id="vault-main"} 1.770821051e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:3a:e0:6b:6f:d8:09:f2:60:81:01:07:23:8c:fb:17:25:5b:46:63:51",common_name="expiring-soon-1.production.local",pki="pki",status="valid",vault_id="vault-main"} 1.770993848e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:3e:b1:61:18:8c:ed:69:04:32:1f:92:36:b8:2d:6f:cf:b0:6e:2d:b0",common_name="expire-2m.production.local",pki="pki",status="valid",vault_id="vault-main"} 1.770821172e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:43:7f:e3:29:d2:7c:67:92:ff:ae:d7:20:9b:59:aa:c7:a0:77:c7:0f",common_name="expired-1.production.local",pki="pki",status="expired",vault_id="vault-main"} 1.770821051e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:44:81:91:b8:cc:bd:16:d2:4f:f4:1c:3d:27:59:f2:6b:60:13:65:f1",common_name="expire-31d.production.local",pki="pki",status="valid",vault_id="vault-main"} 1.773499452e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:4f:0d:32:90:c3:ba:c9:95:56:5e:3f:51:c3:f1:10:b8:52:24:d3:6a",common_name="expiring-soon-2.production.local",pki="pki",status="valid",vault_id="vault-main"} 1.771080248e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:50:5f:73:56:95:b1:a7:ed:6f:e1:e1:43:c3:51:ea:7c:c0:6f:b8:11",common_name="expiring-week-1.production.local",pki="pki",status="valid",vault_id="vault-main"} 1.771425848e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:56:c1:8d:74:2d:8f:08:fc:f7:f8:87:a1:e9:a9:29:26:c9:71:70:b5",common_name="expire-20d.production.local",pki="pki",status="valid",vault_id="vault-main"} 1.772549052e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:6d:62:7e:6d:71:cc:77:3c:61:ab:b3:97:e6:36:6f:db:b0:51:8a:08",common_name="expire-1d.production.local",pki="pki",status="valid",vault_id="vault-main"} 1.770907452e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:7a:54:95:0f:4f:a9:62:2f:62:ea:4f:8e:68:d4:0c:14:85:5d:3c:6e",common_name="expiring-month-1.production.local",pki="pki",status="valid",vault_id="vault-main"} 1.773413048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:7f:f4:da:72:f8:91:6c:de:75:b9:3c:d5:9f:6a:e4:2d:bc:73:8c:38",common_name="expiring-month-2.production.local",pki="pki",status="valid",vault_id="vault-main"} 1.772621049e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki:cc:6c:ee:45:c6:83:91:b6:33:5c:e9:a6:d7:60:7d:fb:ff:ce:a6",common_name="expiring-soon-3.production.local",pki="pki",status="valid",vault_id="vault-main"} 1.770907448e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_dev:19:f8:91:eb:c9:fc:df:c1:17:4c:5f:da:02:07:3a:ed:5c:45:00:52",common_name="expire-1d.development.local",pki="pki_dev",status="valid",vault_id="vault-main"} 1.770907452e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_dev:2d:a4:f2:23:a0:7a:80:69:7e:db:ff:0d:89:6c:56:4d:a4:df:7d:33",common_name="vcv-dev.local",pki="pki_dev",status="valid",vault_id="vault-main"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_dev:53:1f:f5:42:a8:c2:05:e1:cc:fe:f9:38:e5:9f:e5:e1:ce:e4:05:5a",common_name="expire-31d.development.local",pki="pki_dev",status="valid",vault_id="vault-main"} 1.773499452e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_dev:5b:25:a4:38:08:c3:f1:96:36:75:4c:84:24:3b:04:92:9e:5b:fa:b6",common_name="expire-4d.development.local",pki="pki_dev",status="valid",vault_id="vault-main"} 1.771166652e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_dev:69:43:0f:b6:29:33:05:1a:ff:dd:cc:92:eb:d1:81:ce:bf:80:f1:51",common_name="expire-20d.development.local",pki="pki_dev",status="valid",vault_id="vault-main"} 1.772549052e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_dev:69:fb:57:ba:40:be:1e:a8:c4:0c:b1:2e:2e:18:c9:ca:02:db:52:c4",common_name="revoked2.dev.local",pki="pki_dev",status="revoked",vault_id="vault-main"} 1.773413053e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_dev:77:da:43:df:f9:cb:0e:be:ec:64:ec:f3:40:ac:62:29:e4:80:07:99",common_name="revoked.dev.local",pki="pki_dev",status="revoked",vault_id="vault-main"} 1.773413053e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_dev:78:17:48:d7:e5:08:6e:b5:55:b1:1b:19:08:1f:d8:54:9b:59:42:20",common_name="expire-2m.development.local",pki="pki_dev",status="valid",vault_id="vault-main"} 1.770821172e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_production:45:ed:1c:e2:fa:6a:6d:db:c3:d7:b2:32:bb:bd:1e:aa:7e:1f:38:af",common_name="vcv-production.local",pki="pki_production",status="valid",vault_id="vault-main"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_stage:11:c8:f4:0c:40:46:97:aa:e1:c3:26:eb:66:0c:b1:84:1b:14:c4:ed",common_name="expire-1d.staging.local",pki="pki_stage",status="valid",vault_id="vault-main"} 1.770907453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_stage:19:d5:c4:3c:50:12:f8:80:32:6f:33:11:a9:af:0c:3a:96:b9:0c:44",common_name="expire-20d.staging.local",pki="pki_stage",status="valid",vault_id="vault-main"} 1.772549053e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_stage:1a:35:7c:76:c6:c2:12:3a:84:03:20:fc:f1:b8:3b:0f:45:aa:4e:e8",common_name="expire-31d.staging.local",pki="pki_stage",status="valid",vault_id="vault-main"} 1.773499453e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_stage:2e:02:f3:89:e6:b1:3a:fb:e2:76:fe:38:71:68:d0:8d:6a:75:4f:42",common_name="expire-4d.staging.local",pki="pki_stage",status="valid",vault_id="vault-main"} 1.771166653e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_stage:30:f5:96:df:29:a4:3b:8d:23:4c:ac:08:7d:6e:dc:a1:94:be:d2:e0",common_name="vcv-stage.local",pki="pki_stage",status="valid",vault_id="vault-main"} 1.802357048e+09
+vcv_certificate_expiry_timestamp_seconds{certificate_id="vault-main|pki_stage:69:da:9e:55:21:2e:f6:84:84:9c:42:4b:6b:24:26:a4:0e:f3:08:c4",common_name="expire-2m.staging.local",pki="pki_stage",status="valid",vault_id="vault-main"} 1.770821173e+09
+# HELP vcv_certificate_exporter_last_scrape_duration_seconds Duration of the last certificate scrape in seconds
+# TYPE vcv_certificate_exporter_last_scrape_duration_seconds gauge
+vcv_certificate_exporter_last_scrape_duration_seconds 0.072538674
+# HELP vcv_certificate_exporter_last_scrape_success Whether the last scrape succeeded (1) or failed (0)
+# TYPE vcv_certificate_exporter_last_scrape_success gauge
+vcv_certificate_exporter_last_scrape_success 1
+# HELP vcv_certificates_expired_count Number of expired certificates
+# TYPE vcv_certificates_expired_count gauge
+vcv_certificates_expired_count 3
+# HELP vcv_certificates_expiring_soon_count Number of certificates expiring soon within threshold window
+# TYPE vcv_certificates_expiring_soon_count gauge
+vcv_certificates_expiring_soon_count{level="critical",pki="__all__",vault_id="__all__"} 44
+vcv_certificates_expiring_soon_count{level="critical",pki="pki",vault_id="vault-main"} 4
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_cloud",vault_id="vault-dev-3"} 2
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_corporate",vault_id="vault-dev-2"} 2
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_dev",vault_id="vault-main"} 2
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_dmz",vault_id="vault-dev-5"} 0
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_edge",vault_id="vault-dev-3"} 0
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_external",vault_id="vault-dev-2"} 0
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_internal",vault_id="vault-dev-5"} 2
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_lab",vault_id="vault-dev-4"} 2
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_openbao",vault_id="openbao-dev-1"} 9
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_openbao_dev",vault_id="openbao-dev-1"} 5
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_openbao_prod",vault_id="openbao-dev-1"} 1
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_openbao_stage",vault_id="openbao-dev-1"} 5
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_production",vault_id="vault-main"} 0
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_qa",vault_id="vault-dev-4"} 0
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_stage",vault_id="vault-main"} 2
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_vault2",vault_id="vault-dev-2"} 2
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_vault3",vault_id="vault-dev-3"} 2
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_vault4",vault_id="vault-dev-4"} 2
+vcv_certificates_expiring_soon_count{level="critical",pki="pki_vault5",vault_id="vault-dev-5"} 2
+vcv_certificates_expiring_soon_count{level="warning",pki="__all__",vault_id="__all__"} 58
+vcv_certificates_expiring_soon_count{level="warning",pki="pki",vault_id="vault-main"} 8
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_cloud",vault_id="vault-dev-3"} 3
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_corporate",vault_id="vault-dev-2"} 3
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_dev",vault_id="vault-main"} 3
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_dmz",vault_id="vault-dev-5"} 0
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_edge",vault_id="vault-dev-3"} 0
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_external",vault_id="vault-dev-2"} 0
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_internal",vault_id="vault-dev-5"} 3
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_lab",vault_id="vault-dev-4"} 3
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_openbao",vault_id="openbao-dev-1"} 9
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_openbao_dev",vault_id="openbao-dev-1"} 5
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_openbao_prod",vault_id="openbao-dev-1"} 1
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_openbao_stage",vault_id="openbao-dev-1"} 5
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_production",vault_id="vault-main"} 0
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_qa",vault_id="vault-dev-4"} 0
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_stage",vault_id="vault-main"} 3
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_vault2",vault_id="vault-dev-2"} 3
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_vault3",vault_id="vault-dev-3"} 3
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_vault4",vault_id="vault-dev-4"} 3
+vcv_certificates_expiring_soon_count{level="warning",pki="pki_vault5",vault_id="vault-dev-5"} 3
+# HELP vcv_certificates_expiry_bucket Number of certificates expiring in time bucket
+# TYPE vcv_certificates_expiry_bucket gauge
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="__all__",vault_id="__all__"} 60
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki",vault_id="vault-main"} 9
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_cloud",vault_id="vault-dev-3"} 3
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_corporate",vault_id="vault-dev-2"} 3
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_dev",vault_id="vault-main"} 3
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_dmz",vault_id="vault-dev-5"} 0
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_edge",vault_id="vault-dev-3"} 0
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_external",vault_id="vault-dev-2"} 0
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_internal",vault_id="vault-dev-5"} 3
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_lab",vault_id="vault-dev-4"} 3
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_openbao",vault_id="openbao-dev-1"} 10
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_openbao_dev",vault_id="openbao-dev-1"} 5
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_openbao_prod",vault_id="openbao-dev-1"} 1
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_openbao_stage",vault_id="openbao-dev-1"} 5
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_production",vault_id="vault-main"} 0
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_qa",vault_id="vault-dev-4"} 0
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_stage",vault_id="vault-main"} 3
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_vault2",vault_id="vault-dev-2"} 3
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_vault3",vault_id="vault-dev-3"} 3
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_vault4",vault_id="vault-dev-4"} 3
+vcv_certificates_expiry_bucket{bucket="0-7d",pki="pki_vault5",vault_id="vault-dev-5"} 3
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="__all__",vault_id="__all__"} 11
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki",vault_id="vault-main"} 1
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_cloud",vault_id="vault-dev-3"} 1
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_corporate",vault_id="vault-dev-2"} 1
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_dev",vault_id="vault-main"} 1
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_dmz",vault_id="vault-dev-5"} 0
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_edge",vault_id="vault-dev-3"} 0
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_external",vault_id="vault-dev-2"} 0
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_internal",vault_id="vault-dev-5"} 1
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_lab",vault_id="vault-dev-4"} 1
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_openbao",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_openbao_dev",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_openbao_prod",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_openbao_stage",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_production",vault_id="vault-main"} 0
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_qa",vault_id="vault-dev-4"} 0
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_stage",vault_id="vault-main"} 1
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_vault2",vault_id="vault-dev-2"} 1
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_vault3",vault_id="vault-dev-3"} 1
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_vault4",vault_id="vault-dev-4"} 1
+vcv_certificates_expiry_bucket{bucket="30-90d",pki="pki_vault5",vault_id="vault-dev-5"} 1
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="__all__",vault_id="__all__"} 14
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki",vault_id="vault-main"} 4
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_cloud",vault_id="vault-dev-3"} 1
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_corporate",vault_id="vault-dev-2"} 1
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_dev",vault_id="vault-main"} 1
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_dmz",vault_id="vault-dev-5"} 0
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_edge",vault_id="vault-dev-3"} 0
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_external",vault_id="vault-dev-2"} 0
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_internal",vault_id="vault-dev-5"} 1
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_lab",vault_id="vault-dev-4"} 1
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_openbao",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_openbao_dev",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_openbao_prod",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_openbao_stage",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_production",vault_id="vault-main"} 0
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_qa",vault_id="vault-dev-4"} 0
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_stage",vault_id="vault-main"} 1
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_vault2",vault_id="vault-dev-2"} 1
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_vault3",vault_id="vault-dev-3"} 1
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_vault4",vault_id="vault-dev-4"} 1
+vcv_certificates_expiry_bucket{bucket="7-30d",pki="pki_vault5",vault_id="vault-dev-5"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="__all__",vault_id="__all__"} 16
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki",vault_id="vault-main"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_cloud",vault_id="vault-dev-3"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_corporate",vault_id="vault-dev-2"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_dev",vault_id="vault-main"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_dmz",vault_id="vault-dev-5"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_edge",vault_id="vault-dev-3"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_external",vault_id="vault-dev-2"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_internal",vault_id="vault-dev-5"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_lab",vault_id="vault-dev-4"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_openbao",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_openbao_dev",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_openbao_prod",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_openbao_stage",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_production",vault_id="vault-main"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_qa",vault_id="vault-dev-4"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_stage",vault_id="vault-main"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_vault2",vault_id="vault-dev-2"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_vault3",vault_id="vault-dev-3"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_vault4",vault_id="vault-dev-4"} 1
+vcv_certificates_expiry_bucket{bucket="90d+",pki="pki_vault5",vault_id="vault-dev-5"} 1
+vcv_certificates_expiry_bucket{bucket="expired",pki="__all__",vault_id="__all__"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki",vault_id="vault-main"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_cloud",vault_id="vault-dev-3"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_corporate",vault_id="vault-dev-2"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_dev",vault_id="vault-main"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_dmz",vault_id="vault-dev-5"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_edge",vault_id="vault-dev-3"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_external",vault_id="vault-dev-2"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_internal",vault_id="vault-dev-5"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_lab",vault_id="vault-dev-4"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_openbao",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_openbao_dev",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_openbao_prod",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_openbao_stage",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_production",vault_id="vault-main"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_qa",vault_id="vault-dev-4"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_stage",vault_id="vault-main"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_vault2",vault_id="vault-dev-2"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_vault3",vault_id="vault-dev-3"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_vault4",vault_id="vault-dev-4"} 0
+vcv_certificates_expiry_bucket{bucket="expired",pki="pki_vault5",vault_id="vault-dev-5"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="__all__",vault_id="__all__"} 10
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki",vault_id="vault-main"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_cloud",vault_id="vault-dev-3"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_corporate",vault_id="vault-dev-2"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_dev",vault_id="vault-main"} 2
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_dmz",vault_id="vault-dev-5"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_edge",vault_id="vault-dev-3"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_external",vault_id="vault-dev-2"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_internal",vault_id="vault-dev-5"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_lab",vault_id="vault-dev-4"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_openbao",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_openbao_dev",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_openbao_prod",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_openbao_stage",vault_id="openbao-dev-1"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_production",vault_id="vault-main"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_qa",vault_id="vault-dev-4"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_stage",vault_id="vault-main"} 0
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_vault2",vault_id="vault-dev-2"} 2
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_vault3",vault_id="vault-dev-3"} 2
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_vault4",vault_id="vault-dev-4"} 2
+vcv_certificates_expiry_bucket{bucket="revoked",pki="pki_vault5",vault_id="vault-dev-5"} 2
+# HELP vcv_certificates_last_fetch_timestamp_seconds Timestamp of last successful certificates fetch
+# TYPE vcv_certificates_last_fetch_timestamp_seconds gauge
+vcv_certificates_last_fetch_timestamp_seconds 1.770821123e+09
+# HELP vcv_certificates_partial_scrape Whether the last scrape was partial (1) due to per-vault errors
+# TYPE vcv_certificates_partial_scrape gauge
+vcv_certificates_partial_scrape{vault_id="__all__"} 0
+# HELP vcv_certificates_total Total certificates grouped by status
+# TYPE vcv_certificates_total gauge
+vcv_certificates_total{pki="__all__",status="expired",vault_id="__all__"} 3
+vcv_certificates_total{pki="__all__",status="revoked",vault_id="__all__"} 10
+vcv_certificates_total{pki="__all__",status="valid",vault_id="__all__"} 98
+vcv_certificates_total{pki="pki",status="expired",vault_id="vault-main"} 2
+vcv_certificates_total{pki="pki",status="revoked",vault_id="vault-main"} 0
+vcv_certificates_total{pki="pki",status="valid",vault_id="vault-main"} 13
+vcv_certificates_total{pki="pki_cloud",status="expired",vault_id="vault-dev-3"} 0
+vcv_certificates_total{pki="pki_cloud",status="revoked",vault_id="vault-dev-3"} 0
+vcv_certificates_total{pki="pki_cloud",status="valid",vault_id="vault-dev-3"} 6
+vcv_certificates_total{pki="pki_corporate",status="expired",vault_id="vault-dev-2"} 0
+vcv_certificates_total{pki="pki_corporate",status="revoked",vault_id="vault-dev-2"} 0
+vcv_certificates_total{pki="pki_corporate",status="valid",vault_id="vault-dev-2"} 6
+vcv_certificates_total{pki="pki_dev",status="expired",vault_id="vault-main"} 0
+vcv_certificates_total{pki="pki_dev",status="revoked",vault_id="vault-main"} 2
+vcv_certificates_total{pki="pki_dev",status="valid",vault_id="vault-main"} 6
+vcv_certificates_total{pki="pki_dmz",status="expired",vault_id="vault-dev-5"} 0
+vcv_certificates_total{pki="pki_dmz",status="revoked",vault_id="vault-dev-5"} 0
+vcv_certificates_total{pki="pki_dmz",status="valid",vault_id="vault-dev-5"} 1
+vcv_certificates_total{pki="pki_edge",status="expired",vault_id="vault-dev-3"} 0
+vcv_certificates_total{pki="pki_edge",status="revoked",vault_id="vault-dev-3"} 0
+vcv_certificates_total{pki="pki_edge",status="valid",vault_id="vault-dev-3"} 1
+vcv_certificates_total{pki="pki_external",status="expired",vault_id="vault-dev-2"} 0
+vcv_certificates_total{pki="pki_external",status="revoked",vault_id="vault-dev-2"} 0
+vcv_certificates_total{pki="pki_external",status="valid",vault_id="vault-dev-2"} 1
+vcv_certificates_total{pki="pki_internal",status="expired",vault_id="vault-dev-5"} 0
+vcv_certificates_total{pki="pki_internal",status="revoked",vault_id="vault-dev-5"} 0
+vcv_certificates_total{pki="pki_internal",status="valid",vault_id="vault-dev-5"} 6
+vcv_certificates_total{pki="pki_lab",status="expired",vault_id="vault-dev-4"} 0
+vcv_certificates_total{pki="pki_lab",status="revoked",vault_id="vault-dev-4"} 0
+vcv_certificates_total{pki="pki_lab",status="valid",vault_id="vault-dev-4"} 6
+vcv_certificates_total{pki="pki_openbao",status="expired",vault_id="openbao-dev-1"} 1
+vcv_certificates_total{pki="pki_openbao",status="revoked",vault_id="openbao-dev-1"} 0
+vcv_certificates_total{pki="pki_openbao",status="valid",vault_id="openbao-dev-1"} 9
+vcv_certificates_total{pki="pki_openbao_dev",status="expired",vault_id="openbao-dev-1"} 0
+vcv_certificates_total{pki="pki_openbao_dev",status="revoked",vault_id="openbao-dev-1"} 0
+vcv_certificates_total{pki="pki_openbao_dev",status="valid",vault_id="openbao-dev-1"} 5
+vcv_certificates_total{pki="pki_openbao_prod",status="expired",vault_id="openbao-dev-1"} 0
+vcv_certificates_total{pki="pki_openbao_prod",status="revoked",vault_id="openbao-dev-1"} 0
+vcv_certificates_total{pki="pki_openbao_prod",status="valid",vault_id="openbao-dev-1"} 1
+vcv_certificates_total{pki="pki_openbao_stage",status="expired",vault_id="openbao-dev-1"} 0
+vcv_certificates_total{pki="pki_openbao_stage",status="revoked",vault_id="openbao-dev-1"} 0
+vcv_certificates_total{pki="pki_openbao_stage",status="valid",vault_id="openbao-dev-1"} 5
+vcv_certificates_total{pki="pki_production",status="expired",vault_id="vault-main"} 0
+vcv_certificates_total{pki="pki_production",status="revoked",vault_id="vault-main"} 0
+vcv_certificates_total{pki="pki_production",status="valid",vault_id="vault-main"} 1
+vcv_certificates_total{pki="pki_qa",status="expired",vault_id="vault-dev-4"} 0
+vcv_certificates_total{pki="pki_qa",status="revoked",vault_id="vault-dev-4"} 0
+vcv_certificates_total{pki="pki_qa",status="valid",vault_id="vault-dev-4"} 1
+vcv_certificates_total{pki="pki_stage",status="expired",vault_id="vault-main"} 0
+vcv_certificates_total{pki="pki_stage",status="revoked",vault_id="vault-main"} 0
+vcv_certificates_total{pki="pki_stage",status="valid",vault_id="vault-main"} 6
+vcv_certificates_total{pki="pki_vault2",status="expired",vault_id="vault-dev-2"} 0
+vcv_certificates_total{pki="pki_vault2",status="revoked",vault_id="vault-dev-2"} 2
+vcv_certificates_total{pki="pki_vault2",status="valid",vault_id="vault-dev-2"} 6
+vcv_certificates_total{pki="pki_vault3",status="expired",vault_id="vault-dev-3"} 0
+vcv_certificates_total{pki="pki_vault3",status="revoked",vault_id="vault-dev-3"} 2
+vcv_certificates_total{pki="pki_vault3",status="valid",vault_id="vault-dev-3"} 6
+vcv_certificates_total{pki="pki_vault4",status="expired",vault_id="vault-dev-4"} 0
+vcv_certificates_total{pki="pki_vault4",status="revoked",vault_id="vault-dev-4"} 2
+vcv_certificates_total{pki="pki_vault4",status="valid",vault_id="vault-dev-4"} 6
+vcv_certificates_total{pki="pki_vault5",status="expired",vault_id="vault-dev-5"} 0
+vcv_certificates_total{pki="pki_vault5",status="revoked",vault_id="vault-dev-5"} 2
+vcv_certificates_total{pki="pki_vault5",status="valid",vault_id="vault-dev-5"} 6
+# HELP vcv_expiration_threshold_critical_days Configured critical expiration threshold in days
+# TYPE vcv_expiration_threshold_critical_days gauge
+vcv_expiration_threshold_critical_days 2
+# HELP vcv_expiration_threshold_warning_days Configured warning expiration threshold in days
+# TYPE vcv_expiration_threshold_warning_days gauge
+vcv_expiration_threshold_warning_days 10
+# HELP vcv_pki_mounts_configured Number of PKI mounts configured for a vault
+# TYPE vcv_pki_mounts_configured gauge
+vcv_pki_mounts_configured{vault_id="__all__"} 25
+vcv_pki_mounts_configured{vault_id="openbao-dev-1"} 4
+vcv_pki_mounts_configured{vault_id="vault-dev-2"} 4
+vcv_pki_mounts_configured{vault_id="vault-dev-3"} 5
+vcv_pki_mounts_configured{vault_id="vault-dev-4"} 4
+vcv_pki_mounts_configured{vault_id="vault-dev-5"} 4
+vcv_pki_mounts_configured{vault_id="vault-main"} 4
+# HELP vcv_vault_connected Vault connection status (1=connected,0=disconnected)
+# TYPE vcv_vault_connected gauge
+vcv_vault_connected{vault_id="__all__"} 1
+vcv_vault_connected{vault_id="openbao-dev-1"} 1
+vcv_vault_connected{vault_id="vault-dev-2"} 1
+vcv_vault_connected{vault_id="vault-dev-3"} 1
+vcv_vault_connected{vault_id="vault-dev-4"} 1
+vcv_vault_connected{vault_id="vault-dev-5"} 1
+vcv_vault_connected{vault_id="vault-main"} 1
+# HELP vcv_vault_list_certificates_duration_seconds Duration of the last Vault certificate listing in seconds
+# TYPE vcv_vault_list_certificates_duration_seconds gauge
+vcv_vault_list_certificates_duration_seconds{vault_id="__all__"} 0.072538674
+vcv_vault_list_certificates_duration_seconds{vault_id="openbao-dev-1"} 0.011151703
+vcv_vault_list_certificates_duration_seconds{vault_id="vault-dev-2"} 0.012099077
+vcv_vault_list_certificates_duration_seconds{vault_id="vault-dev-3"} 0.007680871
+vcv_vault_list_certificates_duration_seconds{vault_id="vault-dev-4"} 0.008578079
+vcv_vault_list_certificates_duration_seconds{vault_id="vault-dev-5"} 0.006516247
+vcv_vault_list_certificates_duration_seconds{vault_id="vault-main"} 0.026417321
+# HELP vcv_vault_list_certificates_error Whether the last Vault certificate listing errored (1) or not (0)
+# TYPE vcv_vault_list_certificates_error gauge
+vcv_vault_list_certificates_error{vault_id="__all__"} 0
+vcv_vault_list_certificates_error{vault_id="openbao-dev-1"} 0
+vcv_vault_list_certificates_error{vault_id="vault-dev-2"} 0
+vcv_vault_list_certificates_error{vault_id="vault-dev-3"} 0
+vcv_vault_list_certificates_error{vault_id="vault-dev-4"} 0
+vcv_vault_list_certificates_error{vault_id="vault-dev-5"} 0
+vcv_vault_list_certificates_error{vault_id="vault-main"} 0
+# HELP vcv_vault_list_certificates_success Whether the last Vault certificate listing succeeded (1) or failed (0)
+# TYPE vcv_vault_list_certificates_success gauge
+vcv_vault_list_certificates_success{vault_id="__all__"} 1
+vcv_vault_list_certificates_success{vault_id="openbao-dev-1"} 1
+vcv_vault_list_certificates_success{vault_id="vault-dev-2"} 1
+vcv_vault_list_certificates_success{vault_id="vault-dev-3"} 1
+vcv_vault_list_certificates_success{vault_id="vault-dev-4"} 1
+vcv_vault_list_certificates_success{vault_id="vault-dev-5"} 1
+vcv_vault_list_certificates_success{vault_id="vault-main"} 1
+# HELP vcv_vaults_configured Number of Vault instances configured
+# TYPE vcv_vaults_configured gauge
+vcv_vaults_configured 6

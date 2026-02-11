@@ -8,7 +8,8 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 - **Frontend**: Plain `index.html`, `styles.css`, `app-htmx.js` served from the embedded filesystem (no Node/bundler).
 - **Binary layout**: `app/cmd/server` embeds `/web` assets via Go `embed`; a single executable serves both API and UI.
 - **HTMX Integration**: Certificate UI fragments under `/ui/*` and optional Admin panel under `/admin/*`.
-- **OpenBao compatibility**: Uses the same Vault client library which works with both Hashicorp Vault and OpenBao due to API compatibility.
+- **Security**: Rate limiting (prod only), CSRF protection, security headers, request ID tracking, body size limits.
+- **OpenBao compatibility**: Uses the same Vault client library which works with both HashiCorp Vault and OpenBao due to API compatibility.
 
 ## Directory layout (app/)
 
@@ -16,12 +17,12 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 - `cmd/server/web/` — `index.html`, `assets/app-htmx.js`, `assets/styles.css`, `templates/` (UI fragments + Admin templates).
 - `config/` — environment-backed configuration loading with expiration threshold support.
 - `internal/cache/` — simple in-memory TTL cache (used by Vault client).
-- `internal/handlers/` — HTTP handlers (`certs`, `i18n`, `health`, `ready`, `ui` routes).
+- `internal/handlers/` — HTTP handlers (`certs`, `i18n`, `health`, `ready`, `ui`, `admin` routes).
 - `internal/metrics/` — Prometheus collectors.
 - `internal/logger/` — zerolog initialization and structured helpers (HTTP events, panic).
 - `internal/vault/` — Vault client implementations with graceful shutdown support.
 - `internal/version/` — build version info (injected via ldflags).
-- `middleware/` — request ID, HTTP logging, panic recovery, CORS, security headers.
+- `middleware/` — request ID, HTTP logging, panic recovery, CORS, security headers, rate limiting, CSRF protection, body limit.
 
 ## API surface
 
@@ -115,7 +116,12 @@ Precedence rules:
 ## Security
 
 - **Container hardening**: read-only filesystem, no-new-privileges, dropped capabilities.
-- **Graceful shutdown**: proper cleanup of HTTP server and background goroutines.
+- **Rate limiting**: Production-only (300 requests/minute, exempting health/ready/metrics).
+- **CSRF protection**: Required for all state-changing requests.
+- **Security headers**: HSTS, X-Frame-Options, X-Content-Type-Options, CSP.
+- **Request ID tracking**: Unique IDs for all requests for log correlation.
+- **Body size limits**: 1MB maximum request body.
+- **Graceful shutdown**: Proper cleanup of HTTP server and background goroutines.
 
 ## Logging
 
@@ -380,3 +386,4 @@ Test targets:
 - Efficient DOM updates via HTMX partial swapping
 - Lazy loading of certificate details
 - Optimized search with client-side filtering
+- Rate limiting to prevent abuse (production only)

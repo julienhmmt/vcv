@@ -1,28 +1,49 @@
 # VaultCertsViewer 🔐
 
-VaultCertsViewer (vcv) is a lightweight web UI that lists and inspects certificates stored in one or more Hashicorp Vault or OpenBao PKI mounts, especially their expiration dates and SANs.
+VaultCertsViewer (vcv) is a lightweight web UI that lists and inspects certificates stored in one or more HashiCorp Vault or OpenBao PKI mounts, especially their expiration dates and SANs.
 
-OpenBao compatible: VCV works seamlessly with both Hashicorp Vault and OpenBao, as they share the same PKI API. Tested with OpenBao 2.4 and Vault 1.21 (as of 01/2026).
+OpenBao compatible: VCV works seamlessly with both HashiCorp Vault and OpenBao, as they share the same PKI API. Tested with OpenBao 2.4+ and Vault 1.20+ (as of 02/2026).
 
 ## ✨ What it does
 
-- Discovers all certificates in Vault/OpenBao PKI mounts and shows them in a searchable, filterable table
+- Discovers all certificates in Vault/OpenBao PKI mounts and shows them in a searchable, filterable table with pagination (25/50/100/all)
+- Multi-Vault support: connect to multiple Vault/OpenBao instances simultaneously
 - Multi-PKI engine support with modal selector to choose which mounts to display
-- Shows common names (CN), SANs, and certificate details
+- Shows common names (CN), SANs, and certificate details with creation/expiration dates
 - Displays status distribution (valid/expired/revoked) and upcoming expirations
-- Highlights certificates expiring soon (7/30 days) with configurable thresholds
-- Real-time Vault connection status with toast notifications
+- Highlights certificates expiring soon with configurable thresholds (default: 7/30 days)
+- Real-time Vault connection status with header indicator
 - Multi-language support (en, fr, es, de, it) and dark/light theme
+- Admin panel for web-based configuration management (optional, bcrypt-protected)
+- Prometheus metrics endpoint with enhanced metrics and per-certificate options
+- Security hardened: rate limiting (300 req/min), CSRF protection, security headers
 
 ## 🚀 Quick start
 
 ### Hashicorp Vault
 
+Option 1: Explicit mounts (recommended for production):
+
 ```bash
 vault policy write vcv - <<'EOF'
 path "pki/certs"    { capabilities = ["list"] }
 path "pki/certs/*"  { capabilities = ["read","list"] }
+path "pki2/certs"   { capabilities = ["list"] }
+path "pki2/certs/*" { capabilities = ["read","list"] }
 path "sys/health"   { capabilities = ["read"] }
+EOF
+
+vault write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
+vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
+```
+
+Option 2: Wildcard pattern (for dynamic environments):
+
+```bash
+vault policy write vcv - <<'EOF'
+path "pki*/certs"    { capabilities = ["list"] }
+path "pki*/certs/*"  { capabilities = ["read","list"] }
+path "sys/health"    { capabilities = ["read"] }
 EOF
 
 vault write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
@@ -31,11 +52,28 @@ vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 
 ### OpenBao
 
+Option 1: Explicit mounts (recommended for production):
+
 ```bash
 bao policy write vcv - <<'EOF'
 path "pki/certs"    { capabilities = ["list"] }
 path "pki/certs/*"  { capabilities = ["read","list"] }
+path "pki2/certs"   { capabilities = ["list"] }
+path "pki2/certs/*" { capabilities = ["read","list"] }
 path "sys/health"   { capabilities = ["read"] }
+EOF
+
+bao write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
+bao token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
+```
+
+Option 2: Wildcard pattern (for dynamic environments):
+
+```bash
+bao policy write vcv - <<'EOF'
+path "pki*/certs"    { capabilities = ["list"] }
+path "pki*/certs/*"  { capabilities = ["read","list"] }
+path "sys/health"    { capabilities = ["read"] }
 EOF
 
 bao write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
@@ -62,6 +100,14 @@ Create a `settings.json` file:
       "critical": 7,
       "warning": 30
     }
+  },
+  "metrics": {
+    "per_certificate": false,
+    "enhanced_metrics": true
+  },
+  "cors": {
+    "enabled": false,
+    "allowed_origins": []
   },
   "vaults": [
     {
@@ -112,10 +158,33 @@ docker run -d \
 
 VCV supports custom CA bundles and TLS settings per Vault instance through `settings.json`:
 
-- `tls_ca_cert_base64`: base64-encoded PEM CA bundle
-- `tls_ca_cert`: file path to PEM CA bundle  
+- `tls_ca_cert_base64`: base64-encoded PEM CA bundle (preferred)
+- `tls_ca_cert`: file path to PEM CA bundle
+- `tls_ca_path`: directory containing CA certs
 - `tls_server_name`: TLS SNI server name override
 - `tls_insecure`: disable TLS verification (dev only)
+
+Precedence: `tls_ca_cert_base64` overrides `tls_ca_cert`/`tls_ca_path`.
+
+## 📊 Prometheus metrics
+
+VCV exposes metrics at `/metrics` endpoint with comprehensive certificate monitoring:
+
+**Key metrics:**
+
+- `vcv_certificates_total{vault_id, pki, status}` - Certificate counts by status
+- `vcv_certificates_expiring_soon_count{vault_id, pki, level}` - Expiring certificates
+- `vcv_vault_connected{vault_id}` - Connection status
+- `vcv_certificates_last_fetch_timestamp_seconds` - Last successful scrape
+
+**Configuration:**
+
+```json
+"metrics": {
+  "per_certificate": false,    // High cardinality metrics
+  "enhanced_metrics": true     // Detailed bucket metrics
+}
+```
 
 ## 🎛️ Admin panel (optional)
 
@@ -130,14 +199,18 @@ volumes:
 
 ## 🌍 Features
 
-- **Multi-Vault support**: Connect to multiple Vault/OpenBao instances
-- **Multi-PKI engine**: Monitor multiple PKI mounts simultaneously  
-- **Real-time status**: Live connection monitoring with notifications
-- **Dark mode**: Complete dark theme support
-- **Internationalization**: 5 languages with automatic detection
-- **Configurable alerts**: Custom expiration thresholds
-- **Admin panel**: Web-based configuration management
-- **Security hardened**: Read-only container with minimal privileges
+- **Multi-Vault support**: Connect to multiple Vault/OpenBao instances simultaneously
+- **Multi-PKI engine**: Monitor multiple PKI mounts with modal selector and certificate counts
+- **Real-time search**: Instant filtering with 300ms debouncing
+- **Status filtering**: Quick filters for valid/expired/revoked certificates
+- **Pagination**: Configurable page sizes (25/50/100/all) with navigation
+- **Sort options**: By vault, PKI mount, common name, creation/expiration dates
+- **Real-time status**: Live Vault connection monitoring with header indicator
+- **Internationalization**: 5 languages with URL parameter support (?lang=xx)
+- **Configurable thresholds**: Custom expiration thresholds (critical/warning)
+- **Admin panel**: Web-based configuration management (bcrypt-protected)
+- **Prometheus metrics**: Built-in metrics endpoint with enhanced options
+- **Read-only container**: Supports running with minimal privileges
 
 ## 📚 Documentation
 
