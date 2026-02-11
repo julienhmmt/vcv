@@ -35,5 +35,18 @@ tasks:
 
   update-go:
     desc: Update go version
+    dir: app
     cmds:
-      - cd app && go get -u all && go mod tidy -v && go clean -cache -v && cd ..
+      - go get -u all && go mod tidy -v && go clean -cache -v
+
+  lint:
+    desc: Run go fmt and go vet
+    dir: app
+    cmds:
+      - go fmt ./... && go vet ./...
+
+  coverage:
+    desc: Run unit tests with coverage
+    dir: app
+    cmds:
+      - 'go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out'
