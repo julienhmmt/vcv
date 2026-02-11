@@ -1,5 +1,8 @@
 # VaultCertsViewer 🔐
 
+![GitHub Release](https://img.shields.io/github/v/release/julienhmmt/vcv?display_name=release&style=for-the-badge) ![GitHub License](https://img.shields.io/github/license/julienhmmt/vcv?style=for-the-badge)
+
+
 VaultCertsViewer (vcv) is a lightweight web UI that lists and inspects certificates stored in one or more Hashicorp Vault or OpenBao PKI (the Hashicorp Vault fork) mounts, especially their expiration dates and SANs.
 
 VaultCertsViewer can simultaneously monitor multiple PKI engines through a single interface, with a modal selector to choose which mounts to display. With its `settings.json` file configuration, VCV can connect to multiple Vault/OpenBao instances and PKI mounts.
