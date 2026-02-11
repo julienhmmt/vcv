@@ -800,6 +800,67 @@ func paginateCertificates(items []certs.Certificate, pageIndex int, pageSize str
 	return items[start:end], totalPages
 }
 
+func parseStatusFilters(raw string) []string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" || trimmed == "all" {
+		return nil
+	}
+	parts := strings.Split(trimmed, ",")
+	result := make([]string, 0, len(parts))
+	for _, part := range parts {
+		value := strings.TrimSpace(part)
+		if value != "" && value != "all" {
+			result = append(result, value)
+		}
+	}
+	if len(result) == 0 {
+		return nil
+	}
+	return result
+}
+
+func matchesStatusFilter(certificate certs.Certificate, statusFilters []string, certStatuses []string, now time.Time, thresholds config.ExpirationThresholds) bool {
+	for _, filter := range statusFilters {
+		switch filter {
+		case "valid":
+			if !containsString(certStatuses, "valid") {
+				continue
+			}
+			days := daysUntil(certificate.ExpiresAt.UTC(), now)
+			if thresholds.Warning > 0 && days >= 0 && days <= thresholds.Warning {
+				continue
+			}
+			return true
+		case "warning":
+			if !containsString(certStatuses, "valid") {
+				continue
+			}
+			days := daysUntil(certificate.ExpiresAt.UTC(), now)
+			if thresholds.Warning <= 0 || days < 0 || days > thresholds.Warning {
+				continue
+			}
+			if thresholds.Critical > 0 && days <= thresholds.Critical {
+				continue
+			}
+			return true
+		case "critical":
+			if !containsString(certStatuses, "valid") {
+				continue
+			}
+			days := daysUntil(certificate.ExpiresAt.UTC(), now)
+			if thresholds.Critical <= 0 || days < 0 || days > thresholds.Critical {
+				continue
+			}
+			return true
+		default:
+			if containsString(certStatuses, filter) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func applyCertificateFilters(items []certs.Certificate, state certsQueryState, sortKey string, sortDirection string, thresholds config.ExpirationThresholds) []certs.Certificate {
 	loweredTerm := strings.ToLower(strings.TrimSpace(state.SearchTerm))
 	vaultFilter := strings.ToLower(strings.TrimSpace(state.VaultFilter))
@@ -809,6 +870,7 @@ func applyCertificateFilters(items []certs.Certificate, state certsQueryState, s
 	if state.ExpiryFilter != "" && state.ExpiryFilter != "all" {
 		maxDays = parseInt(state.ExpiryFilter, -1)
 	}
+	statusFilters := parseStatusFilters(state.StatusFilter)
 	filtered := make([]certs.Certificate, 0, len(items))
 	for _, certificate := range items {
 		vaultID, mountName := extractVaultIDAndMountName(certificate.ID)
@@ -822,36 +884,11 @@ func applyCertificateFilters(items []certs.Certificate, state certsQueryState, s
 				continue
 			}
 		}
-		statuses := certificateStatuses(certificate, now)
-		if state.StatusFilter == "valid" {
-			if !containsString(statuses, "valid") {
+		if statusFilters != nil {
+			certStatuses := certificateStatuses(certificate, now)
+			if !matchesStatusFilter(certificate, statusFilters, certStatuses, now, thresholds) {
 				continue
 			}
-			days := daysUntil(certificate.ExpiresAt.UTC(), now)
-			if thresholds.Warning > 0 && days >= 0 && days <= thresholds.Warning {
-				continue
-			}
-		} else if state.StatusFilter == "warning" {
-			if !containsString(statuses, "valid") {
-				continue
-			}
-			days := daysUntil(certificate.ExpiresAt.UTC(), now)
-			if thresholds.Warning <= 0 || days < 0 || days > thresholds.Warning {
-				continue
-			}
-			if thresholds.Critical > 0 && days <= thresholds.Critical {
-				continue
-			}
-		} else if state.StatusFilter == "critical" {
-			if !containsString(statuses, "valid") {
-				continue
-			}
-			days := daysUntil(certificate.ExpiresAt.UTC(), now)
-			if thresholds.Critical <= 0 || days < 0 || days > thresholds.Critical {
-				continue
-			}
-		} else if state.StatusFilter != "all" && !containsString(statuses, state.StatusFilter) {
-			continue
 		}
 		if maxDays >= 0 {
 			days := daysUntil(certificate.ExpiresAt, now)

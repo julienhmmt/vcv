@@ -726,10 +726,33 @@ function renderDonutChart() {
 }
 
 function syncDashboardCardFromStatusFilter() {
+  const active = getActiveStatusFilters();
+  updateActiveDashboardCard(active);
+  toggleClearFilterButton(active);
+}
+
+function getActiveStatusFilters() {
   const statusSelect = document.getElementById("vcv-status-filter");
-  const currentStatus = statusSelect ? statusSelect.value : "all";
-  updateActiveDashboardCard(currentStatus);
-  toggleClearFilterButton(currentStatus);
+  if (!statusSelect) {
+    return [];
+  }
+  const raw = statusSelect.value.trim();
+  if (raw === "" || raw === "all") {
+    return [];
+  }
+  return raw.split(",").map((s) => s.trim()).filter((s) => s !== "" && s !== "all");
+}
+
+function setStatusFilterValue(statuses) {
+  const statusSelect = document.getElementById("vcv-status-filter");
+  if (!statusSelect) {
+    return;
+  }
+  if (statuses.length === 0) {
+    statusSelect.value = "all";
+  } else {
+    statusSelect.value = statuses.join(",");
+  }
 }
 
 function filterByDashboardCard(status) {
@@ -737,26 +760,32 @@ function filterByDashboardCard(status) {
   if (!statusSelect) {
     return;
   }
-  const currentValue = statusSelect.value;
-  const nextValue = currentValue === status ? "all" : status;
-  statusSelect.value = nextValue;
+  const active = getActiveStatusFilters();
+  const index = active.indexOf(status);
+  if (index === -1) {
+    active.push(status);
+  } else {
+    active.splice(index, 1);
+  }
+  setStatusFilterValue(active);
   const pageInput = document.getElementById("vcv-page");
   if (pageInput) {
     pageInput.value = "0";
   }
-  updateActiveDashboardCard(nextValue);
-  toggleClearFilterButton(nextValue);
+  updateActiveDashboardCard(active);
+  toggleClearFilterButton(active);
   refreshHtmxCertsTable();
   updateFilterBadge();
 }
 
-function toggleClearFilterButton(status) {
+function toggleClearFilterButton(activeStatuses) {
   const btn = document.getElementById("vcv-clear-filter");
   const hint = document.getElementById("dashboard-filter-hint");
   if (!btn) {
     return;
   }
-  if (status === "all") {
+  const hasFilter = Array.isArray(activeStatuses) ? activeStatuses.length > 0 : (activeStatuses !== "all" && activeStatuses !== "");
+  if (!hasFilter) {
     btn.classList.add("vcv-hidden");
     if (hint) {
       hint.classList.remove("vcv-hidden");
@@ -778,17 +807,18 @@ function clearStatusFilter() {
   if (pageInput) {
     pageInput.value = "0";
   }
-  updateActiveDashboardCard("all");
-  toggleClearFilterButton("all");
+  updateActiveDashboardCard([]);
+  toggleClearFilterButton([]);
   refreshHtmxCertsTable();
   updateFilterBadge();
 }
 
-function updateActiveDashboardCard(activeStatus) {
+function updateActiveDashboardCard(activeStatuses) {
+  const activeSet = Array.isArray(activeStatuses) ? new Set(activeStatuses) : new Set(activeStatuses === "all" || activeStatuses === "" ? [] : [activeStatuses]);
   const stats = document.querySelectorAll(".vcv-stat-clickable");
   stats.forEach((stat) => {
     const statStatus = stat.getAttribute("data-status") || "";
-    if (statStatus === activeStatus) {
+    if (activeSet.has(statStatus)) {
       stat.classList.add("vcv-stat-active");
     } else {
       stat.classList.remove("vcv-stat-active");

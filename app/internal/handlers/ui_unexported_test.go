@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"vcv/config"
 	"vcv/internal/certs"
 	"vcv/internal/i18n"
 
@@ -830,4 +831,89 @@ func TestVaultHealthCache_Clear(t *testing.T) {
 	entry2, exists2 = cache.get("vault2")
 	assert.False(t, exists2)
 	assert.Equal(t, vaultHealthCacheEntry{}, entry2)
+}
+
+func TestParseStatusFilters(t *testing.T) {
+	tests := []struct {
+		name     string
+		raw      string
+		expected []string
+	}{
+		{name: "all returns nil", raw: "all", expected: nil},
+		{name: "empty returns nil", raw: "", expected: nil},
+		{name: "single status", raw: "valid", expected: []string{"valid"}},
+		{name: "two statuses", raw: "valid,expired", expected: []string{"valid", "expired"}},
+		{name: "three statuses with spaces", raw: " warning , critical , revoked ", expected: []string{"warning", "critical", "revoked"}},
+		{name: "all mixed in is ignored", raw: "valid,all,expired", expected: []string{"valid", "expired"}},
+		{name: "only all values returns nil", raw: "all,all", expected: nil},
+		{name: "trailing comma", raw: "valid,", expected: []string{"valid"}},
+		{name: "leading comma", raw: ",expired", expected: []string{"expired"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseStatusFilters(tt.raw)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestMatchesStatusFilter_MultiSelect(t *testing.T) {
+	now := time.Date(2024, 6, 15, 0, 0, 0, 0, time.UTC)
+	thresholds := config.ExpirationThresholds{Warning: 30, Critical: 7}
+
+	validCert := certs.Certificate{
+		CommonName: "valid.example.com",
+		ExpiresAt:  now.Add(90 * 24 * time.Hour),
+	}
+	warningCert := certs.Certificate{
+		CommonName: "warning.example.com",
+		ExpiresAt:  now.Add(15 * 24 * time.Hour),
+	}
+	criticalCert := certs.Certificate{
+		CommonName: "critical.example.com",
+		ExpiresAt:  now.Add(3 * 24 * time.Hour),
+	}
+	expiredCert := certs.Certificate{
+		CommonName: "expired.example.com",
+		ExpiresAt:  now.Add(-5 * 24 * time.Hour),
+	}
+	revokedCert := certs.Certificate{
+		CommonName: "revoked.example.com",
+		ExpiresAt:  now.Add(60 * 24 * time.Hour),
+		Revoked:    true,
+	}
+
+	tests := []struct {
+		name     string
+		cert     certs.Certificate
+		filters  []string
+		expected bool
+	}{
+		{name: "valid cert matches valid filter", cert: validCert, filters: []string{"valid"}, expected: true},
+		{name: "valid cert does not match expired filter", cert: validCert, filters: []string{"expired"}, expected: false},
+		{name: "valid cert matches valid+expired filter", cert: validCert, filters: []string{"valid", "expired"}, expected: true},
+		{name: "expired cert matches expired filter", cert: expiredCert, filters: []string{"expired"}, expected: true},
+		{name: "expired cert matches valid+expired filter", cert: expiredCert, filters: []string{"valid", "expired"}, expected: true},
+		{name: "expired cert does not match valid filter", cert: expiredCert, filters: []string{"valid"}, expected: false},
+		{name: "warning cert matches warning filter", cert: warningCert, filters: []string{"warning"}, expected: true},
+		{name: "warning cert matches warning+critical filter", cert: warningCert, filters: []string{"warning", "critical"}, expected: true},
+		{name: "warning cert does not match valid filter", cert: warningCert, filters: []string{"valid"}, expected: false},
+		{name: "critical cert matches critical filter", cert: criticalCert, filters: []string{"critical"}, expected: true},
+		{name: "critical cert does not match warning filter", cert: criticalCert, filters: []string{"warning"}, expected: false},
+		{name: "critical cert matches critical+expired filter", cert: criticalCert, filters: []string{"critical", "expired"}, expected: true},
+		{name: "revoked cert matches revoked filter", cert: revokedCert, filters: []string{"revoked"}, expected: true},
+		{name: "revoked cert matches revoked+expired filter", cert: revokedCert, filters: []string{"revoked", "expired"}, expected: true},
+		{name: "revoked cert does not match valid filter", cert: revokedCert, filters: []string{"valid"}, expected: false},
+		{name: "all five filters match valid cert", cert: validCert, filters: []string{"valid", "warning", "critical", "expired", "revoked"}, expected: true},
+		{name: "all five filters match expired cert", cert: expiredCert, filters: []string{"valid", "warning", "critical", "expired", "revoked"}, expected: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			certStatuses := certificateStatuses(tt.cert, now)
+			result := matchesStatusFilter(tt.cert, tt.filters, certStatuses, now, thresholds)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }
