@@ -26,7 +26,8 @@ func TestCollector_ErrorStopsCollection(t *testing.T) {
 	mockVault.On("CheckConnection", mock.Anything).Return(assert.AnError)
 
 	registry := prometheus.NewRegistry()
-	collector := NewCertificateCollector(mockVault, map[string]vault.Client{}, config.ExpirationThresholds{Critical: 7, Warning: 30})
+	metricsConfig := config.MetricsConfig{PerCertificate: false, EnhancedMetrics: false}
+	collector := NewCertificateCollectorWithVaults(mockVault, map[string]vault.Client{}, config.ExpirationThresholds{Critical: 7, Warning: 30}, metricsConfig, []config.VaultInstance{})
 	require.NoError(t, registry.Register(collector))
 
 	metricsCount := testutil.CollectAndCount(collector)
@@ -60,7 +61,8 @@ func TestCollector_SuccessMetrics(t *testing.T) {
 	statusClients := map[string]vault.Client{"vault-a": mockVault}
 
 	registry := prometheus.NewRegistry()
-	rawCollector := NewCertificateCollectorWithVaults(multiClient, statusClients, config.ExpirationThresholds{Critical: 7, Warning: 30}, vaultInstances)
+	metricsConfig := config.MetricsConfig{PerCertificate: true, EnhancedMetrics: true}
+	rawCollector := NewCertificateCollectorWithVaults(multiClient, statusClients, config.ExpirationThresholds{Critical: 7, Warning: 30}, metricsConfig, vaultInstances)
 	collector, ok := rawCollector.(*certificateCollector)
 	require.True(t, ok)
 	collector.now = func() time.Time { return now }
@@ -140,7 +142,8 @@ func TestCollector_EnhancedMetrics(t *testing.T) {
 	statusClients := map[string]vault.Client{"vault-1": mockVault}
 
 	registry := prometheus.NewRegistry()
-	rawCollector := NewCertificateCollectorWithVaults(multiClient, statusClients, config.ExpirationThresholds{Critical: 7, Warning: 30}, vaultInstances)
+	metricsConfig := config.MetricsConfig{PerCertificate: false, EnhancedMetrics: true}
+	rawCollector := NewCertificateCollectorWithVaults(multiClient, statusClients, config.ExpirationThresholds{Critical: 7, Warning: 30}, metricsConfig, vaultInstances)
 	collector, ok := rawCollector.(*certificateCollector)
 	require.True(t, ok)
 	collector.now = func() time.Time { return now }
@@ -180,7 +183,8 @@ func TestCollector_ThresholdMetrics(t *testing.T) {
 	mockVault.On("CheckConnection", mock.Anything).Return(nil)
 
 	registry := prometheus.NewRegistry()
-	collector := NewCertificateCollector(mockVault, map[string]vault.Client{}, config.ExpirationThresholds{Critical: 2, Warning: 10})
+	metricsConfig := config.MetricsConfig{PerCertificate: false, EnhancedMetrics: false}
+	collector := NewCertificateCollector(mockVault, map[string]vault.Client{}, config.ExpirationThresholds{Critical: 2, Warning: 10}, metricsConfig)
 	typed, ok := collector.(*certificateCollector)
 	require.True(t, ok)
 	typed.now = func() time.Time { return now }
@@ -211,7 +215,8 @@ func TestCollector_ZeroExpiresAtExcludedFromBuckets(t *testing.T) {
 	mockVault.On("CheckConnection", mock.Anything).Return(nil)
 
 	registry := prometheus.NewRegistry()
-	collector := NewCertificateCollector(mockVault, map[string]vault.Client{}, config.ExpirationThresholds{Critical: 7, Warning: 30})
+	metricsConfig := config.MetricsConfig{PerCertificate: false, EnhancedMetrics: true}
+	collector := NewCertificateCollector(mockVault, map[string]vault.Client{}, config.ExpirationThresholds{Critical: 7, Warning: 30}, metricsConfig)
 	typed, ok := collector.(*certificateCollector)
 	require.True(t, ok)
 	typed.now = func() time.Time { return now }

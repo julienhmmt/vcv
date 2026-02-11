@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"math"
-	"os"
 	"sort"
 	"strings"
 	"time"
@@ -52,7 +51,7 @@ type certificateCollector struct {
 
 // NewCertificateCollector returns a Prometheus collector exposing certificate inventory and expiry status.
 
-func NewCertificateCollector(vaultClient vault.Client, statusClients map[string]vault.Client, thresholds config.ExpirationThresholds) prometheus.Collector {
+func NewCertificateCollector(vaultClient vault.Client, statusClients map[string]vault.Client, thresholds config.ExpirationThresholds, metricsConfig config.MetricsConfig) prometheus.Collector {
 	critical := thresholds.Critical
 	if critical <= 0 {
 		critical = 7
@@ -61,8 +60,6 @@ func NewCertificateCollector(vaultClient vault.Client, statusClients map[string]
 	if warning <= 0 {
 		warning = 30
 	}
-	perCertificate := parseBoolEnv("VCV_METRICS_PER_CERTIFICATE", false)
-	enhancedMetrics := parseBoolEnv("VCV_METRICS_ENHANCED", true)
 	clients := statusClients
 	if clients == nil {
 		clients = map[string]vault.Client{}
@@ -71,15 +68,15 @@ func NewCertificateCollector(vaultClient vault.Client, statusClients map[string]
 		vaultClient:      vaultClient,
 		statusClients:    clients,
 		thresholds:       config.ExpirationThresholds{Critical: critical, Warning: warning},
-		perCertificate:   perCertificate,
-		enhancedMetrics:  enhancedMetrics,
+		perCertificate:   metricsConfig.PerCertificate,
+		enhancedMetrics:  metricsConfig.EnhancedMetrics,
 		configuredVaults: []config.VaultInstance{},
 		now:              time.Now,
 	}
 }
 
-func NewCertificateCollectorWithVaults(vaultClient vault.Client, statusClients map[string]vault.Client, thresholds config.ExpirationThresholds, vaults []config.VaultInstance) prometheus.Collector {
-	collector := NewCertificateCollector(vaultClient, statusClients, thresholds)
+func NewCertificateCollectorWithVaults(vaultClient vault.Client, statusClients map[string]vault.Client, thresholds config.ExpirationThresholds, metricsConfig config.MetricsConfig, vaults []config.VaultInstance) prometheus.Collector {
+	collector := NewCertificateCollector(vaultClient, statusClients, thresholds, metricsConfig)
 	typed, ok := collector.(*certificateCollector)
 	if !ok {
 		return collector
@@ -390,6 +387,7 @@ func (collector *certificateCollector) emitPerCertificateMetrics(ch chan<- prome
 	if !collector.perCertificate {
 		return
 	}
+	emitEnhanced := collector.enhancedMetrics
 	for _, certificate := range certificates {
 		if certificate.ExpiresAt.IsZero() {
 			continue
@@ -398,7 +396,7 @@ func (collector *certificateCollector) emitPerCertificateMetrics(ch chan<- prome
 		status := collector.statusLabel(certificate, now)
 		expiryTimestamp := float64(certificate.ExpiresAt.Unix())
 		ch <- prometheus.MustNewConstMetric(expiryTimestampDesc, prometheus.GaugeValue, expiryTimestamp, certificate.ID, certificate.CommonName, status, vaultID, pki)
-		if collector.enhancedMetrics {
+		if emitEnhanced {
 			daysRemaining := float64(daysUntil(certificate.ExpiresAt.UTC(), now.UTC()))
 			ch <- prometheus.MustNewConstMetric(daysUntilExpiryDesc, prometheus.GaugeValue, daysRemaining, certificate.ID, certificate.CommonName, status, vaultID, pki)
 		}
@@ -513,20 +511,5 @@ func (collector *certificateCollector) emitEnhancedMetrics(ch chan<- prometheus.
 	}
 	for _, bucket := range []string{"0-7d", "7-30d", "30-90d", "90d+", "expired", "revoked"} {
 		ch <- prometheus.MustNewConstMetric(expiryBucketDesc, prometheus.GaugeValue, float64(allBuckets[bucket]), allLabelValue, allLabelValue, bucket)
-	}
-}
-
-func parseBoolEnv(key string, fallback bool) bool {
-	value := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
-	if value == "" {
-		return fallback
-	}
-	switch value {
-	case "1", "true", "yes", "y", "on":
-		return true
-	case "0", "false", "no", "n", "off":
-		return false
-	default:
-		return fallback
 	}
 }

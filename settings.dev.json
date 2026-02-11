@@ -15,6 +15,10 @@
       "warning": 10
     }
   },
+  "metrics": {
+    "per_certificate": true,
+    "enhanced_metrics": true
+  },
   "cors": {
     "allowed_origins": [
       "http://localhost:4321",
@@ -118,7 +122,7 @@
       "pki_mount": "pki_openbao",
       "pki_mounts": [
         "pki_openbao",
-        "pki_openbao_dev", 
+        "pki_openbao_dev",
         "pki_openbao_stage",
         "pki_openbao_prod"
       ],

@@ -63,6 +63,10 @@ type adminPanelTemplateData struct {
 	Settings        config.SettingsFile
 	SuccessText     string
 	VaultViews      []adminVaultViewData
+	MetricsView     struct {
+		PerCertificate  bool
+		EnhancedMetrics bool
+	}
 }
 
 type adminSessionStore struct {
@@ -458,6 +462,17 @@ func renderAdminTemplate(w http.ResponseWriter, templates *template.Template, na
 func buildAdminPanelData(settings config.SettingsFile, successText string, errorText string, messages i18n.Messages) adminPanelTemplateData {
 	corsOriginsText := strings.Join(settings.CORS.AllowedOrigins, ",")
 	views := make([]adminVaultViewData, 0, len(settings.Vaults))
+
+	// Read actual metrics values from settings, with defaults if nil
+	perCertificate := false
+	enhancedMetrics := true
+	if settings.Metrics.PerCertificate != nil {
+		perCertificate = *settings.Metrics.PerCertificate
+	}
+	if settings.Metrics.EnhancedMetrics != nil {
+		enhancedMetrics = *settings.Metrics.EnhancedMetrics
+	}
+
 	for i, vault := range settings.Vaults {
 		mounts := vault.PKIMounts
 		if len(mounts) == 0 {
@@ -470,7 +485,21 @@ func buildAdminPanelData(settings config.SettingsFile, successText string, error
 		key := fmt.Sprintf("%d", i)
 		views = append(views, adminVaultViewData{Messages: messages, Enabled: config.IsVaultEnabled(vault), Key: key, MountsText: mountsText, Open: false, TLSInsecure: vault.TLSInsecure, Vault: vault})
 	}
-	return adminPanelTemplateData{Messages: messages, CorsOriginsText: corsOriginsText, ErrorText: errorText, Settings: settings, SuccessText: successText, VaultViews: views}
+	return adminPanelTemplateData{
+		Messages:        messages,
+		CorsOriginsText: corsOriginsText,
+		ErrorText:       errorText,
+		Settings:        settings,
+		SuccessText:     successText,
+		VaultViews:      views,
+		MetricsView: struct {
+			PerCertificate  bool
+			EnhancedMetrics bool
+		}{
+			PerCertificate:  perCertificate,
+			EnhancedMetrics: enhancedMetrics,
+		},
+	}
 }
 
 func parseSettingsUpdateForm(r *http.Request, existing config.SettingsFile) (config.SettingsFile, error) {
@@ -490,6 +519,13 @@ func parseSettingsUpdateForm(r *http.Request, existing config.SettingsFile) (con
 	}
 	updated.Certificates.ExpirationThresholds.Critical = critical
 	updated.Certificates.ExpirationThresholds.Warning = warning
+
+	// Parse metrics settings
+	perCertificate := r.PostForm.Get("metrics_per_certificate") == "on"
+	enhancedMetrics := r.PostForm.Get("metrics_enhanced") == "on"
+	updated.Metrics.PerCertificate = &perCertificate
+	updated.Metrics.EnhancedMetrics = &enhancedMetrics
+
 	updated.CORS.AllowedOrigins = splitAndTrim(r.PostForm.Get("cors_origins"))
 	updated.Vaults = parseVaultsFromForm(r.PostForm)
 	return updated, nil

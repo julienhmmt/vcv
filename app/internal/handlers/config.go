@@ -15,6 +15,10 @@ type ConfigResponse struct {
 		Critical int `json:"critical"`
 		Warning  int `json:"warning"`
 	} `json:"expirationThresholds"`
+	Metrics struct {
+		PerCertificate  bool `json:"per_certificate"`
+		EnhancedMetrics bool `json:"enhanced_metrics"`
+	} `json:"metrics"`
 	PKIMounts []string              `json:"pkiMounts"`
 	Vaults    []VaultConfigResponse `json:"vaults"`
 }
@@ -33,6 +37,8 @@ func GetConfig(cfg config.Config) http.HandlerFunc {
 		resp := ConfigResponse{}
 		resp.ExpirationThresholds.Critical = cfg.ExpirationThresholds.Critical
 		resp.ExpirationThresholds.Warning = cfg.ExpirationThresholds.Warning
+		resp.Metrics.PerCertificate = cfg.Metrics.PerCertificate
+		resp.Metrics.EnhancedMetrics = cfg.Metrics.EnhancedMetrics
 		resp.PKIMounts = cfg.Vault.PKIMounts
 		if resp.PKIMounts == nil {
 			resp.PKIMounts = []string{}

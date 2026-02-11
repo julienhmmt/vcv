@@ -10,6 +10,10 @@ const state = {
   suppressUrlUpdateUntilNextSuccess: false,
   vaultConnected: null,
   vaultMountGroups: [],
+  metrics: {
+    perCertificate: false,
+    enhancedMetrics: true,
+  },
 };
 
 function buildVaultMountKey(vaultId, mount) {
@@ -344,7 +348,7 @@ function initClientValidation() {
     
     // Validate page size
     if (params.pageSize) {
-      const validSizes = ['25', '50', '100', 'all'];
+      const validSizes = ['25', '50', '75', '100', 'all'];
       if (!validSizes.includes(params.pageSize)) {
         evt.preventDefault();
         const messages = state.messages || {};
@@ -1230,6 +1234,13 @@ async function loadConfig() {
     if (!data) {
       return;
     }
+
+    // Load metrics configuration if available
+    if (data.metrics && typeof data.metrics === "object") {
+      state.metrics.perCertificate = Boolean(data.metrics.per_certificate);
+      state.metrics.enhancedMetrics = Boolean(data.metrics.enhanced_metrics);
+    }
+
     const vaults = Array.isArray(data.vaults) ? data.vaults : [];
     if (vaults.length > 0) {
       state.vaultMountGroups = vaults

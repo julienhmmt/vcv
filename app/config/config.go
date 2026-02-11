@@ -31,6 +31,7 @@ type Config struct {
 	Vault                VaultConfig
 	Vaults               []VaultInstance
 	ExpirationThresholds ExpirationThresholds
+	Metrics              MetricsConfig
 }
 
 // CORSConfig holds CORS-specific configuration.
@@ -56,9 +57,16 @@ type ExpirationThresholds struct {
 	Warning  int `json:"warning"`
 }
 
+// MetricsConfig holds metrics collection configuration.
+type MetricsConfig struct {
+	PerCertificate  bool `json:"per_certificate"`
+	EnhancedMetrics bool `json:"enhanced_metrics"`
+}
+
 type SettingsFile struct {
 	App          AppSettings         `json:"app"`
 	Certificates CertificateSettings `json:"certificates"`
+	Metrics      MetricsSettings     `json:"metrics"`
 	CORS         CORSSettings        `json:"cors"`
 	Vaults       []VaultInstance     `json:"vaults"`
 }
@@ -83,6 +91,11 @@ type CORSSettings struct {
 
 type CertificateSettings struct {
 	ExpirationThresholds ExpirationThresholds `json:"expiration_thresholds"`
+}
+
+type MetricsSettings struct {
+	PerCertificate  *bool `json:"per_certificate"`
+	EnhancedMetrics *bool `json:"enhanced_metrics"`
 }
 
 // Load reads configuration from environment variables or settings file.
@@ -116,6 +129,7 @@ func Load() (Config, error) {
 		CORS:                 loadCORSConfig(env),
 		Vault:                legacyVault,
 		ExpirationThresholds: loadExpirationThresholds(),
+		Metrics:              loadMetricsConfig(),
 	}
 
 	vaultInstances, vaultErr := LoadVaultInstances()
@@ -192,13 +206,22 @@ func buildConfigFromSettings(settings SettingsFile) Config {
 		cors.AllowedOrigins = settings.CORS.AllowedOrigins
 		cors.AllowCredentials = settings.CORS.AllowCredentials
 	}
-	expirationThresholds := ExpirationThresholds{Critical: 7, Warning: 30}
+	expirations := ExpirationThresholds{Critical: 7, Warning: 30}
 	if settings.Certificates.ExpirationThresholds.Critical > 0 {
-		expirationThresholds.Critical = settings.Certificates.ExpirationThresholds.Critical
+		expirations.Critical = settings.Certificates.ExpirationThresholds.Critical
 	}
 	if settings.Certificates.ExpirationThresholds.Warning > 0 {
-		expirationThresholds.Warning = settings.Certificates.ExpirationThresholds.Warning
+		expirations.Warning = settings.Certificates.ExpirationThresholds.Warning
 	}
+	metrics := MetricsConfig{PerCertificate: false, EnhancedMetrics: true}
+	// Check if metrics section exists in settings (non-nil pointers)
+	if settings.Metrics.PerCertificate != nil {
+		metrics.PerCertificate = *settings.Metrics.PerCertificate
+	}
+	if settings.Metrics.EnhancedMetrics != nil {
+		metrics.EnhancedMetrics = *settings.Metrics.EnhancedMetrics
+	}
+	// Otherwise, keep defaults (PerCertificate: false, EnhancedMetrics: true)
 	return Config{
 		Env:                  env,
 		Port:                 port,
@@ -209,7 +232,8 @@ func buildConfigFromSettings(settings SettingsFile) Config {
 		CORS:                 cors,
 		Vault:                VaultConfig{},
 		Vaults:               []VaultInstance{},
-		ExpirationThresholds: expirationThresholds,
+		ExpirationThresholds: expirations,
+		Metrics:              metrics,
 	}
 }
 
@@ -368,4 +392,26 @@ func getEnvInt(key string, defaultValue int) int {
 		}
 	}
 	return defaultValue
+}
+
+func loadMetricsConfig() MetricsConfig {
+	return MetricsConfig{
+		PerCertificate:  parseBoolEnv("VCV_METRICS_PER_CERTIFICATE", false),
+		EnhancedMetrics: parseBoolEnv("VCV_METRICS_ENHANCED", true),
+	}
+}
+
+func parseBoolEnv(key string, fallback bool) bool {
+	value := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
+	if value == "" {
+		return fallback
+	}
+	switch value {
+	case "1", "true", "yes", "y", "on":
+		return true
+	case "0", "false", "no", "n", "off":
+		return false
+	default:
+		return fallback
+	}
 }

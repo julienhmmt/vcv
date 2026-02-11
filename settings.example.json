@@ -15,6 +15,10 @@
       "warning": 10
     }
   },
+  "metrics": {
+    "per_certificate": true,
+    "enhanced_metrics": false
+  },
   "cors": {
     "allowed_origins": [
       "http://localhost:4321",

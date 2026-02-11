@@ -31,6 +31,25 @@
     </fieldset>
 
     <fieldset class="admin-fieldset">
+      <legend class="admin-legend"><span class="admin-legend-icon">📊</span> {{.Messages.AdminMetrics}}</legend>
+      <span class="admin-field-hint">{{.Messages.AdminMetricsHint}}</span>
+      <div class="admin-grid">
+        <div class="admin-form-row">
+          <label class="admin-label" for="settings-metrics-per-certificate">
+            <input class="vcv-checkbox" id="settings-metrics-per-certificate" name="metrics_per_certificate" type="checkbox" {{if .MetricsView.PerCertificate}}checked{{end}} />
+            {{.Messages.AdminMetricsPerCertificate}}
+          </label>
+        </div>
+        <div class="admin-form-row">
+          <label class="admin-label" for="settings-metrics-enhanced">
+            <input class="vcv-checkbox" id="settings-metrics-enhanced" name="metrics_enhanced" type="checkbox" {{if .MetricsView.EnhancedMetrics}}checked{{end}} />
+            {{.Messages.AdminMetricsEnhanced}}
+          </label>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset class="admin-fieldset">
       <legend class="admin-legend"><span class="admin-legend-icon">🌐</span> {{.Messages.AdminCORS}}</legend>
       <div class="admin-grid">
         <div class="admin-form-row admin-form-row-full">

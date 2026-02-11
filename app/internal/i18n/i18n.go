@@ -167,6 +167,10 @@ type Messages struct {
 	AdminCORSOriginsHint        string `json:"adminCORSOriginsHint"`
 	AdminVaultTokenHint         string `json:"adminVaultTokenHint"`
 	AdminThresholdsHint         string `json:"adminThresholdsHint"`
+	AdminMetrics                string `json:"adminMetrics"`
+	AdminMetricsHint            string `json:"adminMetricsHint"`
+	AdminMetricsPerCertificate  string `json:"adminMetricsPerCertificate"`
+	AdminMetricsEnhanced        string `json:"adminMetricsEnhanced"`
 }
 
 // Response is the payload returned by the /api/i18n endpoint.
@@ -323,6 +327,10 @@ var englishMessages = Messages{
 	AdminCORSOriginsHint:        "e.g. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:         "Vault access token. This value is stored in the settings file.",
 	AdminThresholdsHint:         "Certificates expiring within these thresholds are flagged in the dashboard.",
+	AdminMetrics:                "Metrics",
+	AdminMetricsHint:            "Configure Prometheus metrics collection behavior.",
+	AdminMetricsPerCertificate:  "Per-certificate metrics (⚠️ high cardinality)",
+	AdminMetricsEnhanced:        "Enhanced metrics (categorize certificats by expiration time ranges)",
 }
 
 var frenchMessages = Messages{
@@ -473,6 +481,10 @@ var frenchMessages = Messages{
 	AdminCORSOriginsHint:        "ex. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:         "Jeton d'accès Vault. Cette valeur est stockée dans le fichier de paramètres.",
 	AdminThresholdsHint:         "Les certificats expirant dans ces seuils sont signalés dans le tableau de bord.",
+	AdminMetrics:                "Métriques",
+	AdminMetricsHint:            "Configurer le comportement de collecte des métriques Prometheus.",
+	AdminMetricsPerCertificate:  "Métriques par certificat (⚠️ haute cardinalité)",
+	AdminMetricsEnhanced:        "Métriques améliorées (catégoriser les certificats par intervalles de date d'expiration)",
 }
 
 var spanishMessages = Messages{
@@ -623,6 +635,10 @@ var spanishMessages = Messages{
 	AdminCORSOriginsHint:        "ej. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:         "Token de acceso de Vault. Este valor se almacena en el archivo de configuración.",
 	AdminThresholdsHint:         "Los certificados que expiran dentro de estos umbrales se señalan en el panel.",
+	AdminMetrics:                "Métricas",
+	AdminMetricsHint:            "Configurar el comportamiento de recolección de métricas de Prometheus.",
+	AdminMetricsPerCertificate:  "Métricas por certificado (⚠️ alta cardinalidad)",
+	AdminMetricsEnhanced:        "Métricas mejoradas (categorizar certificados por intervalos de fecha de expiración)",
 }
 
 var germanMessages = Messages{
@@ -773,6 +789,10 @@ var germanMessages = Messages{
 	AdminCORSOriginsHint:        "z.B. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:         "Vault-Zugriffstoken. Dieser Wert wird in der Einstellungsdatei gespeichert.",
 	AdminThresholdsHint:         "Zertifikate, die innerhalb dieser Schwellenwerte ablaufen, werden im Dashboard markiert.",
+	AdminMetrics:                "Metriken",
+	AdminMetricsHint:            "Prometheus-Metrikensammelverhalten konfigurieren.",
+	AdminMetricsPerCertificate:  "Metriken pro Zertifikat (⚠️ hohe Kardinalität)",
+	AdminMetricsEnhanced:        "Erweiterte Metriken ()",
 }
 
 var italianMessages = Messages{
@@ -922,6 +942,10 @@ var italianMessages = Messages{
 	AdminCORSOriginsHint:        "es. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:         "Token di accesso Vault. Questo valore viene memorizzato nel file delle impostazioni.",
 	AdminThresholdsHint:         "I certificati in scadenza entro queste soglie vengono segnalati nella dashboard.",
+	AdminMetrics:                "Metriche",
+	AdminMetricsHint:            "Configura il comportamento di raccolta delle metriche di Prometheus.",
+	AdminMetricsPerCertificate:  "Metriche per certificato (⚠️ alta cardinalità)",
+	AdminMetricsEnhanced:        "Metriche avanzate (categorizzare certificati per intervallo di data di scadenza)",
 }
 
 // MessagesForLanguage returns the translations for a given language code.
