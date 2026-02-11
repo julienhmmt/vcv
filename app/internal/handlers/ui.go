@@ -222,8 +222,6 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 		}
 	}
 	vaultHealthCache := newVaultHealthCache(30 * time.Second)
-	vaultDisplayNames := buildVaultDisplayNames(vaultInstances)
-	showVaultMount := shouldShowVaultMount(vaultInstances)
 	enabledInstances := func() []config.VaultInstance {
 		if vaultRegistry == nil {
 			return vaultInstances
@@ -255,7 +253,8 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 				Msg("failed to list certificates for index")
 			certificates = []certs.Certificate{}
 		}
-		certsData := buildCertsFragmentData(certificates, expirationThresholds, messages, queryState, vaultDisplayNames, showVaultMount)
+		instances := enabledInstances()
+		certsData := buildCertsFragmentData(certificates, expirationThresholds, messages, queryState, buildVaultDisplayNames(instances), shouldShowVaultMount(instances))
 		data := indexTemplateData{Language: string(language), Messages: messages, Certs: certsData, AppVersionText: version.Version}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := templates.ExecuteTemplate(w, "index.html", data); err != nil {
@@ -281,7 +280,8 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return false
 		}
-		if renderErr := renderCertsFragment(w, templates, certificates, expirationThresholds, messages, queryState, vaultDisplayNames, showVaultMount); renderErr != nil {
+		instances := enabledInstances()
+		if renderErr := renderCertsFragment(w, templates, certificates, expirationThresholds, messages, queryState, buildVaultDisplayNames(instances), shouldShowVaultMount(instances)); renderErr != nil {
 			requestID := middleware.GetRequestID(r.Context())
 			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, renderErr).
 				Str("request_id", requestID).

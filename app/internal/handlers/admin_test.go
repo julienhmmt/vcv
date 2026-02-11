@@ -2,7 +2,9 @@ package handlers
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
+	"errors"
 	"html/template"
 	"io/fs"
 	"net/http"
@@ -22,8 +24,38 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"vcv/config"
+	"vcv/internal/certs"
 	"vcv/internal/i18n"
+	"vcv/internal/vault"
 )
+
+// mockVaultClient is a test double for vault.Client
+type mockVaultClient struct {
+	checkConnectionFunc func(ctx context.Context) error
+}
+
+func (m *mockVaultClient) CheckConnection(ctx context.Context) error {
+	if m.checkConnectionFunc != nil {
+		return m.checkConnectionFunc(ctx)
+	}
+	return nil
+}
+
+func (m *mockVaultClient) GetCertificateDetails(ctx context.Context, serialNumber string) (certs.DetailedCertificate, error) {
+	return certs.DetailedCertificate{}, nil
+}
+
+func (m *mockVaultClient) GetCertificatePEM(ctx context.Context, serialNumber string) (certs.PEMResponse, error) {
+	return certs.PEMResponse{}, nil
+}
+
+func (m *mockVaultClient) InvalidateCache() {}
+
+func (m *mockVaultClient) ListCertificates(ctx context.Context) ([]certs.Certificate, error) {
+	return []certs.Certificate{}, nil
+}
+
+func (m *mockVaultClient) Shutdown() {}
 
 func newAdminWebFS() fstest.MapFS {
 	return fstest.MapFS{
@@ -47,7 +79,7 @@ func TestRegisterAdminRoutes_DisabledWithoutPassword(t *testing.T) {
 	// Create settings file without admin password
 	settingsContent := `{"app":{"env":"dev","port":52000},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/admin", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
@@ -60,7 +92,7 @@ func TestRegisterAdminRoutes_DisabledWithPlaintextPassword(t *testing.T) {
 	// Create settings file with plaintext password (invalid)
 	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"secret"},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/admin", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
@@ -74,7 +106,7 @@ func TestAdminLoginAndSettingsRoundtrip(t *testing.T) {
 	adminPassword := mustBcryptPasswordHash(t, "secret")
 	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil)
 	loginPayload, err := json.Marshal(map[string]string{"username": "admin", "password": "secret"})
 	require.NoError(t, err)
 	loginReq := httptest.NewRequest(http.MethodPost, "/api/admin/login", bytes.NewReader(loginPayload))
@@ -296,7 +328,7 @@ func TestBuildAdminPanelData_BuildsVaultViewsAndCORS(t *testing.T) {
 		},
 	}
 	messages := i18n.MessagesForLanguage(i18n.LanguageEnglish)
-	data := buildAdminPanelData(settings, "ok", "", messages)
+	data := buildAdminPanelData(settings, "ok", "", messages, nil)
 	assert.Equal(t, "http://a,http://b", data.CorsOriginsText)
 	assert.Equal(t, "ok", data.SuccessText)
 	require.Len(t, data.VaultViews, 2)
@@ -319,7 +351,7 @@ func TestAdminRoutes_HTMXPanelLoginLogoutAndVaultActions(t *testing.T) {
 	adminPassword := mustBcryptPasswordHash(t, "secret")
 	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil)
 
 	panelReq := httptest.NewRequest(http.MethodGet, "/admin/panel", nil)
 	panelRec := httptest.NewRecorder()
@@ -373,7 +405,7 @@ func TestAdminRoutes_SettingsPost_ErrorsAndSuccess(t *testing.T) {
 	adminPassword := mustBcryptPasswordHash(t, "secret")
 	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil)
 
 	loginReq := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
 	loginReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -555,7 +587,7 @@ func TestAdminRoutes_VaultRemove_PersistsToSettings(t *testing.T) {
 	require.NoError(t, os.WriteFile(settingsPath, []byte(initialWithAdmin), 0o644))
 
 	router := chi.NewRouter()
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil)
 
 	loginReq := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
 	loginReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -574,4 +606,117 @@ func TestAdminRoutes_VaultRemove_PersistsToSettings(t *testing.T) {
 	content, err := os.ReadFile(settingsPath)
 	require.NoError(t, err)
 	assert.NotContains(t, string(content), "\"id\": \"v1\"")
+}
+
+func TestBuildAdminPanelData_VaultConnectionStatuses(t *testing.T) {
+	enabled := true
+	disabled := false
+
+	tests := []struct {
+		name            string
+		vaultEnabled    bool
+		clientExists    bool
+		connected       bool
+		expectStatus    string
+		expectClass     string
+		expectConnected bool
+	}{
+		{
+			name:            "connected vault",
+			vaultEnabled:    true,
+			clientExists:    true,
+			connected:       true,
+			expectStatus:    "Connected",
+			expectClass:     "vcv-status-connected",
+			expectConnected: true,
+		},
+		{
+			name:            "disconnected vault",
+			vaultEnabled:    true,
+			clientExists:    true,
+			connected:       false,
+			expectStatus:    "Disconnected",
+			expectClass:     "vcv-status-disconnected",
+			expectConnected: false,
+		},
+		{
+			name:            "disabled vault",
+			vaultEnabled:    false,
+			clientExists:    false,
+			connected:       false,
+			expectStatus:    "Disabled",
+			expectClass:     "vcv-status-disabled",
+			expectConnected: false,
+		},
+		{
+			name:            "enabled but no client",
+			vaultEnabled:    true,
+			clientExists:    false,
+			connected:       false,
+			expectStatus:    "Disconnected",
+			expectClass:     "vcv-status-disconnected",
+			expectConnected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var enabledPtr *bool
+			if tt.vaultEnabled {
+				enabledPtr = &enabled
+			} else {
+				enabledPtr = &disabled
+			}
+
+			settings := config.SettingsFile{
+				Vaults: []config.VaultInstance{
+					{ID: "v1", Address: "https://vault.example.com", Token: "tok", PKIMount: "pki", Enabled: enabledPtr},
+				},
+			}
+
+			var clients map[string]vault.Client
+			if tt.clientExists {
+				mockClient := &mockVaultClient{
+					checkConnectionFunc: func(ctx context.Context) error {
+						if tt.connected {
+							return nil
+						}
+						return errors.New("connection failed")
+					},
+				}
+				clients = map[string]vault.Client{"v1": mockClient}
+			}
+
+			messages := i18n.MessagesForLanguage(i18n.LanguageEnglish)
+			data := buildAdminPanelData(settings, "", "", messages, clients)
+
+			require.Len(t, data.VaultViews, 1)
+			view := data.VaultViews[0]
+			assert.Equal(t, tt.expectConnected, view.Connected)
+			assert.Equal(t, tt.expectClass, view.StatusClass)
+			assert.Equal(t, tt.expectStatus, view.StatusText)
+		})
+	}
+}
+
+func TestBuildAdminPanelData_NilVaultClients(t *testing.T) {
+	enabled := true
+	settings := config.SettingsFile{
+		Vaults: []config.VaultInstance{
+			{ID: "v1", Address: "https://vault.example.com", Token: "tok", PKIMount: "pki", Enabled: &enabled},
+		},
+	}
+	messages := i18n.MessagesForLanguage(i18n.LanguageEnglish)
+	data := buildAdminPanelData(settings, "", "", messages, nil)
+
+	require.Len(t, data.VaultViews, 1)
+	view := data.VaultViews[0]
+	assert.False(t, view.Connected)
+	assert.Equal(t, "vcv-status-disconnected", view.StatusClass)
+	assert.Equal(t, "Disconnected", view.StatusText)
+}
+
+// vaultClient interface for testing (subset of vault.Client)
+type vaultClient interface {
+	CheckConnection(ctx context.Context) error
 }

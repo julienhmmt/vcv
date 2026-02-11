@@ -114,12 +114,12 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(version.Info())
 	})
-	r.Get("/api/config", handlers.GetConfig(cfg))
+	r.Get("/api/config", handlers.GetConfig(cfg, vaultRegistry))
 	r.Get("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP)
 	handlers.RegisterI18nRoutes(r)
 	handlers.RegisterCertRoutes(r, multiVaultClient)
 	handlers.RegisterUIRoutes(r, multiVaultClient, cfg.AllVaults, statusClients, webFS, cfg.ExpirationThresholds, vaultRegistry)
-	handlers.RegisterAdminRoutes(r, webFS, settingsPath, cfg.Env, vaultRegistry)
+	handlers.RegisterAdminRoutes(r, webFS, settingsPath, cfg.Env, vaultRegistry, statusClients)
 
 	return r, nil
 }

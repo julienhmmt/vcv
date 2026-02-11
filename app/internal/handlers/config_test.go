@@ -37,7 +37,7 @@ func TestGetConfig_Success(t *testing.T) {
 		},
 	}
 
-	handler := GetConfig(cfg)
+	handler := GetConfig(cfg, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/config", nil)
 	w := httptest.NewRecorder()
 
@@ -72,7 +72,7 @@ func TestGetConfig_CustomValues(t *testing.T) {
 		},
 	}
 
-	handler := GetConfig(cfg)
+	handler := GetConfig(cfg, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/config", nil)
 	w := httptest.NewRecorder()
 
@@ -101,7 +101,7 @@ func TestGetConfig_EncodingError(t *testing.T) {
 		Vault:                config.VaultConfig{PKIMounts: []string{"pki"}},
 	}
 
-	handler := GetConfig(cfg)
+	handler := GetConfig(cfg, nil)
 
 	// Create a response writer that will fail on write
 	w := &failingResponseWriter{}
@@ -122,7 +122,7 @@ func TestGetConfig_NilSlicesAndVaultFiltering(t *testing.T) {
 		},
 	}
 
-	h := GetConfig(cfg)
+	h := GetConfig(cfg, nil)
 	req := httptest.NewRequest(http.MethodGet, "/api/config", nil)
 	res := httptest.NewRecorder()
 	h(res, req)

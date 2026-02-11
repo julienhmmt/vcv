@@ -6,6 +6,7 @@ import (
 
 	"vcv/config"
 	"vcv/internal/logger"
+	"vcv/internal/vault"
 	"vcv/middleware"
 )
 
@@ -30,7 +31,7 @@ type VaultConfigResponse struct {
 }
 
 // GetConfig returns the application configuration.
-func GetConfig(cfg config.Config) http.HandlerFunc {
+func GetConfig(cfg config.Config, vaultRegistry *vault.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		requestID := middleware.GetRequestID(r.Context())
 
@@ -43,10 +44,17 @@ func GetConfig(cfg config.Config) http.HandlerFunc {
 		if resp.PKIMounts == nil {
 			resp.PKIMounts = []string{}
 		}
-		resp.Vaults = make([]VaultConfigResponse, 0, len(cfg.Vaults))
-		for _, instance := range cfg.Vaults {
+		allVaults := cfg.AllVaults
+		if len(allVaults) == 0 {
+			allVaults = cfg.Vaults
+		}
+		resp.Vaults = make([]VaultConfigResponse, 0, len(allVaults))
+		for _, instance := range allVaults {
 			vaultID := instance.ID
 			if vaultID == "" {
+				continue
+			}
+			if vaultRegistry != nil && !vaultRegistry.IsEnabled(vaultID) {
 				continue
 			}
 			displayName := instance.DisplayName
@@ -61,7 +69,6 @@ func GetConfig(cfg config.Config) http.HandlerFunc {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
 
 		if err := json.NewEncoder(w).Encode(resp); err != nil {
 			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).

@@ -17,7 +17,7 @@ func freePort(t *testing.T) int {
 		t.Fatalf("failed to find free port: %v", err)
 	}
 	port := l.Addr().(*net.TCPAddr).Port
-	l.Close()
+	_ = l.Close()
 	return port
 }
 
@@ -44,9 +44,14 @@ func TestMain_ShutsDownOnSignal(t *testing.T) {
 	}
 
 	// Change to temp directory to ensure the settings file is found
-	originalWd, _ := os.Getwd()
-	defer os.Chdir(originalWd)
-	os.Chdir(tmpDir)
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get working directory: %v", err)
+	}
+	defer func() { _ = os.Chdir(originalWd) }()
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("failed to change directory: %v", err)
+	}
 
 	done := make(chan struct{})
 	go func() {

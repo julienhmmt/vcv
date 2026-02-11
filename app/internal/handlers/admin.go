@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
@@ -50,6 +51,9 @@ type adminLoginTemplateData struct {
 type adminVaultViewData struct {
 	Messages    i18n.Messages
 	Enabled     bool
+	Connected   bool
+	StatusClass string
+	StatusText  string
 	Key         string
 	MountsText  string
 	Open        bool
@@ -465,9 +469,8 @@ func renderAdminTemplate(w http.ResponseWriter, templates *template.Template, na
 	return templates.ExecuteTemplate(w, name, data)
 }
 
-func buildAdminPanelData(settings config.SettingsFile, successText string, errorText string, messages i18n.Messages) adminPanelTemplateData {
+func buildAdminPanelData(settings config.SettingsFile, successText string, errorText string, messages i18n.Messages, vaultClients map[string]vault.Client) adminPanelTemplateData {
 	corsOriginsText := strings.Join(settings.CORS.AllowedOrigins, ",")
-	views := make([]adminVaultViewData, 0, len(settings.Vaults))
 
 	// Read actual metrics values from settings, with defaults if nil
 	perCertificate := false
@@ -479,7 +482,53 @@ func buildAdminPanelData(settings config.SettingsFile, successText string, error
 		enhancedMetrics = *settings.Metrics.EnhancedMetrics
 	}
 
-	for i, vault := range settings.Vaults {
+	// First pass: collect vault data and prepare connection checks
+	type vaultCheck struct {
+		index   int
+		vault   config.VaultInstance
+		enabled bool
+		client  vault.Client
+	}
+	checks := make([]vaultCheck, 0, len(settings.Vaults))
+	for i, v := range settings.Vaults {
+		enabled := config.IsVaultEnabled(v)
+		var client vault.Client
+		if enabled && vaultClients != nil {
+			if c, ok := vaultClients[v.ID]; ok && c != nil {
+				client = c
+			}
+		}
+		checks = append(checks, vaultCheck{index: i, vault: v, enabled: enabled, client: client})
+	}
+
+	// Second pass: run connection checks concurrently
+	type checkResult struct {
+		index     int
+		connected bool
+	}
+	results := make([]bool, len(checks))
+	var wg sync.WaitGroup
+	for i, check := range checks {
+		if !check.enabled || check.client == nil {
+			results[i] = false
+			continue
+		}
+		wg.Add(1)
+		go func(idx int, client vault.Client) {
+			defer wg.Done()
+			checkCtx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+			if err := client.CheckConnection(checkCtx); err == nil {
+				results[idx] = true
+			}
+		}(i, check.client)
+	}
+	wg.Wait()
+
+	// Build view data with results
+	views := make([]adminVaultViewData, 0, len(checks))
+	for i, check := range checks {
+		vault := check.vault
 		mounts := vault.PKIMounts
 		if len(mounts) == 0 {
 			mount := strings.TrimSpace(vault.PKIMount)
@@ -488,8 +537,33 @@ func buildAdminPanelData(settings config.SettingsFile, successText string, error
 			}
 		}
 		mountsText := strings.Join(mounts, ",")
-		key := fmt.Sprintf("%d", i)
-		views = append(views, adminVaultViewData{Messages: messages, Enabled: config.IsVaultEnabled(vault), Key: key, MountsText: mountsText, Open: false, TLSInsecure: vault.TLSInsecure, Vault: vault})
+		key := fmt.Sprintf("%d", check.index)
+
+		// Determine status class and text
+		statusClass := "vcv-status-disabled"
+		statusText := messages.AdminVaultDisabled
+		if check.enabled {
+			if results[i] {
+				statusClass = "vcv-status-connected"
+				statusText = messages.AdminVaultConnected
+			} else {
+				statusClass = "vcv-status-disconnected"
+				statusText = messages.AdminVaultDisconnected
+			}
+		}
+
+		views = append(views, adminVaultViewData{
+			Messages:    messages,
+			Enabled:     check.enabled,
+			Connected:   results[i],
+			StatusClass: statusClass,
+			StatusText:  statusText,
+			Key:         key,
+			MountsText:  mountsText,
+			Open:        false,
+			TLSInsecure: vault.TLSInsecure,
+			Vault:       vault,
+		})
 	}
 	return adminPanelTemplateData{
 		Messages:        messages,
@@ -617,7 +691,7 @@ type adminPageTemplateData struct {
 	Messages       i18n.Messages
 }
 
-func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, env config.Environment, vaultRegistry *vault.Registry) {
+func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, env config.Environment, vaultRegistry *vault.Registry, vaultStatusClients map[string]vault.Client) {
 	// Load settings to get admin password
 	settingsStore := newAdminSettingsStore(settingsPath, env)
 	settings, err := settingsStore.load()
@@ -685,7 +759,7 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		data := buildAdminPanelData(settings, "", "", messages)
+		data := buildAdminPanelData(settings, "", "", messages, vaultStatusClients)
 		if err := renderAdminTemplate(w, templates, "admin-panel-fragment.html", data); err != nil {
 			requestID := middleware.GetRequestID(r.Context())
 			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
@@ -704,7 +778,7 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-			data := buildAdminPanelData(settings, "", "", messages)
+			data := buildAdminPanelData(settings, "", "", messages, vaultStatusClients)
 			_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
 			return
 		}
@@ -728,12 +802,12 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 			}
 			updated, err := parseSettingsUpdateForm(r, current)
 			if err != nil {
-				data := buildAdminPanelData(current, "", err.Error(), messages)
+				data := buildAdminPanelData(current, "", err.Error(), messages, vaultStatusClients)
 				_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
 				return
 			}
 			if err := store.save(updated); err != nil {
-				data := buildAdminPanelData(updated, "", err.Error(), messages)
+				data := buildAdminPanelData(updated, "", err.Error(), messages, vaultStatusClients)
 				_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
 				return
 			}
@@ -743,7 +817,7 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
-			data := buildAdminPanelData(settings, messages.AdminSettingsSaved, "", messages)
+			data := buildAdminPanelData(settings, messages.AdminSettingsSaved, "", messages, vaultStatusClients)
 			_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
 		})
 		r.Post("/admin/vault/add", func(w http.ResponseWriter, r *http.Request) {
@@ -755,7 +829,7 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 				return
 			}
 			vault := config.VaultInstance{ID: "", Address: "", Token: "", PKIMount: "pki", PKIMounts: []string{"pki"}, DisplayName: "", TLSInsecure: false}
-			data := adminVaultViewData{Messages: messages, Enabled: true, Key: key, MountsText: "pki", Open: true, TLSInsecure: false, Vault: vault}
+			data := adminVaultViewData{Messages: messages, Enabled: true, Key: key, MountsText: "pki", Open: true, TLSInsecure: false, Vault: vault, StatusClass: "vcv-status-disconnected", StatusText: messages.AdminVaultDisconnected}
 			w.Header().Set("HX-Trigger-After-Swap", fmt.Sprintf(`{"adminVaultAdded":{"key":"%s"}}`, key))
 			_ = renderAdminTemplate(w, templates, "admin-vault-item.html", data)
 		})

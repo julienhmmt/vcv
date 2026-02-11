@@ -29,9 +29,14 @@ func TestLoadDefaults(t *testing.T) {
 	}
 
 	// Change to temp directory to ensure the settings file is found
-	originalWd, _ := os.Getwd()
-	defer os.Chdir(originalWd)
-	os.Chdir(tmpDir)
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get working directory: %v", err)
+	}
+	defer func() { _ = os.Chdir(originalWd) }()
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("failed to change directory: %v", err)
+	}
 
 	cfg, err := Load()
 	if err != nil {
@@ -91,9 +96,14 @@ func TestLoadFromSettingsFile(t *testing.T) {
 	}
 
 	// Change to temp directory to ensure the settings file is found
-	originalWd, _ := os.Getwd()
-	defer os.Chdir(originalWd)
-	os.Chdir(tmpDir)
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get working directory: %v", err)
+	}
+	defer func() { _ = os.Chdir(originalWd) }()
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("failed to change directory: %v", err)
+	}
 
 	cfg, err := Load()
 	if err != nil {
@@ -141,11 +151,16 @@ func TestLoadFromSettingsFile(t *testing.T) {
 func TestLoadSettingsFile_MissingFile(t *testing.T) {
 	// Change to temp directory with no settings file
 	tmpDir := t.TempDir()
-	originalWd, _ := os.Getwd()
-	defer os.Chdir(originalWd)
-	os.Chdir(tmpDir)
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get working directory: %v", err)
+	}
+	defer func() { _ = os.Chdir(originalWd) }()
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("failed to change directory: %v", err)
+	}
 
-	_, err := Load()
+	_, err = Load()
 	if err == nil {
 		t.Fatalf("expected error for missing settings file, got none")
 	}

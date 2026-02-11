@@ -159,6 +159,9 @@ type Messages struct {
 	AdminVaultTLSServerName     string `json:"adminVaultTLSServerName"`
 	AdminVaultTLSInsecure       string `json:"adminVaultTLSInsecure"`
 	AdminVaultEnabled           string `json:"adminVaultEnabled"`
+	AdminVaultConnected         string `json:"adminVaultConnected"`
+	AdminVaultDisconnected      string `json:"adminVaultDisconnected"`
+	AdminVaultDisabled          string `json:"adminVaultDisabled"`
 	AdminVaultRemove            string `json:"adminVaultRemove"`
 	AdminVaultTLSTip            string `json:"adminVaultTLSTip"`
 	AdminToggleEnable           string `json:"adminToggleEnable"`
@@ -319,6 +322,9 @@ var englishMessages = Messages{
 	AdminVaultTLSServerName:     "TLS server name (SNI)",
 	AdminVaultTLSInsecure:       "TLS insecure",
 	AdminVaultEnabled:           "Enabled",
+	AdminVaultConnected:         "Connected",
+	AdminVaultDisconnected:      "Disconnected",
+	AdminVaultDisabled:          "Disabled",
 	AdminVaultRemove:            "Remove",
 	AdminVaultTLSTip:            "TLS tip: Provide the CA bundle either inline as base64 (preferred) or via a PEM file path / CA directory. If \"TLS CA cert (base64)\" is set, it takes precedence and the file/path fields are ignored. Encode a PEM bundle with: cat /path/to/ca.pem | base64 | tr -d '\\n'. \"TLS server name\" overrides SNI. \"TLS insecure\" disables verification (development only).",
 	AdminToggleEnable:           "Enable",
@@ -473,6 +479,9 @@ var frenchMessages = Messages{
 	AdminVaultTLSServerName:     "Nom du serveur TLS (SNI)",
 	AdminVaultTLSInsecure:       "TLS non sécurisé",
 	AdminVaultEnabled:           "Activé",
+	AdminVaultConnected:         "Connecté",
+	AdminVaultDisconnected:      "Déconnecté",
+	AdminVaultDisabled:          "Désactivé",
 	AdminVaultRemove:            "Supprimer",
 	AdminVaultTLSTip:            "Astuce TLS : Fournissez le bundle CA soit en ligne en base64 (préféré) soit via un chemin de fichier PEM / répertoire CA. Si \"Certificat CA TLS (base64)\" est défini, il a la priorité et les champs fichier/chemin sont ignorés. Encodez un bundle PEM avec : cat /chemin/vers/ca.pem | base64 | tr -d '\\n'. \"Nom du serveur TLS\" remplace SNI. \"TLS non sécurisé\" désactive la vérification (développement uniquement).",
 	AdminToggleEnable:           "Activer",
@@ -614,6 +623,9 @@ var spanishMessages = Messages{
 	AdminAddVault:               "Agregar vault",
 	AdminSaveSettings:           "Guardar settings.json",
 	AdminRestartNote:            "Los cambios se guardan en el archivo de configuración. Es posible que se requiera reiniciar el servidor para que todos los cambios surtan efecto.",
+	AdminVaultConnected:         "Conectado",
+	AdminVaultDisconnected:      "Desconectado",
+	AdminVaultDisabled:          "Deshabilitado",
 	AdminVaultID:                "ID",
 	AdminVaultDisplayName:       "Nombre para mostrar",
 	AdminVaultAddress:           "Dirección",
@@ -768,6 +780,9 @@ var germanMessages = Messages{
 	AdminAddVault:               "Vault hinzufügen",
 	AdminSaveSettings:           "settings.json speichern",
 	AdminRestartNote:            "Änderungen werden in der Einstellungsdatei gespeichert. Ein Neustart des Servers kann erforderlich sein, damit alle Änderungen wirksam werden.",
+	AdminVaultConnected:         "Verbindung hergestellt",
+	AdminVaultDisconnected:      "Verbindung unterbrochen",
+	AdminVaultDisabled:          "Deaktiviert",
 	AdminVaultID:                "ID",
 	AdminVaultDisplayName:       "Anzeigename",
 	AdminVaultAddress:           "Adresse",
@@ -921,6 +936,9 @@ var italianMessages = Messages{
 	AdminAddVault:               "Aggiungi vault",
 	AdminSaveSettings:           "Salva settings.json",
 	AdminRestartNote:            "Le modifiche vengono salvate nel file delle impostazioni. Potrebbe essere necessario riavviare il server affinché tutte le modifiche abbiano effetto.",
+	AdminVaultConnected:         "Connesso",
+	AdminVaultDisconnected:      "Disconnesso",
+	AdminVaultDisabled:          "Disabilitato",
 	AdminVaultID:                "ID",
 	AdminVaultDisplayName:       "Nome visualizzato",
 	AdminVaultAddress:           "Indirizzo",

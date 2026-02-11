@@ -367,9 +367,12 @@ func TestConvertVaultInstanceToLegacy(t *testing.T) {
 // Helper functions
 
 func changeWorkingDirectory(t *testing.T, dir string) {
-	originalWd, _ := os.Getwd()
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get working directory: %v", err)
+	}
 	t.Cleanup(func() {
-		os.Chdir(originalWd)
+		_ = os.Chdir(originalWd)
 	})
 	if err := os.Chdir(dir); err != nil {
 		t.Fatalf("failed to change working directory: %v", err)
