@@ -10,9 +10,19 @@ VCV utilizza un'architettura di rendering lato server basata su [HTMX](https://h
 
 ## 🔐 Accesso al pannello di amministrazione
 
-### VCV_ADMIN_PASSWORD
+### Password admin nel file di configurazione
 
-Variabile d'ambiente necessaria per attivare il pannello di amministrazione. Deve essere un **hash bcrypt**.
+Per attivare il pannello di amministrazione, aggiungere una sezione `admin` al file `settings.json` con una password bcrypt:
+
+```json
+{
+  "admin": {
+    "password": "$2b$12$vostro-hash-bcrypt-qui"
+  }
+}
+```
+
+La password deve essere un **hash bcrypt** (prefisso `$2a$`, `$2b$`, o `$2y$`).
 
 ```bash
 # Generare un hash bcrypt (esempio con htpasswd)
@@ -20,12 +30,9 @@ htpasswd -nbBC 10 admin LaTuaPasswordSicura | cut -d: -f2
 
 # O con Python
 python3 -c "import bcrypt; print(bcrypt.hashpw(b'LaTuaPassword', bcrypt.gensalt()).decode())"
-
-# Impostare la variabile d'ambiente
-export VCV_ADMIN_PASSWORD='$2a$10$...'
 ```
 
-Puoi anche utilizzare il servizio 'bcrypt' di <https://tools.hommet.net/bcrypt> per generare un hash bcrypt (nessun dato viene memorizzato).
+Puoi anche usare il servizio 'bcrypt' di <https://tools.hommet.net/bcrypt> per generare un hash bcrypt (nessun dato viene memorizzato).
 
 **Nome utente predefinito:** `admin` (non modificabile, valore predefinito)
 **Durata della sessione:** 12 ore (non modificabile, valore predefinito)
@@ -50,12 +57,13 @@ Porta di ascolto del server HTTP.
 
 ### Percorso del file di configurazione
 
-La variabile d'ambiente `SETTINGS_PATH` specifica il percorso del file `settings.json`. Se non impostata, VCV cerca i file in quest'ordine:
+VCV cerca il file di configurazione in quest'ordine:
 
-1. `settings.<env>.json` (es: `settings.dev.json`)
-2. `settings.json`
-3. `./settings.json`
-4. `/etc/vcv/settings.json`
+1. `settings.dev.json`
+2. `settings.prod.json`
+3. `settings.json`
+4. `./settings.json`
+5. `/app/settings.json`
 
 ### Registrazione (app.logging)
 

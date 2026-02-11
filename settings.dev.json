@@ -1,4 +1,7 @@
 {
+  "admin": {
+    "password": "$2y$10$.SWJT4Amz9tyq4qq2vqQyOZm/KZAf38YVVNxj/6EvYLk4I0C6Q9A2"
+  },
   "app": {
     "env": "dev",
     "logging": {

@@ -133,8 +133,6 @@ services:
     restart: unless-stopped
     ports:
       - "52000:52000"
-    environment:
-      - SETTINGS_PATH=/app/settings.json
     volumes:
       - ./settings.json:/app/settings.json:rw
 ```
@@ -149,7 +147,6 @@ docker compose up -d
 docker run -d \
   --name vcv \
   -v "$(pwd)/settings.json:/app/settings.json:rw" \
-  -e "SETTINGS_PATH=/app/settings.json" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
   -p 52000:52000 jhmmt/vcv:1.6
 ```
@@ -188,13 +185,21 @@ VCV exposes metrics at `/metrics` endpoint with comprehensive certificate monito
 
 ## 🎛️ Admin panel (optional)
 
-Enable admin panel for UI-based configuration editing:
+To enable the administration panel, you have to edit the `settings.json` file and write the admin bcrypt hash password in the `admin.password` field.
+
+```json
+...
+  "admin": {
+    "password": "$2y$10$.changeme"
+  },
+...
+```
+
+Also, do not forget to make the `settings.json` file read-write, to be able to edit and save parameters.
 
 ```yaml
-environment:
-  - VCV_ADMIN_PASSWORD=$2y$10$<BCRYPT_HASH_HERE>
 volumes:
-  - ./settings.json:/app/settings.json:rw  # Must be read-write
+  - ./settings.json:/app/settings.json:rw
 ```
 
 ## 🌍 Features

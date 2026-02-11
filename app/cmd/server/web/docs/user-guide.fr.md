@@ -22,7 +22,7 @@ VaultCertsViewer (VCV) est une interface web légère conçue pour visualiser et
 - **Synchronisation d'URL** : Les filtres, la recherche, l'ordre de tri, la pagination et la sélection des montages sont reflétés dans l'URL pour le partage et les favoris.
 - **I18n** : Support complet de l'anglais, du français, de l'espagnol, de l'allemand et de l'italien. Changez de langue avec le menu déroulant dans l'en-tête.
 - **Mode sombre** : Interface moderne avec bascule mode sombre/clair persistante.
-- **Panneau d'administration** : Gérez le fichier `settings.json` visuellement (ajouter/supprimer des instances Vault, configurer les seuils, la journalisation, CORS). Nécessite la variable d'environnement `VCV_ADMIN_PASSWORD`.
+- **Panneau d'administration** : Gérez le fichier `settings.json` visuellement (ajouter/supprimer des instances Vault, configurer les seuils, la journalisation, CORS). Nécessite un mot de passe administrateur configuré dans `settings.json`.
 - **Métriques Prometheus** : Exposez les métriques de certificats et de connexion sur `/metrics` pour la surveillance et les alertes.
 
 ## Utilisation de l'interface
@@ -54,18 +54,14 @@ L'icône bouclier dans l'en-tête indique l'état global de connexion Vault (ver
 
 VCV est configuré principalement via un fichier `settings.json`. Le panneau d'administration permet de modifier ce fichier visuellement. Consultez la documentation de configuration pour tous les détails.
 
-Tous les paramètres de l'application (instances Vault, seuils d'expiration, journalisation, CORS, etc.) sont définis dans `settings.json`. Seules deux variables d'environnement sont encore nécessaires :
+Tous les paramètres de l'application (instances Vault, seuils d'expiration, journalisation, CORS, etc.) sont définis dans `settings.json`. Le panneau d'administration vous permet de gérer ces paramètres visuellement via l'interface web.
 
-- `VCV_ADMIN_PASSWORD` : Hash bcrypt pour activer le panneau d'administration (conservé en variable d'environnement pour des raisons de sécurité — il ne doit pas être stocké dans un fichier modifiable depuis l'interface).
-- `SETTINGS_PATH` : Chemin vers un fichier `settings.json` personnalisé (nécessaire uniquement si le fichier n'est pas dans un emplacement par défaut).
-
-> **Note :** Les variables d'environnement (`VAULT_ADDRS`, `LOG_LEVEL`, etc.) sont toujours supportées comme solution de repli lorsqu'aucun `settings.json` n'est trouvé, mais l'utilisation de `settings.json` est l'approche recommandée.
+> **Note :** Le panneau d'administration nécessite qu'un mot de passe administrateur soit configuré dans le fichier `settings.json` sous le champ `admin.password`.
 
 ## Limites et ce qu'il ne fait pas
 
 - **Lecture seule** : VCV est un outil de visualisation. Il ne permet **pas** de générer, renouveler ou révoquer des certificats.
 - **Authentification** : VCV suppose que vous avez fourni des jetons valides pour les instances Vault auxquelles il se connecte.
-- **Gestion de Vault** : Il ne gère pas les politiques Vault ni la configuration PKI ; il lit uniquement les données existantes.
 
 ## Support
 

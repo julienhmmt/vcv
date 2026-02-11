@@ -55,7 +55,7 @@ vault write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
 vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 ```
 
-This dedicated token limits permissions to certificate listing/reading, can be renewed, and is used as `VAULT_READ_TOKEN` by the app.
+This dedicated token limits permissions to certificate listing/reading, can be renewed, and is used in the `settings.json` file.
 
 ## 🚀 How to deploy and use for OpenBao
 
@@ -82,7 +82,7 @@ bao write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
 bao token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 ```
 
-This dedicated token limits permissions to certificate listing/reading, can be renewed, and is used as `VAULT_READ_TOKEN` by the app.
+This dedicated token limits permissions to certificate listing/reading, can be renewed, and is used in the `settings.json` file.
 
 ## 🧩 Multi-PKI engine support
 
@@ -158,7 +158,7 @@ Notes:
 
 ## 🛠️ Administration panel
 
-An administration panel lets you configure some settings of the application. It is accessible via the `/admin` route and is protected by a password. To enable the administration panel, you must set the `VCV_ADMIN_PASSWORD` environment variable.
+An administration panel lets you configure some settings of the application. It is accessible via the `/admin` route and is protected by a password. To enable the administration panel, you must include an `admin` section in your `settings.json` file with a bcrypt password hash.
 
 The following settings can be configured in the administration panel:
 
@@ -166,9 +166,9 @@ The following settings can be configured in the administration panel:
 - CORS
 - Vault/OpenBao instances (address, port, token, TLS, PKI mounts)
 
-The environment variable `VCV_ADMIN_PASSWORD` must contains a **bcrypt hash** (prefix `$2a$`, `$2b$`, or `$2y$`).
+The `admin.password` field must contain a **bcrypt hash** (prefix `$2a$`, `$2b$`, or `$2y$`).
 
-If the variable is missing or not a bcrypt hash, the admin route is disabled and the `/admin` page is not accessible.
+If the field is missing or not a bcrypt hash, the admin route is disabled and the `/admin` page is not accessible.
 
 ## ⏱️ Certificate expiration thresholds
 

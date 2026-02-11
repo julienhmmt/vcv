@@ -1,4 +1,7 @@
 {
+  "admin": {
+    "password": "$2y$10$.changeme"
+  },
   "app": {
     "env": "prod",
     "logging": {

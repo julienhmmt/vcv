@@ -22,7 +22,7 @@ VaultCertsViewer (VCV) ist eine leichtgewichtige Web-Schnittstelle zur Visualisi
 - **URL-Synchronisation**: Filter, Suche, Sortierreihenfolge, Paginierung und Mount-Auswahl werden in der URL abgebildet, um Lesezeichen und Teilen zu ermöglichen.
 - **I18n**: Volle Unterstützung für Englisch, Französisch, Spanisch, Deutsch und Italienisch. Wechseln Sie die Sprache über das Dropdown-Menü im Header.
 - **Dunkelmodus**: Moderne Benutzeroberfläche mit persistentem Dunkel-/Hellmodus-Umschalter.
-- **Admin-Panel**: Verwalten Sie die `settings.json` visuell (Vault-Instanzen hinzufügen/entfernen, Schwellenwerte konfigurieren, Protokollierung, CORS). Erfordert die Umgebungsvariable `VCV_ADMIN_PASSWORD`.
+- **Admin-Panel**: Verwalten Sie die `settings.json` visuell (Vault-Instanzen hinzufügen/entfernen, Schwellenwerte konfigurieren, Protokollierung, CORS). Erfordert ein Admin-Passwort, das in `settings.json` konfiguriert ist.
 - **Prometheus-Metriken**: Zertifikats- und Verbindungsmetriken unter `/metrics` für Überwachung und Alarmierung.
 
 ## Bedienung der Oberfläche
@@ -54,12 +54,9 @@ Das Schild-Symbol im Header zeigt den gesamten Vault-Verbindungsstatus (grün = 
 
 VCV wird hauptsächlich über eine `settings.json`-Datei konfiguriert. Das Admin-Panel ermöglicht die visuelle Bearbeitung dieser Datei. Siehe die Konfigurationsdokumentation für alle Details.
 
-Alle Anwendungseinstellungen (Vault-Instanzen, Ablaufschwellenwerte, Protokollierung, CORS usw.) werden in `settings.json` definiert. Nur zwei Umgebungsvariablen sind noch erforderlich:
+Alle Anwendungseinstellungen (Vault-Instanzen, Ablaufschwellenwerte, Protokollierung, CORS usw.) werden in `settings.json` definiert. Das Admin-Panel ermöglicht die visuelle Verwaltung dieser Einstellungen über die Weboberfläche.
 
-- `VCV_ADMIN_PASSWORD`: Bcrypt-Hash zur Aktivierung des Admin-Panels (aus Sicherheitsgründen als Umgebungsvariable belassen — sollte nicht in einer über die Oberfläche bearbeitbaren Datei gespeichert werden).
-- `SETTINGS_PATH`: Pfad zu einer benutzerdefinierten `settings.json`-Datei (nur erforderlich, wenn die Datei nicht an einem Standardspeicherort liegt).
-
-> **Hinweis:** Umgebungsvariablen (`VAULT_ADDRS`, `LOG_LEVEL` usw.) werden weiterhin als Legacy-Fallback unterstützt, wenn keine `settings.json` gefunden wird, aber die Verwendung von `settings.json` ist der empfohlene Ansatz.
+> **Hinweis:** Das Admin-Panel erfordert, dass ein Admin-Passwort in der `settings.json`-Datei unter dem Feld `admin.password` konfiguriert ist.
 
 ## Einschränkungen & was es NICHT tut
 

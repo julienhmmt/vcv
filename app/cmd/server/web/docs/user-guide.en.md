@@ -22,7 +22,7 @@ VaultCertsViewer (VCV) is a lightweight web interface designed to visualize and 
 - **URL state sync**: Filters, search, sort order, pagination, and mount selection are reflected in the URL for bookmarking and sharing.
 - **I18n**: Full support for English, French, Spanish, German, and Italian. Switch languages with the dropdown in the header.
 - **Dark mode**: Modern UI with persistent dark/light mode toggle.
-- **Admin panel**: Manage `settings.json` visually (add/remove Vault instances, configure thresholds, logging, CORS). Requires `VCV_ADMIN_PASSWORD` environment variable.
+- **Admin panel**: Manage `settings.json` visually (add/remove Vault instances, configure thresholds, logging, CORS). Requires admin password configured in `settings.json`.
 - **Prometheus metrics**: Expose certificate and connection metrics at `/metrics` for monitoring and alerting.
 
 ## Using the interface
@@ -54,12 +54,9 @@ The shield icon in the header shows the overall Vault connection state (green = 
 
 VCV is configured primarily through a `settings.json` file. The admin panel lets you edit this file visually. See the configuration documentation for full details.
 
-All application settings (Vault instances, expiration thresholds, logging, CORS, etc.) are defined in `settings.json`. Only two environment variables are still required:
+All application settings (Vault instances, expiration thresholds, logging, CORS, etc.) are defined in `settings.json`. The admin panel allows you to manage these settings visually through the web interface.
 
-- `VCV_ADMIN_PASSWORD`: Bcrypt hash to enable the admin panel (kept as an env var for security — it should not be stored in a file editable from the UI).
-- `SETTINGS_PATH`: Path to a custom `settings.json` file (only needed if the file is not in a default location).
-
-> **Note:** Environment variables (`VAULT_ADDRS`, `LOG_LEVEL`, etc.) are still supported as a legacy fallback when no `settings.json` is found, but using `settings.json` is the recommended approach.
+> **Note:** The admin panel requires an admin password to be configured in the `settings.json` file under the `admin.password` field.
 
 ## Limits & what it does NOT do
 

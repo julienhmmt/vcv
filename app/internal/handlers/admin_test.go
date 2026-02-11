@@ -43,8 +43,11 @@ func mustBcryptPasswordHash(t *testing.T, value string) string {
 
 func TestRegisterAdminRoutes_DisabledWithoutPassword(t *testing.T) {
 	router := chi.NewRouter()
-	t.Setenv("VCV_ADMIN_PASSWORD", "")
-	RegisterAdminRoutes(router, newAdminWebFS(), t.TempDir()+"/settings.json", config.EnvDev)
+	settingsPath := filepath.Join(t.TempDir(), "settings.json")
+	// Create settings file without admin password
+	settingsContent := `{"app":{"env":"dev","port":52000},"vaults":[]}`
+	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
 	req := httptest.NewRequest(http.MethodGet, "/admin", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
@@ -53,8 +56,11 @@ func TestRegisterAdminRoutes_DisabledWithoutPassword(t *testing.T) {
 
 func TestRegisterAdminRoutes_DisabledWithPlaintextPassword(t *testing.T) {
 	router := chi.NewRouter()
-	t.Setenv("VCV_ADMIN_PASSWORD", "secret")
-	RegisterAdminRoutes(router, newAdminWebFS(), t.TempDir()+"/settings.json", config.EnvDev)
+	settingsPath := filepath.Join(t.TempDir(), "settings.json")
+	// Create settings file with plaintext password (invalid)
+	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"secret"},"vaults":[]}`
+	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
 	req := httptest.NewRequest(http.MethodGet, "/admin", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
@@ -64,7 +70,10 @@ func TestRegisterAdminRoutes_DisabledWithPlaintextPassword(t *testing.T) {
 func TestAdminLoginAndSettingsRoundtrip(t *testing.T) {
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	router := chi.NewRouter()
-	t.Setenv("VCV_ADMIN_PASSWORD", mustBcryptPasswordHash(t, "secret"))
+	// Create settings file with bcrypt admin password
+	adminPassword := mustBcryptPasswordHash(t, "secret")
+	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
+	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
 	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
 	loginPayload, err := json.Marshal(map[string]string{"username": "admin", "password": "secret"})
 	require.NoError(t, err)
@@ -98,8 +107,8 @@ func TestAdminLoginAndSettingsRoundtrip(t *testing.T) {
 		PKIMounts:       []string{"pki"},
 		DisplayName:     "vault",
 		TLSCACertBase64: "ZHVtbXk",
-		TLSCACert:       "/etc/vcv/tls/vault-ca.pem",
-		TLSCAPath:       "/etc/vcv/tls/ca",
+		TLSCACert:       "/app/tls/vault-ca.pem",
+		TLSCAPath:       "/app/tls/ca",
 		TLSServerName:   "vault.service.consul",
 		TLSInsecure:     false,
 		Enabled:         &enabled,
@@ -126,15 +135,15 @@ func TestAdminLoginAndSettingsRoundtrip(t *testing.T) {
 	require.Len(t, after.Vaults, 1)
 	assert.Equal(t, "v1", after.Vaults[0].ID)
 	assert.Equal(t, "ZHVtbXk", after.Vaults[0].TLSCACertBase64)
-	assert.Equal(t, "/etc/vcv/tls/vault-ca.pem", after.Vaults[0].TLSCACert)
-	assert.Equal(t, "/etc/vcv/tls/ca", after.Vaults[0].TLSCAPath)
+	assert.Equal(t, "/app/tls/vault-ca.pem", after.Vaults[0].TLSCACert)
+	assert.Equal(t, "/app/tls/ca", after.Vaults[0].TLSCAPath)
 	assert.Equal(t, "vault.service.consul", after.Vaults[0].TLSServerName)
 
 	fileBytes, readErr := os.ReadFile(settingsPath)
 	require.NoError(t, readErr)
 	assert.Contains(t, string(fileBytes), "\"vaults\"")
 	assert.Contains(t, string(fileBytes), "\"tls_ca_cert_base64\": \"ZHVtbXk\"")
-	assert.Contains(t, string(fileBytes), "\"tls_ca_cert\": \"/etc/vcv/tls/vault-ca.pem\"")
+	assert.Contains(t, string(fileBytes), "\"tls_ca_cert\": \"/app/tls/vault-ca.pem\"")
 }
 
 func TestAdminSessionStore_LoginFromForm_SetsCookie(t *testing.T) {
@@ -306,7 +315,10 @@ func TestNewVaultKey_GeneratesValue(t *testing.T) {
 func TestAdminRoutes_HTMXPanelLoginLogoutAndVaultActions(t *testing.T) {
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	router := chi.NewRouter()
-	t.Setenv("VCV_ADMIN_PASSWORD", mustBcryptPasswordHash(t, "secret"))
+	// Create settings file with bcrypt admin password
+	adminPassword := mustBcryptPasswordHash(t, "secret")
+	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
+	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
 	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
 
 	panelReq := httptest.NewRequest(http.MethodGet, "/admin/panel", nil)
@@ -357,7 +369,10 @@ func TestAdminRoutes_HTMXPanelLoginLogoutAndVaultActions(t *testing.T) {
 func TestAdminRoutes_SettingsPost_ErrorsAndSuccess(t *testing.T) {
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
 	router := chi.NewRouter()
-	t.Setenv("VCV_ADMIN_PASSWORD", mustBcryptPasswordHash(t, "secret"))
+	// Create settings file with bcrypt admin password
+	adminPassword := mustBcryptPasswordHash(t, "secret")
+	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
+	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
 	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
 
 	loginReq := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
@@ -383,7 +398,7 @@ func TestAdminRoutes_SettingsPost_ErrorsAndSuccess(t *testing.T) {
 	assert.Equal(t, http.StatusOK, invalidVaultRec.Code)
 	assert.Contains(t, invalidVaultRec.Body.String(), "vault id is empty")
 
-	goodReq := httptest.NewRequest(http.MethodPost, "/admin/settings", strings.NewReader("expire_critical=1&expire_warning=2&cors_origins=http://a,http://b&vault_id_1=v1&vault_address_1=https://vault.example.com&vault_token_1=tok&vault_mounts_1=pki&vault_tls_ca_cert_base64_1=ZHVtbXk&vault_tls_ca_cert_1=/etc/vcv/tls/vault-ca.pem&vault_tls_ca_path_1=/etc/vcv/tls/ca&vault_tls_server_name_1=vault.service.consul&vault_enabled_1=on"))
+	goodReq := httptest.NewRequest(http.MethodPost, "/admin/settings", strings.NewReader("expire_critical=1&expire_warning=2&cors_origins=http://a,http://b&vault_id_1=v1&vault_address_1=https://vault.example.com&vault_token_1=tok&vault_mounts_1=pki&vault_tls_ca_cert_base64_1=ZHVtbXk&vault_tls_ca_cert_1=/app/tls/vault-ca.pem&vault_tls_ca_path_1=/app/tls/ca&vault_tls_server_name_1=vault.service.consul&vault_enabled_1=on"))
 	goodReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	goodReq.AddCookie(cookies[0])
 	goodRec := httptest.NewRecorder()
@@ -395,8 +410,8 @@ func TestAdminRoutes_SettingsPost_ErrorsAndSuccess(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, string(fileBytes), "\"id\": \"v1\"")
 	assert.Contains(t, string(fileBytes), "\"tls_ca_cert_base64\": \"ZHVtbXk\"")
-	assert.Contains(t, string(fileBytes), "\"tls_ca_cert\": \"/etc/vcv/tls/vault-ca.pem\"")
-	assert.Contains(t, string(fileBytes), "\"tls_ca_path\": \"/etc/vcv/tls/ca\"")
+	assert.Contains(t, string(fileBytes), "\"tls_ca_cert\": \"/app/tls/vault-ca.pem\"")
+	assert.Contains(t, string(fileBytes), "\"tls_ca_path\": \"/app/tls/ca\"")
 	assert.Contains(t, string(fileBytes), "\"tls_server_name\": \"vault.service.consul\"")
 }
 
@@ -534,11 +549,12 @@ func TestAdminSessionStore_LoginFromForm_RateLimited(t *testing.T) {
 
 func TestAdminRoutes_VaultRemove_PersistsToSettings(t *testing.T) {
 	settingsPath := filepath.Join(t.TempDir(), "settings.json")
-	initial := `{"app":{"env":"dev","port":52000,"logging":{"level":"debug","format":"json","output":"stdout","file_path":""}},"cors":{"allowed_origins":[],"allow_credentials":true},"certificates":{"expiration_thresholds":{"critical":1,"warning":2}},"vaults":[{"id":"v1","address":"https://vault.example.com","token":"tok","pki_mount":"pki","pki_mounts":["pki"],"display_name":"v1","tls_insecure":false,"enabled":true}]}`
-	require.NoError(t, os.WriteFile(settingsPath, []byte(initial), 0o644))
+	// Add admin password to the initial settings
+	adminPassword := mustBcryptPasswordHash(t, "secret")
+	initialWithAdmin := `{"app":{"env":"dev","port":52000,"logging":{"level":"debug","format":"json","output":"stdout","file_path":""}},"admin":{"password":"` + adminPassword + `"},"cors":{"allowed_origins":[],"allow_credentials":true},"certificates":{"expiration_thresholds":{"critical":1,"warning":2}},"vaults":[{"id":"v1","address":"https://vault.example.com","token":"tok","pki_mount":"pki","pki_mounts":["pki"],"display_name":"v1","tls_insecure":false,"enabled":true}]}`
+	require.NoError(t, os.WriteFile(settingsPath, []byte(initialWithAdmin), 0o644))
 
 	router := chi.NewRouter()
-	t.Setenv("VCV_ADMIN_PASSWORD", mustBcryptPasswordHash(t, "secret"))
 	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
 
 	loginReq := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))

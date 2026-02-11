@@ -429,6 +429,7 @@ func (s *adminSettingsStore) getSettings(w http.ResponseWriter, r *http.Request)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
+	settings.Admin.Password = ""
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(settings)
@@ -439,6 +440,10 @@ func (s *adminSettingsStore) putSettings(w http.ResponseWriter, r *http.Request)
 	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
 		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
 		return
+	}
+	existing, loadErr := s.load()
+	if loadErr == nil && strings.TrimSpace(settings.Admin.Password) == "" {
+		settings.Admin.Password = existing.Admin.Password
 	}
 	if err := s.save(settings); err != nil {
 		log := logger.Get()
@@ -612,16 +617,27 @@ type adminPageTemplateData struct {
 }
 
 func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, env config.Environment) {
-	password := strings.TrimSpace(os.Getenv("VCV_ADMIN_PASSWORD"))
+	// Load settings to get admin password
+	settingsStore := newAdminSettingsStore(settingsPath, env)
+	settings, err := settingsStore.load()
+	if err != nil {
+		// If we can't load settings, don't register admin routes
+		return
+	}
+
+	password := strings.TrimSpace(settings.Admin.Password)
 	if password == "" {
+		// No admin password configured, don't register admin routes
 		return
 	}
 	if !strings.HasPrefix(password, "$2a$") && !strings.HasPrefix(password, "$2b$") && !strings.HasPrefix(password, "$2y$") {
+		// Invalid bcrypt hash, don't register admin routes
 		return
 	}
+
 	secureCookies := env == config.EnvProd
 	sessions := newAdminSessionStore(password, secureCookies)
-	store := newAdminSettingsStore(settingsPath, env)
+	store := settingsStore // Use the already created store
 	templates, templatesErr := parseTemplates(webFS)
 	if templatesErr != nil {
 		panic(templatesErr)

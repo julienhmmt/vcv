@@ -73,17 +73,17 @@
 
       <div class="admin-form-row admin-form-row-full">
         <label class="admin-label">{{.Messages.AdminVaultTLSCAFile}}</label>
-        <input class="vcv-input admin-input" name="vault_tls_ca_cert_{{.Key}}" value="{{.Vault.TLSCACert}}" placeholder="/etc/vcv/tls/vault-ca.pem" />
+        <input class="vcv-input admin-input" name="vault_tls_ca_cert_{{.Key}}" value="{{.Vault.TLSCACert}}" placeholder="/app/tls/vault-ca.pem" />
       </div>
 
       <div class="admin-form-row admin-form-row-full">
         <label class="admin-label">{{.Messages.AdminVaultTLSCAPath}}</label>
-        <input class="vcv-input admin-input" name="vault_tls_ca_path_{{.Key}}" value="{{.Vault.TLSCAPath}}" placeholder="/etc/vcv/tls/ca" />
+        <input class="vcv-input admin-input" name="vault_tls_ca_path_{{.Key}}" value="{{.Vault.TLSCAPath}}" placeholder="/app/tls/ca" />
       </div>
 
       <div class="admin-form-row admin-form-row-full">
         <label class="admin-label">{{.Messages.AdminVaultTLSServerName}}</label>
-        <input class="vcv-input admin-input" name="vault_tls_server_name_{{.Key}}" value="{{.Vault.TLSServerName}}" placeholder="vault.service.consul" />
+        <input class="vcv-input admin-input" name="vault_tls_server_name_{{.Key}}" value="{{.Vault.TLSServerName}}" placeholder="" />
       </div>
 
       <div class="admin-form-row">

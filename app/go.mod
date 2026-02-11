@@ -5,7 +5,6 @@ go 1.25.4
 require (
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/hashicorp/vault/api v1.22.0
-	github.com/joho/godotenv v1.5.1
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.5
 	github.com/rs/zerolog v1.34.0

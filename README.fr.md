@@ -55,7 +55,7 @@ vault write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
 vault token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 ```
 
-Ce jeton dédié limite les droits à la consultation des certificats, peut être renouvelé et sert de valeur `VAULT_READ_TOKEN` pour l'application.
+Ce jeton dédié limite les droits à la consultation des certificats, peut être renouvelé et est utilisé dans le fichier `settings.json`.
 
 ## 🚀 Comment le déployer et l'utiliser pour OpenBao
 
@@ -82,7 +82,7 @@ bao write auth/token/roles/vcv allowed_policies="vcv" orphan=true period="24h"
 bao token create -role="vcv" -policy="vcv" -period="24h" -renewable=true
 ```
 
-Ce jeton dédié limite les droits à la consultation des certificats, peut être renouvelé et sert de valeur `VAULT_READ_TOKEN` pour l'application.
+Ce jeton dédié limite les droits à la consultation des certificats, peut être renouvelé et est utilisé dans le fichier `settings.json`.
 
 ## 🧩 Support multi-moteurs PKI
 
@@ -158,7 +158,7 @@ Notes :
 
 ## 🛠️ Panneau d'administration
 
-Un panneau d'administration permet de configurer plusieurs paramètres de l'application. Il est accessible via la route `/admin` et est protégé par un mot de passe. Pour activer le panneau d'administration, vous devez définir la variable d'environnement `VCV_ADMIN_PASSWORD`.
+Un panneau d'administration permet de configurer plusieurs paramètres de l'application. Il est accessible via la route `/admin` et est protégé par un mot de passe. Pour activer le panneau d'administration, vous devez inclure une section `admin` dans votre fichier `settings.json` avec un hash de mot de passe bcrypt.
 
 Les fonctionnalités du panneau d'administration sont les suivantes :
 
@@ -166,9 +166,9 @@ Les fonctionnalités du panneau d'administration sont les suivantes :
 - Configuration des CORS
 - Configuration des instances Vault/OpenBao (adresse, port, token, TLS, montages PKI à surveiller)
 
-La variable d'environnement `VCV_ADMIN_PASSWORD` doit contenir une valeur **hash bcrypt** (préfixe `$2a$`, `$2b$` ou `$2y$`).
+Le champ `admin.password` doit contenir une valeur **hash bcrypt** (préfixe `$2a$`, `$2b$` ou `$2y$`).
 
-Si la variable est absente ou n'est pas un hash bcrypt, la route `/admin` est désactivée et le panneau d'administration est inaccessible.
+Si le champ est absent ou n'est pas un hash bcrypt, la route `/admin` est désactivée et le panneau d'administration est inaccessible.
 
 ## ⏱️ Seuils d'expiration des certificats
 

@@ -46,7 +46,7 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 | `/ui/certs/{id}/details` | GET | HTMX fragment: certificate details |
 | `/ui/theme/toggle` | POST | Toggle dark/light theme |
 | `/ui/status` | GET | Real-time Vault connection status |
-| `/admin` | GET | Admin page (enabled only if `VCV_ADMIN_PASSWORD` is set to a bcrypt hash) |
+| `/admin` | GET | Admin page (enabled only if admin password is configured in settings.json) |
 | `/admin/panel` | GET | Admin panel fragment (HTMX) |
 | `/admin/login` | POST | Admin login (HTMX) |
 | `/admin/logout` | POST | Admin logout (HTMX) |
@@ -61,19 +61,19 @@ The primary configuration source is a JSON file.
 Recommended deployment pattern:
 
 - Mount a `settings.json` file into the container under `/app/settings.json` (the image `WORKDIR` is `/app`).
-- The application will automatically discover the settings file without requiring `SETTINGS_PATH`.
+- The application will automatically discover the settings file.
 
 If you enable the Admin panel, the settings file must be writable so changes can be persisted.
 
 ### Resolution order
 
-Configuration is loaded in this order:
+Configuration is loaded from the first file found in this order:
 
-- `SETTINGS_PATH` if set
-- `settings.<APP_ENV>.json` (default `APP_ENV=dev`)
+- `settings.dev.json`
+- `settings.prod.json`
 - `settings.json`
 - `./settings.json`
-- `/etc/vcv/settings.json`
+- `/app/settings.json`
 
 ### Schema overview
 

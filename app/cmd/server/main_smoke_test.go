@@ -1,21 +1,53 @@
 package main
 
 import (
+	"fmt"
+	"net"
 	"os"
+	"path/filepath"
 	"syscall"
 	"testing"
 	"time"
 )
 
+func freePort(t *testing.T) int {
+	t.Helper()
+	l, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("failed to find free port: %v", err)
+	}
+	port := l.Addr().(*net.TCPAddr).Port
+	l.Close()
+	return port
+}
+
 func TestMain_ShutsDownOnSignal(t *testing.T) {
-	t.Setenv("APP_ENV", "dev")
-	t.Setenv("PORT", "0")
-	t.Setenv("VCV_ADMIN_PASSWORD", "")
-	t.Setenv("VAULT_ADDR", "")
-	t.Setenv("VAULT_READ_TOKEN", "")
-	t.Setenv("VAULT_ADDRS", "")
-	t.Setenv("LOG_OUTPUT", "stdout")
-	t.Setenv("LOG_FORMAT", "json")
+	port := freePort(t)
+	tmpDir := t.TempDir()
+	settingsFile := filepath.Join(tmpDir, "settings.json")
+	settingsContent := fmt.Sprintf(`{
+		"app": {
+			"env": "dev",
+			"port": %d,
+			"logging": {
+				"level": "info",
+				"format": "json",
+				"output": "stdout"
+			}
+		},
+		"vaults": []
+	}`, port)
+
+	err := os.WriteFile(settingsFile, []byte(settingsContent), 0644)
+	if err != nil {
+		t.Fatalf("failed to create test settings file: %v", err)
+	}
+
+	// Change to temp directory to ensure the settings file is found
+	originalWd, _ := os.Getwd()
+	defer os.Chdir(originalWd)
+	os.Chdir(tmpDir)
+
 	done := make(chan struct{})
 	go func() {
 		main()

@@ -42,7 +42,6 @@ func newServerWebFS() fs.FS {
 }
 
 func TestBuildRouter_BasicEndpoints(t *testing.T) {
-	t.Setenv("VCV_ADMIN_PASSWORD", "")
 	cfg := config.Config{
 		Env:                  config.EnvDev,
 		Port:                 "52000",
@@ -129,7 +128,6 @@ func TestBuildRouter_BasicEndpoints(t *testing.T) {
 }
 
 func TestBuildRouter_MissingAssets_Returns404(t *testing.T) {
-	t.Setenv("VCV_ADMIN_PASSWORD", "")
 	cfg := config.Config{Env: config.EnvDev}
 	primary := &vault.MockClient{}
 	multi := &vault.MockClient{}
@@ -148,7 +146,6 @@ func TestBuildRouter_MissingAssets_Returns404(t *testing.T) {
 }
 
 func TestBuildRouter_MissingIndex_Returns500(t *testing.T) {
-	t.Setenv("VCV_ADMIN_PASSWORD", "")
 	cfg := config.Config{Env: config.EnvDev}
 	primary := &vault.MockClient{}
 	multi := &vault.MockClient{}

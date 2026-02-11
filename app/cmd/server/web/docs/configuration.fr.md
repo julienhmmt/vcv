@@ -10,9 +10,19 @@ VCV utilise une architecture de rendu côté serveur propulsée par [HTMX](https
 
 ## 🔐 Accès au panneau d'administration
 
-### VCV_ADMIN_PASSWORD
+### Mot de passe admin dans le fichier de settings
 
-Variable d'environnement requise pour activer le panneau d'administration. Doit être un **hash bcrypt**.
+Pour activer le panneau d'administration, ajoutez une section `admin` à votre fichier `settings.json` avec un mot de passe bcrypt :
+
+```json
+{
+  "admin": {
+    "password": "$2b$12$votre-hash-bcrypt-ici"
+  }
+}
+```
+
+Le mot de passe doit être un **hash bcrypt** (préfixe `$2a$`, `$2b$`, ou `$2y$`).
 
 ```bash
 # Générer un hash bcrypt (exemple avec htpasswd)
@@ -20,9 +30,6 @@ htpasswd -nbBC 10 admin VotreMotDePasseSecurise | cut -d: -f2
 
 # Ou avec Python
 python3 -c "import bcrypt; print(bcrypt.hashpw(b'VotreMotDePasse', bcrypt.gensalt()).decode())"
-
-# Définir la variable d'environnement
-export VCV_ADMIN_PASSWORD='$2a$10$...'
 ```
 
 Vous pouvez également utiliser le service 'bcrypt' de <https://tools.hommet.net/bcrypt> pour générer un hash bcrypt (aucune donnée n'est stockée).
@@ -50,12 +57,13 @@ Port d'écoute du serveur HTTP.
 
 ### Chemin du fichier de configuration
 
-La variable d'environnement `SETTINGS_PATH` spécifie le chemin vers le fichier `settings.json`. Si non définie, VCV recherche les fichiers dans cet ordre :
+VCV recherche le fichier de configuration dans cet ordre :
 
-1. `settings.<env>.json` (ex : `settings.dev.json`)
-2. `settings.json`
-3. `./settings.json`
-4. `/etc/vcv/settings.json`
+1. `settings.dev.json`
+2. `settings.prod.json`
+3. `settings.json`
+4. `./settings.json`
+5. `/app/settings.json`
 
 ### Journalisation (app.logging)
 

@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"strings"
 	"syscall"
 	"time"
 	"vcv/internal/metrics"
@@ -193,27 +191,7 @@ func main() {
 			Msg("Failed to initialize embedded web filesystem")
 	}
 
-	settingsPath := strings.TrimSpace(os.Getenv("SETTINGS_PATH"))
-	if settingsPath == "" {
-		log.Info().
-			Str("env", string(cfg.Env)).
-			Msg("No SETTINGS_PATH provided, searching for default settings files")
-		candidates := []string{fmt.Sprintf("settings.%s.json", string(cfg.Env)), "settings.json", "./settings.json", "/etc/vcv/settings.json"}
-		for _, candidate := range candidates {
-			absPath, absErr := filepath.Abs(candidate)
-			if absErr != nil {
-				continue
-			}
-			if _, statErr := os.Stat(absPath); statErr != nil {
-				continue
-			}
-			settingsPath = absPath
-			break
-		}
-		if settingsPath == "" {
-			settingsPath = filepath.Join(".", fmt.Sprintf("settings.%s.json", string(cfg.Env)))
-		}
-	}
+	settingsPath := cfg.SettingsPath
 
 	log.Info().
 		Str("settings_path", settingsPath).

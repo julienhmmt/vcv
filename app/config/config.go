@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/joho/godotenv"
 )
 
 // Environment represents the application environment.
@@ -27,6 +25,7 @@ type Config struct {
 	LogFormat            string
 	LogOutput            string
 	LogFilePath          string
+	SettingsPath         string
 	CORS                 CORSConfig
 	Vault                VaultConfig
 	Vaults               []VaultInstance
@@ -65,6 +64,7 @@ type MetricsConfig struct {
 
 type SettingsFile struct {
 	App          AppSettings         `json:"app"`
+	Admin        AdminSettings       `json:"admin,omitempty"`
 	Certificates CertificateSettings `json:"certificates"`
 	Metrics      MetricsSettings     `json:"metrics"`
 	CORS         CORSSettings        `json:"cors"`
@@ -98,66 +98,58 @@ type MetricsSettings struct {
 	EnhancedMetrics *bool `json:"enhanced_metrics"`
 }
 
-// Load reads configuration from environment variables or settings file.
+type AdminSettings struct {
+	Password string `json:"password,omitempty"`
+}
+
+// Load reads configuration from settings file only.
 func Load() (Config, error) {
-	_ = godotenv.Load()
 	settings, settingsPath, settingsErr := loadSettingsFile()
-	if settingsErr == nil && settings != nil {
-		cfg := buildConfigFromSettings(*settings)
-		vaults, normalizeErr := normalizeVaultInstances(settings.Vaults)
-		if normalizeErr != nil {
-			return Config{}, fmt.Errorf("invalid settings file %s: %w", settingsPath, normalizeErr)
-		}
-		cfg.Vaults = vaults
-		if len(vaults) > 0 {
-			cfg.Vault = convertVaultInstanceToLegacy(vaults[0])
-		}
-		applyLoggingEnv(cfg)
-		return cfg, nil
+	if settingsErr != nil {
+		return Config{}, fmt.Errorf("failed to load settings file: %w", settingsErr)
+	}
+	if settings == nil {
+		return Config{}, fmt.Errorf("no settings file found")
 	}
 
-	env := parseEnv(getEnv("APP_ENV", "dev"))
-	legacyVault := loadVaultConfig()
-
-	cfg := Config{
-		Env:                  env,
-		Port:                 getEnv("PORT", "52000"),
-		LogLevel:             getEnv("LOG_LEVEL", defaultLogLevel(env)),
-		LogFormat:            getEnv("LOG_FORMAT", defaultLogFormat(env)),
-		LogOutput:            getEnv("LOG_OUTPUT", "stdout"),
-		LogFilePath:          getEnv("LOG_FILE_PATH", ""),
-		CORS:                 loadCORSConfig(env),
-		Vault:                legacyVault,
-		ExpirationThresholds: loadExpirationThresholds(),
-		Metrics:              loadMetricsConfig(),
+	cfg := buildConfigFromSettings(*settings)
+	cfg.SettingsPath = settingsPath
+	vaults, normalizeErr := normalizeVaultInstances(settings.Vaults)
+	if normalizeErr != nil {
+		return Config{}, fmt.Errorf("invalid settings file %s: %w", settingsPath, normalizeErr)
 	}
-
-	vaultInstances, vaultErr := LoadVaultInstances()
-	if vaultErr == nil && len(vaultInstances) > 0 {
-		cfg.Vaults = vaultInstances
-		cfg.Vault = convertVaultInstanceToLegacy(vaultInstances[0])
+	cfg.Vaults = vaults
+	if len(vaults) > 0 {
+		cfg.Vault = convertVaultInstanceToLegacy(vaults[0])
 	}
 
 	return cfg, nil
 }
 
-func loadSettingsFile() (*SettingsFile, string, error) {
-	settingsPath := strings.TrimSpace(getEnv("SETTINGS_PATH", ""))
-	if settingsPath != "" {
-		data, readErr := os.ReadFile(settingsPath)
-		if readErr != nil {
-			return nil, settingsPath, readErr
-		}
-		var settings SettingsFile
-		if err := json.Unmarshal(data, &settings); err != nil {
-			return nil, settingsPath, err
-		}
-		return &settings, settingsPath, nil
-	}
+// settingsCandidates returns the ordered list of settings file paths to try.
+func settingsCandidates() []string {
+	return []string{"settings.dev.json", "settings.prod.json", "settings.json", "./settings.json", "/app/settings.json"}
+}
 
-	envName := strings.ToLower(strings.TrimSpace(getEnv("APP_ENV", "dev")))
-	candidates := []string{fmt.Sprintf("settings.%s.json", envName), "settings.json", "./settings.json", "/etc/vcv/settings.json"}
-	for _, candidate := range candidates {
+// ResolveSettingsPath returns the absolute path of the first settings file found on disk.
+// If no file is found it returns a default path.
+func ResolveSettingsPath() string {
+	for _, candidate := range settingsCandidates() {
+		absPath, absErr := filepath.Abs(candidate)
+		if absErr != nil {
+			continue
+		}
+		if _, statErr := os.Stat(absPath); statErr != nil {
+			continue
+		}
+		return absPath
+	}
+	absDefault, _ := filepath.Abs("settings.json")
+	return absDefault
+}
+
+func loadSettingsFile() (*SettingsFile, string, error) {
+	for _, candidate := range settingsCandidates() {
 		absPath, absErr := filepath.Abs(candidate)
 		if absErr != nil {
 			continue
@@ -237,18 +229,6 @@ func buildConfigFromSettings(settings SettingsFile) Config {
 	}
 }
 
-func applyLoggingEnv(cfg Config) {
-	if strings.TrimSpace(cfg.LogOutput) != "" {
-		_ = os.Setenv("LOG_OUTPUT", cfg.LogOutput)
-	}
-	if strings.TrimSpace(cfg.LogFormat) != "" {
-		_ = os.Setenv("LOG_FORMAT", cfg.LogFormat)
-	}
-	if strings.TrimSpace(cfg.LogFilePath) != "" {
-		_ = os.Setenv("LOG_FILE_PATH", cfg.LogFilePath)
-	}
-}
-
 // IsDev returns true if the environment is development.
 func (c Config) IsDev() bool {
 	return c.Env == EnvDev
@@ -287,17 +267,6 @@ func defaultLogFormat(env Environment) string {
 }
 
 func loadCORSConfig(env Environment) CORSConfig {
-	originsEnv := getEnv("CORS_ALLOWED_ORIGINS", "")
-	if originsEnv != "" {
-		origins := strings.Split(originsEnv, ",")
-		for i := range origins {
-			origins[i] = strings.TrimSpace(origins[i])
-		}
-		return CORSConfig{
-			AllowedOrigins:   origins,
-			AllowCredentials: true,
-		}
-	}
 	switch env {
 	case EnvProd:
 		return CORSConfig{
@@ -309,42 +278,6 @@ func loadCORSConfig(env Environment) CORSConfig {
 			AllowedOrigins:   []string{"http://localhost:4321", "http://localhost:3000"},
 			AllowCredentials: true,
 		}
-	}
-}
-
-func loadVaultConfig() VaultConfig {
-	skipVerifyDefault := getEnv("VAULT_SKIP_VERIFY", "false")
-	tlsInsecure := strings.ToLower(getEnv("VAULT_TLS_INSECURE", skipVerifyDefault)) == "true"
-	tlsCACertBase64 := strings.TrimSpace(getEnv("VAULT_TLS_CA_CERT_BASE64", getEnv("VAULT_CACERT_BYTES", "")))
-	tlsCACert := strings.TrimSpace(getEnv("VAULT_TLS_CA_CERT", getEnv("VAULT_CACERT", "")))
-	tlsCAPath := strings.TrimSpace(getEnv("VAULT_TLS_CA_PATH", getEnv("VAULT_CAPATH", "")))
-	tlsServerName := strings.TrimSpace(getEnv("VAULT_TLS_SERVER_NAME", ""))
-
-	// Support both new VAULT_PKI_MOUNTS (comma-separated) and legacy VAULT_PKI_MOUNT
-	pkiMountsStr := getEnv("VAULT_PKI_MOUNTS", "")
-	if pkiMountsStr == "" {
-		// Fallback to legacy single mount for backward compatibility
-		legacyMount := getEnv("VAULT_PKI_MOUNT", defaultPKIMount)
-		pkiMountsStr = legacyMount
-	}
-
-	var pkiMounts []string
-	if pkiMountsStr != "" {
-		pkiMounts = strings.Split(pkiMountsStr, ",")
-		for i := range pkiMounts {
-			pkiMounts[i] = strings.TrimSpace(pkiMounts[i])
-		}
-	}
-
-	return VaultConfig{
-		Addr:            getEnv("VAULT_ADDR", ""),
-		PKIMounts:       pkiMounts,
-		ReadToken:       getEnv("VAULT_READ_TOKEN", ""),
-		TLSCACertBase64: tlsCACertBase64,
-		TLSCACert:       tlsCACert,
-		TLSCAPath:       tlsCAPath,
-		TLSServerName:   tlsServerName,
-		TLSInsecure:     tlsInsecure,
 	}
 }
 
@@ -366,52 +299,5 @@ func convertVaultInstanceToLegacy(instance VaultInstance) VaultConfig {
 		TLSCAPath:       instance.TLSCAPath,
 		TLSServerName:   instance.TLSServerName,
 		TLSInsecure:     instance.TLSInsecure,
-	}
-}
-
-func loadExpirationThresholds() ExpirationThresholds {
-	critical := getEnvInt("VCV_EXPIRE_CRITICAL", 7)
-	warning := getEnvInt("VCV_EXPIRE_WARNING", 30)
-	return ExpirationThresholds{
-		Critical: critical,
-		Warning:  warning,
-	}
-}
-
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
-
-func getEnvInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if intVal, err := strconv.Atoi(value); err == nil {
-			return intVal
-		}
-	}
-	return defaultValue
-}
-
-func loadMetricsConfig() MetricsConfig {
-	return MetricsConfig{
-		PerCertificate:  parseBoolEnv("VCV_METRICS_PER_CERTIFICATE", false),
-		EnhancedMetrics: parseBoolEnv("VCV_METRICS_ENHANCED", true),
-	}
-}
-
-func parseBoolEnv(key string, fallback bool) bool {
-	value := strings.ToLower(strings.TrimSpace(os.Getenv(key)))
-	if value == "" {
-		return fallback
-	}
-	switch value {
-	case "1", "true", "yes", "y", "on":
-		return true
-	case "0", "false", "no", "n", "off":
-		return false
-	default:
-		return fallback
 	}
 }
