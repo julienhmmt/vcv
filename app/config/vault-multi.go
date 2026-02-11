@@ -43,6 +43,25 @@ func normalizeVaultInstances(instances []VaultInstance) ([]VaultInstance, error)
 	return normalized, nil
 }
 
+// NormalizeAllVaultInstances normalizes all vault instances including disabled ones.
+// This is used to create clients for every vault so they can be toggled at runtime.
+func NormalizeAllVaultInstances(instances []VaultInstance) ([]VaultInstance, error) {
+	normalized := make([]VaultInstance, 0, len(instances))
+	seen := make(map[string]bool)
+	for index, instance := range instances {
+		normalizedInstance, normalizeErr := normalizeVaultInstance(instance)
+		if normalizeErr != nil {
+			return nil, fmt.Errorf("vault %d: %w", index, normalizeErr)
+		}
+		if seen[normalizedInstance.ID] {
+			return nil, fmt.Errorf("duplicate vault id: %s", normalizedInstance.ID)
+		}
+		seen[normalizedInstance.ID] = true
+		normalized = append(normalized, normalizedInstance)
+	}
+	return normalized, nil
+}
+
 func normalizeVaultInstance(instance VaultInstance) (VaultInstance, error) {
 	id := strings.TrimSpace(instance.ID)
 	address := strings.TrimSpace(instance.Address)

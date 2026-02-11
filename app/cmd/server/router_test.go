@@ -56,7 +56,7 @@ func TestBuildRouter_BasicEndpoints(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	webFS := newServerWebFS()
 	statusClients := map[string]vault.Client{}
-	router, err := buildRouter(cfg, primary, statusClients, multi, registry, webFS, "")
+	router, err := buildRouter(cfg, primary, statusClients, multi, registry, webFS, "", nil)
 	assert.NoError(t, err)
 
 	t.Run("serves index", func(t *testing.T) {
@@ -136,7 +136,7 @@ func TestBuildRouter_MissingAssets_Returns404(t *testing.T) {
 		"index.html":                      &fstest.MapFile{Data: []byte("ok")},
 		"templates/status-indicator.html": &fstest.MapFile{Data: []byte("<div></div>")},
 	}
-	router, err := buildRouter(cfg, primary, map[string]vault.Client{}, multi, registry, webFS, "")
+	router, err := buildRouter(cfg, primary, map[string]vault.Client{}, multi, registry, webFS, "", nil)
 	assert.NotNil(t, router)
 	assert.NoError(t, err)
 	req := httptest.NewRequest(http.MethodGet, "/assets/missing.js", nil)
@@ -162,7 +162,7 @@ func TestBuildRouter_MissingIndex_Returns500(t *testing.T) {
 		"templates/certs-pagination.html":      &fstest.MapFile{Data: []byte("{{define \"certs-pagination\"}}{{end}}")},
 		"templates/certs-sort.html":            &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
 	}
-	router, err := buildRouter(cfg, primary, map[string]vault.Client{}, multi, registry, webFS, "")
+	router, err := buildRouter(cfg, primary, map[string]vault.Client{}, multi, registry, webFS, "", nil)
 	assert.NoError(t, err)
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()

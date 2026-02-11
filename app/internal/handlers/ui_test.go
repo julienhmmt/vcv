@@ -24,7 +24,7 @@ import (
 func setupUIRouter(mockVault *vault.MockClient, webFS fs.FS) *chi.Mux {
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
-	handlers.RegisterUIRoutes(router, mockVault, []config.VaultInstance{}, map[string]vault.Client{}, webFS, config.ExpirationThresholds{Critical: 7, Warning: 30})
+	handlers.RegisterUIRoutes(router, mockVault, []config.VaultInstance{}, map[string]vault.Client{}, webFS, config.ExpirationThresholds{Critical: 7, Warning: 30}, nil)
 	return router
 }
 
@@ -49,7 +49,7 @@ func TestStatusFragment_MultiVaultAddsSummaryPill(t *testing.T) {
 	primaryClient := &vault.MockClient{}
 	router := chi.NewRouter()
 	router.Use(middleware.RequestID)
-	handlers.RegisterUIRoutes(router, primaryClient, vaultInstances, vaultStatusClients, webFS, config.ExpirationThresholds{Critical: 7, Warning: 30})
+	handlers.RegisterUIRoutes(router, primaryClient, vaultInstances, vaultStatusClients, webFS, config.ExpirationThresholds{Critical: 7, Warning: 30}, nil)
 	req := httptest.NewRequest(http.MethodGet, "/ui/status?lang=en", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)

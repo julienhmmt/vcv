@@ -11,6 +11,11 @@ var ErrVaultNotConfigured = errors.New("vault is not configured")
 
 type disabledClient struct{}
 
+// NewDisabledClient returns a Client that returns ErrVaultNotConfigured for all operations.
+func NewDisabledClient() Client {
+	return &disabledClient{}
+}
+
 func (c *disabledClient) CheckConnection(_ context.Context) error {
 	return ErrVaultNotConfigured
 }

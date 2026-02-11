@@ -72,13 +72,13 @@ func TestParseCompositeCertificateID(t *testing.T) {
 
 func TestMultiClient_CheckConnection(t *testing.T) {
 	t.Run("not configured", func(t *testing.T) {
-		m := NewMultiClient([]config.VaultInstance{}, map[string]Client{})
+		m := NewMultiClient([]config.VaultInstance{}, map[string]Client{}, nil)
 		err := m.CheckConnection(context.Background())
 		assert.ErrorIs(t, err, ErrVaultNotConfigured)
 	})
 	t.Run("missing client", func(t *testing.T) {
 		instances := []config.VaultInstance{{ID: "v1"}}
-		m := NewMultiClient(instances, map[string]Client{"v1": nil})
+		m := NewMultiClient(instances, map[string]Client{"v1": nil}, nil)
 		err := m.CheckConnection(context.Background())
 		assert.Error(t, err)
 	})
@@ -86,7 +86,7 @@ func TestMultiClient_CheckConnection(t *testing.T) {
 		instances := []config.VaultInstance{{ID: "v1"}}
 		c1 := &MockClient{}
 		c1.On("CheckConnection", mock.Anything).Return(nil)
-		m := NewMultiClient(instances, map[string]Client{"v1": c1})
+		m := NewMultiClient(instances, map[string]Client{"v1": c1}, nil)
 		err := m.CheckConnection(context.Background())
 		assert.NoError(t, err)
 		c1.AssertExpectations(t)
@@ -99,7 +99,7 @@ func TestMultiClient_GetCertificateDetails_RoutesByExplicitVault(t *testing.T) {
 	c2 := &MockClient{}
 	expected := certs.DetailedCertificate{Certificate: certs.Certificate{ID: "pki:aa", CommonName: "cn"}, SerialNumber: "aa"}
 	c2.On("GetCertificateDetails", mock.Anything, "pki:aa").Return(expected, nil)
-	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2})
+	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2}, nil)
 	result, err := m.GetCertificateDetails(context.Background(), "v2|pki:aa")
 	assert.NoError(t, err)
 	assert.Equal(t, "v2|pki:aa", result.ID)
@@ -109,7 +109,7 @@ func TestMultiClient_GetCertificateDetails_RoutesByExplicitVault(t *testing.T) {
 
 func TestMultiClient_GetCertificateDetails_MissingClient(t *testing.T) {
 	instances := []config.VaultInstance{{ID: "v1"}}
-	m := NewMultiClient(instances, map[string]Client{})
+	m := NewMultiClient(instances, map[string]Client{}, nil)
 	_, err := m.GetCertificateDetails(context.Background(), "v1|pki:aa")
 	assert.Error(t, err)
 }
@@ -118,7 +118,7 @@ func TestMultiClient_GetCertificatePEM(t *testing.T) {
 	instances := []config.VaultInstance{{ID: "v1"}}
 	c1 := &MockClient{}
 	c1.On("GetCertificatePEM", mock.Anything, "pki:aa").Return(certs.PEMResponse{SerialNumber: "aa", PEM: "pem"}, nil)
-	m := NewMultiClient(instances, map[string]Client{"v1": c1})
+	m := NewMultiClient(instances, map[string]Client{"v1": c1}, nil)
 	result, err := m.GetCertificatePEM(context.Background(), "v1|pki:aa")
 	assert.NoError(t, err)
 	assert.Equal(t, "aa", result.SerialNumber)
@@ -131,7 +131,7 @@ func TestMultiClient_ListCertificates_SortsAndPrefixes(t *testing.T) {
 	c2 := &MockClient{}
 	c1.On("ListCertificates", mock.Anything).Return([]certs.Certificate{{ID: "pki:b", CommonName: "beta"}}, nil)
 	c2.On("ListCertificates", mock.Anything).Return([]certs.Certificate{{ID: "pki:a", CommonName: "alpha"}}, nil)
-	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2})
+	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2}, nil)
 	result, err := m.ListCertificates(context.Background())
 	assert.NoError(t, err)
 	assert.Len(t, result, 2)
@@ -148,7 +148,7 @@ func TestMultiClient_ListCertificates_AllFailed(t *testing.T) {
 	mockClient := &MockClient{}
 	errBoom := errors.New("boom")
 	mockClient.On("ListCertificates", mock.Anything).Return([]certs.Certificate{}, errBoom)
-	client := NewMultiClient(instances, map[string]Client{"v1": mockClient})
+	client := NewMultiClient(instances, map[string]Client{"v1": mockClient}, nil)
 	var err error
 	_, err = client.ListCertificates(context.Background())
 	assert.Error(t, err)
@@ -160,7 +160,7 @@ func TestMultiClient_ListCertificatesByVault_ReturnsErrorsAndDurations(t *testin
 	c1 := &MockClient{}
 	errBoom := errors.New("boom")
 	c1.On("ListCertificates", mock.Anything).Return([]certs.Certificate{}, errBoom)
-	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": nil})
+	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": nil}, nil)
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	results := m.(CertificatesByVaultLister).ListCertificatesByVault(ctx)
@@ -178,7 +178,7 @@ func TestMultiClient_CacheSize_AggregatesUnique(t *testing.T) {
 	c1 := &fakeSizerClient{cacheSize: 2}
 	c2 := &fakeSizerClient{cacheSize: 3}
 	clients := map[string]Client{"v1": c1, "v2": c1, "v3": c2}
-	m := NewMultiClient(instances, clients)
+	m := NewMultiClient(instances, clients, nil)
 	size := m.(CacheSizer).CacheSize()
 	assert.Equal(t, 5, size)
 }
@@ -191,7 +191,7 @@ func TestMultiClient_InvalidateCache_And_Shutdown_Unique(t *testing.T) {
 	c2.On("InvalidateCache").Return()
 	c1.On("Shutdown").Return()
 	c2.On("Shutdown").Return()
-	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2})
+	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2}, nil)
 	m.InvalidateCache()
 	m.Shutdown()
 	c1.AssertExpectations(t)
@@ -214,7 +214,7 @@ func TestMultiClient_Logging(t *testing.T) {
 	c1.On("ListCertificates", mock.Anything).Return(certs, nil)
 	c2.On("ListCertificates", mock.Anything).Return(certs, nil)
 
-	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2})
+	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2}, nil)
 
 	// Test CheckConnection logging
 	buf.Reset()
@@ -269,7 +269,7 @@ func TestMultiClient_LoggingErrors(t *testing.T) {
 	c1 := &MockClient{}
 	c2 := &MockClient{}
 
-	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2})
+	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2}, nil)
 
 	// Test CheckConnection error logging
 	buf.Reset()
@@ -311,7 +311,7 @@ func TestMultiClient_LoggingNoVaults(t *testing.T) {
 	var buf bytes.Buffer
 	logger.SetOutput(&buf)
 
-	m := NewMultiClient([]config.VaultInstance{}, map[string]Client{})
+	m := NewMultiClient([]config.VaultInstance{}, map[string]Client{}, nil)
 
 	// Test CheckConnection with no vaults
 	buf.Reset()
@@ -343,7 +343,7 @@ func TestNewMultiClient_EdgeCases(t *testing.T) {
 		"vault2": &MockClient{},
 	}
 
-	client := NewMultiClient([]config.VaultInstance{}, clients)
+	client := NewMultiClient([]config.VaultInstance{}, clients, nil)
 	assert.NotNil(t, client)
 
 	// Should fall back to all available clients sorted
@@ -359,7 +359,7 @@ func TestNewMultiClient_EdgeCases(t *testing.T) {
 
 	client = NewMultiClient(instances, map[string]Client{
 		"valid": &MockClient{},
-	})
+	}, nil)
 	assert.NotNil(t, client)
 
 	mc = client.(*multiClient)
@@ -375,7 +375,7 @@ func TestNewMultiClient_EdgeCases(t *testing.T) {
 	client = NewMultiClient(instances, map[string]Client{
 		"duplicate": &MockClient{},
 		"unique":    &MockClient{},
-	})
+	}, nil)
 	assert.NotNil(t, client)
 
 	mc = client.(*multiClient)
@@ -389,7 +389,7 @@ func TestMultiClient_GetCertificateDetails_ErrorCases(t *testing.T) {
 	}
 	client := NewMultiClient([]config.VaultInstance{
 		{ID: "vault1", Address: "http://vault1:8200"},
-	}, clients)
+	}, clients, nil)
 
 	// Test with empty certificate ID
 	mockClient.On("GetCertificateDetails", mock.Anything, "").Return(certs.DetailedCertificate{}, errors.New("invalid certificate id"))
@@ -411,7 +411,7 @@ func TestMultiClient_GetCertificatePEM_ErrorCases(t *testing.T) {
 	}
 	client := NewMultiClient([]config.VaultInstance{
 		{ID: "vault1", Address: "http://vault1:8200"},
-	}, clients)
+	}, clients, nil)
 
 	// Test with empty certificate ID
 	mockClient.On("GetCertificatePEM", mock.Anything, "").Return(certs.PEMResponse{}, errors.New("invalid certificate id"))

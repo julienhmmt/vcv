@@ -47,7 +47,7 @@ func TestRegisterAdminRoutes_DisabledWithoutPassword(t *testing.T) {
 	// Create settings file without admin password
 	settingsContent := `{"app":{"env":"dev","port":52000},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil)
 	req := httptest.NewRequest(http.MethodGet, "/admin", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
@@ -60,7 +60,7 @@ func TestRegisterAdminRoutes_DisabledWithPlaintextPassword(t *testing.T) {
 	// Create settings file with plaintext password (invalid)
 	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"secret"},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil)
 	req := httptest.NewRequest(http.MethodGet, "/admin", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
@@ -74,7 +74,7 @@ func TestAdminLoginAndSettingsRoundtrip(t *testing.T) {
 	adminPassword := mustBcryptPasswordHash(t, "secret")
 	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil)
 	loginPayload, err := json.Marshal(map[string]string{"username": "admin", "password": "secret"})
 	require.NoError(t, err)
 	loginReq := httptest.NewRequest(http.MethodPost, "/api/admin/login", bytes.NewReader(loginPayload))
@@ -319,7 +319,7 @@ func TestAdminRoutes_HTMXPanelLoginLogoutAndVaultActions(t *testing.T) {
 	adminPassword := mustBcryptPasswordHash(t, "secret")
 	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil)
 
 	panelReq := httptest.NewRequest(http.MethodGet, "/admin/panel", nil)
 	panelRec := httptest.NewRecorder()
@@ -373,7 +373,7 @@ func TestAdminRoutes_SettingsPost_ErrorsAndSuccess(t *testing.T) {
 	adminPassword := mustBcryptPasswordHash(t, "secret")
 	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil)
 
 	loginReq := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
 	loginReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -555,7 +555,7 @@ func TestAdminRoutes_VaultRemove_PersistsToSettings(t *testing.T) {
 	require.NoError(t, os.WriteFile(settingsPath, []byte(initialWithAdmin), 0o644))
 
 	router := chi.NewRouter()
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil)
 
 	loginReq := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
 	loginReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")

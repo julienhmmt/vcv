@@ -29,6 +29,7 @@ type Config struct {
 	CORS                 CORSConfig
 	Vault                VaultConfig
 	Vaults               []VaultInstance
+	AllVaults            []VaultInstance
 	ExpirationThresholds ExpirationThresholds
 	Metrics              MetricsConfig
 }
@@ -114,6 +115,11 @@ func Load() (Config, error) {
 
 	cfg := buildConfigFromSettings(*settings)
 	cfg.SettingsPath = settingsPath
+	allVaults, allNormalizeErr := NormalizeAllVaultInstances(settings.Vaults)
+	if allNormalizeErr != nil {
+		return Config{}, fmt.Errorf("invalid settings file %s: %w", settingsPath, allNormalizeErr)
+	}
+	cfg.AllVaults = allVaults
 	vaults, normalizeErr := normalizeVaultInstances(settings.Vaults)
 	if normalizeErr != nil {
 		return Config{}, fmt.Errorf("invalid settings file %s: %w", settingsPath, normalizeErr)

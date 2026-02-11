@@ -27,6 +27,7 @@ import (
 	"vcv/internal/httputil"
 	"vcv/internal/i18n"
 	"vcv/internal/logger"
+	"vcv/internal/vault"
 	"vcv/internal/version"
 	"vcv/middleware"
 )
@@ -616,7 +617,7 @@ type adminPageTemplateData struct {
 	Messages       i18n.Messages
 }
 
-func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, env config.Environment) {
+func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, env config.Environment, vaultRegistry *vault.Registry) {
 	// Load settings to get admin password
 	settingsStore := newAdminSettingsStore(settingsPath, env)
 	settings, err := settingsStore.load()
@@ -638,6 +639,14 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 	secureCookies := env == config.EnvProd
 	sessions := newAdminSessionStore(password, secureCookies)
 	store := settingsStore // Use the already created store
+	refreshRegistry := func() {
+		if vaultRegistry == nil {
+			return
+		}
+		if s, loadErr := store.load(); loadErr == nil {
+			vaultRegistry.Update(s.Vaults)
+		}
+	}
 	templates, templatesErr := parseTemplates(webFS)
 	if templatesErr != nil {
 		panic(templatesErr)
@@ -728,6 +737,7 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 				_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
 				return
 			}
+			refreshRegistry()
 			settings, err := store.load()
 			if err != nil {
 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -777,6 +787,7 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
+			refreshRegistry()
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusOK)
 		})
@@ -786,6 +797,9 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 	router.Group(func(r chi.Router) {
 		r.Use(sessions.requireAuth)
 		r.Get("/api/admin/settings", store.getSettings)
-		r.Put("/api/admin/settings", store.putSettings)
+		r.Put("/api/admin/settings", func(w http.ResponseWriter, r *http.Request) {
+			store.putSettings(w, r)
+			refreshRegistry()
+		})
 	})
 }

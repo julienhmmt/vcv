@@ -57,7 +57,7 @@ func TestCollector_SuccessMetrics(t *testing.T) {
 	mockVault.On("CheckConnection", mock.Anything).Return(nil)
 	vaultInstances := []config.VaultInstance{{ID: "vault-a", PKIMounts: []string{"pki"}}}
 	clientsByVault := map[string]vault.Client{"vault-a": mockVault}
-	multiClient := vault.NewMultiClient(vaultInstances, clientsByVault)
+	multiClient := vault.NewMultiClient(vaultInstances, clientsByVault, nil)
 	statusClients := map[string]vault.Client{"vault-a": mockVault}
 
 	registry := prometheus.NewRegistry()
@@ -138,7 +138,7 @@ func TestCollector_EnhancedMetrics(t *testing.T) {
 	mockVault.On("CheckConnection", mock.Anything).Return(nil)
 	vaultInstances := []config.VaultInstance{{ID: "vault-1", PKIMounts: []string{"pki"}}}
 	clientsByVault := map[string]vault.Client{"vault-1": mockVault}
-	multiClient := vault.NewMultiClient(vaultInstances, clientsByVault)
+	multiClient := vault.NewMultiClient(vaultInstances, clientsByVault, nil)
 	statusClients := map[string]vault.Client{"vault-1": mockVault}
 
 	registry := prometheus.NewRegistry()

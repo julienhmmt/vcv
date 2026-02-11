@@ -76,7 +76,7 @@ func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, status
 	}
 }
 
-func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClients map[string]vault.Client, multiVaultClient vault.Client, registry *prometheus.Registry, webFS fs.FS, settingsPath string) (*chi.Mux, error) {
+func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClients map[string]vault.Client, multiVaultClient vault.Client, registry *prometheus.Registry, webFS fs.FS, settingsPath string, vaultRegistry *vault.Registry) (*chi.Mux, error) {
 	r := chi.NewRouter()
 	assetsFS, assetsError := fs.Sub(webFS, "assets")
 	if assetsError != nil {
@@ -118,8 +118,8 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 	r.Get("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP)
 	handlers.RegisterI18nRoutes(r)
 	handlers.RegisterCertRoutes(r, multiVaultClient)
-	handlers.RegisterUIRoutes(r, multiVaultClient, cfg.Vaults, statusClients, webFS, cfg.ExpirationThresholds)
-	handlers.RegisterAdminRoutes(r, webFS, settingsPath, cfg.Env)
+	handlers.RegisterUIRoutes(r, multiVaultClient, cfg.AllVaults, statusClients, webFS, cfg.ExpirationThresholds, vaultRegistry)
+	handlers.RegisterAdminRoutes(r, webFS, settingsPath, cfg.Env, vaultRegistry)
 
 	return r, nil
 }
@@ -144,46 +144,45 @@ func main() {
 		Str("log_level", cfg.LogLevel).
 		Str("log_format", cfg.LogFormat).
 		Msg("Configuration loaded")
-	primaryVaultClient, vaultError := vault.NewClientFromConfig(cfg.Vault)
-	if vaultError != nil {
-		log.Fatal().Err(vaultError).
-			Msg("Failed to initialize Vault client")
-	}
-
-	statusClients := make(map[string]vault.Client, len(cfg.Vaults))
-	primaryID := ""
-	if len(cfg.Vaults) > 0 {
-		primaryID = cfg.Vaults[0].ID
-	}
-	for _, instance := range cfg.Vaults {
+	// Create clients for ALL vaults (including disabled) so they can be
+	// toggled at runtime via the admin panel without a restart.
+	allClients := make(map[string]vault.Client, len(cfg.AllVaults))
+	var primaryVaultClient vault.Client
+	for i, instance := range cfg.AllVaults {
 		if instance.ID == "" {
 			continue
 		}
-		if primaryID != "" && instance.ID == primaryID {
-			statusClients[instance.ID] = primaryVaultClient
+		vaultCfg := config.VaultConfig{Addr: instance.Address, PKIMounts: instance.PKIMounts, ReadToken: instance.Token, TLSCACertBase64: instance.TLSCACertBase64, TLSCACert: instance.TLSCACert, TLSCAPath: instance.TLSCAPath, TLSServerName: instance.TLSServerName, TLSInsecure: instance.TLSInsecure}
+		client, err := vault.NewClientFromConfig(vaultCfg)
+		if err != nil {
+			log.Error().Err(err).
+				Str("vault_id", instance.ID).
+				Msg("Failed to initialize Vault client, skipping")
 			continue
 		}
-		statusCfg := config.VaultConfig{Addr: instance.Address, PKIMounts: instance.PKIMounts, ReadToken: instance.Token, TLSCACertBase64: instance.TLSCACertBase64, TLSCACert: instance.TLSCACert, TLSCAPath: instance.TLSCAPath, TLSServerName: instance.TLSServerName, TLSInsecure: instance.TLSInsecure}
-		client, err := vault.NewClientFromConfig(statusCfg)
-		if err != nil {
-			log.Fatal().Err(err).
-				Str("vault_id", instance.ID).
-				Msg("Failed to initialize Vault status client")
+		allClients[instance.ID] = client
+		if i == 0 {
+			primaryVaultClient = client
+			cfg.Vault = config.VaultConfig{Addr: instance.Address, PKIMounts: instance.PKIMounts, ReadToken: instance.Token, TLSCACertBase64: instance.TLSCACertBase64, TLSCACert: instance.TLSCACert, TLSCAPath: instance.TLSCAPath, TLSServerName: instance.TLSServerName, TLSInsecure: instance.TLSInsecure}
 		}
-		statusClients[instance.ID] = client
+	}
+	if primaryVaultClient == nil {
+		primaryVaultClient = vault.NewDisabledClient()
 	}
 
-	multiVaultClient := vault.NewMultiClient(cfg.Vaults, statusClients)
+	vaultRegistry := vault.NewRegistry(cfg.AllVaults)
+	multiVaultClient := vault.NewMultiClient(cfg.AllVaults, allClients, vaultRegistry)
 
 	log.Info().
 		Str("vault_addr", cfg.Vault.Addr).
 		Strs("vault_mounts", cfg.Vault.PKIMounts).
-		Int("vault_instances_count", len(cfg.Vaults)).
+		Int("vault_instances_total", len(cfg.AllVaults)).
+		Int("vault_instances_enabled", len(cfg.Vaults)).
 		Msg("Vault client initialized")
 
-	registry := prometheus.NewRegistry()
-	registry.MustRegister(collectors.NewGoCollector())
-	registry.MustRegister(metrics.NewCertificateCollectorWithVaults(multiVaultClient, statusClients, cfg.ExpirationThresholds, cfg.Metrics, cfg.Vaults))
+	promRegistry := prometheus.NewRegistry()
+	promRegistry.MustRegister(collectors.NewGoCollector())
+	promRegistry.MustRegister(metrics.NewCertificateCollectorWithVaults(multiVaultClient, allClients, cfg.ExpirationThresholds, cfg.Metrics, cfg.AllVaults))
 
 	webFS, fsError := fs.Sub(embeddedWeb, "web")
 	if fsError != nil {
@@ -197,7 +196,7 @@ func main() {
 		Str("settings_path", settingsPath).
 		Msg("Using admin settings file")
 
-	router, buildErr := buildRouter(cfg, primaryVaultClient, statusClients, multiVaultClient, registry, webFS, settingsPath)
+	router, buildErr := buildRouter(cfg, primaryVaultClient, allClients, multiVaultClient, promRegistry, webFS, settingsPath, vaultRegistry)
 	if buildErr != nil {
 		log.Fatal().Err(buildErr).
 			Msg("Failed to initialize router")
@@ -233,7 +232,7 @@ func main() {
 	}
 
 	uniqueClients := make(map[vault.Client]struct{})
-	for _, client := range statusClients {
+	for _, client := range allClients {
 		if client == nil {
 			continue
 		}

@@ -16,9 +16,13 @@ import (
 type multiClient struct {
 	orderedVaultIDs []string
 	clientsByVault  map[string]Client
+	registry        *Registry
 }
 
-func NewMultiClient(vaultInstances []config.VaultInstance, clientsByVault map[string]Client) Client {
+// NewMultiClient creates a Client that fans out to multiple vault instances.
+// If a non-nil Registry is provided, only vaults currently enabled in the
+// registry will be queried; otherwise all vaults are used.
+func NewMultiClient(vaultInstances []config.VaultInstance, clientsByVault map[string]Client, registry *Registry) Client {
 	ordered := make([]string, 0, len(vaultInstances))
 	seen := make(map[string]struct{}, len(vaultInstances))
 	for _, instance := range vaultInstances {
@@ -44,21 +48,37 @@ func NewMultiClient(vaultInstances []config.VaultInstance, clientsByVault map[st
 		}
 		sort.Strings(ordered)
 	}
-	return &multiClient{orderedVaultIDs: ordered, clientsByVault: clientsByVault}
+	return &multiClient{orderedVaultIDs: ordered, clientsByVault: clientsByVault, registry: registry}
+}
+
+// activeVaultIDs returns the subset of orderedVaultIDs that are currently
+// enabled according to the registry. If no registry is set, all IDs are returned.
+func (c *multiClient) activeVaultIDs() []string {
+	if c.registry == nil {
+		return c.orderedVaultIDs
+	}
+	active := make([]string, 0, len(c.orderedVaultIDs))
+	for _, id := range c.orderedVaultIDs {
+		if c.registry.IsEnabled(id) {
+			active = append(active, id)
+		}
+	}
+	return active
 }
 
 func (c *multiClient) CheckConnection(ctx context.Context) error {
-	if len(c.orderedVaultIDs) == 0 {
+	active := c.activeVaultIDs()
+	if len(active) == 0 {
 		logger.Get().Debug().Msg("no vault instances configured for connection check")
 		return ErrVaultNotConfigured
 	}
 
 	logger.Get().Debug().
-		Strs("vault_ids", c.orderedVaultIDs).
-		Int("vault_count", len(c.orderedVaultIDs)).
+		Strs("vault_ids", active).
+		Int("vault_count", len(active)).
 		Msg("checking connection to vault instances")
 
-	for _, vaultID := range c.orderedVaultIDs {
+	for _, vaultID := range active {
 		client := c.clientsByVault[vaultID]
 		if client == nil {
 			logger.Get().Error().
@@ -131,14 +151,15 @@ func (c *multiClient) InvalidateCache() {
 }
 
 func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate, error) {
-	if len(c.orderedVaultIDs) == 0 {
+	active := c.activeVaultIDs()
+	if len(active) == 0 {
 		logger.Get().Debug().Msg("no vault instances configured for certificate listing")
 		return []certs.Certificate{}, ErrVaultNotConfigured
 	}
 
 	logger.Get().Debug().
-		Strs("vault_ids", c.orderedVaultIDs).
-		Int("vault_count", len(c.orderedVaultIDs)).
+		Strs("vault_ids", active).
+		Int("vault_count", len(active)).
 		Msg("listing certificates from all vault instances")
 
 	type result struct {
@@ -146,10 +167,10 @@ func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate
 		certificates []certs.Certificate
 		err          error
 	}
-	resultChan := make(chan result, len(c.orderedVaultIDs))
+	resultChan := make(chan result, len(active))
 	var wg sync.WaitGroup
 
-	for _, vaultID := range c.orderedVaultIDs {
+	for _, vaultID := range active {
 		client := c.clientsByVault[vaultID]
 		if client == nil {
 			logger.Get().Error().
@@ -208,7 +229,7 @@ func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate
 	logger.Get().Debug().
 		Int("total_certificates", len(all)).
 		Int("successful_vaults", successCount).
-		Int("total_vaults", len(c.orderedVaultIDs)).
+		Int("total_vaults", len(active)).
 		Msg("completed certificate listing from all vault instances")
 
 	if successCount == 0 {
@@ -229,8 +250,9 @@ func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate
 }
 
 func (c *multiClient) ListCertificatesByVault(ctx context.Context) []ListCertificatesByVaultResult {
-	results := make([]ListCertificatesByVaultResult, 0, len(c.orderedVaultIDs))
-	for _, vaultID := range c.orderedVaultIDs {
+	active := c.activeVaultIDs()
+	results := make([]ListCertificatesByVaultResult, 0, len(active))
+	for _, vaultID := range active {
 		client := c.clientsByVault[vaultID]
 		if client == nil {
 			results = append(results, ListCertificatesByVaultResult{VaultID: vaultID, Certificates: []certs.Certificate{}, Duration: 0, ListError: fmt.Errorf("missing vault client for %s", vaultID)})

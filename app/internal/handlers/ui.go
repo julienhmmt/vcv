@@ -208,7 +208,7 @@ type certsQueryState struct {
 	TriggerID      string
 }
 
-func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstances []config.VaultInstance, vaultStatusClients map[string]vault.Client, webFS fs.FS, expirationThresholds config.ExpirationThresholds) {
+func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstances []config.VaultInstance, vaultStatusClients map[string]vault.Client, webFS fs.FS, expirationThresholds config.ExpirationThresholds, vaultRegistry *vault.Registry) {
 	templates := template.New("").Funcs(templateFuncMap())
 	if t, err := templates.ParseFS(webFS, "templates/*.html"); err == nil {
 		templates = t
@@ -224,6 +224,18 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 	vaultHealthCache := newVaultHealthCache(30 * time.Second)
 	vaultDisplayNames := buildVaultDisplayNames(vaultInstances)
 	showVaultMount := shouldShowVaultMount(vaultInstances)
+	enabledInstances := func() []config.VaultInstance {
+		if vaultRegistry == nil {
+			return vaultInstances
+		}
+		filtered := make([]config.VaultInstance, 0, len(vaultInstances))
+		for _, inst := range vaultInstances {
+			if vaultRegistry.IsEnabled(inst.ID) {
+				filtered = append(filtered, inst)
+			}
+		}
+		return filtered
+	}
 
 	router.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		if templates == nil || templates.Lookup("index.html") == nil {
@@ -338,14 +350,15 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 		language := i18n.ResolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
 
-		results := checkVaultsHealth(r.Context(), vaultInstances, vaultStatusClients, vaultHealthCache)
+		activeVaults := enabledInstances()
+		results := checkVaultsHealth(r.Context(), activeVaults, vaultStatusClients, vaultHealthCache)
 		connectedCount := 0
 		for _, res := range results {
 			if res.entry.connected {
 				connectedCount++
 			}
 		}
-		totalCount := len(vaultInstances)
+		totalCount := len(activeVaults)
 
 		var summary *vaultStatusItem
 		if totalCount == 0 {
@@ -404,7 +417,8 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 		language := i18n.ResolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)
 
-		results := checkVaultsHealth(r.Context(), vaultInstances, vaultStatusClients, vaultHealthCache)
+		activeVaults := enabledInstances()
+		results := checkVaultsHealth(r.Context(), activeVaults, vaultStatusClients, vaultHealthCache)
 
 		items := make([]vaultStatusItem, 0, len(results))
 		if len(results) == 0 {
