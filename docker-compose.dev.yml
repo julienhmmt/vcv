@@ -15,11 +15,12 @@ services:
     cap_add:
       - IPC_LOCK
     # command: "server -dev -dev-root-token-id=root -dev-listen-address=0.0.0.0:8200"
-    command: "sh /vault-dev-init.sh"
+    command: "sh /vault-init-simple.sh vcv"
     networks:
       - vcv-network
     volumes:
       - ./vault-dev-init.sh:/vault-dev-init.sh:ro
+      - ./vault-init-simple.sh:/vault-init-simple.sh:ro
 
   vault-dev-2:
     image: hashicorp/vault:1.21.3
@@ -31,11 +32,12 @@ services:
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     cap_add:
       - IPC_LOCK
-    command: "sh /vault-dev-init-2.sh"
+    command: "sh /vault-init-simple.sh vcv-2"
     networks:
       - vcv-network
     volumes:
-      - ./vault-dev-init-2.sh:/vault-dev-init-2.sh:ro
+      - ./vault-dev-init.sh:/vault-dev-init.sh:ro
+      - ./vault-init-simple.sh:/vault-init-simple.sh:ro
 
   vault-dev-3:
     image: hashicorp/vault:1.21.3
@@ -47,11 +49,12 @@ services:
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     cap_add:
       - IPC_LOCK
-    command: "sh /vault-dev-init-3.sh"
+    command: "sh /vault-init-simple.sh vcv-3"
     networks:
       - vcv-network
     volumes:
-      - ./vault-dev-init-3.sh:/vault-dev-init-3.sh:ro
+      - ./vault-dev-init.sh:/vault-dev-init.sh:ro
+      - ./vault-init-simple.sh:/vault-init-simple.sh:ro
 
   vault-dev-4:
     image: hashicorp/vault:1.21.3
@@ -63,11 +66,12 @@ services:
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     cap_add:
       - IPC_LOCK
-    command: "sh /vault-dev-init-4.sh"
+    command: "sh /vault-init-simple.sh vcv-4"
     networks:
       - vcv-network
     volumes:
-      - ./vault-dev-init-4.sh:/vault-dev-init-4.sh:ro
+      - ./vault-dev-init.sh:/vault-dev-init.sh:ro
+      - ./vault-init-simple.sh:/vault-init-simple.sh:ro
 
   vault-dev-5:
     image: hashicorp/vault:1.21.3
@@ -79,11 +83,12 @@ services:
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     cap_add:
       - IPC_LOCK
-    command: "sh /vault-dev-init-5.sh"
+    command: "sh /vault-init-simple.sh vcv-5"
     networks:
       - vcv-network
     volumes:
-      - ./vault-dev-init-5.sh:/vault-dev-init-5.sh:ro
+      - ./vault-dev-init.sh:/vault-dev-init.sh:ro
+      - ./vault-init-simple.sh:/vault-init-simple.sh:ro
 
   openbao-dev-1:
     image: docker.io/openbao/openbao:2.5.0
