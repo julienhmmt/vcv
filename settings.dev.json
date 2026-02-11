@@ -109,7 +109,7 @@
       ],
       "display_name": "Vault dev-6 (fake)",
       "tls_insecure": true,
-      "enabled": true
+      "enabled": false
     },
     {
       "id": "openbao-dev-1",

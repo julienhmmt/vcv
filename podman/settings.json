@@ -2,7 +2,7 @@
   "app": {
     "env": "prod",
     "logging": {
-      "level": "info",
+      "level": "debug",
       "format": "json",
       "output": "both",
       "file_path": "/var/log/app/vcv.log"
@@ -16,53 +16,46 @@
     }
   },
   "cors": {
-    "allowed_origins": [],
+    "allowed_origins": [
+      "http://localhost:4321",
+      "http://localhost:3000"
+    ],
     "allow_credentials": true
   },
   "vaults": [
     {
-      "id": "vault-dev-1",
-      "address": "http://host.network.internal:38201",
+      "id": "vault-main",
+      "address": "http://vault:8200",
       "token": "root",
-      "pki_mount": "pki",
       "pki_mounts": [
         "pki",
         "pki_dev",
         "pki_stage",
         "pki_production"
       ],
-      "display_name": "Vault dev-1",
+      "display_name": "Vault",
+      "tls_ca_cert_base64": "BASE64_PEM_CA_BUNDLE",
+      "tls_ca_cert": "",
+      "tls_ca_path": "",
+      "tls_server_name": "vault.service.consul",
       "tls_insecure": true,
       "enabled": true
     },
     {
-      "id": "vault-dev-2",
-      "address": "http://host.network.internal:38202",
+      "id": "vault-dev",
+      "address": "http://vault-dev:8200",
       "token": "root",
-      "pki_mount": "pki_vault2",
       "pki_mounts": [
-        "pki_vault2",
+        "pki",
         "pki_corporate",
         "pki_external",
         "pki_partners"
       ],
-      "display_name": "Vault dev-2",
-      "tls_insecure": true,
-      "enabled": true
-    },
-    {
-      "id": "vault-dev-3",
-      "address": "http://host.network.internal:38203",
-      "token": "root",
-      "pki_mount": "pki_vault3",
-      "pki_mounts": [
-        "pki_vault3",
-        "pki_cloud",
-        "pki_edge",
-        "pki_iot",
-        "pki_blockchain"
-      ],
-      "display_name": "Vault dev-3",
+      "display_name": "Vault dev",
+      "tls_ca_cert_base64": "BASE64_PEM_CA_BUNDLE",
+      "tls_ca_cert": "",
+      "tls_ca_path": "",
+      "tls_server_name": "vault-dev.service.consul",
       "tls_insecure": true,
       "enabled": true
     }
