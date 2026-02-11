@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net/url"
 	"testing"
 
 	"vcv/internal/certs"
@@ -144,4 +145,80 @@ func TestBuildPEMDownloadFilename(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestParseMountsQueryParam(t *testing.T) {
+	tests := []struct {
+		name     string
+		query    url.Values
+		expected []string
+	}{
+		{
+			name:     "no mounts parameter",
+			query:    url.Values{},
+			expected: nil,
+		},
+		{
+			name:     "mounts parameter with all sentinel",
+			query:    url.Values{"mounts": []string{"__all__"}},
+			expected: nil,
+		},
+		{
+			name:     "mounts parameter with empty string",
+			query:    url.Values{"mounts": []string{""}},
+			expected: []string{},
+		},
+		{
+			name:     "mounts parameter with spaces",
+			query:    url.Values{"mounts": []string{"  "}},
+			expected: []string{},
+		},
+		{
+			name:     "single mount",
+			query:    url.Values{"mounts": []string{"pki"}},
+			expected: []string{"pki"},
+		},
+		{
+			name:     "multiple mounts",
+			query:    url.Values{"mounts": []string{"pki,custom-pki,other"}},
+			expected: []string{"pki", "custom-pki", "other"},
+		},
+		{
+			name:     "multiple mounts with spaces",
+			query:    url.Values{"mounts": []string{" pki , custom-pki , other "}},
+			expected: []string{"pki", "custom-pki", "other"},
+		},
+		{
+			name:     "multiple mounts with empty entries",
+			query:    url.Values{"mounts": []string{"pki,,custom-pki,,other"}},
+			expected: []string{"pki", "custom-pki", "other"},
+		},
+		{
+			name:     "multiple mounts with only empty entries",
+			query:    url.Values{"mounts": []string{",,"}},
+			expected: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := parseMountsQueryParam(tt.query)
+			if !equalStringSlices(result, tt.expected) {
+				t.Errorf("expected %v, got %v", tt.expected, result)
+			}
+		})
+	}
+}
+
+// Helper function to compare string slices
+func equalStringSlices(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }

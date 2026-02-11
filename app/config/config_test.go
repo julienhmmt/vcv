@@ -293,3 +293,208 @@ func TestLoadSettingsFile_SettingsPathInvalidJSON(t *testing.T) {
 		t.Fatalf("expected settingsPath %q, got %q", path, settingsPath)
 	}
 }
+
+func TestLoadSettingsFile_ErrorCases(t *testing.T) {
+	// Test non-existent file by setting SETTINGS_PATH to non-existent path
+	originalPath := os.Getenv("SETTINGS_PATH")
+	defer func() {
+		if originalPath != "" {
+			_ = os.Setenv("SETTINGS_PATH", originalPath)
+		} else {
+			_ = os.Unsetenv("SETTINGS_PATH")
+		}
+	}()
+
+	_ = os.Setenv("SETTINGS_PATH", "/non/existent/path.json")
+	settings, settingsPath, err := loadSettingsFile()
+	if err == nil {
+		t.Fatalf("expected error for non-existent file, got nil")
+	}
+	if settings != nil {
+		t.Fatalf("expected nil settings for error case")
+	}
+	if settingsPath != "/non/existent/path.json" {
+		t.Fatalf("expected settingsPath to be the requested path even on error")
+	}
+}
+
+func TestBuildConfigFromSettings_ErrorCases(t *testing.T) {
+	clearEnv(t)
+
+	// Test with empty settings
+	emptySettings := SettingsFile{}
+	cfg := buildConfigFromSettings(emptySettings)
+	if cfg.Env == "" {
+		t.Fatalf("expected env to have default value")
+	}
+
+	// Test with minimal settings
+	minimalSettings := SettingsFile{
+		App: AppSettings{
+			Env:  "prod",
+			Port: 8080,
+		},
+		Vaults: []VaultInstance{
+			{ID: "", Address: ""}, // Invalid empty instance
+		},
+	}
+	cfg = buildConfigFromSettings(minimalSettings)
+	if cfg.Env != "prod" {
+		t.Fatalf("expected prod env, got %s", cfg.Env)
+	}
+	if cfg.Port != "8080" {
+		t.Fatalf("expected port 8080, got %s", cfg.Port)
+	}
+}
+
+func TestLoadCORSConfig_EdgeCases(t *testing.T) {
+	clearEnv(t)
+
+	// Test with various CORS configurations
+	testCases := []struct {
+		name            string
+		allowedOrigins  string
+		allowCreds      string
+		expectedOrigins int
+	}{
+		{
+			name:            "single origin",
+			allowedOrigins:  "http://localhost:3000",
+			allowCreds:      "true",
+			expectedOrigins: 1,
+		},
+		{
+			name:            "multiple origins",
+			allowedOrigins:  "http://localhost:3000,https://example.com",
+			allowCreds:      "false",
+			expectedOrigins: 2,
+		},
+		{
+			name:            "empty origins",
+			allowedOrigins:  "",
+			allowCreds:      "true",
+			expectedOrigins: 2, // Default origins are applied when empty
+		},
+		{
+			name:            "comma separated with spaces",
+			allowedOrigins:  "http://localhost:3000, https://example.com ,http://test.com",
+			allowCreds:      "true",
+			expectedOrigins: 3,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			_ = os.Setenv("CORS_ALLOWED_ORIGINS", tc.allowedOrigins)
+			_ = os.Setenv("CORS_ALLOW_CREDENTIALS", tc.allowCreds)
+
+			cfg, err := Load()
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+
+			if len(cfg.CORS.AllowedOrigins) != tc.expectedOrigins {
+				t.Fatalf("expected %d origins, got %d", tc.expectedOrigins, len(cfg.CORS.AllowedOrigins))
+			}
+		})
+	}
+}
+
+func TestConvertVaultInstanceToLegacy_EdgeCases(t *testing.T) {
+	// Test with various vault instances
+	testCases := []struct {
+		name     string
+		instance VaultInstance
+		expected VaultConfig
+	}{
+		{
+			name: "minimal instance",
+			instance: VaultInstance{
+				ID:      "test",
+				Address: "http://vault:8200",
+			},
+			expected: VaultConfig{
+				Addr:            "http://vault:8200",
+				PKIMounts:       []string{"pki"}, // Default PKI mount is applied
+				ReadToken:       "",
+				TLSCACertBase64: "",
+				TLSCACert:       "",
+				TLSCAPath:       "",
+				TLSServerName:   "",
+				TLSInsecure:     false,
+			},
+		},
+		{
+			name: "full instance",
+			instance: VaultInstance{
+				ID:              "full",
+				Address:         "https://vault:8200",
+				Token:           "root",
+				PKIMounts:       []string{"pki1", "pki2"},
+				TLSInsecure:     true,
+				TLSCACertBase64: "base64cert",
+				TLSCACert:       "certdata",
+				TLSCAPath:       "/path/to/ca",
+				TLSServerName:   "vault.example.com",
+			},
+			expected: VaultConfig{
+				Addr:            "https://vault:8200",
+				PKIMounts:       []string{"pki1", "pki2"},
+				ReadToken:       "root", // Token is copied to ReadToken
+				TLSCACertBase64: "base64cert",
+				TLSCACert:       "certdata",
+				TLSCAPath:       "/path/to/ca",
+				TLSServerName:   "vault.example.com",
+				TLSInsecure:     true,
+			},
+		},
+		{
+			name: "instance with single PKI mount",
+			instance: VaultInstance{
+				ID:       "single-pki",
+				Address:  "http://vault:8200",
+				PKIMount: "pki",
+			},
+			expected: VaultConfig{
+				Addr:            "http://vault:8200",
+				PKIMounts:       []string{"pki"},
+				ReadToken:       "",
+				TLSCACertBase64: "",
+				TLSCACert:       "",
+				TLSCAPath:       "",
+				TLSServerName:   "",
+				TLSInsecure:     false,
+			},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := convertVaultInstanceToLegacy(tc.instance)
+			if result.Addr != tc.expected.Addr {
+				t.Fatalf("expected addr %q, got %q", tc.expected.Addr, result.Addr)
+			}
+			if len(result.PKIMounts) != len(tc.expected.PKIMounts) {
+				t.Fatalf("expected %d PKI mounts, got %d", len(tc.expected.PKIMounts), len(result.PKIMounts))
+			}
+			if result.ReadToken != tc.expected.ReadToken {
+				t.Fatalf("expected read token %q, got %q", tc.expected.ReadToken, result.ReadToken)
+			}
+			if result.TLSInsecure != tc.expected.TLSInsecure {
+				t.Fatalf("expected TLS insecure %v, got %v", tc.expected.TLSInsecure, result.TLSInsecure)
+			}
+			if result.TLSCACertBase64 != tc.expected.TLSCACertBase64 {
+				t.Fatalf("expected TLS CA cert base64 %q, got %q", tc.expected.TLSCACertBase64, result.TLSCACertBase64)
+			}
+			if result.TLSCACert != tc.expected.TLSCACert {
+				t.Fatalf("expected TLS CA cert %q, got %q", tc.expected.TLSCACert, result.TLSCACert)
+			}
+			if result.TLSCAPath != tc.expected.TLSCAPath {
+				t.Fatalf("expected TLS CA path %q, got %q", tc.expected.TLSCAPath, result.TLSCAPath)
+			}
+			if result.TLSServerName != tc.expected.TLSServerName {
+				t.Fatalf("expected TLS server name %q, got %q", tc.expected.TLSServerName, result.TLSServerName)
+			}
+		})
+	}
+}

@@ -335,3 +335,121 @@ func TestMultiClient_LoggingNoVaults(t *testing.T) {
 		t.Errorf("Expected no vaults listing log, got: %s", output)
 	}
 }
+
+func TestNewMultiClient_EdgeCases(t *testing.T) {
+	// Test with empty vault instances
+	clients := map[string]Client{
+		"vault1": &MockClient{},
+		"vault2": &MockClient{},
+	}
+
+	client := NewMultiClient([]config.VaultInstance{}, clients)
+	assert.NotNil(t, client)
+
+	// Should fall back to all available clients sorted
+	mc := client.(*multiClient)
+	assert.Equal(t, []string{"vault1", "vault2"}, mc.orderedVaultIDs)
+
+	// Test with vault instances that have empty IDs
+	instances := []config.VaultInstance{
+		{ID: "", Address: "http://vault1:8200"},
+		{ID: "   ", Address: "http://vault2:8200"},
+		{ID: "valid", Address: "http://vault3:8200"},
+	}
+
+	client = NewMultiClient(instances, map[string]Client{
+		"valid": &MockClient{},
+	})
+	assert.NotNil(t, client)
+
+	mc = client.(*multiClient)
+	assert.Equal(t, []string{"valid"}, mc.orderedVaultIDs)
+
+	// Test with duplicate IDs
+	instances = []config.VaultInstance{
+		{ID: "duplicate", Address: "http://vault1:8200"},
+		{ID: "duplicate", Address: "http://vault2:8200"},
+		{ID: "unique", Address: "http://vault3:8200"},
+	}
+
+	client = NewMultiClient(instances, map[string]Client{
+		"duplicate": &MockClient{},
+		"unique":    &MockClient{},
+	})
+	assert.NotNil(t, client)
+
+	mc = client.(*multiClient)
+	assert.Equal(t, []string{"duplicate", "unique"}, mc.orderedVaultIDs)
+}
+
+func TestMultiClient_GetCertificateDetails_ErrorCases(t *testing.T) {
+	mockClient := &MockClient{}
+	clients := map[string]Client{
+		"vault1": mockClient,
+	}
+	client := NewMultiClient([]config.VaultInstance{
+		{ID: "vault1", Address: "http://vault1:8200"},
+	}, clients)
+
+	// Test with empty certificate ID
+	mockClient.On("GetCertificateDetails", mock.Anything, "").Return(certs.DetailedCertificate{}, errors.New("invalid certificate id"))
+	_, err := client.GetCertificateDetails(context.Background(), "")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid certificate id")
+
+	// Test with certificate ID that doesn't contain vault ID
+	mockClient.On("GetCertificateDetails", mock.Anything, "invalid-format").Return(certs.DetailedCertificate{}, errors.New("invalid certificate id"))
+	_, err = client.GetCertificateDetails(context.Background(), "invalid-format")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid certificate id")
+}
+
+func TestMultiClient_GetCertificatePEM_ErrorCases(t *testing.T) {
+	mockClient := &MockClient{}
+	clients := map[string]Client{
+		"vault1": mockClient,
+	}
+	client := NewMultiClient([]config.VaultInstance{
+		{ID: "vault1", Address: "http://vault1:8200"},
+	}, clients)
+
+	// Test with empty certificate ID
+	mockClient.On("GetCertificatePEM", mock.Anything, "").Return(certs.PEMResponse{}, errors.New("invalid certificate id"))
+	_, err := client.GetCertificatePEM(context.Background(), "")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid certificate id")
+
+	// Test with certificate ID that doesn't contain vault ID
+	mockClient.On("GetCertificatePEM", mock.Anything, "invalid-format").Return(certs.PEMResponse{}, errors.New("invalid certificate id"))
+	_, err = client.GetCertificatePEM(context.Background(), "invalid-format")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid certificate id")
+}
+
+func TestMultiClient_CacheSize_ErrorCases(t *testing.T) {
+	// Test with client that doesn't implement CacheSize
+	client := &multiClient{
+		orderedVaultIDs: []string{"vault1"},
+		clientsByVault: map[string]Client{
+			"vault1": &MockClient{}, // MockClient doesn't implement CacheSize
+		},
+	}
+
+	size := client.CacheSize()
+	assert.Equal(t, 0, size)
+}
+
+func TestMultiClient_Shutdown_ErrorCases(t *testing.T) {
+	// Test with client that has nil clients
+	client := &multiClient{
+		orderedVaultIDs: []string{"vault1"},
+		clientsByVault: map[string]Client{
+			"vault1": nil,
+		},
+	}
+
+	// Should not panic
+	assert.NotPanics(t, func() {
+		client.Shutdown()
+	})
+}

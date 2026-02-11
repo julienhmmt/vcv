@@ -91,12 +91,16 @@ func TestErrorVariables(t *testing.T) {
 			// Verify error is not nil
 			assert.NotNil(t, tt.errVar)
 
+			err := tt.errVar
+			assert.Error(t, err)
+
 			// Verify error message
 			assert.Equal(t, tt.expected, tt.errVar.Error())
 
 			// Verify it's a proper error type
-			var err error = tt.errVar
-			assert.Error(t, err)
+			errVar := tt.errVar
+			assert.Error(t, errVar)
+			assert.Equal(t, tt.expected, errVar.Error())
 			assert.Equal(t, tt.expected, err.Error())
 		})
 	}

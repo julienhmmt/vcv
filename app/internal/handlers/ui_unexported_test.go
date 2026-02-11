@@ -7,6 +7,8 @@ import (
 
 	"vcv/internal/certs"
 	"vcv/internal/i18n"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBuildKeySummary(t *testing.T) {
@@ -791,4 +793,41 @@ func TestStatusLabelForMessages(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestVaultHealthCache_Clear(t *testing.T) {
+	cache := newVaultHealthCache(5 * time.Minute)
+
+	// Add some test data
+	cache.set("vault1", vaultHealthCacheEntry{
+		checkedAt: time.Now(),
+		connected: true,
+		errText:   "",
+	})
+	cache.set("vault2", vaultHealthCacheEntry{
+		checkedAt: time.Now(),
+		connected: false,
+		errText:   "connection failed",
+	})
+
+	// Verify data exists
+	entry1, exists1 := cache.get("vault1")
+	assert.True(t, exists1)
+	assert.True(t, entry1.connected)
+
+	entry2, exists2 := cache.get("vault2")
+	assert.True(t, exists2)
+	assert.False(t, entry2.connected)
+
+	// Clear the cache
+	cache.clear()
+
+	// Verify all data is cleared
+	entry1, exists1 = cache.get("vault1")
+	assert.False(t, exists1)
+	assert.Equal(t, vaultHealthCacheEntry{}, entry1)
+
+	entry2, exists2 = cache.get("vault2")
+	assert.False(t, exists2)
+	assert.Equal(t, vaultHealthCacheEntry{}, entry2)
 }

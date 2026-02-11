@@ -94,27 +94,21 @@ func ParsePEM(pemData string) (*DetailedCertificate, error) {
 			ExpiresAt:  cert.NotAfter,
 			Revoked:    false, // This would need to be determined from external source
 		},
-		SerialNumber:      cert.SerialNumber.String(),
-		Issuer:            cert.Issuer.String(),
-		Subject:           cert.Subject.String(),
-		KeyAlgorithm:      cert.PublicKeyAlgorithm.String(),
-		KeySize:           getKeySize(cert),
-		FingerprintSHA1:   fmt.Sprintf("%x", cert.Signature),
-		FingerprintSHA256: fmt.Sprintf("%x", cert.Signature),
-		Usage:             getUsage(cert),
-		PEM:               pemData,
+		SerialNumber: cert.SerialNumber.String(),
+		Issuer:       cert.Issuer.CommonName,
+		Subject:      cert.Subject.CommonName,
 	}
 
-	// Populate SANs
-	for _, name := range cert.DNSNames {
-		detailed.Sans = append(detailed.Sans, name)
-	}
-	for _, email := range cert.EmailAddresses {
-		detailed.Sans = append(detailed.Sans, email)
-	}
+	detailed.Usage = getUsage(cert)
+	detailed.KeyAlgorithm = cert.PublicKeyAlgorithm.String()
+	detailed.KeySize = getKeySize(cert)
+	detailed.Sans = append(detailed.Sans, cert.DNSNames...)
+	detailed.Sans = append(detailed.Sans, cert.EmailAddresses...)
 	for _, ip := range cert.IPAddresses {
 		detailed.Sans = append(detailed.Sans, ip.String())
 	}
+
+	detailed.PEM = pemData
 
 	return detailed, nil
 }

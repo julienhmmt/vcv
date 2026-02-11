@@ -583,6 +583,12 @@ func TestParsePEM(t *testing.T) {
 			expectError: true,
 			errorMsg:    "failed to decode PEM block",
 		},
+		{
+			name:        "invalid certificate in PEM",
+			pemData:     "-----BEGIN CERTIFICATE-----\nINVALIDDATA\n-----END CERTIFICATE-----",
+			expectError: true,
+			errorMsg:    "failed to decode PEM block", // Invalid base64 will fail at PEM decode
+		},
 	}
 
 	for _, tt := range tests {
@@ -604,6 +610,118 @@ func TestParsePEM(t *testing.T) {
 				assert.NotEmpty(t, result.SerialNumber)
 				assert.NotEmpty(t, result.Usage)
 			}
+		})
+	}
+}
+
+func TestGetKeySize(t *testing.T) {
+	// Test with RSA key
+	rsaPrivKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	require.NoError(t, err)
+
+	rsaTemplate := x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: "rsa-test"},
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().Add(24 * time.Hour),
+	}
+
+	rsaCertDER, err := x509.CreateCertificate(rand.Reader, &rsaTemplate, &rsaTemplate, &rsaPrivKey.PublicKey, rsaPrivKey)
+	require.NoError(t, err)
+
+	rsaCert, err := x509.ParseCertificate(rsaCertDER)
+	require.NoError(t, err)
+
+	rsaKeySize := getKeySize(rsaCert)
+	assert.Equal(t, 2048, rsaKeySize)
+
+	// Test with different RSA key sizes
+	rsa4096PrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	require.NoError(t, err)
+
+	rsa4096Template := x509.Certificate{
+		SerialNumber: big.NewInt(2),
+		Subject:      pkix.Name{CommonName: "rsa4096-test"},
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().Add(24 * time.Hour),
+	}
+
+	rsa4096CertDER, err := x509.CreateCertificate(rand.Reader, &rsa4096Template, &rsa4096Template, &rsa4096PrivKey.PublicKey, rsa4096PrivKey)
+	require.NoError(t, err)
+
+	rsa4096Cert, err := x509.ParseCertificate(rsa4096CertDER)
+	require.NoError(t, err)
+
+	rsa4096KeySize := getKeySize(rsa4096Cert)
+	assert.Equal(t, 4096, rsa4096KeySize)
+}
+
+func TestGetUsage(t *testing.T) {
+	tests := []struct {
+		name     string
+		keyUsage x509.KeyUsage
+		extUsage []x509.ExtKeyUsage
+		expected []string
+	}{
+		{
+			name:     "digital signature only",
+			keyUsage: x509.KeyUsageDigitalSignature,
+			extUsage: []x509.ExtKeyUsage{},
+			expected: []string{"Digital Signature"},
+		},
+		{
+			name:     "key encipherment only",
+			keyUsage: x509.KeyUsageKeyEncipherment,
+			extUsage: []x509.ExtKeyUsage{},
+			expected: []string{"Key Encipherment"},
+		},
+		{
+			name:     "multiple key usages",
+			keyUsage: x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment | x509.KeyUsageCertSign,
+			extUsage: []x509.ExtKeyUsage{},
+			expected: []string{"Digital Signature", "Key Encipherment", "Certificate Sign"},
+		},
+		{
+			name:     "server auth only",
+			keyUsage: x509.KeyUsageDigitalSignature,
+			extUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
+			expected: []string{"Digital Signature", "Server Auth"},
+		},
+		{
+			name:     "client auth only",
+			keyUsage: x509.KeyUsageDigitalSignature,
+			extUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+			expected: []string{"Digital Signature", "Client Auth"},
+		},
+		{
+			name:     "multiple extended usages",
+			keyUsage: x509.KeyUsageDigitalSignature,
+			extUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageCodeSigning},
+			expected: []string{"Digital Signature", "Server Auth", "Client Auth", "Code Signing"},
+		},
+		{
+			name:     "all key usages",
+			keyUsage: ^x509.KeyUsage(0), // All bits set
+			extUsage: []x509.ExtKeyUsage{},
+			expected: []string{"Digital Signature", "Key Encipherment", "Key Agreement", "Certificate Sign", "CRL Sign", "Encipher Only", "Decipher Only"},
+		},
+		{
+			name:     "no usage",
+			keyUsage: 0,
+			extUsage: []x509.ExtKeyUsage{},
+			expected: nil, // It seems getUsage returns nil when no usage
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cert := &x509.Certificate{
+				KeyUsage:    tt.keyUsage,
+				ExtKeyUsage: tt.extUsage,
+			}
+
+			usage := getUsage(cert)
+			assert.Equal(t, tt.expected, usage)
 		})
 	}
 }
