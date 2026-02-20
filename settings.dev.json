@@ -1,7 +1,4 @@
 {
-  "admin": {
-    "password": "$2y$10$.SWJT4Amz9tyq4qq2vqQyOZm/KZAf38YVVNxj/6EvYLk4I0C6Q9A2"
-  },
   "app": {
     "env": "dev",
     "logging": {
@@ -11,6 +8,9 @@
       "file_path": "/var/log/app/vcv.log"
     },
     "port": 52000
+  },
+  "admin": {
+    "password": "$2y$10$.SWJT4Amz9tyq4qq2vqQyOZm/KZAf38YVVNxj/6EvYLk4I0C6Q9A2"
   },
   "certificates": {
     "expiration_thresholds": {
@@ -88,7 +88,7 @@
         "pki_perf"
       ],
       "display_name": "Vault dev-4",
-      "tls_insecure": true,
+      "tls_insecure": false,
       "enabled": true
     },
     {
@@ -103,7 +103,7 @@
         "pki_shared"
       ],
       "display_name": "Vault dev-5",
-      "tls_insecure": true,
+      "tls_insecure": false,
       "enabled": true
     },
     {
