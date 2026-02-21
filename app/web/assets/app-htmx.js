@@ -30,6 +30,36 @@ function formatMountGroupTitle(group) {
   return "Vault";
 }
 
+function setModalVisibility(modalId, isOpen) {
+  const modal = document.getElementById(modalId);
+  if (!modal) {
+    return;
+  }
+  if (isOpen) {
+    modal.classList.remove("vcv-hidden");
+    trapFocus(modal);
+    return;
+  }
+  releaseFocusTrap(modal);
+  modal.classList.add("vcv-hidden");
+}
+
+function closeAllModals() {
+  closeCertificateModal();
+  closeMountModal();
+  closeDocumentationModal();
+  closeVaultStatusModal();
+}
+
+function applyMountSelectionChange(shouldRenderSelector) {
+  if (shouldRenderSelector) {
+    renderMountSelector();
+  }
+  renderMountModalList();
+  refreshHtmxCertsTable();
+  updateFilterBadge();
+}
+
 function shouldSuppressErrorToast(detail) {
   const xhr = detail && detail.xhr;
   if (!xhr) {
@@ -132,17 +162,10 @@ function initHtmxErrorHandler() {
     }
     showErrorToast(errorMessage);
   };
-
-  document.body.addEventListener('htmx:responseError', function(evt) {
-    handleErrorEvent(evt, "responseError");
-  });
-
-  document.body.addEventListener('htmx:sendError', function(evt) {
-    handleErrorEvent(evt, "sendError");
-  });
-
-  document.body.addEventListener('htmx:timeout', function(evt) {
-    handleErrorEvent(evt, "timeout");
+  ["responseError", "sendError", "timeout"].forEach(function(kind) {
+    document.body.addEventListener(`htmx:${kind}`, function(evt) {
+      handleErrorEvent(evt, kind);
+    });
   });
   
 }
@@ -188,20 +211,14 @@ function releaseFocusTrap(modal) {
 function initModalHandlers() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
-      closeCertificateModal();
-      closeMountModal();
-      closeDocumentationModal();
-      closeVaultStatusModal();
+      closeAllModals();
     }
   });
   const backdrops = document.querySelectorAll(".vcv-modal-backdrop");
   backdrops.forEach((backdrop) => {
     backdrop.addEventListener("click", (event) => {
       if (event.target === backdrop) {
-        closeCertificateModal();
-        closeMountModal();
-        closeDocumentationModal();
-        closeVaultStatusModal();
+        closeAllModals();
       }
     });
   });
@@ -1024,45 +1041,25 @@ function filterMountList(searchTerm) {
 }
 
 function openMountModal() {
-  const modal = document.getElementById("mount-modal");
-  if (!modal) {
-    return;
-  }
   const searchInput = document.getElementById("mount-search");
   if (searchInput) {
     searchInput.value = "";
   }
   renderMountModalList();
   updateMountStats();
-  modal.classList.remove("vcv-hidden");
-  trapFocus(modal);
+  setModalVisibility("mount-modal", true);
 }
 
 function closeMountModal() {
-  const modal = document.getElementById("mount-modal");
-  if (!modal) {
-    return;
-  }
-  releaseFocusTrap(modal);
-  modal.classList.add("vcv-hidden");
+  setModalVisibility("mount-modal", false);
 }
 
 function openVaultStatusModal() {
-  const modal = document.getElementById("vault-status-modal");
-  if (!modal) {
-    return;
-  }
-  modal.classList.remove("vcv-hidden");
-  trapFocus(modal);
+  setModalVisibility("vault-status-modal", true);
 }
 
 function closeVaultStatusModal() {
-  const modal = document.getElementById("vault-status-modal");
-  if (!modal) {
-    return;
-  }
-  releaseFocusTrap(modal);
-  modal.classList.add("vcv-hidden");
+  setModalVisibility("vault-status-modal", false);
 }
 
 let vaultRefreshLastTime = 0;
@@ -1098,25 +1095,17 @@ function toggleMount(mountKey) {
   } else {
     state.selectedMounts.splice(index, 1);
   }
-  renderMountModalList();
-  refreshHtmxCertsTable();
-  updateFilterBadge();
+  applyMountSelectionChange(false);
 }
 
 function selectAllMounts() {
   state.selectedMounts = [...state.availableMounts];
-  renderMountSelector();
-  renderMountModalList();
-  refreshHtmxCertsTable();
-  updateFilterBadge();
+  applyMountSelectionChange(true);
 }
 
 function deselectAllMounts() {
   state.selectedMounts = [];
-  renderMountSelector();
-  renderMountModalList();
-  refreshHtmxCertsTable();
-  updateFilterBadge();
+  applyMountSelectionChange(true);
 }
 
 function selectAllVaultMounts(vaultId, event) {
@@ -1132,10 +1121,7 @@ function selectAllVaultMounts(vaultId, event) {
   const selectedSet = new Set(state.selectedMounts);
   keysToAdd.forEach((key) => selectedSet.add(key));
   state.selectedMounts = Array.from(selectedSet);
-  renderMountSelector();
-  renderMountModalList();
-  refreshHtmxCertsTable();
-  updateFilterBadge();
+  applyMountSelectionChange(true);
 }
 
 function deselectAllVaultMounts(vaultId, event) {
@@ -1144,28 +1130,15 @@ function deselectAllVaultMounts(vaultId, event) {
   }
   const prefix = `${vaultId}|`;
   state.selectedMounts = state.selectedMounts.filter((key) => !key.startsWith(prefix));
-  renderMountSelector();
-  renderMountModalList();
-  refreshHtmxCertsTable();
-  updateFilterBadge();
+  applyMountSelectionChange(true);
 }
 
 function openCertificateModal() {
-  const modal = document.getElementById("certificate-modal");
-  if (!modal) {
-    return;
-  }
-  modal.classList.remove("vcv-hidden");
-  trapFocus(modal);
+  setModalVisibility("certificate-modal", true);
 }
 
 function closeCertificateModal() {
-  const modal = document.getElementById("certificate-modal");
-  if (!modal) {
-    return;
-  }
-  releaseFocusTrap(modal);
-  modal.classList.add("vcv-hidden");
+  setModalVisibility("certificate-modal", false);
 }
 
 let currentDocType = "user";
@@ -1192,12 +1165,7 @@ function openDocumentationModal(type = "user") {
 }
 
 function closeDocumentationModal() {
-  const modal = document.getElementById("vcv-documentation-modal");
-  if (!modal) {
-    return;
-  }
-  releaseFocusTrap(modal);
-  modal.classList.add("vcv-hidden");
+  setModalVisibility("vcv-documentation-modal", false);
 }
 
 async function loadDocumentation(type = null) {
