@@ -96,7 +96,7 @@ VaultCertsViewer can monitor multiple PKI engines simultaneously through a singl
 - **Real-time search**: Instant filtering as you type in the search box with 300ms debouncing
 - **Status filtering**: Quick filters for valid/expired/revoked certificates
 - **Partitioning**: Visualize certificate partitioning by expiration date
-- **Pagination**: Configurable page size (25/50/75/100/all) with navigation controls
+- **Pagination**: Configurable page size (25/50/100/all) with navigation controls
 - **Sort options**: Sort by vault, PKI mount, common name, creation or expiration date
 
 ### 🐳 docker-compose

@@ -96,7 +96,7 @@ VaultCertsViewer peut surveiller simultanément plusieurs moteurs PKI via une se
 - **Recherche en temps réel** : Filtrage instantané pendant la saisie avec délai de 300ms
 - **Filtrage par statut** : Filtres rapides pour les certificats valides/expirés/révoqués
 - **Répartition** : Visualisation de la répartition des certificats par statut
-- **Pagination** : Taille de page configurable (25/50/75/100/tout) avec contrôles de navigation
+- **Pagination** : Taille de page configurable (25/50/100/tout) avec contrôles de navigation
 - **Options de tri** : Tri par vault, moteur PKI, nom commun, date de création et date d'expiration
 
 ### 🐳 docker-compose
