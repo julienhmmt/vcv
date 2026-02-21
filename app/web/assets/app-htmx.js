@@ -87,44 +87,28 @@ function buildCertsPageUrl() {
   return `/?${params.toString()}`;
 }
 
+function syncControlFromUrlParam(params, elementId, paramName, fallbackValue) {
+  const element = document.getElementById(elementId);
+  if (!element || !params.has(paramName)) {
+    return;
+  }
+  element.value = params.get(paramName) || fallbackValue;
+}
+
 function applyCertsStateFromUrl() {
   const params = new URLSearchParams(window.location.search || "");
-  
-  // Sync language select if present in URL
   const langParam = params.get("lang");
   const langSelect = document.getElementById("vcv-lang-select");
   if (langParam && langSelect && langSelect.value !== langParam) {
     langSelect.value = langParam;
   }
-
-  const searchInput = document.getElementById("vcv-search");
-  if (searchInput && params.has("search")) {
-    searchInput.value = params.get("search") || "";
-  }
-  const statusSelect = document.getElementById("vcv-status-filter");
-  if (statusSelect && params.has("status")) {
-    statusSelect.value = params.get("status") || "all";
-  }
-  const expirySelect = document.getElementById("vcv-expiry-filter");
-  if (expirySelect && params.has("expiry")) {
-    expirySelect.value = params.get("expiry") || "all";
-  }
-  const pageSizeSelect = document.getElementById("vcv-page-size");
-  if (pageSizeSelect && params.has("pageSize")) {
-    pageSizeSelect.value = params.get("pageSize") || "25";
-  }
-  const pageInput = document.getElementById("vcv-page");
-  if (pageInput && params.has("page")) {
-    pageInput.value = params.get("page") || "0";
-  }
-  const sortKeyInput = document.getElementById("vcv-sort-key");
-  if (sortKeyInput && params.has("sortKey")) {
-    sortKeyInput.value = params.get("sortKey") || "commonName";
-  }
-  const sortDirInput = document.getElementById("vcv-sort-dir");
-  if (sortDirInput && params.has("sortDir")) {
-    sortDirInput.value = params.get("sortDir") || "asc";
-  }
+  syncControlFromUrlParam(params, "vcv-search", "search", "");
+  syncControlFromUrlParam(params, "vcv-status-filter", "status", "all");
+  syncControlFromUrlParam(params, "vcv-expiry-filter", "expiry", "all");
+  syncControlFromUrlParam(params, "vcv-page-size", "pageSize", "25");
+  syncControlFromUrlParam(params, "vcv-page", "page", "0");
+  syncControlFromUrlParam(params, "vcv-sort-key", "sortKey", "commonName");
+  syncControlFromUrlParam(params, "vcv-sort-dir", "sortDir", "asc");
   const mountsValue = params.get("mounts");
   if (typeof mountsValue === "string") {
     if (mountsValue === MOUNTS_ALL_SENTINEL) {
@@ -228,12 +212,17 @@ function initDashboardKeyboard() {
   document.querySelectorAll(".vcv-stat-clickable").forEach((stat) => {
     stat.setAttribute("tabindex", "0");
     stat.setAttribute("role", "button");
-    stat.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        stat.click();
-      }
-    });
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+    const target = event.target && event.target.closest ? event.target.closest(".vcv-stat-clickable") : null;
+    if (!target) {
+      return;
+    }
+    event.preventDefault();
+    target.click();
   });
 }
 
@@ -485,28 +474,38 @@ function applyTranslations() {
   if (!messages) {
     return;
   }
-  setText(document.getElementById("certificate-modal-close"), messages.buttonClose);
-  setText(document.getElementById("dashboard-expired-label"), messages.dashboardExpired);
-  setText(document.getElementById("dashboard-expired-desc"), messages.dashboardExpiredDesc);
-  setText(document.getElementById("dashboard-warning-label"), messages.dashboardWarning);
-  setText(document.getElementById("dashboard-warning-desc"), messages.dashboardWarningDesc);
-  setText(document.getElementById("dashboard-critical-label"), messages.dashboardCritical);
-  setText(document.getElementById("dashboard-critical-desc"), messages.dashboardCriticalDesc);
-  setText(document.getElementById("dashboard-clear-filter-text"), messages.dashboardClearFilter);
-  setText(document.getElementById("dashboard-filter-hint"), messages.dashboardFilterHint);
-  setText(document.getElementById("dashboard-revoked-label"), messages.dashboardRevoked);
-  setText(document.getElementById("dashboard-revoked-desc"), messages.dashboardRevokedDesc);
-  setText(document.getElementById("dashboard-donut-label"), messages.dashboardCertsLabel);
-  setText(document.getElementById("dashboard-valid-label"), messages.dashboardValid);
-  setText(document.getElementById("dashboard-valid-desc"), messages.dashboardValidDesc);
-  setText(document.getElementById("mount-close"), messages.buttonClose);
-  setText(document.getElementById("mount-deselect-all"), messages.deselectAll);
-  setText(document.getElementById("mount-modal-title"), messages.mountSelectorTitle);
-  setText(document.getElementById("mount-select-all"), messages.selectAll);
-  setText(document.getElementById("mount-stats-selected-label"), messages.mountStatsSelected);
-  setText(document.getElementById("mount-footer-vaults-label"), messages.mountStatsVaults);
-  setText(document.getElementById("mount-footer-mounts-label"), messages.mountStatsMounts);
-  setText(document.getElementById("vcv-page-size-label"), messages.paginationPageSizeLabel);
+  const textBindings = [
+    ["certificate-modal-close", messages.buttonClose],
+    ["dashboard-expired-label", messages.dashboardExpired],
+    ["dashboard-expired-desc", messages.dashboardExpiredDesc],
+    ["dashboard-warning-label", messages.dashboardWarning],
+    ["dashboard-warning-desc", messages.dashboardWarningDesc],
+    ["dashboard-critical-label", messages.dashboardCritical],
+    ["dashboard-critical-desc", messages.dashboardCriticalDesc],
+    ["dashboard-clear-filter-text", messages.dashboardClearFilter],
+    ["dashboard-filter-hint", messages.dashboardFilterHint],
+    ["dashboard-revoked-label", messages.dashboardRevoked],
+    ["dashboard-revoked-desc", messages.dashboardRevokedDesc],
+    ["dashboard-donut-label", messages.dashboardCertsLabel],
+    ["dashboard-valid-label", messages.dashboardValid],
+    ["dashboard-valid-desc", messages.dashboardValidDesc],
+    ["mount-close", messages.buttonClose],
+    ["mount-deselect-all", messages.deselectAll],
+    ["mount-modal-title", messages.mountSelectorTitle],
+    ["mount-select-all", messages.selectAll],
+    ["mount-stats-selected-label", messages.mountStatsSelected],
+    ["mount-footer-vaults-label", messages.mountStatsVaults],
+    ["mount-footer-mounts-label", messages.mountStatsMounts],
+    ["vcv-page-size-label", messages.paginationPageSizeLabel],
+    ["vcv-page-prev", messages.paginationPrev],
+    ["vcv-documentation-modal-close", messages.buttonClose],
+    ["vcv-documentation-modal-title", messages.buttonDocumentation],
+    ["vault-status-modal-close", messages.buttonClose],
+    ["vault-status-modal-title", messages.vaultStatusTitle || "Vault status"],
+  ];
+  textBindings.forEach(([elementId, value]) => {
+    setText(document.getElementById(elementId), value);
+  });
   const searchInput = document.getElementById("vcv-search");
   if (searchInput && typeof messages.searchPlaceholder === "string" && messages.searchPlaceholder !== "") {
     searchInput.setAttribute("placeholder", messages.searchPlaceholder);
@@ -526,12 +525,6 @@ function applyTranslations() {
   if (pageSizeSelect) {
     setText(pageSizeSelect.querySelector("option[value='all']"), messages.paginationAll);
   }
-  setText(document.getElementById("vcv-page-prev"), messages.paginationPrev);
-  setText(document.getElementById("vcv-documentation-modal-close"), messages.buttonClose);
-  setText(document.getElementById("vcv-documentation-modal-title"), messages.buttonDocumentation);
-  setText(document.getElementById("vault-status-modal-close"), messages.buttonClose);
-  setText(document.getElementById("vault-status-modal-title"), messages.vaultStatusTitle || "Vault status");
-  
   const refreshBtn = document.getElementById("refresh-btn");
   if (refreshBtn) {
     refreshBtn.setAttribute("title", messages.buttonRefresh);
@@ -604,25 +597,27 @@ function setMountsHiddenField() {
 }
 
 function getCertsHtmxValues() {
-  const expiryFilter = document.getElementById("vcv-expiry-filter");
-  const mountsInput = document.getElementById("vcv-mounts");
-  const pageInput = document.getElementById("vcv-page");
-  const pageSizeSelect = document.getElementById("vcv-page-size");
-  const searchInput = document.getElementById("vcv-search");
-  const sortDirInput = document.getElementById("vcv-sort-dir");
-  const sortKeyInput = document.getElementById("vcv-sort-key");
-  const statusFilter = document.getElementById("vcv-status-filter");
-  const langSelect = document.getElementById("vcv-lang-select");
+  const controls = {
+    expiry: document.getElementById("vcv-expiry-filter"),
+    mounts: document.getElementById("vcv-mounts"),
+    page: document.getElementById("vcv-page"),
+    pageSize: document.getElementById("vcv-page-size"),
+    search: document.getElementById("vcv-search"),
+    sortDir: document.getElementById("vcv-sort-dir"),
+    sortKey: document.getElementById("vcv-sort-key"),
+    status: document.getElementById("vcv-status-filter"),
+    lang: document.getElementById("vcv-lang-select"),
+  };
   return {
-    expiry: expiryFilter ? expiryFilter.value : "all",
-    mounts: mountsInput ? mountsInput.value : "",
-    page: pageInput ? pageInput.value : "0",
-    pageSize: pageSizeSelect ? pageSizeSelect.value : "25",
-    search: searchInput ? searchInput.value : "",
-    sortDir: sortDirInput ? sortDirInput.value : "asc",
-    sortKey: sortKeyInput ? sortKeyInput.value : "commonName",
-    status: statusFilter ? statusFilter.value : "all",
-    lang: langSelect ? langSelect.value : "",
+    expiry: controls.expiry ? controls.expiry.value : "all",
+    mounts: controls.mounts ? controls.mounts.value : "",
+    page: controls.page ? controls.page.value : "0",
+    pageSize: controls.pageSize ? controls.pageSize.value : "25",
+    search: controls.search ? controls.search.value : "",
+    sortDir: controls.sortDir ? controls.sortDir.value : "asc",
+    sortKey: controls.sortKey ? controls.sortKey.value : "commonName",
+    status: controls.status ? controls.status.value : "all",
+    lang: controls.lang ? controls.lang.value : "",
   };
 }
 
