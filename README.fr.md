@@ -8,6 +8,8 @@ VaultCertsViewer (vcv) peut surveiller simultanément plusieurs moteurs PKI via 
 
 **Compatible avec OpenBao** : VCV fonctionne avec HashiCorp Vault et OpenBao, car ils partagent la même API PKI. Testé avec OpenBao 2.4+ et Vault 1.20+ (au 02/2026).
 
+![Mode clair](img/VaultCertsViewer-v1.6.png)
+
 ## ✨ Quelles sont les fonctionnalités ?
 
 - Découvre tous les certificats d'un ou plusieurs moteurs PKI dans Vault/OpenBao et les affiche dans un tableau filtrable et recherchable.
@@ -29,6 +31,28 @@ VaultCertsViewer permet aux équipes plateforme et sécurité d'avoir une vue ra
 
 - Aux equipes exploitant l'outil Vault/OpenBao qui ont besoin d'une visibilité rapide et en lecture seule sur les certificats.
 - Aux opérateurs qui veulent une vue claire et simple dans leur navigateur.
+
+## Images de l'application
+
+### Mode clair
+
+Page principale :
+
+![Page principale](img/VaultCertsViewer-v1.6-light.png)
+
+Page d'administration :
+
+![Page d'administration](img/VaultCertsViewer-v1.6-admin-light.png)
+
+### Mode sombre
+
+Page principale :
+
+![Page principale](img/VaultCertsViewer-v1.6-dark.png)
+
+Page d'administration :
+
+![Page d'administration](img/VaultCertsViewer-v1.6-admin-dark.png)
 
 ## 🚀 Comment le déployer et l'utiliser pour Hashicorp Vault ?
 
