@@ -135,8 +135,8 @@ Créez ce fichier `settings.json` dans le répertoire de travail, et saisissez c
   },
   "cors": {
     "allowed_origins": [
-        "https://172.16.20.50:8443",
-        "https://reproxy.vcv.local"
+      "https://172.16.20.50:8443",
+      "https://reproxy.vcv.local"
     ],
     "allow_credentials": true
   },
@@ -145,12 +145,7 @@ Créez ce fichier `settings.json` dans le répertoire de travail, et saisissez c
       "id": "vault-main",
       "address": "http://vault:8200",
       "token": "root",
-      "pki_mounts": [
-        "pki",
-        "pki_dev",
-        "pki_stage",
-        "pki_production"
-      ],
+      "pki_mounts": ["pki", "pki_dev", "pki_stage", "pki_production"],
       "display_name": "Vault",
       "tls_ca_cert_base64": "BASE64_PEM_CA_BUNDLE",
       "tls_ca_cert": "",
@@ -163,12 +158,7 @@ Créez ce fichier `settings.json` dans le répertoire de travail, et saisissez c
       "id": "vault-dev",
       "address": "http://vault-dev:8200",
       "token": "root",
-      "pki_mounts": [
-        "pki",
-        "pki_corporate",
-        "pki_external",
-        "pki_partners"
-      ],
+      "pki_mounts": ["pki", "pki_corporate", "pki_external", "pki_partners"],
       "display_name": "Vault dev",
       "tls_ca_cert_base64": "BASE64_PEM_CA_BUNDLE",
       "tls_ca_cert": "",

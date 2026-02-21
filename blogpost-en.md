@@ -135,8 +135,8 @@ Create the file `settings.json` in the workdir, and type these informations with
   },
   "cors": {
     "allowed_origins": [
-        "https://172.16.20.50:8443",
-        "https://reproxy.vcv.local"
+      "https://172.16.20.50:8443",
+      "https://reproxy.vcv.local"
     ],
     "allow_credentials": true
   },
@@ -145,12 +145,7 @@ Create the file `settings.json` in the workdir, and type these informations with
       "id": "vault-main",
       "address": "http://vault:8200",
       "token": "root",
-      "pki_mounts": [
-        "pki",
-        "pki_dev",
-        "pki_stage",
-        "pki_production"
-      ],
+      "pki_mounts": ["pki", "pki_dev", "pki_stage", "pki_production"],
       "display_name": "Vault",
       "tls_ca_cert_base64": "BASE64_PEM_CA_BUNDLE",
       "tls_ca_cert": "",
@@ -163,12 +158,7 @@ Create the file `settings.json` in the workdir, and type these informations with
       "id": "vault-dev",
       "address": "http://vault-dev:8200",
       "token": "root",
-      "pki_mounts": [
-        "pki",
-        "pki_corporate",
-        "pki_external",
-        "pki_partners"
-      ],
+      "pki_mounts": ["pki", "pki_corporate", "pki_external", "pki_partners"],
       "display_name": "Vault dev",
       "tls_ca_cert_base64": "BASE64_PEM_CA_BUNDLE",
       "tls_ca_cert": "",
@@ -183,7 +173,7 @@ Create the file `settings.json` in the workdir, and type these informations with
 
 ### Rapid launch with docker run
 
-Type this command to launch a vcv container: 
+Type this command to launch a vcv container:
 
 ```bash
 docker run -d \
@@ -216,7 +206,7 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '0.50'
+          cpus: "0.50"
           memory: 64M
 ```
 
