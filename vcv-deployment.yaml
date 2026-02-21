@@ -80,31 +80,41 @@ type: Opaque
 stringData:
   settings.json: |
     {
+      "admin": {
+        "password": "$2y$10$.changeme"
+      },
       "app": {
         "env": "prod",
-        "port": 52000,
         "logging": {
-          "level": "info",
+          "level": "debug",
           "format": "json",
-          "output": "stdout",
+          "output": "both",
           "file_path": "/var/log/app/vcv.log"
-        }
-      },
-      "cors": {
-        "allowed_origins": [],
-        "allow_credentials": true
+        },
+        "port": 52000
       },
       "certificates": {
         "expiration_thresholds": {
-          "critical": 7,
-          "warning": 30
+          "critical": 2,
+          "warning": 10
         }
+      },
+      "metrics": {
+        "per_certificate": true,
+        "enhanced_metrics": false
+      },
+      "cors": {
+        "allowed_origins": [
+          "https://172.16.20.50:8443",
+          "https://reproxy.vcv.local"
+        ],
+        "allow_credentials": true
       },
       "vaults": [
         {
           "id": "vault-main",
-          "address": "https://vault-prod.example.com:8200",
-          "token": "change-me",
+          "address": "http://vault:8200",
+          "token": "root",
           "pki_mounts": [
             "pki",
             "pki_dev",
@@ -116,13 +126,13 @@ stringData:
           "tls_ca_cert": "",
           "tls_ca_path": "",
           "tls_server_name": "vault.service.consul",
-          "tls_insecure": false,
+          "tls_insecure": true,
           "enabled": true
         },
         {
           "id": "vault-dev",
-          "address": "https://vault-dev.example.com:8200",
-          "token": "change-me",
+          "address": "http://vault-dev:8200",
+          "token": "root",
           "pki_mounts": [
             "pki",
             "pki_corporate",
@@ -134,7 +144,7 @@ stringData:
           "tls_ca_cert": "",
           "tls_ca_path": "",
           "tls_server_name": "vault-dev.service.consul",
-          "tls_insecure": false,
+          "tls_insecure": true,
           "enabled": true
         }
       ]

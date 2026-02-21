@@ -24,8 +24,8 @@
   },
   "cors": {
     "allowed_origins": [
-      "http://localhost:4321",
-      "http://localhost:3000"
+        "https://172.16.20.50:8443",
+        "https://reproxy.vcv.local"
     ],
     "allow_credentials": true
   },

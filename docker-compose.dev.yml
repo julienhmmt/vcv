@@ -1,8 +1,4 @@
 ---
-# Multi-Vault development environment for VCV testing
-# Currently VCV connects only to vault:8200 (single Vault instance)
-# Additional Vaults (vault-dev-2, vault-dev-3) are infrastructure prep
-# for future multi-Vault support when VCV supports VAULT_ADDRS or similar
 services:
   vault:
     image: hashicorp/vault:1.21.3
@@ -107,10 +103,9 @@ services:
       - ./openbao-dev-init-1.sh:/openbao-dev-init-1.sh:ro
 
   app:
-    # build:
-      # context: ./app
-      # dockerfile: Dockerfile
-    image: jhmmt/vcv:dev
+    build:
+      context: ./app
+      dockerfile: Dockerfile
     container_name: vcv
     ports:
       - "52000:52000/tcp"
