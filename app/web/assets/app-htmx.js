@@ -1,6 +1,18 @@
 "use strict";
 (function () {
 const MOUNTS_ALL_SENTINEL = "__all__";
+const DEFAULT_CERTS_VALUES = {
+  expiry: "all",
+  mounts: "",
+  page: "0",
+  pageSize: "25",
+  search: "",
+  sortDir: "asc",
+  sortKey: "commonName",
+  status: "all",
+  lang: "",
+};
+const VALID_PAGE_SIZES = ["25", "50", "100", "all"];
 
 const state = {
   availableMounts: [],
@@ -18,6 +30,10 @@ const state = {
 
 function buildVaultMountKey(vaultId, mount) {
   return `${vaultId}|${mount}`;
+}
+
+function getMessages() {
+  return state.messages || {};
 }
 
 function formatMountGroupTitle(group) {
@@ -354,10 +370,9 @@ function initClientValidation() {
     
     // Validate page size
     if (params.pageSize) {
-      const validSizes = ['25', '50', '75', '100', 'all'];
-      if (!validSizes.includes(params.pageSize)) {
+      if (!VALID_PAGE_SIZES.includes(params.pageSize)) {
         evt.preventDefault();
-        const messages = state.messages || {};
+        const messages = getMessages();
         const validationError = messages.errorInvalidPageSize || "Invalid page size";
         showErrorToast(validationError);
         return;
@@ -597,28 +612,25 @@ function setMountsHiddenField() {
 }
 
 function getCertsHtmxValues() {
-  const controls = {
-    expiry: document.getElementById("vcv-expiry-filter"),
-    mounts: document.getElementById("vcv-mounts"),
-    page: document.getElementById("vcv-page"),
-    pageSize: document.getElementById("vcv-page-size"),
-    search: document.getElementById("vcv-search"),
-    sortDir: document.getElementById("vcv-sort-dir"),
-    sortKey: document.getElementById("vcv-sort-key"),
-    status: document.getElementById("vcv-status-filter"),
-    lang: document.getElementById("vcv-lang-select"),
+  const controlIds = {
+    expiry: "vcv-expiry-filter",
+    mounts: "vcv-mounts",
+    page: "vcv-page",
+    pageSize: "vcv-page-size",
+    search: "vcv-search",
+    sortDir: "vcv-sort-dir",
+    sortKey: "vcv-sort-key",
+    status: "vcv-status-filter",
+    lang: "vcv-lang-select",
   };
-  return {
-    expiry: controls.expiry ? controls.expiry.value : "all",
-    mounts: controls.mounts ? controls.mounts.value : "",
-    page: controls.page ? controls.page.value : "0",
-    pageSize: controls.pageSize ? controls.pageSize.value : "25",
-    search: controls.search ? controls.search.value : "",
-    sortDir: controls.sortDir ? controls.sortDir.value : "asc",
-    sortKey: controls.sortKey ? controls.sortKey.value : "commonName",
-    status: controls.status ? controls.status.value : "all",
-    lang: controls.lang ? controls.lang.value : "",
-  };
+  const values = { ...DEFAULT_CERTS_VALUES };
+  Object.keys(controlIds).forEach((key) => {
+    const element = document.getElementById(controlIds[key]);
+    if (element) {
+      values[key] = element.value;
+    }
+  });
+  return values;
 }
 
 function showDonutTooltip(event, text) {
@@ -628,8 +640,7 @@ function showDonutTooltip(event, text) {
   }
   tooltip.textContent = text;
   tooltip.classList.remove("vcv-hidden");
-  tooltip.style.left = (event.clientX + 10) + "px";
-  tooltip.style.top = (event.clientY - 30) + "px";
+  positionDonutTooltip(tooltip, event);
 }
 
 function moveDonutTooltip(event) {
@@ -637,6 +648,10 @@ function moveDonutTooltip(event) {
   if (!tooltip) {
     return;
   }
+  positionDonutTooltip(tooltip, event);
+}
+
+function positionDonutTooltip(tooltip, event) {
   tooltip.style.left = (event.clientX + 10) + "px";
   tooltip.style.top = (event.clientY - 30) + "px";
 }
