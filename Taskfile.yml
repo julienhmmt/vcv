@@ -19,6 +19,7 @@ tasks:
       VCV_TAG:
         sh: 'echo ${VCV_TAG:-latest}'
     cmds:
+      - docker buildx use vcv-builder
       - docker buildx build --platform linux/amd64,linux/arm64 --build-arg VERSION={{.VCV_TAG}} -t jhmmt/vcv:{{.VCV_TAG}} --push ./app
 
   test-offline:
