@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"vcv/config"
+	"vcv/internal/config"
 )
 
 // failingResponseWriter is a ResponseWriter that always fails on Write

@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"vcv/internal/logger"
-	"vcv/middleware"
+	"vcv/internal/middleware"
 )
 
 func ReadinessCheck(w http.ResponseWriter, r *http.Request) {

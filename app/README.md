@@ -14,7 +14,7 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 ## Directory layout (app/)
 
 - `cmd/server/main.go` — entrypoint, router, middleware, static file serving, graceful shutdown.
-- `cmd/server/web/` — `index.html`, `assets/app-htmx.js`, `assets/styles.css`, `templates/` (UI fragments + Admin templates).
+- `web/` — `index.html`, `assets/app-htmx.js`, `assets/styles.css`, `templates/` (UI fragments + Admin templates).
 - `config/` — environment-backed configuration loading with expiration threshold support.
 - `internal/cache/` — simple in-memory TTL cache (used by Vault client).
 - `internal/handlers/` — HTTP handlers (`certs`, `i18n`, `health`, `ready`, `ui`, `admin` routes).
@@ -375,7 +375,7 @@ Test targets:
 - No external frontend toolchain; edit `app-htmx.js`/`styles.css` directly.
 - Request IDs are added to all responses; include them when correlating logs.
 - Use `VAULT_TLS_INSECURE=true` only in development environments.
-- HTMX partial templates are in `cmd/server/web/templates/`.
+- HTMX partial templates are in `web/templates/`.
 - JavaScript uses modern ES6+ features with browser-native APIs.
 - CSS uses custom properties for theming and responsive design.
 

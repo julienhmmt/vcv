@@ -10,8 +10,8 @@ import (
 
 	"vcv/internal/certs"
 	"vcv/internal/logger"
+	"vcv/internal/middleware"
 	"vcv/internal/vault"
-	"vcv/middleware"
 )
 
 const mountsAllSentinel = "__all__"

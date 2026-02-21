@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"vcv/internal/logger"
-	"vcv/middleware"
+	"vcv/internal/middleware"
 )
 
 func HealthCheck(w http.ResponseWriter, r *http.Request) {

@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"vcv/middleware"
+	"vcv/internal/middleware"
 )
 
 func TestSecurityHeaders(t *testing.T) {

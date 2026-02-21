@@ -3,7 +3,7 @@ package vault
 import (
 	"sync"
 
-	"vcv/config"
+	"vcv/internal/config"
 )
 
 // Registry tracks which vault IDs are currently enabled.

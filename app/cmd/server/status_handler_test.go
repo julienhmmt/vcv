@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"vcv/config"
+	"vcv/internal/config"
 	"vcv/internal/vault"
 )
 

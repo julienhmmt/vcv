@@ -6,7 +6,7 @@ import (
 
 	"vcv/internal/i18n"
 	"vcv/internal/logger"
-	"vcv/middleware"
+	"vcv/internal/middleware"
 
 	"github.com/go-chi/chi/v5"
 )

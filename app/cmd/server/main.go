@@ -12,12 +12,13 @@ import (
 	"time"
 	"vcv/internal/metrics"
 
-	"vcv/config"
+	"vcv/internal/config"
 	"vcv/internal/handlers"
 	"vcv/internal/logger"
+	"vcv/internal/middleware"
 	"vcv/internal/vault"
 	"vcv/internal/version"
-	"vcv/middleware"
+	"vcv/web"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/prometheus/client_golang/prometheus"
@@ -184,7 +185,7 @@ func main() {
 	promRegistry.MustRegister(collectors.NewGoCollector())
 	promRegistry.MustRegister(metrics.NewCertificateCollectorWithVaults(multiVaultClient, allClients, cfg.ExpirationThresholds, cfg.Metrics, cfg.AllVaults))
 
-	webFS, fsError := fs.Sub(embeddedWeb, "web")
+	webFS, fsError := fs.Sub(web.EmbeddedFS, ".")
 	if fsError != nil {
 		log.Fatal().Err(fsError).
 			Msg("Failed to initialize embedded web filesystem")

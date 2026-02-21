@@ -18,13 +18,13 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/yuin/goldmark"
 
-	"vcv/config"
 	"vcv/internal/certs"
+	"vcv/internal/config"
 	"vcv/internal/i18n"
 	"vcv/internal/logger"
+	"vcv/internal/middleware"
 	"vcv/internal/vault"
 	"vcv/internal/version"
-	"vcv/middleware"
 )
 
 type certDetailsTemplateData struct {

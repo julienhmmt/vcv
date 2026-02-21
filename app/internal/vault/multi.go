@@ -8,8 +8,8 @@ import (
 	"sync"
 	"time"
 
-	"vcv/config"
 	"vcv/internal/certs"
+	"vcv/internal/config"
 	"vcv/internal/logger"
 )
 

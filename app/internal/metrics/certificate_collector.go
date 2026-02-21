@@ -10,8 +10,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
-	"vcv/config"
 	"vcv/internal/certs"
+	"vcv/internal/config"
 	"vcv/internal/vault"
 )
 

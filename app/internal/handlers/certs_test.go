@@ -16,8 +16,8 @@ import (
 
 	"vcv/internal/certs"
 	"vcv/internal/handlers"
+	"vcv/internal/middleware"
 	"vcv/internal/vault"
-	"vcv/middleware"
 )
 
 func setupRouter(mockVault *vault.MockClient) *chi.Mux {

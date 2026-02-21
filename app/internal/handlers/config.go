@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"vcv/config"
+	"vcv/internal/config"
 	"vcv/internal/logger"
+	"vcv/internal/middleware"
 	"vcv/internal/vault"
-	"vcv/middleware"
 )
 
 // ConfigResponse holds the public configuration exposed to the frontend.

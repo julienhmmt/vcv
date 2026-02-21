@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"vcv/config"
 	"vcv/internal/certs"
+	"vcv/internal/config"
 	"vcv/internal/i18n"
 
 	"github.com/stretchr/testify/assert"

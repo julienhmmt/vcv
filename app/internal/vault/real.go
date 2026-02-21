@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"vcv/config"
 	"vcv/internal/cache"
 	"vcv/internal/certs"
+	"vcv/internal/config"
 	"vcv/internal/logger"
 
 	"github.com/hashicorp/vault/api"

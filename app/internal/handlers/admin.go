@@ -23,14 +23,14 @@ import (
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/crypto/bcrypt"
 
-	"vcv/config"
+	"vcv/internal/config"
 	vcverrors "vcv/internal/errors"
 	"vcv/internal/httputil"
 	"vcv/internal/i18n"
 	"vcv/internal/logger"
+	"vcv/internal/middleware"
 	"vcv/internal/vault"
 	"vcv/internal/version"
-	"vcv/middleware"
 )
 
 const adminCookieName string = "vcv_admin_session"

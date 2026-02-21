@@ -14,8 +14,8 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"vcv/config"
 	"vcv/internal/certs"
+	"vcv/internal/config"
 	"vcv/internal/vault"
 )
 

@@ -14,11 +14,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 
-	"vcv/config"
 	"vcv/internal/certs"
+	"vcv/internal/config"
 	"vcv/internal/handlers"
+	"vcv/internal/middleware"
 	"vcv/internal/vault"
-	"vcv/middleware"
 )
 
 func setupUIRouter(mockVault *vault.MockClient, webFS fs.FS) *chi.Mux {

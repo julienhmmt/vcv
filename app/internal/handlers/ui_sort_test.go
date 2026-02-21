@@ -6,8 +6,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"vcv/config"
 	"vcv/internal/certs"
+	"vcv/internal/config"
 )
 
 func TestSortCertificates_ByCommonName_Asc(t *testing.T) {
