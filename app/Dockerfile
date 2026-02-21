@@ -4,11 +4,14 @@ ARG VERSION=${VERSION}
 
 WORKDIR /app
 
+# Copy go mod files first for better caching
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy backend source code
-COPY . .
+# Copy only necessary source files (exclude img/, docs/, etc.)
+COPY cmd/ ./cmd/
+COPY internal/ ./internal/
+COPY web/ ./web/
 
 # Build the application with version info
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath \
