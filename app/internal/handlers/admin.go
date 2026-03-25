@@ -641,6 +641,10 @@ type adminPageTemplateData struct {
 	Messages       i18n.Messages
 }
 
+type adminVaultAddedEvent struct {
+	Key string `json:"key"`
+}
+
 func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, env config.Environment, vaultRegistry *vault.Registry, vaultStatusClients map[string]vault.Client) {
 	// Load settings to get admin password
 	settingsStore := newAdminSettingsStore(settingsPath, env)
@@ -780,7 +784,12 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 			}
 			vault := config.VaultInstance{ID: "", Address: "", Token: "", PKIMount: "pki", PKIMounts: []string{"pki"}, DisplayName: "", TLSInsecure: false}
 			data := adminVaultViewData{Messages: messages, Enabled: true, Key: key, MountsText: "pki", Open: true, TLSInsecure: false, Vault: vault, StatusClass: "vcv-status-disconnected", StatusText: messages.AdminVaultDisconnected}
-			w.Header().Set("HX-Trigger-After-Swap", fmt.Sprintf(`{"adminVaultAdded":{"key":"%s"}}`, key))
+			hxTriggerAfterSwap, err := json.Marshal(map[string]adminVaultAddedEvent{"adminVaultAdded": {Key: key}})
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Set("HX-Trigger-After-Swap", string(hxTriggerAfterSwap))
 			_ = renderAdminTemplate(w, templates, "admin-vault-item.html", data)
 		})
 		r.Post("/admin/vault/remove", func(w http.ResponseWriter, r *http.Request) {
