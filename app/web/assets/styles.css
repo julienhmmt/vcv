@@ -1282,8 +1282,7 @@ body {
 }
 
 .vcv-table th.vcv-col-status {
-  text-align: right;
-  white-space: nowrap;
+  text-align: center;
 }
 
 .vcv-table td {
@@ -1295,22 +1294,20 @@ body {
 }
 
 .vcv-table td.vcv-col-status {
-  text-align: right;
-  white-space: nowrap;
-  padding-right: 1.25rem;
+  text-align: center;
 }
 
 /* Column width definitions */
 col.vcv-col-cert {
-  width: auto;
+  width: 58%;
 }
 
 col.vcv-col-expiry {
-  width: 22%;
+  width: 27%;
 }
 
 col.vcv-col-status {
-  width: 1%;
+  width: 15%;
 }
 
 .vcv-table td.vcv-col-cert {
@@ -1454,23 +1451,6 @@ col.vcv-col-status {
 .vcv-row-clickable:focus-visible {
   outline: 2px solid var(--vcv-color-primary);
   outline-offset: -2px;
-}
-
-/* Hover arrow on clickable rows */
-.vcv-row-clickable td:last-child {
-  position: relative;
-}
-
-.vcv-row-clickable:hover td:last-child::after {
-  content: "›";
-  position: absolute;
-  right: 0.5rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1.125rem;
-  color: var(--vcv-color-muted);
-  opacity: 0.5;
-  pointer-events: none;
 }
 
 /* SAN hint below cert name */
