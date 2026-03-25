@@ -350,8 +350,10 @@ func shouldFallbackToDirectWrite(err error) bool {
 }
 
 func validateSettings(settings config.SettingsFile) error {
+	normalizedVaults := make([]config.VaultInstance, len(settings.Vaults))
+	copy(normalizedVaults, settings.Vaults)
 	seen := make(map[string]struct{})
-	for i, vault := range settings.Vaults {
+	for i, vault := range normalizedVaults {
 		id := strings.TrimSpace(vault.ID)
 		address := strings.TrimSpace(vault.Address)
 		token := strings.TrimSpace(vault.Token)
@@ -373,9 +375,9 @@ func validateSettings(settings config.SettingsFile) error {
 		}
 		if len(vault.PKIMounts) == 0 {
 			if strings.TrimSpace(vault.PKIMount) == "" {
-				settings.Vaults[i].PKIMount = "pki"
+				normalizedVaults[i].PKIMount = "pki"
 			}
-			settings.Vaults[i].PKIMounts = []string{settings.Vaults[i].PKIMount}
+			normalizedVaults[i].PKIMounts = []string{normalizedVaults[i].PKIMount}
 		}
 	}
 	return nil
