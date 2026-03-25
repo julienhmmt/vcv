@@ -116,6 +116,8 @@
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
+
   --vcv-color-bg: #0f172a;
   --vcv-color-surface: #1e293b;
   --vcv-color-surface-muted: #334155;
@@ -426,10 +428,6 @@ body {
   min-width: 10rem;
 }
 
-.vcv-filter-item-search .vcv-input {
-  width: 100%;
-}
-
 .vcv-filter-item-select {
   flex-shrink: 0;
 }
@@ -578,6 +576,17 @@ body {
 .vcv-button-small:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.vcv-col-actions .vcv-button-small {
+  flex: 0 0 auto;
+  min-width: 3.25rem;
+  padding: 0.25rem 0.625rem;
+  font-size: 0.6875rem;
+  white-space: nowrap;
+  justify-content: center;
+  text-align: center;
+  line-height: 1.4;
 }
 
 .vcv-button-small:hover:not(:disabled) {
@@ -1118,15 +1127,15 @@ body {
     transform 0.15s;
 }
 
+.vcv-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 .vcv-button:hover:not(:disabled) {
   background: var(--vcv-color-bg);
   border-color: var(--vcv-color-border-strong);
   color: var(--vcv-color-text-strong);
-}
-
-.vcv-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
 }
 
 .vcv-button.vcv-button-loading {
@@ -1330,8 +1339,7 @@ col.vcv-col-actions {
 .vcv-san-value {
   font-size: 0.75rem;
   font-family:
-    "SF Mono", Monaco, Inconsolata, "Fira Code", "Droid Sans Mono",
-    monospace;
+    "SF Mono", Monaco, Inconsolata, "Fira Code", "Droid Sans Mono", monospace;
   color: var(--vcv-color-text);
   font-weight: 500;
   display: block;
@@ -1368,17 +1376,6 @@ col.vcv-col-actions {
   flex-wrap: nowrap;
 }
 
-.vcv-col-actions .vcv-button-small {
-  flex: 0 0 auto;
-  min-width: 3.25rem;
-  padding: 0.25rem 0.625rem;
-  font-size: 0.6875rem;
-  white-space: nowrap;
-  justify-content: center;
-  text-align: center;
-  line-height: 1.4;
-}
-
 .vcv-table td code {
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
@@ -1386,11 +1383,21 @@ col.vcv-col-actions {
   border-radius: 0.375rem;
   border: 1px solid var(--vcv-color-border);
   font-family:
-    "SF Mono", Monaco, Inconsolata, "Fira Code", "Droid Sans Mono",
-    monospace;
+    "SF Mono", Monaco, Inconsolata, "Fira Code", "Droid Sans Mono", monospace;
   box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
   color: var(--vcv-color-text);
   font-weight: 500;
+}
+
+.markdown-body :is(code) {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 0.9em;
+  background: var(--vcv-color-surface-muted);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  color: var(--vcv-color-text);
 }
 
 .vcv-sort-meta {
@@ -1471,8 +1478,7 @@ col.vcv-col-actions {
 .vcv-san-tag {
   display: inline-block;
   font-family:
-    "SF Mono", Monaco, Inconsolata, "Fira Code", "Droid Sans Mono",
-    monospace;
+    "SF Mono", Monaco, Inconsolata, "Fira Code", "Droid Sans Mono", monospace;
   font-size: 0.6875rem;
   color: var(--vcv-color-muted);
   max-width: 100%;
@@ -2070,17 +2076,17 @@ col.vcv-col-actions {
   border-bottom: 1px solid var(--vcv-color-border);
 }
 
-.vcv-cd-prop:nth-last-child(-n + 2):nth-child(odd),
 .vcv-cd-prop:last-child {
-  border-bottom: none;
-}
-
-.vcv-cd-prop:nth-last-child(-n + 2):nth-child(even) {
   border-bottom: none;
 }
 
 .vcv-cd-prop:nth-child(odd) {
   border-right: 1px solid var(--vcv-color-border);
+}
+
+.vcv-cd-prop:nth-last-child(-n + 2):nth-child(odd),
+.vcv-cd-prop:nth-last-child(-n + 2):nth-child(even) {
+  border-bottom: none;
 }
 
 .vcv-cd-prop-full {
@@ -2159,7 +2165,7 @@ col.vcv-col-actions {
   display: inline-flex;
 }
 
-.vcv-cd-san-chip code {
+.vcv-cd-san-list .vcv-cd-san-chip code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.75rem;
   background: var(--vcv-color-surface-muted);
@@ -2187,12 +2193,12 @@ col.vcv-col-actions {
     grid-template-columns: 1fr;
   }
 
-  .vcv-cd-prop:nth-child(odd) {
-    border-right: none;
-  }
-
   .vcv-cd-prop {
     border-bottom: 1px solid var(--vcv-color-border);
+  }
+
+  .vcv-cd-prop:nth-child(odd) {
+    border-right: none;
   }
 
   .vcv-cd-prop:last-child {
@@ -2281,17 +2287,6 @@ col.vcv-col-actions {
 
 .markdown-body li {
   margin-bottom: 0.5rem;
-}
-
-.markdown-body code {
-  font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    "Courier New", monospace;
-  font-size: 0.9em;
-  background: var(--vcv-color-surface-muted);
-  padding: 0.2rem 0.4rem;
-  border-radius: 0.25rem;
-  color: var(--vcv-color-text);
 }
 
 /* Utilities */
@@ -2627,13 +2622,6 @@ col.vcv-col-actions {
   box-shadow: 0 0 0 1px var(--vcv-color-danger-surface);
 }
 
-/* ============================================
-   Dark Mode
-   ============================================ */
-[data-theme="dark"] {
-  color-scheme: dark;
-}
-
 [data-theme="dark"] body {
   background: var(--vcv-color-bg);
   color: var(--vcv-color-text);
@@ -2898,12 +2886,10 @@ col.vcv-col-actions {
       1turn
   );
   mask: radial-gradient(circle, transparent 55%, black 56%);
-  mask: radial-gradient(circle, transparent 55%, black 56%);
 }
 
 .vcv-donut:has(.vcv-donut-svg) {
   background: none;
-  mask: none;
   mask: none;
 }
 
