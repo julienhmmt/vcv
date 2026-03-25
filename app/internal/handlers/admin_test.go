@@ -416,7 +416,6 @@ func TestAdminSessionStore_Verify_EmptyPassword(t *testing.T) {
 	assert.False(t, store.verify("admin", "anything"))
 }
 
-
 func TestAdminSessionStore_Login_SessionFixation(t *testing.T) {
 	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
 	store.sessions["old-token"] = time.Now().Add(1 * time.Hour)

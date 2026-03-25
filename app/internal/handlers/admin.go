@@ -38,7 +38,6 @@ const adminUsername string = "admin"
 
 const adminMaxSessions int = 1024
 
-
 type adminLoginTemplateData struct {
 	Messages  i18n.Messages
 	ErrorText string
@@ -172,7 +171,6 @@ func (s *adminSessionStore) verify(username string, password string) bool {
 	}
 	return false
 }
-
 
 func (s *adminSessionStore) loginFromForm(w http.ResponseWriter, r *http.Request) (bool, string) {
 	if !s.allowLoginAttempt(r) {
