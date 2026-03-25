@@ -242,10 +242,6 @@ func (s *adminSessionStore) clearCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: "", Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: s.secureCookies, Expires: time.Unix(0, 0), MaxAge: -1})
 }
 
-func (s *adminSessionStore) logoutJSON(w http.ResponseWriter, _ *http.Request) {
-	s.clearCookie(w)
-	w.WriteHeader(http.StatusNoContent)
-}
 
 func (s *adminSessionStore) requireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -424,40 +420,6 @@ func validateSettings(settings config.SettingsFile) error {
 	return nil
 }
 
-func (s *adminSettingsStore) getSettings(w http.ResponseWriter, r *http.Request) {
-	settings, err := s.load()
-	if err != nil {
-		requestID := middleware.GetRequestID(r.Context())
-		logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
-			Str("request_id", requestID).
-			Msg("failed to load admin settings")
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	settings.Admin.Password = ""
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(settings)
-}
-
-func (s *adminSettingsStore) putSettings(w http.ResponseWriter, r *http.Request) {
-	var settings config.SettingsFile
-	if err := json.NewDecoder(r.Body).Decode(&settings); err != nil {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	existing, loadErr := s.load()
-	if loadErr == nil && strings.TrimSpace(settings.Admin.Password) == "" {
-		settings.Admin.Password = existing.Admin.Password
-	}
-	if err := s.save(settings); err != nil {
-		log := logger.Get()
-		log.Error().Err(err).Msg("failed to save admin settings")
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	w.WriteHeader(http.StatusNoContent)
-}
 
 func parseTemplates(webFS fs.FS) (*template.Template, error) {
 	return template.New("").Funcs(templateFuncMap()).ParseFS(webFS, "templates/*.html")
@@ -869,22 +831,14 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 			}
 			settings.Vaults = updatedVaults
 			if err := store.save(settings); err != nil {
-				http.Error(w, err.Error(), http.StatusBadRequest)
+				logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
+					Msg("failed to save settings after vault removal")
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 				return
 			}
 			refreshRegistry()
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			w.WriteHeader(http.StatusOK)
-		})
-	})
-	router.Post("/api/admin/login", sessions.login)
-	router.Post("/api/admin/logout", sessions.logoutJSON)
-	router.Group(func(r chi.Router) {
-		r.Use(sessions.requireAuth)
-		r.Get("/api/admin/settings", store.getSettings)
-		r.Put("/api/admin/settings", func(w http.ResponseWriter, r *http.Request) {
-			store.putSettings(w, r)
-			refreshRegistry()
 		})
 	})
 }

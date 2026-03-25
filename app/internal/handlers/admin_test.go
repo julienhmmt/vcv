@@ -99,84 +99,6 @@ func TestRegisterAdminRoutes_DisabledWithPlaintextPassword(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, rec.Code)
 }
 
-func TestAdminLoginAndSettingsRoundtrip(t *testing.T) {
-	settingsPath := filepath.Join(t.TempDir(), "settings.json")
-	router := chi.NewRouter()
-	// Create settings file with bcrypt admin password
-	adminPassword := mustBcryptPasswordHash(t, "secret")
-	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
-	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil)
-	loginPayload, err := json.Marshal(map[string]string{"username": "admin", "password": "secret"})
-	require.NoError(t, err)
-	loginReq := httptest.NewRequest(http.MethodPost, "/api/admin/login", bytes.NewReader(loginPayload))
-	loginReq.Header.Set("Content-Type", "application/json")
-	loginRec := httptest.NewRecorder()
-	router.ServeHTTP(loginRec, loginReq)
-	require.Equal(t, http.StatusNoContent, loginRec.Code)
-	cookies := loginRec.Result().Cookies()
-	require.NotEmpty(t, cookies)
-
-	getReq := httptest.NewRequest(http.MethodGet, "/api/admin/settings", nil)
-	getReq.AddCookie(cookies[0])
-	getRec := httptest.NewRecorder()
-	router.ServeHTTP(getRec, getReq)
-	require.Equal(t, http.StatusOK, getRec.Code)
-	var initial config.SettingsFile
-	require.NoError(t, json.NewDecoder(getRec.Body).Decode(&initial))
-	assert.Equal(t, "dev", initial.App.Env)
-
-	updated := initial
-	updated.App.Env = "prod"
-	updated.Certificates.ExpirationThresholds.Critical = 5
-	updated.Certificates.ExpirationThresholds.Warning = 25
-	enabled := true
-	updated.Vaults = []config.VaultInstance{{
-		ID:              "v1",
-		Address:         "https://vault.example.com:8200",
-		Token:           "token",
-		PKIMount:        "pki",
-		PKIMounts:       []string{"pki"},
-		DisplayName:     "vault",
-		TLSCACertBase64: "ZHVtbXk",
-		TLSCACert:       "/app/tls/vault-ca.pem",
-		TLSCAPath:       "/app/tls/ca",
-		TLSServerName:   "vault.service.consul",
-		TLSInsecure:     false,
-		Enabled:         &enabled,
-	}}
-	payload, err := json.Marshal(updated)
-	require.NoError(t, err)
-	putReq := httptest.NewRequest(http.MethodPut, "/api/admin/settings", bytes.NewReader(payload))
-	putReq.Header.Set("Content-Type", "application/json")
-	putReq.AddCookie(cookies[0])
-	putRec := httptest.NewRecorder()
-	router.ServeHTTP(putRec, putReq)
-	require.Equal(t, http.StatusNoContent, putRec.Code)
-
-	getReq2 := httptest.NewRequest(http.MethodGet, "/api/admin/settings", nil)
-	getReq2.AddCookie(cookies[0])
-	getRec2 := httptest.NewRecorder()
-	router.ServeHTTP(getRec2, getReq2)
-	require.Equal(t, http.StatusOK, getRec2.Code)
-	var after config.SettingsFile
-	require.NoError(t, json.NewDecoder(getRec2.Body).Decode(&after))
-	assert.Equal(t, "prod", after.App.Env)
-	assert.Equal(t, 5, after.Certificates.ExpirationThresholds.Critical)
-	assert.Equal(t, 25, after.Certificates.ExpirationThresholds.Warning)
-	require.Len(t, after.Vaults, 1)
-	assert.Equal(t, "v1", after.Vaults[0].ID)
-	assert.Equal(t, "ZHVtbXk", after.Vaults[0].TLSCACertBase64)
-	assert.Equal(t, "/app/tls/vault-ca.pem", after.Vaults[0].TLSCACert)
-	assert.Equal(t, "/app/tls/ca", after.Vaults[0].TLSCAPath)
-	assert.Equal(t, "vault.service.consul", after.Vaults[0].TLSServerName)
-
-	fileBytes, readErr := os.ReadFile(settingsPath)
-	require.NoError(t, readErr)
-	assert.Contains(t, string(fileBytes), "\"vaults\"")
-	assert.Contains(t, string(fileBytes), "\"tls_ca_cert_base64\": \"ZHVtbXk\"")
-	assert.Contains(t, string(fileBytes), "\"tls_ca_cert\": \"/app/tls/vault-ca.pem\"")
-}
 
 func TestAdminSessionStore_LoginFromForm_SetsCookie(t *testing.T) {
 	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
@@ -192,18 +114,6 @@ func TestAdminSessionStore_LoginFromForm_SetsCookie(t *testing.T) {
 	assert.NotEmpty(t, cookies[0].Value)
 }
 
-func TestAdminSessionStore_LogoutJSON_ClearsCookie(t *testing.T) {
-	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
-	req := httptest.NewRequest(http.MethodPost, "/api/admin/logout", nil)
-	rec := httptest.NewRecorder()
-	store.logoutJSON(rec, req)
-	assert.Equal(t, http.StatusNoContent, rec.Code)
-	result := rec.Result()
-	cookies := result.Cookies()
-	require.NotEmpty(t, cookies)
-	assert.Equal(t, adminCookieName, cookies[0].Name)
-	assert.Equal(t, "", cookies[0].Value)
-}
 
 func TestAdminSessionStore_RequireAuth_Unauthorized_WhenMissingCookie(t *testing.T) {
 	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
@@ -543,14 +453,6 @@ func TestAdminSessionStore_Login_SessionFixation(t *testing.T) {
 	assert.False(t, oldExists, "old session should be deleted")
 }
 
-func TestAdminSettingsStore_PutSettings_BadJSON(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "settings.json")
-	store := &adminSettingsStore{path: path}
-	req := httptest.NewRequest(http.MethodPut, "/api/admin/settings", strings.NewReader("not json"))
-	rec := httptest.NewRecorder()
-	store.putSettings(rec, req)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-}
 
 func TestAdminSessionStore_LoginFromForm_WrongPassword(t *testing.T) {
 	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)

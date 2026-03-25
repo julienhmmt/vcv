@@ -15,13 +15,13 @@ func ClientIP(r *http.Request, trustProxy bool) string {
 			parts := strings.Split(forwarded, ",")
 			if len(parts) > 0 {
 				value := strings.TrimSpace(parts[0])
-				if value != "" {
+				if value != "" && net.ParseIP(value) != nil {
 					return value
 				}
 			}
 		}
 		realIP := strings.TrimSpace(r.Header.Get("X-Real-IP"))
-		if realIP != "" {
+		if realIP != "" && net.ParseIP(realIP) != nil {
 			return realIP
 		}
 	}

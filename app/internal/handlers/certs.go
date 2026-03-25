@@ -160,7 +160,7 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 		}
 		filename := buildPEMDownloadFilename(pemResponse.SerialNumber)
 		w.Header().Set("Content-Type", "application/x-pem-file")
-		w.Header().Set("Content-Disposition", "attachment; filename="+filename)
+		w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+"\"")
 		w.WriteHeader(http.StatusOK)
 		if _, writeErr := w.Write([]byte(pemResponse.PEM)); writeErr != nil {
 			requestID := middleware.GetRequestID(req.Context())
@@ -291,8 +291,8 @@ func extractVaultMountFromCertificateID(value string) (string, string) {
 }
 
 func buildPEMDownloadFilename(serialNumber string) string {
-	replacer := strings.NewReplacer(":", "-", "/", "-", "\\", "-", "..", "-")
-	safe := replacer.Replace(serialNumber)
+	replacer := strings.NewReplacer(":", "-", "/", "-", "\\", "-", "..", "-", "\r", "", "\n", "", "\"", "", ";", "")
+	safe := strings.TrimSpace(replacer.Replace(serialNumber))
 	if safe == "" {
 		return "certificate.pem"
 	}
