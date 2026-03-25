@@ -38,10 +38,6 @@ const adminUsername string = "admin"
 
 const adminMaxSessions int = 1024
 
-type adminLoginRequest struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
 
 type adminLoginTemplateData struct {
 	Messages  i18n.Messages
@@ -177,38 +173,6 @@ func (s *adminSessionStore) verify(username string, password string) bool {
 	return false
 }
 
-func (s *adminSessionStore) login(w http.ResponseWriter, r *http.Request) {
-	var payload adminLoginRequest
-	if !s.allowLoginAttempt(r) {
-		http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
-		return
-	}
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&payload); err != nil {
-		http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-		return
-	}
-	if !s.verify(strings.TrimSpace(payload.Username), payload.Password) {
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-		return
-	}
-	token, err := s.createToken()
-	if err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	expiresAt := time.Now().Add(s.sessionTTL)
-	s.mu.Lock()
-	if oldCookie, cookieErr := r.Cookie(adminCookieName); cookieErr == nil && oldCookie.Value != "" {
-		delete(s.sessions, oldCookie.Value)
-	}
-	s.pruneSessions(time.Now())
-	s.sessions[token] = expiresAt
-	s.mu.Unlock()
-	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: token, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: s.secureCookies, Expires: expiresAt})
-	w.WriteHeader(http.StatusNoContent)
-}
 
 func (s *adminSessionStore) loginFromForm(w http.ResponseWriter, r *http.Request) (bool, string) {
 	if !s.allowLoginAttempt(r) {
@@ -426,7 +390,11 @@ func parseTemplates(webFS fs.FS) (*template.Template, error) {
 func renderAdminTemplate(w http.ResponseWriter, templates *template.Template, name string, data interface{}) error {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	return templates.ExecuteTemplate(w, name, data)
+	if err := templates.ExecuteTemplate(w, name, data); err != nil {
+		logger.Get().Error().Err(err).Str("template", name).Msg("failed to render admin template")
+		return err
+	}
+	return nil
 }
 
 func buildAdminPanelData(settings config.SettingsFile, successText string, errorText string, messages i18n.Messages, vaultClients map[string]vault.Client) adminPanelTemplateData {
@@ -568,6 +536,12 @@ func parseSettingsUpdateForm(r *http.Request, existing config.SettingsFile) (con
 	if err != nil {
 		return config.SettingsFile{}, vcverrors.ErrInvalidThreshold
 	}
+	if critical <= 0 || critical > 3650 || warning <= 0 || warning > 3650 {
+		return config.SettingsFile{}, vcverrors.ErrInvalidThreshold
+	}
+	if critical >= warning {
+		return config.SettingsFile{}, vcverrors.ErrInvalidThreshold
+	}
 	updated.Certificates.ExpirationThresholds.Critical = critical
 	updated.Certificates.ExpirationThresholds.Warning = warning
 
@@ -578,7 +552,7 @@ func parseSettingsUpdateForm(r *http.Request, existing config.SettingsFile) (con
 	updated.Metrics.EnhancedMetrics = &enhancedMetrics
 
 	updated.CORS.AllowedOrigins = splitAndTrim(r.PostForm.Get("cors_origins"))
-	updated.Vaults = parseVaultsFromForm(r.PostForm)
+	updated.Vaults = parseVaultsFromForm(r.PostForm, existing.Vaults)
 	return updated, nil
 }
 
@@ -602,7 +576,11 @@ func splitAndTrim(value string) []string {
 	return trimmed
 }
 
-func parseVaultsFromForm(form url.Values) []config.VaultInstance {
+func parseVaultsFromForm(form url.Values, existingVaults []config.VaultInstance) []config.VaultInstance {
+	existingTokens := make(map[string]string, len(existingVaults))
+	for _, v := range existingVaults {
+		existingTokens[v.ID] = v.Token
+	}
 	keys := extractVaultKeys(form)
 	vaults := make([]config.VaultInstance, 0, len(keys))
 	for _, key := range keys {
@@ -610,6 +588,9 @@ func parseVaultsFromForm(form url.Values) []config.VaultInstance {
 		displayName := strings.TrimSpace(form.Get("vault_display_" + key))
 		address := strings.TrimSpace(form.Get("vault_address_" + key))
 		token := form.Get("vault_token_" + key)
+		if token == "" {
+			token = existingTokens[id]
+		}
 		mounts := splitAndTrim(form.Get("vault_mounts_" + key))
 		tlsCACertBase64 := strings.TrimSpace(form.Get("vault_tls_ca_cert_base64_" + key))
 		tlsCACert := strings.TrimSpace(form.Get("vault_tls_ca_cert_" + key))

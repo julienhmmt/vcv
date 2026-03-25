@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"html/template"
 	"io/fs"
@@ -174,7 +172,7 @@ func TestParseVaultsFromForm_Defaults(t *testing.T) {
 	form.Set("vault_address_2", "https://vault2.example.com")
 	form.Set("vault_token_2", "tok2")
 	form.Set("vault_enabled_2", "on")
-	vaults := parseVaultsFromForm(form)
+	vaults := parseVaultsFromForm(form, nil)
 	require.Len(t, vaults, 2)
 	assert.Equal(t, "pki", vaults[0].PKIMount)
 	assert.Equal(t, []string{}, vaults[0].PKIMounts)
@@ -418,35 +416,16 @@ func TestAdminSessionStore_Verify_EmptyPassword(t *testing.T) {
 	assert.False(t, store.verify("admin", "anything"))
 }
 
-func TestAdminSessionStore_Login_BadJSON(t *testing.T) {
-	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
-	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", strings.NewReader("not json"))
-	req.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	store.login(rec, req)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-}
-
-func TestAdminSessionStore_Login_WrongPassword(t *testing.T) {
-	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
-	payload, _ := json.Marshal(map[string]string{"username": "admin", "password": "wrong"})
-	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", bytes.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
-	rec := httptest.NewRecorder()
-	store.login(rec, req)
-	assert.Equal(t, http.StatusUnauthorized, rec.Code)
-}
 
 func TestAdminSessionStore_Login_SessionFixation(t *testing.T) {
 	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
 	store.sessions["old-token"] = time.Now().Add(1 * time.Hour)
-	payload, _ := json.Marshal(map[string]string{"username": "admin", "password": "secret"})
-	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", bytes.NewReader(payload))
-	req.Header.Set("Content-Type", "application/json")
+	req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(&http.Cookie{Name: adminCookieName, Value: "old-token"})
 	rec := httptest.NewRecorder()
-	store.login(rec, req)
-	assert.Equal(t, http.StatusNoContent, rec.Code)
+	ok, _ := store.loginFromForm(rec, req)
+	assert.True(t, ok)
 	_, oldExists := store.sessions["old-token"]
 	assert.False(t, oldExists, "old session should be deleted")
 }
