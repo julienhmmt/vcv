@@ -1,21 +1,32 @@
-<div class="vcv-cd-header">
-  <div class="vcv-cd-title-row">
-    <h3 class="vcv-cd-cn">{{.Certificate.CommonName}}</h3>
-    <div class="vcv-cd-badges">
-      {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
+<div class="vcv-cd-hero vcv-cd-hero-{{.ExpiryTone}}">
+  <div class="vcv-cd-hero-identity">
+    <div class="vcv-cd-hero-name-row">
+      <h3 class="vcv-cd-cn">{{.Certificate.CommonName}}</h3>
+      <div class="vcv-cd-badges">
+        {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
+      </div>
+    </div>
+    {{if .Certificate.Subject}}<div class="vcv-cd-hero-subject">{{.Certificate.Subject}}</div>{{end}}
+  </div>
+  <div class="vcv-cd-hero-expiry">
+    {{if .DaysLabel}}<div class="vcv-cd-hero-countdown vcv-cd-expiry-value-{{.ExpiryTone}}">{{.DaysLabel}}</div>{{end}}
+    <div class="vcv-cd-hero-date">
+      <span class="vcv-cd-hero-date-label">{{.Messages.ColumnExpiresAt}}</span>
+      <span class="vcv-cd-expiry-value-{{.ExpiryTone}}">{{.ExpiresAtDate}}</span>
+      <span class="vcv-cd-time">{{.ExpiresAtTime}} UTC</span>
+    </div>
+    <div class="vcv-cd-hero-date">
+      <span class="vcv-cd-hero-date-label">{{.Messages.ColumnCreatedAt}}</span>
+      <span>{{.CreatedAtDate}}</span>
+      <span class="vcv-cd-time">{{.CreatedAtTime}} UTC</span>
     </div>
   </div>
-  {{if .DaysLabel}}<div class="vcv-cd-expiry-hint vcv-cd-expiry-hint-{{.ExpiryTone}}">{{.DaysLabel}}</div>{{end}}
 </div>
 
 <div class="vcv-cd-sections">
   <section class="vcv-cd-section">
     <div class="vcv-cd-section-title">{{.Messages.CertificateInformationTitle}}</div>
     <dl class="vcv-cd-props">
-      <div class="vcv-cd-prop">
-        <dt>{{.Messages.LabelSubject}}</dt>
-        <dd title="{{.Certificate.Subject}}">{{.Certificate.Subject}}</dd>
-      </div>
       <div class="vcv-cd-prop">
         <dt>{{.Messages.LabelIssuer}}</dt>
         <dd title="{{.Certificate.Issuer}}">{{.Certificate.Issuer}}</dd>
@@ -38,20 +49,6 @@
   </section>
 
   <section class="vcv-cd-section">
-    <div class="vcv-cd-section-title">{{.Messages.ColumnCreatedAt}} / {{.Messages.ColumnExpiresAt}}</div>
-    <dl class="vcv-cd-props">
-      <div class="vcv-cd-prop">
-        <dt>{{.Messages.ColumnCreatedAt}}</dt>
-        <dd>{{.CreatedAtDate}} <span class="vcv-cd-time">{{.CreatedAtTime}} UTC</span></dd>
-      </div>
-      <div class="vcv-cd-prop">
-        <dt>{{.Messages.ColumnExpiresAt}}</dt>
-        <dd class="vcv-cd-expiry-value vcv-cd-expiry-value-{{.ExpiryTone}}">{{.ExpiresAtDate}} <span class="vcv-cd-time">{{.ExpiresAtTime}} UTC</span></dd>
-      </div>
-    </dl>
-  </section>
-
-  <section class="vcv-cd-section">
     <div class="vcv-cd-section-title">{{.Messages.TechnicalDetailsTitle}}</div>
     <dl class="vcv-cd-props">
       <div class="vcv-cd-prop">
@@ -63,12 +60,12 @@
         <dd>{{.UsageSummary}}</dd>
       </div>
       <div class="vcv-cd-prop vcv-cd-prop-full">
-        <dt>{{.Messages.LabelFingerprintSHA1}}</dt>
-        <dd><code class="vcv-cd-fingerprint">{{.Certificate.FingerprintSHA1}}</code></dd>
-      </div>
-      <div class="vcv-cd-prop vcv-cd-prop-full">
         <dt>{{.Messages.LabelFingerprintSHA256}}</dt>
         <dd><code class="vcv-cd-fingerprint">{{.Certificate.FingerprintSHA256}}</code></dd>
+      </div>
+      <div class="vcv-cd-prop vcv-cd-prop-full">
+        <dt>{{.Messages.LabelFingerprintSHA1}}</dt>
+        <dd><code class="vcv-cd-fingerprint">{{.Certificate.FingerprintSHA1}}</code></dd>
       </div>
     </dl>
   </section>

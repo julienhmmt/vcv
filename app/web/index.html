@@ -117,19 +117,19 @@
         <div class="vcv-modal vcv-modal-lg vcv-mount-modal">
           <div class="vcv-modal-header vcv-mount-modal-header">
             <div class="vcv-mount-modal-header-left">
-              <h2 class="vcv-modal-title" id="mount-modal-title">PKI Engines</h2>
+              <h2 class="vcv-modal-title" id="mount-modal-title">{{.Messages.MountSelectorTitle}}</h2>
               <span class="vcv-mount-counter-pill" id="mount-stats">
                 <span id="mount-stats-selected">0</span>
                 <span class="vcv-mount-counter-sep">/</span>
                 <span id="mount-stats-total">0</span>
-                <span class="vcv-mount-counter-label" id="mount-stats-selected-label">Selected</span>
+                <span class="vcv-mount-counter-label" id="mount-stats-selected-label">{{.Messages.MountStatsSelected}}</span>
               </span>
             </div>
             <div class="vcv-mount-modal-header-right">
-              <button id="mount-select-all" type="button" class="vcv-mount-link-btn" onclick="VCV.selectAllMounts()">Select all</button>
+              <button id="mount-select-all" type="button" class="vcv-mount-link-btn" onclick="VCV.selectAllMounts()">{{.Messages.SelectAll}}</button>
               <span class="vcv-mount-header-divider"></span>
-              <button id="mount-deselect-all" type="button" class="vcv-mount-link-btn" onclick="VCV.deselectAllMounts()">Deselect all</button>
-              <button type="button" class="vcv-modal-close" onclick="VCV.closeMountModal()">
+              <button id="mount-deselect-all" type="button" class="vcv-mount-link-btn" onclick="VCV.deselectAllMounts()">{{.Messages.DeselectAll}}</button>
+              <button type="button" class="vcv-modal-close" onclick="VCV.closeMountModal()" aria-label="{{.Messages.ButtonClose}}">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
               </button>
             </div>
@@ -150,17 +150,17 @@
           <div class="vcv-mount-modal-footer">
             <div class="vcv-mount-footer-stats">
               <span class="vcv-mount-footer-stat">
-                <span class="vcv-mount-footer-stat-label" id="mount-footer-vaults-label">Vaults</span>
+                <span class="vcv-mount-footer-stat-label" id="mount-footer-vaults-label">{{.Messages.MountStatsVaults}}</span>
                 <span class="vcv-mount-footer-stat-value" id="mount-footer-vaults-value">0 / 0</span>
               </span>
               <span class="vcv-mount-footer-divider"></span>
               <span class="vcv-mount-footer-stat">
-                <span class="vcv-mount-footer-stat-label" id="mount-footer-mounts-label">PKI mounts</span>
+                <span class="vcv-mount-footer-stat-label" id="mount-footer-mounts-label">{{.Messages.MountStatsMounts}}</span>
                 <span class="vcv-mount-footer-stat-value" id="mount-footer-mounts-value">0 / 0</span>
               </span>
             </div>
-            <button id="mount-close" type="button" class="vcv-button vcv-mount-done-btn" onclick="VCV.closeMountModal()">
-              Close
+            <button id="mount-close" type="button" class="vcv-button vcv-button-primary vcv-mount-done-btn" onclick="VCV.closeMountModal()">
+              {{.Messages.ButtonClose}}
             </button>
           </div>
         </div>
@@ -434,7 +434,9 @@
       <div class="vcv-modal">
         <div class="vcv-modal-header">
           <h2 class="vcv-modal-title" id="certificate-modal-title">{{.Messages.ModalDetailsTitle}}</h2>
-          <button type="button" class="vcv-modal-close" onclick="VCV.closeCertificateModal()">×</button>
+          <button type="button" class="vcv-modal-close" onclick="VCV.closeCertificateModal()" aria-label="{{.Messages.ButtonClose}}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
         </div>
         <div class="vcv-modal-content">
           <div id="details-content" class="vcv-details-content">
@@ -442,7 +444,8 @@
           </div>
         </div>
         <div class="vcv-modal-actions">
-          <button id="certificate-modal-close" type="button" class="vcv-button" onclick="VCV.closeCertificateModal()">{{.Messages.ButtonClose}}</button>
+          <button id="certificate-modal-close" type="button" class="vcv-button vcv-button-secondary" onclick="VCV.closeCertificateModal()">{{.Messages.ButtonClose}}</button>
+          <a id="certificate-modal-pem" class="vcv-button vcv-button-primary" href="#" style="display:none">PEM</a>
         </div>
       </div>
     </div>

@@ -306,6 +306,10 @@ function initVaultConnectionNotifications() {
 		const detail = evt.detail;
 		const requestConfig = detail && detail.requestConfig;
 		const requestPath = (requestConfig && typeof requestConfig.path === 'string') ? requestConfig.path : '';
+		if (requestPath.includes('/ui/certs/') && requestPath.endsWith('/details')) {
+			updateCertModalPemLink(requestPath);
+			return;
+		}
 		if (requestPath === '' || !requestPath.startsWith('/ui/status')) {
 			return;
 		}
@@ -994,7 +998,10 @@ function renderMountModalList() {
         const mounts = Array.isArray(group.mounts) ? group.mounts : [];
         const selectedCount = mounts.filter((m) => selectedSet.has(buildVaultMountKey(group.id, m))).length;
         const totalCount = mounts.length;
-        const countBadge = `<span class="vcv-badge vcv-badge-neutral" style="font-size:0.6875rem;padding:0.0625rem 0.4375rem;border-radius:999px;">${selectedCount}/${totalCount}</span>`;
+        const allSelected = selectedCount === totalCount;
+        const noneSelected = selectedCount === 0;
+        const badgeClass = allSelected ? "vcv-mount-count-badge vcv-mount-count-badge-all" : noneSelected ? "vcv-mount-count-badge vcv-mount-count-badge-none" : "vcv-mount-count-badge";
+        const countBadge = `<span class="${badgeClass}">${selectedCount}/${totalCount}</span>`;
         const chips = mounts
           .map((mountName) => {
             const key = buildVaultMountKey(group.id, mountName);
@@ -1003,8 +1010,9 @@ function renderMountModalList() {
           .join("");
         const eGroupId = escapeHtml(group.id);
         const eTitle = escapeHtml(title);
+        const vaultIcon = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;opacity:0.6"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>';
         const headerActions = `<div class="vcv-mount-modal-section-actions"><button type="button" class="vcv-mount-link-btn" data-action="select-all" data-vault-id="${eGroupId}">${selectAllLabel}</button><button type="button" class="vcv-mount-link-btn" data-action="deselect-all" data-vault-id="${eGroupId}">${deselectAllLabel}</button></div>`;
-        return `<div class="vcv-mount-modal-section" data-vault-section="${eGroupId}"><div class="vcv-mount-modal-section-header" data-action="toggle-section" data-vault-id="${eGroupId}">${chevronSvg}<div class="vcv-mount-modal-section-title">${eTitle} ${countBadge}</div>${headerActions}</div><div class="vcv-mount-modal-section-options">${chips}</div></div>`;
+        return `<div class="vcv-mount-modal-section" data-vault-section="${eGroupId}"><div class="vcv-mount-modal-section-header" data-action="toggle-section" data-vault-id="${eGroupId}">${chevronSvg}<div class="vcv-mount-modal-section-title">${vaultIcon}${eTitle} ${countBadge}</div>${headerActions}</div><div class="vcv-mount-modal-section-options">${chips}</div></div>`;
       })
       .join("");
     listContainer.innerHTML = content;
@@ -1189,7 +1197,25 @@ function openCertificateModal() {
 }
 
 function closeCertificateModal() {
+  const pemBtn = document.getElementById("certificate-modal-pem");
+  if (pemBtn) {
+    pemBtn.style.display = "none";
+    pemBtn.href = "#";
+  }
   setModalVisibility("certificate-modal", false);
+}
+
+function updateCertModalPemLink(path) {
+  const match = path.match(/\/ui\/certs\/([^/]+)\/details/);
+  if (!match) {
+    return;
+  }
+  const pemBtn = document.getElementById("certificate-modal-pem");
+  if (!pemBtn) {
+    return;
+  }
+  pemBtn.href = "/api/certs/" + match[1] + "/pem/download";
+  pemBtn.style.display = "";
 }
 
 let currentDocType = "user";
