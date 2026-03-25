@@ -10,7 +10,8 @@ tasks:
       - rm -f vcv.log
       - touch vcv.log
       - docker compose -f docker-compose.dev.yml down
-      - "docker buildx build --platform linux/arm64 --load --build-arg VERSION=dev -t jhmmt/vcv:dev ./app"
+      - docker compose -f docker-compose.dev.yml build
+      # - "docker buildx build --platform linux/arm64 --load --build-arg VERSION=dev -t jhmmt/vcv:dev ./app"
       - docker compose -f docker-compose.dev.yml up -d
 
   docker-build:

@@ -128,7 +128,7 @@ Create a `settings.json` file:
 ```yaml
 services:
   vcv:
-    image: jhmmt/vcv:1.6
+    image: jhmmt/vcv:1.6.1.1.1.1
     container_name: vcv
     restart: unless-stopped
     ports:
@@ -148,7 +148,7 @@ docker run -d \
   --name vcv \
   -v "$(pwd)/settings.json:/app/settings.json:rw" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
-  -p 52000:52000 jhmmt/vcv:1.6
+  -p 52000:52000 jhmmt/vcv:1.6.1
 ```
 
 ## 🔐 TLS configuration
@@ -223,6 +223,6 @@ Full documentation available on [GitHub](https://github.com/julienhmmt/vcv)
 
 ## 🏷️ Tags
 
-- `jhmmt/vcv:1.6` - Latest stable release
+- `jhmmt/vcv:1.6.1` - Latest stable release
 - `jhmmt/vcv:latest` - Always latest version
-- `jhmmt/vcv:dev` - Development build
+- `jhmmt/vcv:beta` - Development build

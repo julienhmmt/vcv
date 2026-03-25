@@ -8,7 +8,7 @@ VaultCertsViewer (vcv) peut surveiller simultanément plusieurs moteurs PKI via 
 
 **Compatible avec OpenBao** : VCV fonctionne avec HashiCorp Vault et OpenBao, car ils partagent la même API PKI. Testé avec OpenBao 2.4+ et Vault 1.20+ (au 02/2026).
 
-![Mode clair](img/VaultCertsViewer-v1.6.png)
+![Mode clair](img/VaultCertsViewer-v1.6.1.png)
 
 ## ✨ Quelles sont les fonctionnalités ?
 
@@ -38,21 +38,21 @@ VaultCertsViewer permet aux équipes plateforme et sécurité d'avoir une vue ra
 
 Page principale :
 
-![Page principale](img/VaultCertsViewer-v1.6-light.png)
+![Page principale](img/VaultCertsViewer-v1.6.1-light.png)
 
 Page d'administration :
 
-![Page d'administration](img/VaultCertsViewer-v1.6-admin-light.png)
+![Page d'administration](img/VaultCertsViewer-v1.6.1-admin-light.png)
 
 ### Mode sombre
 
 Page principale :
 
-![Page principale](img/VaultCertsViewer-v1.6-dark.png)
+![Page principale](img/VaultCertsViewer-v1.6.1-dark.png)
 
 Page d'administration :
 
-![Page d'administration](img/VaultCertsViewer-v1.6-admin-dark.png)
+![Page d'administration](img/VaultCertsViewer-v1.6.1-admin-dark.png)
 
 ## 🚀 Comment le déployer et l'utiliser pour Hashicorp Vault ?
 
@@ -154,7 +154,7 @@ docker run -d \
   -v "$(pwd)/settings.json:/app/settings.json:rw" \
   -v "$(pwd)/logs:/var/log/app:rw" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
-  -p 52000:52000 jhmmt/vcv:1.6
+  -p 52000:52000 jhmmt/vcv:1.6.1
 ```
 
 ## 🔐 Configuration TLS Vault/OpenBao
