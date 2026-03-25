@@ -292,10 +292,8 @@
       <div class="vcv-table-wrapper">
         <table class="vcv-table">
           <colgroup>
-            <col class="vcv-col-cn" />
-            <col class="vcv-col-san" />
-            <col class="vcv-col-date" />
-            <col class="vcv-col-date" />
+            <col class="vcv-col-cert" />
+            <col class="vcv-col-expiry" />
             <col class="vcv-col-status" />
             <col class="vcv-col-actions" />
           </colgroup>
@@ -303,7 +301,7 @@
             <tr>
               <th scope="col">
                 <button type="button" id="vcv-sort-commonName" class="vcv-sort" data-sort-key="commonName" data-direction="asc">
-                  <span class="vcv-sort-label">Common name</span>
+                  <span class="vcv-sort-label">{{.Messages.ColumnCommonName}}</span>
                   <span class="vcv-sort-indicator" aria-hidden="true"></span>
                 </button>
                 <div id="vcv-sort-meta" class="vcv-sort-meta">
@@ -317,21 +315,14 @@
                   </button>
                 </div>
               </th>
-              <th scope="col">SAN</th>
-              <th scope="col">
-                <button type="button" id="vcv-sort-createdAt" class="vcv-sort" data-sort-key="createdAt" data-direction="asc">
-                  <span class="vcv-sort-label">Created</span>
-                  <span class="vcv-sort-indicator" aria-hidden="true"></span>
-                </button>
-              </th>
               <th scope="col">
                 <button type="button" id="vcv-sort-expiresAt" class="vcv-sort" data-sort-key="expiresAt" data-direction="asc">
-                  <span class="vcv-sort-label">Expires</span>
+                  <span class="vcv-sort-label">{{.Messages.ColumnExpiresAt}}</span>
                   <span class="vcv-sort-indicator" aria-hidden="true"></span>
                 </button>
               </th>
-              <th scope="col" class="vcv-col-status">Status</th>
-              <th scope="col" class="vcv-col-actions">Actions</th>
+              <th scope="col" class="vcv-col-status">{{.Messages.ColumnStatus}}</th>
+              <th scope="col" class="vcv-col-actions">{{.Messages.ColumnActions}}</th>
             </tr>
           </thead>
           <tbody
@@ -342,33 +333,34 @@
           >
             {{if eq (len .Certs.Rows) 0}}
             <tr>
-              <td colspan="6">{{.Messages.NoData}}</td>
+              <td colspan="4">{{.Messages.NoData}}</td>
             </tr>
             {{else}}
             {{range .Certs.Rows}}
-            <tr class="{{.RowClass}}">
-              <td class="vcv-col-cn">
+            <tr class="{{.RowClass}} vcv-row-clickable"
+                hx-get="/ui/certs/{{urlquery .ID}}/details"
+                hx-target="#details-content"
+                hx-swap="innerHTML"
+                hx-include="#vcv-lang-select"
+                onclick="VCV.openCertificateModal()"
+                tabindex="0"
+                role="button"
+                aria-label="{{.CommonName}}">
+              <td class="vcv-col-cert">
                 <div class="vcv-cn-name">{{.CommonName}}</div>
+                {{if .Sans}}<div class="vcv-san-row"><span class="vcv-san-tag" title="{{.Sans}}">{{.Sans}}</span></div>{{end}}
                 {{if .ShowVaultMount}}<div class="vcv-cert-meta"><span class="vcv-cert-meta-item">{{.VaultName}}</span><span class="vcv-cert-meta-sep">·</span><span class="vcv-cert-meta-item">{{.MountName}}</span></div>{{end}}
               </td>
-              <td class="vcv-col-san"><span class="vcv-san-value" title="{{.Sans}}">{{.Sans}}</span></td>
-              <td class="vcv-col-date">
-                <div class="vcv-date-primary">{{.CreatedAtDate}}</div>
-                <div class="vcv-date-secondary">{{.CreatedAtTime}} UTC</div>
-              </td>
-              <td class="vcv-col-date {{.ExpiresCellClass}}">
-                <div class="{{.ExpiresDateClass}}">{{.ExpiresAtDate}}</div>
+              <td class="vcv-col-expiry {{.ExpiresCellClass}}">
+                {{if .DaysRemainingText}}<div class="vcv-expiry-count {{.DaysRemainingClass}}">{{.DaysRemainingText}}</div>{{end}}
+                <div class="{{.ExpiresDateClass}} vcv-expiry-date">{{.ExpiresAtDate}}</div>
                 <div class="vcv-date-secondary">{{.ExpiresAtTime}} UTC</div>
-                {{if .DaysRemainingText}}<div class="{{.DaysRemainingClass}}">{{.DaysRemainingText}}</div>{{end}}
               </td>
               <td class="vcv-col-status">
                 {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
               </td>
-              <td class="vcv-col-actions">
-                <div class="vcv-actions-group">
-                  <button type="button" class="vcv-button vcv-button-small" onclick="VCV.openCertificateModal()" hx-get="/ui/certs/{{urlquery .ID}}/details" hx-target="#details-content" hx-swap="innerHTML" hx-include="#vcv-lang-select" title="{{.ButtonDetailsText}}">{{.ButtonDetailsText}}</button>
-                  <a class="vcv-button vcv-button-small vcv-button-primary" href="/api/certs/{{urlquery .ID}}/pem/download" title="{{.ButtonDownloadPEM}}">PEM</a>
-                </div>
+              <td class="vcv-col-actions" onclick="event.stopPropagation()">
+                <a class="vcv-button vcv-button-small vcv-button-primary" href="/api/certs/{{urlquery .ID}}/pem/download" title="{{.ButtonDownloadPEM}}">PEM</a>
               </td>
             </tr>
             {{end}}
