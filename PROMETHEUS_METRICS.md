@@ -34,7 +34,7 @@ Or via environment variables (legacy):
 ### Certificate inventory
 
 | Metric | Type | Labels | Description |
-|--------|------|--------|-------------|
+| ------ | ---- | ------ | ----------- |
 | `vcv_certificates_total` | Gauge | `vault_id`, `pki`, `status` | Total certificates by status (valid/expired/revoked) |
 | `vcv_certificates_expired_count` | Gauge | - | Total number of expired certificates |
 | `vcv_certificates_expiring_soon_count` | Gauge | `vault_id`, `pki`, `level` | Certificates expiring within threshold window (level: warning/critical) |
@@ -44,16 +44,16 @@ Or via environment variables (legacy):
 ### Expiration thresholds
 
 | Metric | Type | Labels | Description |
-|--------|------|--------|-------------|
+| ------ | ---- | ------ | ----------- |
 | `vcv_expiration_threshold_critical_days` | Gauge | - | Configured critical threshold in days |
 | `vcv_expiration_threshold_warning_days` | Gauge | - | Configured warning threshold in days |
 
-**Use Case**: These metrics expose the configured thresholds so you can validate alert rules match your configuration.
+**Use case**: These metrics expose the configured thresholds so you can validate alert rules match your configuration.
 
-### Expiry Time Buckets (Enhanced Metrics)
+### Expiry time buckets (enhanced metrics)
 
 | Metric | Type | Labels | Description |
-|--------|------|--------|-------------|
+| ------ | ---- | ------ | ----------- |
 | `vcv_certificates_expiry_bucket` | Gauge | `vault_id`, `pki`, `bucket` | Certificate count by expiration time range |
 
 **Buckets**:
@@ -65,12 +65,12 @@ Or via environment variables (legacy):
 - `expired` - Already expired
 - `revoked` - Revoked certificates
 
-**Use Case**: Trend analysis, capacity planning, and understanding certificate lifecycle distribution.
+**Use case**: Trend analysis, capacity planning, and understanding certificate lifecycle distribution.
 
 ### Vault connectivity
 
 | Metric | Type | Labels | Description |
-|--------|------|--------|-------------|
+| ------ | ---- | ------ | ----------- |
 | `vcv_vault_connected` | Gauge | `vault_id` | Vault connection status (1=connected, 0=disconnected) |
 | `vcv_vault_list_certificates_success` | Gauge | `vault_id` | Whether last certificate listing succeeded (1=success, 0=failure) |
 | `vcv_vault_list_certificates_error` | Gauge | `vault_id` | Whether last certificate listing errored (1=error, 0=no error) |
@@ -80,49 +80,49 @@ Or via environment variables (legacy):
 ### Configuration metrics
 
 | Metric | Type | Labels | Description |
-|--------|------|--------|-------------|
+| ------ | ---- | ------ | ----------- |
 | `vcv_vaults_configured` | Gauge | - | Number of Vault instances configured |
 | `vcv_pki_mounts_configured` | Gauge | `vault_id` | Number of PKI mounts configured per vault |
 
-### Exporter Health
+### Exporter health
 
 | Metric | Type | Labels | Description |
-|--------|------|--------|-------------|
+| ------ | ---- | ------ | ----------- |
 | `vcv_certificate_exporter_last_scrape_success` | Gauge | - | Whether last scrape succeeded (1=success, 0=failure) |
 | `vcv_certificate_exporter_last_scrape_duration_seconds` | Gauge | - | Duration of last certificate scrape |
 
-## Per-Certificate Metrics (High Cardinality)
+## Per-certificate metrics (high cardinality)
 
 **⚠️ Warning**: These metrics are disabled by default due to high cardinality. Enable with `VCV_METRICS_PER_CERTIFICATE=true`.
 
 | Metric | Type | Labels | Description |
-|--------|------|--------|-------------|
+| ------ | ---- | ------ | ----------- |
 | `vcv_certificate_expiry_timestamp_seconds` | Gauge | `certificate_id`, `common_name`, `status`, `vault_id`, `pki` | Certificate expiration timestamp (Unix epoch) |
 | `vcv_certificate_days_until_expiry` | Gauge | `certificate_id`, `common_name`, `status`, `vault_id`, `pki` | Days remaining until expiration (negative if expired) |
 
-**Use Case**: Debugging specific certificates, drill-down analysis. Not recommended for large deployments (>1000 certificates).
+**Use case**: Debugging specific certificates, drill-down analysis. Not recommended for large deployments (>1000 certificates).
 
-## Label Values
+## Label values
 
-### Special Label Values
+### Special label values
 
 - `vault_id="__all__"` - Aggregated across all vaults
 - `pki="__all__"` - Aggregated across all PKI mounts
 
-### Status Values
+### Status values
 
 - `valid` - Certificate is valid and not expired
 - `expired` - Certificate has expired
 - `revoked` - Certificate has been revoked
 
-### Level Values
+### Level values
 
 - `critical` - Within critical threshold (default: 7 days)
 - `warning` - Within warning threshold (default: 30 days)
 
-## Example Queries
+## Example queries
 
-### Basic Monitoring
+### Basic monitoring
 
 ```promql
 # Total valid certificates
@@ -141,7 +141,7 @@ vcv_certificates_expired_count
 vcv_vault_connected{vault_id!="__all__"}
 ```
 
-### Trend Analysis
+### Trend analysis
 
 ```promql
 # Certificate distribution by expiry bucket
@@ -154,7 +154,7 @@ sum by (vault_id) (vcv_certificates_expiry_bucket{bucket="0-7d"})
 sum(vcv_certificates_total{status="revoked"}) / sum(vcv_certificates_total) * 100
 ```
 
-### Per-Vault Analysis
+### Per-vault analysis
 
 ```promql
 # Certificates per vault
@@ -167,9 +167,9 @@ vcv_certificates_expiring_soon_count{level="critical", vault_id!="__all__"}
 vcv_vault_list_certificates_duration_seconds{vault_id!="__all__"}
 ```
 
-## Alert Rules
+## Alert rules
 
-### Critical Alerts
+### Critical alerts
 
 ```yaml
 groups:
@@ -203,7 +203,7 @@ groups:
           description: "{{ $value }} certificates are expiring within {{ ALERT_VALUE vcv_expiration_threshold_critical_days }} days (vault={{ $labels.vault_id }}, pki={{ $labels.pki }})."
 ```
 
-### Warning Alerts
+### Warning alerts
 
 ```yaml
       - alert: VCVCertificatesExpiringSoonWarning
@@ -242,30 +242,30 @@ groups:
           description: "{{ $value }} certificates are expiring in the next 7 days."
 ```
 
-## Grafana Dashboard Queries
+## Grafana dashboard queries
 
-### Certificate Status Overview
+### Certificate status overview
 
 ```promql
 # Donut chart - Certificate status distribution
 sum by (status) (vcv_certificates_total{vault_id="__all__", pki="__all__"})
 ```
 
-### Expiration Timeline
+### Expiration timeline
 
 ```promql
 # Bar chart - Certificates by expiry bucket
 sum by (bucket) (vcv_certificates_expiry_bucket{vault_id="__all__", pki="__all__"})
 ```
 
-### Vault Health Matrix
+### Vault health matrix
 
 ```promql
 # Table - Vault connectivity and certificate counts
 sum by (vault_id) (vcv_certificates_total{vault_id!="__all__"})
 ```
 
-### Threshold Compliance
+### Threshold compliance
 
 ```promql
 # Gauge - Critical threshold
@@ -281,7 +281,7 @@ sum(vcv_certificates_expiring_soon_count{level="critical"})
 sum(vcv_certificates_expiring_soon_count{level="warning"})
 ```
 
-## Best Practices
+## Best practices
 
 1. **Use aggregated metrics for alerting** - Prefer `vcv_certificates_expiring_soon_count` over per-certificate metrics
 2. **Monitor threshold configuration** - Use `vcv_expiration_threshold_*` metrics to validate alert rules
