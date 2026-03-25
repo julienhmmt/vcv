@@ -44,7 +44,7 @@
               hx-target="#vcv-certs-body"
               hx-swap="innerHTML"
               hx-sync="#vcv-certs-body:replace"
-              hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+              hx-include=".vcv-cert-param"
             >
               <span class="vcv-refresh-icon">↻</span>
             </button>
@@ -74,7 +74,7 @@
               <span id="vcv-documentation-icon" aria-hidden="true">📖</span>
             </button>
             <form action="/" method="GET" class="vcv-lang-form">
-              <select id="vcv-lang-select" name="lang" class="vcv-select vcv-lang-select" aria-label="{{.Messages.LabelLanguage}}" onchange="this.form.submit()">
+              <select id="vcv-lang-select" name="lang" class="vcv-select vcv-lang-select vcv-cert-param" aria-label="{{.Messages.LabelLanguage}}" onchange="this.form.submit()">
                 <option value="de" {{if eq .Language "de"}}selected{{end}}>DE</option>
                 <option value="en" {{if eq .Language "en"}}selected{{end}}>EN</option>
                 <option value="es" {{if eq .Language "es"}}selected{{end}}>ES</option>
@@ -90,12 +90,12 @@
             <div class="vcv-filter-bar-row">
               <div class="vcv-filter-item vcv-filter-item-mount">
                 <div id="mount-selector" class="vcv-mount-filter"></div>
-                <input id="vcv-mounts" name="mounts" type="hidden" value="__all__" />
+                <input id="vcv-mounts" name="mounts" type="hidden" value="__all__" class="vcv-cert-param" />
               </div>
               <div class="vcv-filter-item vcv-filter-item-search">
                 <input
                   id="vcv-search"
-                  class="vcv-input"
+                  class="vcv-input vcv-cert-param"
                   type="search"
                   placeholder="{{.Messages.SearchPlaceholder}}"
                   name="search"
@@ -104,7 +104,7 @@
                   hx-target="#vcv-certs-body"
                   hx-swap="innerHTML"
                   hx-sync="#vcv-certs-body:replace"
-                  hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+                  hx-include=".vcv-cert-param"
                 />
               </div>
             </div>
@@ -231,23 +231,23 @@
       </div>
       <div id="vcv-donut-tooltip" class="vcv-donut-tooltip vcv-hidden"></div>
 
-      <input id="vcv-status-filter" name="status" type="hidden" value="all" />
-      <input id="vcv-page" name="page" type="hidden" value="{{.Certs.PageIndex}}" />
-      <input id="vcv-sort-key" name="sortKey" type="hidden" value="{{.Certs.SortKey}}" />
-      <input id="vcv-sort-dir" name="sortDir" type="hidden" value="{{.Certs.SortDirection}}" />
+      <input id="vcv-status-filter" name="status" type="hidden" value="all" class="vcv-cert-param" />
+      <input id="vcv-page" name="page" type="hidden" value="{{.Certs.PageIndex}}" class="vcv-cert-param" />
+      <input id="vcv-sort-key" name="sortKey" type="hidden" value="{{.Certs.SortKey}}" class="vcv-cert-param" />
+      <input id="vcv-sort-dir" name="sortDir" type="hidden" value="{{.Certs.SortDirection}}" class="vcv-cert-param" />
       <div class="vcv-table-footer">
         <div class="vcv-page-size">
           <label id="vcv-page-size-label" for="vcv-page-size">Results per page</label>
           <select
             id="vcv-page-size"
-            class="vcv-select vcv-page-size-select"
+            class="vcv-select vcv-page-size-select vcv-cert-param"
             name="pageSize"
             hx-get="/ui/certs"
             hx-trigger="change"
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include=".vcv-cert-param"
           >
             <option value="25">25</option>
             <option value="50">50</option>
@@ -264,7 +264,7 @@
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include=".vcv-cert-param"
             hx-vals='{"pageAction":"prev"}'
             {{if .Certs.PagePrevDisabled}}disabled{{end}}
           >
@@ -280,7 +280,7 @@
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include=".vcv-cert-param"
             hx-vals='{"pageAction":"next"}'
             {{if .Certs.PageNextDisabled}}disabled{{end}}
           >
@@ -338,7 +338,7 @@
             id="vcv-certs-body"
             hx-get="/ui/certs"
             hx-swap="innerHTML"
-            hx-include="#vcv-lang-select, #vcv-search, #vcv-status-filter, #vcv-page-size, #vcv-page, #vcv-sort-key, #vcv-sort-dir, #vcv-mounts"
+            hx-include=".vcv-cert-param"
           >
             {{if eq (len .Certs.Rows) 0}}
             <tr>
