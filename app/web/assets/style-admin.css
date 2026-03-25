@@ -524,7 +524,9 @@
 
 .vcv-status-connected::before {
   background: var(--vcv-color-success);
-  box-shadow: 0 0 0 1.5px var(--vcv-color-success-surface), 0 0 0 3px var(--vcv-color-success);
+  box-shadow:
+    0 0 0 1.5px var(--vcv-color-success-surface),
+    0 0 0 3px var(--vcv-color-success);
 }
 
 .vcv-status-connected .admin-vault-status-icon {
@@ -541,7 +543,9 @@
 
 .vcv-status-disconnected::before {
   background: var(--vcv-color-danger);
-  box-shadow: 0 0 0 1.5px var(--vcv-color-danger-surface), 0 0 0 3px var(--vcv-color-danger);
+  box-shadow:
+    0 0 0 1.5px var(--vcv-color-danger-surface),
+    0 0 0 3px var(--vcv-color-danger);
 }
 
 .vcv-status-disconnected .admin-vault-status-icon {
@@ -559,7 +563,9 @@
 
 .vcv-status-disabled::before {
   background: var(--vcv-color-muted);
-  box-shadow: 0 0 0 1.5px var(--vcv-color-surface-muted), 0 0 0 3px var(--vcv-color-muted);
+  box-shadow:
+    0 0 0 1.5px var(--vcv-color-surface-muted),
+    0 0 0 3px var(--vcv-color-muted);
 }
 
 .vcv-status-disabled .admin-vault-status-icon {
@@ -846,5 +852,3 @@
 [data-theme="dark"] .admin-note {
   background: var(--vcv-color-bg);
 }
-
-
