@@ -264,7 +264,7 @@
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include=".vcv-cert-param"
+            hx-include=".vcv-cert-param, #vcv-page, #vcv-sort-key, #vcv-sort-dir"
             hx-vals='{"pageAction":"prev"}'
             {{if .Certs.PagePrevDisabled}}disabled{{end}}
           >
@@ -280,7 +280,7 @@
             hx-target="#vcv-certs-body"
             hx-swap="innerHTML"
             hx-sync="#vcv-certs-body:replace"
-            hx-include=".vcv-cert-param"
+            hx-include=".vcv-cert-param, #vcv-page, #vcv-sort-key, #vcv-sort-dir"
             hx-vals='{"pageAction":"next"}'
             {{if .Certs.PageNextDisabled}}disabled{{end}}
           >
