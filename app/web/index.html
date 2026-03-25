@@ -352,7 +352,7 @@
                 {{if .ShowVaultMount}}<div class="vcv-cert-meta"><span class="vcv-cert-meta-item">{{.VaultName}}</span><span class="vcv-cert-meta-sep">·</span><span class="vcv-cert-meta-item">{{.MountName}}</span></div>{{end}}
               </td>
               <td class="vcv-col-expiry {{.ExpiresCellClass}}">
-                {{if .DaysRemainingText}}<div class="vcv-expiry-count {{.DaysRemainingClass}}">{{.DaysRemainingText}}</div>{{end}}
+                <div class="vcv-expiry-count {{.DaysRemainingClass}}{{if not .DaysRemainingText}} vcv-expiry-count-empty{{end}}">{{if .DaysRemainingText}}{{.DaysRemainingText}}{{else}}&nbsp;{{end}}</div>
                 <div class="{{.ExpiresDateClass}} vcv-expiry-date">{{.ExpiresAtDate}}</div>
                 <div class="vcv-date-secondary">{{.ExpiresAtTime}} UTC</div>
               </td>
