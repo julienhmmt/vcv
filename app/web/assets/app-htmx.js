@@ -14,6 +14,11 @@ const DEFAULT_CERTS_VALUES = {
 };
 const VALID_PAGE_SIZES = ["25", "50", "100", "all"];
 
+const HTML_ESCAPE_MAP = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, (c) => HTML_ESCAPE_MAP[c]);
+}
+
 const state = {
   availableMounts: [],
   hasSyncedInitialUrl: false,
@@ -964,8 +969,11 @@ function buildMountChip(mountName, key, isSelected, vaultId) {
   const activeClass = isSelected ? " vcv-mount-chip-active" : "";
   const checkedAttr = isSelected ? " checked" : "";
   const checkSvg = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
-  const dataAttrs = vaultId ? ` data-vault="${vaultId}" data-mount="${mountName}"` : ` data-mount="${mountName}"`;
-  return `<label class="vcv-mount-chip${activeClass}"${dataAttrs}><input type="checkbox"${checkedAttr} data-mount-key="${key.replace(/"/g, '&quot;')}" /><span class="vcv-mount-chip-check">${checkSvg}</span><span class="vcv-mount-chip-label">${mountName}</span></label>`;
+  const eMountName = escapeHtml(mountName);
+  const eVaultId = escapeHtml(vaultId);
+  const eKey = escapeHtml(key);
+  const dataAttrs = vaultId ? ` data-vault="${eVaultId}" data-mount="${eMountName}"` : ` data-mount="${eMountName}"`;
+  return `<label class="vcv-mount-chip${activeClass}"${dataAttrs}><input type="checkbox"${checkedAttr} data-mount-key="${eKey}" /><span class="vcv-mount-chip-check">${checkSvg}</span><span class="vcv-mount-chip-label">${eMountName}</span></label>`;
 }
 
 function renderMountModalList() {
@@ -993,8 +1001,10 @@ function renderMountModalList() {
             return buildMountChip(mountName, key, selectedSet.has(key), group.id);
           })
           .join("");
-        const headerActions = `<div class="vcv-mount-modal-section-actions"><button type="button" class="vcv-mount-link-btn" data-action="select-all" data-vault-id="${group.id.replace(/"/g, '&quot;')}">${selectAllLabel}</button><button type="button" class="vcv-mount-link-btn" data-action="deselect-all" data-vault-id="${group.id.replace(/"/g, '&quot;')}">${deselectAllLabel}</button></div>`;
-        return `<div class="vcv-mount-modal-section" data-vault-section="${group.id}"><div class="vcv-mount-modal-section-header" data-action="toggle-section" data-vault-id="${group.id.replace(/"/g, '&quot;')}">${chevronSvg}<div class="vcv-mount-modal-section-title">${title} ${countBadge}</div>${headerActions}</div><div class="vcv-mount-modal-section-options">${chips}</div></div>`;
+        const eGroupId = escapeHtml(group.id);
+        const eTitle = escapeHtml(title);
+        const headerActions = `<div class="vcv-mount-modal-section-actions"><button type="button" class="vcv-mount-link-btn" data-action="select-all" data-vault-id="${eGroupId}">${selectAllLabel}</button><button type="button" class="vcv-mount-link-btn" data-action="deselect-all" data-vault-id="${eGroupId}">${deselectAllLabel}</button></div>`;
+        return `<div class="vcv-mount-modal-section" data-vault-section="${eGroupId}"><div class="vcv-mount-modal-section-header" data-action="toggle-section" data-vault-id="${eGroupId}">${chevronSvg}<div class="vcv-mount-modal-section-title">${eTitle} ${countBadge}</div>${headerActions}</div><div class="vcv-mount-modal-section-options">${chips}</div></div>`;
       })
       .join("");
     listContainer.innerHTML = content;
@@ -1229,14 +1239,20 @@ async function loadDocumentation(type = null) {
     const endpoint = docType === "admin" ? "/ui/docs/configuration" : "/ui/docs/user-guide";
     const response = await fetch(`${endpoint}?lang=${lang}&_=${Date.now()}`);
     if (!response.ok) {
-      content.innerHTML = `<p class="vcv-error">Failed to load documentation (${response.status})</p>`;
+      const errEl = document.createElement("p");
+      errEl.className = "vcv-error";
+      errEl.textContent = `Failed to load documentation (${response.status})`;
+      content.replaceChildren(errEl);
       return;
     }
     const html = await response.text();
     content.innerHTML = html;
   } catch (err) {
     console.error("[VCV] Error loading documentation:", err);
-    content.innerHTML = `<p class="vcv-error">Error: ${err.message}</p>`;
+    const errEl = document.createElement("p");
+    errEl.className = "vcv-error";
+    errEl.textContent = `Error: ${err.message}`;
+    content.replaceChildren(errEl);
   }
 }
 
