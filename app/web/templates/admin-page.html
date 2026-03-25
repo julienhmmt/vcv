@@ -91,7 +91,9 @@
       <div class="vcv-modal">
         <div class="vcv-modal-header">
           <h2 class="vcv-modal-title" id="vault-status-modal-title">{{.Messages.ModalVaultStatusTitle}}</h2>
-          <button type="button" class="vcv-modal-close" onclick="VCV.closeVaultStatusModal()">×</button>
+          <button type="button" class="vcv-modal-close" onclick="VCV.closeVaultStatusModal()" aria-label="{{.Messages.ButtonClose}}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
         </div>
         <div class="vcv-modal-content">
           <div id="vault-status-content" class="vcv-details-content">
@@ -109,7 +111,9 @@
       <div class="vcv-modal vcv-modal-lg">
         <div class="vcv-modal-header">
           <h2 class="vcv-modal-title" id="vcv-documentation-modal-title">{{.Messages.ButtonDocumentation}}</h2>
-          <button type="button" class="vcv-modal-close" onclick="VCV.closeDocumentationModal()">×</button>
+          <button type="button" class="vcv-modal-close" onclick="VCV.closeDocumentationModal()" aria-label="{{.Messages.ButtonClose}}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
         </div>
         <div class="vcv-modal-content">
           <div id="vcv-documentation-content" class="vcv-documentation-content markdown-body">

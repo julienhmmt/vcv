@@ -2,13 +2,18 @@
   <div class="admin-login">
     <div class="admin-login-card">
       <div class="admin-login-header">
-        <div class="admin-login-icon">🔐</div>
+        <div class="admin-login-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="currentColor"/></svg>
+        </div>
         <h2 class="admin-login-title">{{.Messages.AdminLogin}}</h2>
         <p class="admin-login-subtitle">{{.Messages.AdminLoginHint}}</p>
       </div>
       <div class="admin-login-body">
         {{if .ErrorText}}
-          <div class="admin-alert admin-alert-error" role="alert">⚠️ {{.ErrorText}}</div>
+          <div class="admin-alert admin-alert-error" role="alert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            {{.ErrorText}}
+          </div>
         {{end}}
         <form class="admin-form" hx-post="/admin/login" hx-target="#admin-root" hx-swap="innerHTML">
           <input type="hidden" id="admin-username" name="username" value="admin" />
@@ -20,7 +25,10 @@
         </form>
       </div>
       <div class="admin-login-footer">
-        <p class="admin-login-footer-text"><a href="/">← {{.Messages.AdminBackToVCV}}</a></p>
+        <p class="admin-login-footer-text">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          <a href="/">{{.Messages.AdminBackToVCV}}</a>
+        </p>
       </div>
     </div>
   </div>

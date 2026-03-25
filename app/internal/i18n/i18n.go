@@ -132,6 +132,7 @@ type Messages struct {
 	AdminTitle                  string `json:"adminTitle"`
 	AdminBackToVCV              string `json:"adminBackToVCV"`
 	AdminSettings               string `json:"adminSettings"`
+	AdminSettingsHint           string `json:"adminSettingsHint"`
 	AdminSettingsSaved          string `json:"adminSettingsSaved"`
 	AdminLogout                 string `json:"adminLogout"`
 	AdminLogin                  string `json:"adminLogin"`
@@ -295,6 +296,7 @@ var englishMessages = Messages{
 	AdminTitle:                  "VaultCertsViewer Admin",
 	AdminBackToVCV:              "Back to VCV",
 	AdminSettings:               "Settings",
+	AdminSettingsHint:           "Configure application settings, vault connections, and behavior.",
 	AdminSettingsSaved:          "Settings saved",
 	AdminLogout:                 "Logout",
 	AdminLogin:                  "Login",
@@ -452,6 +454,7 @@ var frenchMessages = Messages{
 	AdminTitle:                  "VaultCertsViewer Admin",
 	AdminBackToVCV:              "Retour à VCV",
 	AdminSettings:               "Paramètres",
+	AdminSettingsHint:           "Configurez les paramètres de l'application, les connexions vault et le comportement.",
 	AdminSettingsSaved:          "Paramètres enregistrés",
 	AdminLogout:                 "Déconnexion",
 	AdminLogin:                  "Connexion",
@@ -609,6 +612,7 @@ var spanishMessages = Messages{
 	AdminTitle:                  "VaultCertsViewer Admin",
 	AdminBackToVCV:              "Volver a VCV",
 	AdminSettings:               "Configuración",
+	AdminSettingsHint:           "Configure los ajustes de la aplicación, las conexiones de vault y el comportamiento.",
 	AdminSettingsSaved:          "Configuración guardada",
 	AdminLogout:                 "Cerrar sesión",
 	AdminLogin:                  "Iniciar sesión",
@@ -766,6 +770,7 @@ var germanMessages = Messages{
 	AdminTitle:                  "VaultCertsViewer Admin",
 	AdminBackToVCV:              "Zurück zu VCV",
 	AdminSettings:               "Einstellungen",
+	AdminSettingsHint:           "Anwendungseinstellungen, Vault-Verbindungen und Verhalten konfigurieren.",
 	AdminSettingsSaved:          "Einstellungen gespeichert",
 	AdminLogout:                 "Abmelden",
 	AdminLogin:                  "Anmelden",
@@ -922,6 +927,7 @@ var italianMessages = Messages{
 	AdminTitle:                  "VaultCertsViewer Admin",
 	AdminBackToVCV:              "Torna a VCV",
 	AdminSettings:               "Impostazioni",
+	AdminSettingsHint:           "Configura le impostazioni dell'applicazione, le connessioni vault e il comportamento.",
 	AdminSettingsSaved:          "Impostazioni salvate",
 	AdminLogout:                 "Disconnetti",
 	AdminLogin:                  "Accedi",

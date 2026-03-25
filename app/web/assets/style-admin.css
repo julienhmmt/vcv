@@ -79,6 +79,10 @@
 .admin-login-footer-text {
   font-size: 0.75rem;
   color: var(--vcv-color-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: 0;
 }
 
 .admin-login-footer-text a {
@@ -116,12 +120,18 @@
 /* ------- Panel header ------- */
 .admin-card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
+  padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--vcv-color-border);
+}
+
+.admin-card-header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
 }
 
 .admin-card-title {
@@ -135,6 +145,12 @@
   gap: 0.5rem;
 }
 
+.admin-card-subtitle {
+  font-size: 0.8125rem;
+  color: var(--vcv-color-muted);
+  margin: 0;
+}
+
 .admin-card-title-icon {
   width: 2rem;
   height: 2rem;
@@ -144,7 +160,7 @@
   border-radius: 0.5rem;
   background: rgba(16, 185, 129, 0.1);
   border: 1px solid rgba(16, 185, 129, 0.2);
-  font-size: 1rem;
+  color: var(--vcv-color-primary);
 }
 
 /* ------- Form ------- */
@@ -284,6 +300,23 @@
   border: 1px solid var(--vcv-color-border);
   border-radius: var(--vcv-radius-md);
   line-height: 1.5;
+  flex: 1;
+}
+
+/* ------- Save bar ------- */
+.admin-save-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  background: var(--vcv-color-surface);
+  border: 1px solid var(--vcv-color-border);
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.admin-save-bar .vcv-button-primary {
+  flex-shrink: 0;
 }
 
 /* ------- Hints ------- */
@@ -305,9 +338,10 @@
 }
 
 .admin-empty-state-icon {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-  opacity: 0.5;
+  display: block;
+  margin: 0 auto 0.75rem;
+  color: var(--vcv-color-border-strong);
+  opacity: 0.6;
 }
 
 /* ------- Section header ------- */

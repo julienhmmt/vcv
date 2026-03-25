@@ -1,22 +1,45 @@
 <section class="admin-panel-surface">
   {{if .SuccessText}}
-    <div class="admin-alert admin-alert-success" role="status">✅ {{.SuccessText}}</div>
+    <div class="admin-alert admin-alert-success" role="status">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/></svg>
+      {{.SuccessText}}
+    </div>
   {{end}}
   {{if .ErrorText}}
-    <div class="admin-alert admin-alert-error" role="alert">⚠️ {{.ErrorText}}</div>
+    <div class="admin-alert admin-alert-error" role="alert">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      {{.ErrorText}}
+    </div>
   {{end}}
 
   <div class="admin-card-header">
-    <h2 class="admin-card-title"><span class="admin-card-title-icon">⚙️</span> {{.Messages.AdminSettings}}</h2>
+    <div class="admin-card-header-left">
+      <h2 class="admin-card-title">
+        <span class="admin-card-title-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+        </span>
+        {{.Messages.AdminSettings}}
+      </h2>
+      <p class="admin-card-subtitle">{{.Messages.AdminSettingsHint}}</p>
+    </div>
     <div class="admin-actions">
-      <button class="vcv-button vcv-button-secondary" type="button" onclick="VCV.openDocumentationModal('admin')" aria-label="{{.Messages.ButtonDocumentation}}">📖 {{.Messages.ButtonDocumentation}}</button>
-      <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/logout" hx-target="#admin-root" hx-swap="innerHTML">{{.Messages.AdminLogout}}</button>
+      <button class="vcv-button vcv-button-secondary" type="button" onclick="VCV.openDocumentationModal('admin')" aria-label="{{.Messages.ButtonDocumentation}}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+        {{.Messages.ButtonDocumentation}}
+      </button>
+      <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/logout" hx-target="#admin-root" hx-swap="innerHTML">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        {{.Messages.AdminLogout}}
+      </button>
     </div>
   </div>
 
   <form id="admin-settings-form" class="admin-form" hx-post="/admin/settings" hx-target="#admin-root" hx-swap="innerHTML">
     <fieldset class="admin-fieldset">
-      <legend class="admin-legend"><span class="admin-legend-icon">🔒</span> {{.Messages.AdminCertificates}}</legend>
+      <legend class="admin-legend">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        {{.Messages.AdminCertificates}}
+      </legend>
       <span class="admin-field-hint">{{.Messages.AdminThresholdsHint}}</span>
       <div class="admin-grid">
         <div class="admin-form-row">
@@ -31,7 +54,10 @@
     </fieldset>
 
     <fieldset class="admin-fieldset">
-      <legend class="admin-legend"><span class="admin-legend-icon">📊</span> {{.Messages.AdminMetrics}}</legend>
+      <legend class="admin-legend">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        {{.Messages.AdminMetrics}}
+      </legend>
       <span class="admin-field-hint">{{.Messages.AdminMetricsHint}}</span>
       <div class="admin-grid">
         <div class="admin-form-row">
@@ -50,7 +76,10 @@
     </fieldset>
 
     <fieldset class="admin-fieldset">
-      <legend class="admin-legend"><span class="admin-legend-icon">🌐</span> {{.Messages.AdminCORS}}</legend>
+      <legend class="admin-legend">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        {{.Messages.AdminCORS}}
+      </legend>
       <div class="admin-grid">
         <div class="admin-form-row admin-form-row-full">
           <label class="admin-label" for="settings-cors-origins">{{.Messages.AdminCORSOrigins}}</label>
@@ -60,11 +89,17 @@
     </fieldset>
 
     <fieldset class="admin-fieldset">
-      <legend class="admin-legend"><span class="admin-legend-icon">🏛️</span> {{.Messages.AdminVaults}}</legend>
+      <legend class="admin-legend">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        {{.Messages.AdminVaults}}
+      </legend>
       <div class="admin-section-header">
         <div class="admin-section-hint">{{.Messages.AdminVaultsHint}}</div>
         <div class="admin-actions">
-          <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/vault/add" hx-target="#admin-vaults-list" hx-swap="beforeend" hx-on::after-request="var e=document.getElementById('admin-vaults-empty');if(e)e.remove()">+ {{.Messages.AdminAddVault}}</button>
+          <button class="vcv-button vcv-button-secondary" type="button" hx-post="/admin/vault/add" hx-target="#admin-vaults-list" hx-swap="beforeend" hx-on::after-request="var e=document.getElementById('admin-vaults-empty');if(e)e.remove()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            {{.Messages.AdminAddVault}}
+          </button>
         </div>
       </div>
       <div id="admin-vaults-list" class="admin-vaults-list">
@@ -73,17 +108,20 @@
             {{template "admin-vault-item.html" .}}
           {{end}}
         {{else}}
-          <div class="admin-empty-state" id="admin-vaults-empty"><div class="admin-empty-state-icon">🏛️</div>{{.Messages.AdminVaultsEmpty}}</div>
+          <div class="admin-empty-state" id="admin-vaults-empty">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="admin-empty-state-icon" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            {{.Messages.AdminVaultsEmpty}}
+          </div>
         {{end}}
       </div>
     </fieldset>
 
-    <div class="admin-actions admin-actions-space">
-      <button class="vcv-button vcv-button-primary" type="submit">{{.Messages.AdminSaveSettings}}</button>
-    </div>
-
-    <div class="admin-note">
-      {{.Messages.AdminRestartNote}}
+    <div class="admin-save-bar">
+      <div class="admin-note">{{.Messages.AdminRestartNote}}</div>
+      <button class="vcv-button vcv-button-primary" type="submit">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        {{.Messages.AdminSaveSettings}}
+      </button>
     </div>
   </form>
 </section>
