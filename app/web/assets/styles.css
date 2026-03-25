@@ -1281,8 +1281,7 @@ body {
   box-shadow: 0 1px 0 0 var(--vcv-color-border);
 }
 
-.vcv-table th.vcv-col-status,
-.vcv-table th.vcv-col-actions {
+.vcv-table th.vcv-col-status {
   text-align: center;
 }
 
@@ -1298,26 +1297,17 @@ body {
   text-align: center;
 }
 
-.vcv-table td.vcv-col-actions {
-  text-align: center;
-  padding: 0.5rem 0.75rem;
-}
-
 /* Column width definitions */
 col.vcv-col-cert {
-  width: 46%;
+  width: 58%;
 }
 
 col.vcv-col-expiry {
-  width: 24%;
+  width: 27%;
 }
 
 col.vcv-col-status {
-  width: 14%;
-}
-
-col.vcv-col-actions {
-  width: 16%;
+  width: 15%;
 }
 
 .vcv-table td.vcv-col-cert {
@@ -1369,13 +1359,6 @@ col.vcv-col-actions {
 }
 
 /* Actions column */
-.vcv-actions-group {
-  display: inline-flex;
-  gap: 0.25rem;
-  align-items: stretch;
-  flex-wrap: nowrap;
-}
-
 .vcv-table td code {
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;

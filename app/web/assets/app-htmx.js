@@ -500,6 +500,7 @@ function applyTranslations() {
   }
   const textBindings = [
     ["certificate-modal-close", messages.buttonClose],
+    ["certificate-modal-pem", messages.buttonDownloadPEM],
     ["dashboard-expired-label", messages.dashboardExpired],
     ["dashboard-expired-desc", messages.dashboardExpiredDesc],
     ["dashboard-warning-label", messages.dashboardWarning],
@@ -1193,6 +1194,11 @@ function deselectAllVaultMounts(vaultId, event) {
 }
 
 function openCertificateModal() {
+  const pemBtn = document.getElementById("certificate-modal-pem");
+  if (pemBtn) {
+    pemBtn.style.display = "none";
+    pemBtn.href = "#";
+  }
   setModalVisibility("certificate-modal", true);
 }
 

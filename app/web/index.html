@@ -295,7 +295,6 @@
             <col class="vcv-col-cert" />
             <col class="vcv-col-expiry" />
             <col class="vcv-col-status" />
-            <col class="vcv-col-actions" />
           </colgroup>
           <thead>
             <tr>
@@ -322,7 +321,6 @@
                 </button>
               </th>
               <th scope="col" class="vcv-col-status">{{.Messages.ColumnStatus}}</th>
-              <th scope="col" class="vcv-col-actions">{{.Messages.ColumnActions}}</th>
             </tr>
           </thead>
           <tbody
@@ -333,7 +331,7 @@
           >
             {{if eq (len .Certs.Rows) 0}}
             <tr>
-              <td colspan="4">{{.Messages.NoData}}</td>
+              <td colspan="3">{{.Messages.NoData}}</td>
             </tr>
             {{else}}
             {{range .Certs.Rows}}
@@ -358,9 +356,6 @@
               </td>
               <td class="vcv-col-status">
                 {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
-              </td>
-              <td class="vcv-col-actions" onclick="event.stopPropagation()">
-                <a class="vcv-button vcv-button-small vcv-button-primary" href="/api/certs/{{urlquery .ID}}/pem/download" title="{{.ButtonDownloadPEM}}">PEM</a>
               </td>
             </tr>
             {{end}}
@@ -445,7 +440,7 @@
         </div>
         <div class="vcv-modal-actions">
           <button id="certificate-modal-close" type="button" class="vcv-button vcv-button-secondary" onclick="VCV.closeCertificateModal()">{{.Messages.ButtonClose}}</button>
-          <a id="certificate-modal-pem" class="vcv-button vcv-button-primary" href="#" style="display:none">PEM</a>
+          <a id="certificate-modal-pem" class="vcv-button vcv-button-primary" href="#" style="display:none">{{.Messages.ButtonDownloadPEM}}</a>
         </div>
       </div>
     </div>

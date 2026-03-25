@@ -22,9 +22,6 @@
   <td class="vcv-col-status">
     {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
   </td>
-  <td class="vcv-col-actions" onclick="event.stopPropagation()">
-    <a class="vcv-button vcv-button-small vcv-button-primary" href="/api/certs/{{urlquery .ID}}/pem/download" title="{{.ButtonDownloadPEM}}">PEM</a>
-  </td>
 </tr>
 {{end}}
 {{end}}
