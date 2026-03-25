@@ -965,7 +965,7 @@ function buildMountChip(mountName, key, isSelected, vaultId) {
   const checkedAttr = isSelected ? " checked" : "";
   const checkSvg = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
   const dataAttrs = vaultId ? ` data-vault="${vaultId}" data-mount="${mountName}"` : ` data-mount="${mountName}"`;
-  return `<label class="vcv-mount-chip${activeClass}"${dataAttrs}><input type="checkbox"${checkedAttr} onchange="VCV.toggleMount('${key}')" /><span class="vcv-mount-chip-check">${checkSvg}</span><span class="vcv-mount-chip-label">${mountName}</span></label>`;
+  return `<label class="vcv-mount-chip${activeClass}"${dataAttrs}><input type="checkbox"${checkedAttr} data-mount-key="${key.replace(/"/g, '&quot;')}" /><span class="vcv-mount-chip-check">${checkSvg}</span><span class="vcv-mount-chip-label">${mountName}</span></label>`;
 }
 
 function renderMountModalList() {
@@ -993,8 +993,8 @@ function renderMountModalList() {
             return buildMountChip(mountName, key, selectedSet.has(key), group.id);
           })
           .join("");
-        const headerActions = `<div class="vcv-mount-modal-section-actions"><button type="button" class="vcv-mount-link-btn" onclick="VCV.selectAllVaultMounts('${group.id}', event)">${selectAllLabel}</button><button type="button" class="vcv-mount-link-btn" onclick="VCV.deselectAllVaultMounts('${group.id}', event)">${deselectAllLabel}</button></div>`;
-        return `<div class="vcv-mount-modal-section" data-vault-section="${group.id}"><div class="vcv-mount-modal-section-header" onclick="VCV.toggleVaultSection('${group.id}')">${chevronSvg}<div class="vcv-mount-modal-section-title">${title} ${countBadge}</div>${headerActions}</div><div class="vcv-mount-modal-section-options">${chips}</div></div>`;
+        const headerActions = `<div class="vcv-mount-modal-section-actions"><button type="button" class="vcv-mount-link-btn" data-action="select-all" data-vault-id="${group.id.replace(/"/g, '&quot;')}">${selectAllLabel}</button><button type="button" class="vcv-mount-link-btn" data-action="deselect-all" data-vault-id="${group.id.replace(/"/g, '&quot;')}">${deselectAllLabel}</button></div>`;
+        return `<div class="vcv-mount-modal-section" data-vault-section="${group.id}"><div class="vcv-mount-modal-section-header" data-action="toggle-section" data-vault-id="${group.id.replace(/"/g, '&quot;')}">${chevronSvg}<div class="vcv-mount-modal-section-title">${title} ${countBadge}</div>${headerActions}</div><div class="vcv-mount-modal-section-options">${chips}</div></div>`;
       })
       .join("");
     listContainer.innerHTML = content;
@@ -1050,6 +1050,30 @@ function filterMountList(searchTerm) {
   });
 }
 
+function handleMountModalClick(event) {
+  const btn = event.target.closest("[data-action]");
+  if (!btn) {
+    return;
+  }
+  const action = btn.dataset.action;
+  const vaultId = btn.dataset.vaultId;
+  if (action === "select-all") {
+    selectAllVaultMounts(vaultId, event);
+  } else if (action === "deselect-all") {
+    deselectAllVaultMounts(vaultId, event);
+  } else if (action === "toggle-section") {
+    toggleVaultSection(vaultId);
+  }
+}
+
+function handleMountModalChange(event) {
+  const input = event.target.closest("input[data-mount-key]");
+  if (!input) {
+    return;
+  }
+  toggleMount(input.dataset.mountKey);
+}
+
 function openMountModal() {
   const searchInput = document.getElementById("mount-search");
   if (searchInput) {
@@ -1057,6 +1081,13 @@ function openMountModal() {
   }
   renderMountModalList();
   updateMountStats();
+  const listContainer = document.getElementById("mount-modal-list");
+  if (listContainer) {
+    listContainer.removeEventListener("click", handleMountModalClick);
+    listContainer.removeEventListener("change", handleMountModalChange);
+    listContainer.addEventListener("click", handleMountModalClick);
+    listContainer.addEventListener("change", handleMountModalChange);
+  }
   setModalVisibility("mount-modal", true);
 }
 

@@ -78,43 +78,13 @@
     },
     {
       "id": "vault-dev-4",
-      "address": "http://vault-dev-4:8200",
-      "token": "root",
-      "pki_mount": "pki_vault4",
-      "pki_mounts": [
-        "pki_vault4",
-        "pki_lab",
-        "pki_qa",
-        "pki_perf"
-      ],
-      "display_name": "Vault dev-4",
-      "tls_insecure": false,
-      "enabled": true
-    },
-    {
-      "id": "vault-dev-5",
-      "address": "http://vault-dev-5:8200",
-      "token": "root",
-      "pki_mount": "pki_vault5",
-      "pki_mounts": [
-        "pki_vault5",
-        "pki_internal",
-        "pki_dmz",
-        "pki_shared"
-      ],
-      "display_name": "Vault dev-5",
-      "tls_insecure": false,
-      "enabled": true
-    },
-    {
-      "id": "vault-dev-6",
       "address": "http://127.0.0.1:1",
       "token": "root",
       "pki_mount": "pki_fake",
       "pki_mounts": [
         "pki_fake"
       ],
-      "display_name": "Vault dev-6 (fake)",
+      "display_name": "Vault dev-4 (fake)",
       "tls_insecure": true,
       "enabled": false
     },
