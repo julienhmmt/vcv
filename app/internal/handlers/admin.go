@@ -242,7 +242,6 @@ func (s *adminSessionStore) clearCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: "", Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: s.secureCookies, Expires: time.Unix(0, 0), MaxAge: -1})
 }
 
-
 func (s *adminSessionStore) requireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie(adminCookieName)
@@ -419,7 +418,6 @@ func validateSettings(settings config.SettingsFile) error {
 	}
 	return nil
 }
-
 
 func parseTemplates(webFS fs.FS) (*template.Template, error) {
 	return template.New("").Funcs(templateFuncMap()).ParseFS(webFS, "templates/*.html")

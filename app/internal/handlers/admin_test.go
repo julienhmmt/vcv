@@ -99,7 +99,6 @@ func TestRegisterAdminRoutes_DisabledWithPlaintextPassword(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, rec.Code)
 }
 
-
 func TestAdminSessionStore_LoginFromForm_SetsCookie(t *testing.T) {
 	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
 	req := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
@@ -113,7 +112,6 @@ func TestAdminSessionStore_LoginFromForm_SetsCookie(t *testing.T) {
 	assert.Equal(t, adminCookieName, cookies[0].Name)
 	assert.NotEmpty(t, cookies[0].Value)
 }
-
 
 func TestAdminSessionStore_RequireAuth_Unauthorized_WhenMissingCookie(t *testing.T) {
 	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
@@ -452,7 +450,6 @@ func TestAdminSessionStore_Login_SessionFixation(t *testing.T) {
 	_, oldExists := store.sessions["old-token"]
 	assert.False(t, oldExists, "old session should be deleted")
 }
-
 
 func TestAdminSessionStore_LoginFromForm_WrongPassword(t *testing.T) {
 	store := newAdminSessionStore(mustBcryptPasswordHash(t, "secret"), false)
