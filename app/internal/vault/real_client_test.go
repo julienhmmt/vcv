@@ -438,7 +438,7 @@ func TestReadCertificateFromMount_MissingCertificateField(t *testing.T) {
 	}))
 	defer server.Close()
 	client := newRealClientForTest(t, server.URL, []string{"pki"})
-	_, err := client.readCertificateFromMount("pki", "aa")
+	_, err := client.readCertificateFromMount(context.Background(), "pki", "aa")
 	if err == nil {
 		t.Fatalf("expected error")
 	}
@@ -456,7 +456,7 @@ func TestReadCertificateFromMount_InvalidPEM(t *testing.T) {
 	}))
 	defer server.Close()
 	client := newRealClientForTest(t, server.URL, []string{"pki"})
-	_, err := client.readCertificateFromMount("pki", "aa")
+	_, err := client.readCertificateFromMount(context.Background(), "pki", "aa")
 	if err == nil {
 		t.Fatalf("expected error")
 	}

@@ -256,9 +256,9 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 	return allCertificates, nil
 }
 
-func (c *realClient) listCertificatesFromMount(_ context.Context, mount string) ([]certs.Certificate, map[string]bool, error) {
+func (c *realClient) listCertificatesFromMount(ctx context.Context, mount string) ([]certs.Certificate, map[string]bool, error) {
 	listPath := fmt.Sprintf("%s/certs", mount)
-	secret, err := c.client.Logical().List(listPath)
+	secret, err := c.client.Logical().ListWithContext(ctx, listPath)
 	if err != nil {
 		return nil, nil, fmt.Errorf("failed to list certificates from mount %s: %w", mount, err)
 	}
@@ -271,7 +271,7 @@ func (c *realClient) listCertificatesFromMount(_ context.Context, mount string) 
 		return nil, nil, fmt.Errorf("unexpected list response from Vault for mount %s: missing keys array", mount)
 	}
 
-	revokedSet, err := c.fetchRevokedSerialsFromMount(mount)
+	revokedSet, err := c.fetchRevokedSerialsFromMount(ctx, mount)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -282,7 +282,7 @@ func (c *realClient) listCertificatesFromMount(_ context.Context, mount string) 
 		if !ok {
 			continue
 		}
-		certificate, err := c.readCertificateFromMount(mount, serial)
+		certificate, err := c.readCertificateFromMount(ctx, mount, serial)
 		if err != nil {
 			continue
 		}
@@ -295,9 +295,9 @@ func (c *realClient) listCertificatesFromMount(_ context.Context, mount string) 
 	return result, revokedSet, nil
 }
 
-func (c *realClient) fetchRevokedSerialsFromMount(mount string) (map[string]bool, error) {
+func (c *realClient) fetchRevokedSerialsFromMount(ctx context.Context, mount string) (map[string]bool, error) {
 	path := fmt.Sprintf("%s/certs/revoked", mount)
-	secret, err := c.client.Logical().List(path)
+	secret, err := c.client.Logical().ListWithContext(ctx, path)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list revoked certificates from mount %s: %w", mount, err)
 	}
@@ -322,9 +322,9 @@ func (c *realClient) fetchRevokedSerialsFromMount(mount string) (map[string]bool
 	return serials, nil
 }
 
-func (c *realClient) readCertificateFromMount(mount, serial string) (certs.Certificate, error) {
+func (c *realClient) readCertificateFromMount(ctx context.Context, mount, serial string) (certs.Certificate, error) {
 	path := fmt.Sprintf("%s/cert/%s", mount, serial)
-	secret, err := c.client.Logical().Read(path)
+	secret, err := c.client.Logical().ReadWithContext(ctx, path)
 	if err != nil {
 		return certs.Certificate{}, fmt.Errorf("failed to read certificate %s from mount %s: %w", serial, mount, err)
 	}
@@ -449,7 +449,7 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 	}
 
 	// Get revoked status
-	revokedSet, err := c.fetchRevokedSerialsFromMount(mount)
+	revokedSet, err := c.fetchRevokedSerialsFromMount(ctx, mount)
 	if err != nil {
 		return certs.DetailedCertificate{}, err
 	}
