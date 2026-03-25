@@ -182,7 +182,7 @@
             </div>
           </div>
           <div class="vcv-dashboard-stats">
-            <div class="vcv-stat vcv-stat-valid vcv-stat-clickable" data-status="valid" onclick="VCV.filterByDashboardCard('valid')">
+            <div class="vcv-stat vcv-stat-valid vcv-stat-clickable" data-status="valid" onclick="VCV.filterByDashboardCard('valid')" role="button" tabindex="0" aria-label="{{.Messages.DashboardValid}}">
               <div class="vcv-stat-header">
                 <span class="vcv-stat-dot"></span>
                 <span class="vcv-stat-label" id="dashboard-valid-label">{{.Messages.DashboardValid}}</span>
@@ -190,7 +190,7 @@
               <span class="vcv-stat-value" id="dashboard-valid">{{.Certs.DashboardValid}}</span>
               <span class="vcv-stat-desc" id="dashboard-valid-desc">{{.Messages.DashboardValidDesc}}</span>
             </div>
-            <div class="vcv-stat vcv-stat-warning vcv-stat-clickable" data-status="warning" onclick="VCV.filterByDashboardCard('warning')">
+            <div class="vcv-stat vcv-stat-warning vcv-stat-clickable" data-status="warning" onclick="VCV.filterByDashboardCard('warning')" role="button" tabindex="0" aria-label="{{.Messages.DashboardWarning}}">
               <div class="vcv-stat-header">
                 <span class="vcv-stat-dot"></span>
                 <span class="vcv-stat-label" id="dashboard-warning-label">{{.Messages.DashboardWarning}}</span>
@@ -198,7 +198,7 @@
               <span class="vcv-stat-value" id="dashboard-warning">{{.Certs.DashboardWarning}}</span>
               <span class="vcv-stat-desc" id="dashboard-warning-desc">{{.Messages.DashboardWarningDesc}}</span>
             </div>
-            <div class="vcv-stat vcv-stat-critical vcv-stat-clickable" data-status="critical" onclick="VCV.filterByDashboardCard('critical')">
+            <div class="vcv-stat vcv-stat-critical vcv-stat-clickable" data-status="critical" onclick="VCV.filterByDashboardCard('critical')" role="button" tabindex="0" aria-label="{{.Messages.DashboardCritical}}">
               <div class="vcv-stat-header">
                 <span class="vcv-stat-dot"></span>
                 <span class="vcv-stat-label" id="dashboard-critical-label">{{.Messages.DashboardCritical}}</span>
@@ -206,7 +206,7 @@
               <span class="vcv-stat-value" id="dashboard-critical">{{.Certs.DashboardCritical}}</span>
               <span class="vcv-stat-desc" id="dashboard-critical-desc">{{.Messages.DashboardCriticalDesc}}</span>
             </div>
-            <div class="vcv-stat vcv-stat-expired vcv-stat-clickable" data-status="expired" onclick="VCV.filterByDashboardCard('expired')">
+            <div class="vcv-stat vcv-stat-expired vcv-stat-clickable" data-status="expired" onclick="VCV.filterByDashboardCard('expired')" role="button" tabindex="0" aria-label="{{.Messages.DashboardExpired}}">
               <div class="vcv-stat-header">
                 <span class="vcv-stat-dot"></span>
                 <span class="vcv-stat-label" id="dashboard-expired-label">{{.Messages.DashboardExpired}}</span>
@@ -214,7 +214,7 @@
               <span class="vcv-stat-value" id="dashboard-expired">{{.Certs.DashboardExpired}}</span>
               <span class="vcv-stat-desc" id="dashboard-expired-desc">{{.Messages.DashboardExpiredDesc}}</span>
             </div>
-            <div class="vcv-stat vcv-stat-revoked vcv-stat-clickable" data-status="revoked" onclick="VCV.filterByDashboardCard('revoked')">
+            <div class="vcv-stat vcv-stat-revoked vcv-stat-clickable" data-status="revoked" onclick="VCV.filterByDashboardCard('revoked')" role="button" tabindex="0" aria-label="{{.Messages.DashboardRevoked}}">
               <div class="vcv-stat-header">
                 <span class="vcv-stat-dot"></span>
                 <span class="vcv-stat-label" id="dashboard-revoked-label">{{.Messages.DashboardRevoked}}</span>
