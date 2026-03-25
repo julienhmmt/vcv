@@ -8,3 +8,9 @@ vcv.log
 *.out
 # test logs
 test-offline.log
+
+# node_modules
+node_modules
+vendor
+dist
+build
