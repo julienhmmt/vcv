@@ -33,27 +33,27 @@ Or via environment variables (legacy):
 
 ### Certificate inventory
 
-| Metric | Type | Labels | Description |
-| ------ | ---- | ------ | ----------- |
-| `vcv_certificates_total` | Gauge | `vault_id`, `pki`, `status` | Total certificates by status (valid/expired/revoked) |
-| `vcv_certificates_expired_count` | Gauge | - | Total number of expired certificates |
-| `vcv_certificates_expiring_soon_count` | Gauge | `vault_id`, `pki`, `level` | Certificates expiring within threshold window (level: warning/critical) |
-| `vcv_certificates_last_fetch_timestamp_seconds` | Gauge | - | Unix timestamp of last successful certificate fetch |
-| `vcv_cache_size` | Gauge | - | Number of items currently cached |
+| Metric                                          | Type  | Labels                      | Description                                                             |
+| ----------------------------------------------- | ----- | --------------------------- | ----------------------------------------------------------------------- |
+| `vcv_certificates_total`                        | Gauge | `vault_id`, `pki`, `status` | Total certificates by status (valid/expired/revoked)                    |
+| `vcv_certificates_expired_count`                | Gauge | -                           | Total number of expired certificates                                    |
+| `vcv_certificates_expiring_soon_count`          | Gauge | `vault_id`, `pki`, `level`  | Certificates expiring within threshold window (level: warning/critical) |
+| `vcv_certificates_last_fetch_timestamp_seconds` | Gauge | -                           | Unix timestamp of last successful certificate fetch                     |
+| `vcv_cache_size`                                | Gauge | -                           | Number of items currently cached                                        |
 
 ### Expiration thresholds
 
-| Metric | Type | Labels | Description |
-| ------ | ---- | ------ | ----------- |
-| `vcv_expiration_threshold_critical_days` | Gauge | - | Configured critical threshold in days |
-| `vcv_expiration_threshold_warning_days` | Gauge | - | Configured warning threshold in days |
+| Metric                                   | Type  | Labels | Description                           |
+| ---------------------------------------- | ----- | ------ | ------------------------------------- |
+| `vcv_expiration_threshold_critical_days` | Gauge | -      | Configured critical threshold in days |
+| `vcv_expiration_threshold_warning_days`  | Gauge | -      | Configured warning threshold in days  |
 
 **Use case**: These metrics expose the configured thresholds so you can validate alert rules match your configuration.
 
 ### Expiry time buckets (enhanced metrics)
 
-| Metric | Type | Labels | Description |
-| ------ | ---- | ------ | ----------- |
+| Metric                           | Type  | Labels                      | Description                                |
+| -------------------------------- | ----- | --------------------------- | ------------------------------------------ |
 | `vcv_certificates_expiry_bucket` | Gauge | `vault_id`, `pki`, `bucket` | Certificate count by expiration time range |
 
 **Buckets**:
@@ -69,36 +69,36 @@ Or via environment variables (legacy):
 
 ### Vault connectivity
 
-| Metric | Type | Labels | Description |
-| ------ | ---- | ------ | ----------- |
-| `vcv_vault_connected` | Gauge | `vault_id` | Vault connection status (1=connected, 0=disconnected) |
-| `vcv_vault_list_certificates_success` | Gauge | `vault_id` | Whether last certificate listing succeeded (1=success, 0=failure) |
-| `vcv_vault_list_certificates_error` | Gauge | `vault_id` | Whether last certificate listing errored (1=error, 0=no error) |
-| `vcv_vault_list_certificates_duration_seconds` | Gauge | `vault_id` | Duration of last certificate listing operation |
-| `vcv_certificates_partial_scrape` | Gauge | `vault_id` | Whether last scrape was partial due to vault errors (1=partial, 0=complete) |
+| Metric                                         | Type  | Labels     | Description                                                                 |
+| ---------------------------------------------- | ----- | ---------- | --------------------------------------------------------------------------- |
+| `vcv_vault_connected`                          | Gauge | `vault_id` | Vault connection status (1=connected, 0=disconnected)                       |
+| `vcv_vault_list_certificates_success`          | Gauge | `vault_id` | Whether last certificate listing succeeded (1=success, 0=failure)           |
+| `vcv_vault_list_certificates_error`            | Gauge | `vault_id` | Whether last certificate listing errored (1=error, 0=no error)              |
+| `vcv_vault_list_certificates_duration_seconds` | Gauge | `vault_id` | Duration of last certificate listing operation                              |
+| `vcv_certificates_partial_scrape`              | Gauge | `vault_id` | Whether last scrape was partial due to vault errors (1=partial, 0=complete) |
 
 ### Configuration metrics
 
-| Metric | Type | Labels | Description |
-| ------ | ---- | ------ | ----------- |
-| `vcv_vaults_configured` | Gauge | - | Number of Vault instances configured |
+| Metric                      | Type  | Labels     | Description                               |
+| --------------------------- | ----- | ---------- | ----------------------------------------- |
+| `vcv_vaults_configured`     | Gauge | -          | Number of Vault instances configured      |
 | `vcv_pki_mounts_configured` | Gauge | `vault_id` | Number of PKI mounts configured per vault |
 
 ### Exporter health
 
-| Metric | Type | Labels | Description |
-| ------ | ---- | ------ | ----------- |
-| `vcv_certificate_exporter_last_scrape_success` | Gauge | - | Whether last scrape succeeded (1=success, 0=failure) |
-| `vcv_certificate_exporter_last_scrape_duration_seconds` | Gauge | - | Duration of last certificate scrape |
+| Metric                                                  | Type  | Labels | Description                                          |
+| ------------------------------------------------------- | ----- | ------ | ---------------------------------------------------- |
+| `vcv_certificate_exporter_last_scrape_success`          | Gauge | -      | Whether last scrape succeeded (1=success, 0=failure) |
+| `vcv_certificate_exporter_last_scrape_duration_seconds` | Gauge | -      | Duration of last certificate scrape                  |
 
 ## Per-certificate metrics (high cardinality)
 
 **⚠️ Warning**: These metrics are disabled by default due to high cardinality. Enable with `VCV_METRICS_PER_CERTIFICATE=true`.
 
-| Metric | Type | Labels | Description |
-| ------ | ---- | ------ | ----------- |
-| `vcv_certificate_expiry_timestamp_seconds` | Gauge | `certificate_id`, `common_name`, `status`, `vault_id`, `pki` | Certificate expiration timestamp (Unix epoch) |
-| `vcv_certificate_days_until_expiry` | Gauge | `certificate_id`, `common_name`, `status`, `vault_id`, `pki` | Days remaining until expiration (negative if expired) |
+| Metric                                     | Type  | Labels                                                       | Description                                           |
+| ------------------------------------------ | ----- | ------------------------------------------------------------ | ----------------------------------------------------- |
+| `vcv_certificate_expiry_timestamp_seconds` | Gauge | `certificate_id`, `common_name`, `status`, `vault_id`, `pki` | Certificate expiration timestamp (Unix epoch)         |
+| `vcv_certificate_days_until_expiry`        | Gauge | `certificate_id`, `common_name`, `status`, `vault_id`, `pki` | Days remaining until expiration (negative if expired) |
 
 **Use case**: Debugging specific certificates, drill-down analysis. Not recommended for large deployments (>1000 certificates).
 
@@ -206,40 +206,40 @@ groups:
 ### Warning alerts
 
 ```yaml
-      - alert: VCVCertificatesExpiringSoonWarning
-        expr: sum by (vault_id, pki) (vcv_certificates_expiring_soon_count{level="warning"}) > 0
-        labels:
-          severity: warning
-        annotations:
-          summary: "Certificates expiring soon (warning)"
-          description: "{{ $value }} certificates are expiring within {{ ALERT_VALUE vcv_expiration_threshold_warning_days }} days (vault={{ $labels.vault_id }}, pki={{ $labels.pki }})."
+- alert: VCVCertificatesExpiringSoonWarning
+  expr: sum by (vault_id, pki) (vcv_certificates_expiring_soon_count{level="warning"}) > 0
+  labels:
+    severity: warning
+  annotations:
+    summary: "Certificates expiring soon (warning)"
+    description: "{{ $value }} certificates are expiring within {{ ALERT_VALUE vcv_expiration_threshold_warning_days }} days (vault={{ $labels.vault_id }}, pki={{ $labels.pki }})."
 
-      - alert: VCVPartialScrape
-        expr: vcv_certificates_partial_scrape{vault_id="__all__"} == 1
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "VCV partial scrape"
-          description: "At least one Vault failed during listing; aggregated counts may be incomplete."
+- alert: VCVPartialScrape
+  expr: vcv_certificates_partial_scrape{vault_id="__all__"} == 1
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "VCV partial scrape"
+    description: "At least one Vault failed during listing; aggregated counts may be incomplete."
 
-      - alert: VCVStaleInventory
-        expr: time() - vcv_certificates_last_fetch_timestamp_seconds > 3600
-        for: 10m
-        labels:
-          severity: warning
-        annotations:
-          summary: "VCV inventory is stale"
-          description: "The exporter has not refreshed certificates for more than 1 hour."
+- alert: VCVStaleInventory
+  expr: time() - vcv_certificates_last_fetch_timestamp_seconds > 3600
+  for: 10m
+  labels:
+    severity: warning
+  annotations:
+    summary: "VCV inventory is stale"
+    description: "The exporter has not refreshed certificates for more than 1 hour."
 
-      - alert: VCVHighExpiryRate
-        expr: sum(vcv_certificates_expiry_bucket{bucket="0-7d"}) > 10
-        for: 15m
-        labels:
-          severity: warning
-        annotations:
-          summary: "High certificate expiry rate"
-          description: "{{ $value }} certificates are expiring in the next 7 days."
+- alert: VCVHighExpiryRate
+  expr: sum(vcv_certificates_expiry_bucket{bucket="0-7d"}) > 10
+  for: 15m
+  labels:
+    severity: warning
+  annotations:
+    summary: "High certificate expiry rate"
+    description: "{{ $value }} certificates are expiring in the next 7 days."
 ```
 
 ## Grafana dashboard queries

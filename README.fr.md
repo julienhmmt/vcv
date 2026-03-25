@@ -214,7 +214,7 @@ Ces valeurs contrôlent :
 
 ## 🌍 Multilingue
 
-L'UI est localisée en *anglais*, *français*, *espagnol*, *allemand* et *italien*. La langue se choisit dans l'en-tête via un bouton ou saisissant dans l'URL le composant `?lang=xx`.
+L'UI est localisée en _anglais_, _français_, _espagnol_, _allemand_ et _italien_. La langue se choisit dans l'en-tête via un bouton ou saisissant dans l'URL le composant `?lang=xx`.
 
 ## 📊 Exporter des métriques vers Prometheus
 
@@ -268,7 +268,7 @@ Pour configurer le scraping côté Prometheus (exemple avec VCV exposant le port
 scrape_configs:
   - job_name: vcv
     static_configs:
-      - targets: ['<your-vcv-host>:52000']
+      - targets: ["<your-vcv-host>:52000"]
     metrics_path: /metrics
 ```
 

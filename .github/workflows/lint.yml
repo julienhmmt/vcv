@@ -1,5 +1,4 @@
 ---
-
 name: Lint
 
 on:
@@ -9,16 +8,15 @@ on:
 permissions: {}
 
 jobs:
-
   super-linter:
     name: Super Linter
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     permissions:
-        contents: read
-        packages: read
-        statuses: write
+      contents: read
+      packages: read
+      statuses: write
 
     steps:
       - name: Checkout code

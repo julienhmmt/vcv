@@ -30,34 +30,34 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 
 ## API surface
 
-| Endpoint | Method | Description |
-| ---------- | -------- | ------------- |
-| `/` | GET | Embedded UI |
-| `/api/cache/invalidate` | POST | Clear Vault cache |
-| `/api/certs/{id}/details` | GET | Detailed certificate view |
-| `/api/certs/{id}/pem` | GET | PEM content |
-| `/api/certs/{id}/pem/download` | GET | Download PEM content |
-| `/api/certs` | GET | List certificates |
-| `/api/config` | GET | Application configuration (thresholds) |
-| `/api/health` | GET | Liveness probe |
-| `/api/i18n` | GET | UI translations (lang via query param) |
-| `/api/ready` | GET | Readiness probe |
-| `/api/status` | GET | Vault connection status (per vault) |
-| `/api/version` | GET | Application version info |
-| `/metrics` | GET | Prometheus metrics |
-| `/ui/certs` | GET | HTMX fragment: certificates table + dashboard |
-| `/ui/certs/refresh` | POST | HTMX fragment: refresh certificates |
-| `/ui/certs/{id}/details` | GET | HTMX fragment: certificate details |
-| `/ui/theme/toggle` | POST | Toggle dark/light theme |
-| `/ui/vaults/status` | GET | HTMX fragment: vault status |
-| `/ui/vaults/refresh` | POST | HTMX fragment: refresh vaults |
-| `/admin` | GET | Admin page (enabled only if admin password is configured in settings.json) |
-| `/admin/panel` | GET | Admin panel fragment (HTMX) |
-| `/admin/login` | POST | Admin login (HTMX) |
-| `/admin/logout` | POST | Admin logout (HTMX) |
-| `/api/admin/login` | POST | Admin login (JSON) |
-| `/api/admin/logout` | POST | Admin logout (JSON) |
-| `/api/admin/settings` | GET/PUT | Admin settings (JSON, requires auth) |
+| Endpoint                       | Method  | Description                                                                |
+| ------------------------------ | ------- | -------------------------------------------------------------------------- |
+| `/`                            | GET     | Embedded UI                                                                |
+| `/api/cache/invalidate`        | POST    | Clear Vault cache                                                          |
+| `/api/certs/{id}/details`      | GET     | Detailed certificate view                                                  |
+| `/api/certs/{id}/pem`          | GET     | PEM content                                                                |
+| `/api/certs/{id}/pem/download` | GET     | Download PEM content                                                       |
+| `/api/certs`                   | GET     | List certificates                                                          |
+| `/api/config`                  | GET     | Application configuration (thresholds)                                     |
+| `/api/health`                  | GET     | Liveness probe                                                             |
+| `/api/i18n`                    | GET     | UI translations (lang via query param)                                     |
+| `/api/ready`                   | GET     | Readiness probe                                                            |
+| `/api/status`                  | GET     | Vault connection status (per vault)                                        |
+| `/api/version`                 | GET     | Application version info                                                   |
+| `/metrics`                     | GET     | Prometheus metrics                                                         |
+| `/ui/certs`                    | GET     | HTMX fragment: certificates table + dashboard                              |
+| `/ui/certs/refresh`            | POST    | HTMX fragment: refresh certificates                                        |
+| `/ui/certs/{id}/details`       | GET     | HTMX fragment: certificate details                                         |
+| `/ui/theme/toggle`             | POST    | Toggle dark/light theme                                                    |
+| `/ui/vaults/status`            | GET     | HTMX fragment: vault status                                                |
+| `/ui/vaults/refresh`           | POST    | HTMX fragment: refresh vaults                                              |
+| `/admin`                       | GET     | Admin page (enabled only if admin password is configured in settings.json) |
+| `/admin/panel`                 | GET     | Admin panel fragment (HTMX)                                                |
+| `/admin/login`                 | POST    | Admin login (HTMX)                                                         |
+| `/admin/logout`                | POST    | Admin logout (HTMX)                                                        |
+| `/api/admin/login`             | POST    | Admin login (JSON)                                                         |
+| `/api/admin/logout`            | POST    | Admin logout (JSON)                                                        |
+| `/api/admin/settings`          | GET/PUT | Admin settings (JSON, requires auth)                                       |
 
 ## Configuration (settings.json)
 

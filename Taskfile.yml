@@ -1,4 +1,4 @@
-version: '3'
+version: "3"
 
 tasks:
   default: task --list
@@ -6,18 +6,18 @@ tasks:
   dev:
     desc: Construit le binaire Go et le container docker
     cmds:
-      - 'cd /Users/jh/git/gh/vcv && go clean -cache && go build -C app -o ../vcv ./cmd/server'
+      - "cd /Users/jh/git/gh/vcv && go clean -cache && go build -C app -o ../vcv ./cmd/server"
       - rm -f vcv.log
       - touch vcv.log
       - docker compose -f docker-compose.dev.yml down
-      - 'docker buildx build --platform linux/arm64 --load --build-arg VERSION=dev -t jhmmt/vcv:dev ./app'
+      - "docker buildx build --platform linux/arm64 --load --build-arg VERSION=dev -t jhmmt/vcv:dev ./app"
       - docker compose -f docker-compose.dev.yml up -d
 
   docker-build:
     desc: Construit les images docker (arm64 et amd64) et push sur Docker Hub
     vars:
       VCV_TAG:
-        sh: 'echo ${VCV_TAG:-latest}'
+        sh: "echo ${VCV_TAG:-latest}"
     cmds:
       - docker buildx use vcv-builder
       - docker buildx build --platform linux/amd64,linux/arm64 --build-arg VERSION={{.VCV_TAG}} -t jhmmt/vcv:{{.VCV_TAG}} --push ./app
@@ -26,13 +26,13 @@ tasks:
     desc: Run unit tests offline (no Vault) with coverage
     dir: app
     cmds:
-      - 'go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out'
+      - "go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out"
 
   test-dev:
     desc: Run tests against dev stack (docker-compose)
     dir: app
     cmds:
-      - 'VAULT_ADDR=http://localhost:8200 VAULT_TOKEN=root go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out'
+      - "VAULT_ADDR=http://localhost:8200 VAULT_TOKEN=root go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out"
 
   update-go:
     desc: Update go version
@@ -50,4 +50,4 @@ tasks:
     desc: Run unit tests with coverage
     dir: app
     cmds:
-      - 'go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out'
+      - "go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out"

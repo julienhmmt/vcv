@@ -268,7 +268,7 @@ To scrape metrics, add this to your Prometheus configuration (example with VCV r
 scrape_configs:
   - job_name: vcv
     static_configs:
-      - targets: ['<your-vcv-host>:52000']
+      - targets: ["<your-vcv-host>:52000"]
     metrics_path: /metrics
 ```
 
