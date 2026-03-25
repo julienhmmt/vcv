@@ -23,8 +23,8 @@
   border: 1px solid var(--vcv-color-border);
   border-radius: 1rem;
   box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.05),
-    0 10px 15px -3px rgba(0, 0, 0, 0.08);
+    0 4px 6px -1px rgb(0 0 0 / 5%),
+    0 10px 15px -3px rgb(0 0 0 / 8%);
   overflow: hidden;
 }
 
@@ -44,8 +44,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 1rem;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: rgb(16 185 129 / 10%);
+  border: 1px solid rgb(16 185 129 / 20%);
   font-size: 1.5rem;
   color: var(--vcv-color-primary);
 }
@@ -158,8 +158,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 0.5rem;
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.2);
+  background: rgb(16 185 129 / 10%);
+  border: 1px solid rgb(16 185 129 / 20%);
   color: var(--vcv-color-primary);
 }
 
@@ -251,12 +251,12 @@
   margin: 0;
   background: var(--vcv-color-surface);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
 }
 
 .admin-fieldset:hover {
   border-color: var(--vcv-color-border-strong);
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px -2px rgb(0 0 0 / 8%);
 }
 
 .admin-legend {
@@ -312,7 +312,7 @@
   background: var(--vcv-color-surface);
   border: 1px solid var(--vcv-color-border);
   border-radius: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 4%);
 }
 
 .admin-save-bar .vcv-button-primary {
@@ -370,16 +370,16 @@
   border: 1px solid var(--vcv-color-border);
   background: var(--vcv-color-surface);
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 3%);
 }
 
 .admin-vault-accordion:hover {
   border-color: var(--vcv-color-border-strong);
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 12px -2px rgb(0 0 0 / 8%);
 }
 
 .admin-vault-accordion[open] {
-  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 16px -4px rgb(0 0 0 / 10%);
 }
 
 .admin-vault-summary {
@@ -424,8 +424,8 @@
 }
 
 .admin-vault-accordion[open] .admin-vault-summary-icon {
-  background: rgba(16, 185, 129, 0.1);
-  border-color: rgba(16, 185, 129, 0.2);
+  background: rgb(16 185 129 / 10%);
+  border-color: rgb(16 185 129 / 20%);
 }
 
 .admin-vault-summary-title {
@@ -497,7 +497,7 @@
   width: 1rem;
   height: 1rem;
   border-radius: 50%;
-  background: currentColor;
+  background: currentcolor;
   color: var(--vcv-color-surface);
   font-size: 0.675rem;
   font-weight: 700;
@@ -558,7 +558,7 @@
   background: var(--vcv-color-surface-muted);
   color: var(--vcv-color-muted);
   border: 1px solid var(--vcv-color-border-strong);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 50%);
 }
 
 .vcv-status-disabled::before {
@@ -707,6 +707,7 @@
   padding: 0.3125rem 0.625rem;
   font-size: 0.6875rem;
 }
+
 .admin-docs-content {
   padding: 1.5rem;
   line-height: 1.7;
@@ -801,39 +802,39 @@
 /* ------- Dark mode overrides ------- */
 [data-theme="dark"] .admin-login-card {
   box-shadow:
-    0 4px 6px -1px rgba(0, 0, 0, 0.2),
-    0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    0 4px 6px -1px rgb(0 0 0 / 20%),
+    0 10px 15px -3px rgb(0 0 0 / 30%);
 }
 
 [data-theme="dark"] .admin-fieldset {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 15%);
 }
 
 [data-theme="dark"] .admin-fieldset:hover {
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px -2px rgb(0 0 0 / 30%);
 }
 
 [data-theme="dark"] .admin-vault-accordion {
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 15%);
 }
 
 [data-theme="dark"] .admin-vault-accordion:hover {
-  box-shadow: 0 4px 12px -2px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 12px -2px rgb(0 0 0 / 30%);
 }
 
 [data-theme="dark"] .admin-vault-accordion[open] {
-  box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 8px 16px -4px rgb(0 0 0 / 40%);
 }
 
 [data-theme="dark"] .admin-login-icon {
-  background: rgba(16, 185, 129, 0.15);
-  border-color: rgba(16, 185, 129, 0.25);
+  background: rgb(16 185 129 / 15%);
+  border-color: rgb(16 185 129 / 25%);
 }
 
 [data-theme="dark"] .vcv-status-disabled {
   background: var(--vcv-color-surface-muted);
   border-color: var(--vcv-color-border-strong);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
 }
 
 [data-theme="dark"] .vcv-status-connected {
