@@ -1,7 +1,7 @@
 ---
 services:
-  vault:
-    image: hashicorp/vault:1.21.3
+  vault-dev-1:
+    image: hashicorp/vault:1.21.2
     container_name: vault
     ports:
       - "8200:8200/tcp"
@@ -36,7 +36,7 @@ services:
       - ./vault-init-simple.sh:/vault-init-simple.sh:ro
 
   vault-dev-3:
-    image: hashicorp/vault:1.21.3
+    image: hashicorp/vault:1.21.4
     container_name: vault-dev-3
     ports:
       - "8202:8200/tcp"
@@ -52,42 +52,8 @@ services:
       - ./vault-dev-init.sh:/vault-dev-init.sh:ro
       - ./vault-init-simple.sh:/vault-init-simple.sh:ro
 
-  vault-dev-4:
-    image: hashicorp/vault:1.21.3
-    container_name: vault-dev-4
-    ports:
-      - "8203:8200/tcp"
-    environment:
-      - VAULT_DEV_ROOT_TOKEN_ID=root
-      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
-    cap_add:
-      - IPC_LOCK
-    command: "sh /vault-init-simple.sh vcv-4"
-    networks:
-      - vcv-network
-    volumes:
-      - ./vault-dev-init.sh:/vault-dev-init.sh:ro
-      - ./vault-init-simple.sh:/vault-init-simple.sh:ro
-
-  vault-dev-5:
-    image: hashicorp/vault:1.21.3
-    container_name: vault-dev-5
-    ports:
-      - "8204:8200/tcp"
-    environment:
-      - VAULT_DEV_ROOT_TOKEN_ID=root
-      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
-    cap_add:
-      - IPC_LOCK
-    command: "sh /vault-init-simple.sh vcv-5"
-    networks:
-      - vcv-network
-    volumes:
-      - ./vault-dev-init.sh:/vault-dev-init.sh:ro
-      - ./vault-init-simple.sh:/vault-init-simple.sh:ro
-
   openbao-dev-1:
-    image: docker.io/openbao/openbao:2.5.0
+    image: docker.io/openbao/openbao:2.5.1
     container_name: openbao-dev-1
     ports:
       - "1337:1337/tcp"
@@ -112,11 +78,9 @@ services:
     networks:
       - vcv-network
     depends_on:
-      - vault
+      - vault-dev-1
       - vault-dev-2
       - vault-dev-3
-      - vault-dev-4
-      - vault-dev-5
       - openbao-dev-1
     read_only: true
     security_opt:

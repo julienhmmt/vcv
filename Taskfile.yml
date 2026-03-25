@@ -6,7 +6,7 @@ tasks:
   dev:
     desc: Construit le binaire Go et le container docker
     cmds:
-      - 'cd /Users/jh/git/vcv && go clean -cache && go build -C app -o ../vcv ./cmd/server'
+      - 'cd /Users/jh/git/gh/vcv && go clean -cache && go build -C app -o ../vcv ./cmd/server'
       - rm -f vcv.log
       - touch vcv.log
       - docker compose -f docker-compose.dev.yml down
