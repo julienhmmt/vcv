@@ -126,6 +126,7 @@ func (s *adminSessionStore) allowLoginAttempt(r *http.Request) bool {
 }
 
 func (s *adminSessionStore) pruneSessions(now time.Time) {
+	// pruneSessions must be called while holding s.mu.
 	for token, expiresAt := range s.sessions {
 		if now.After(expiresAt) {
 			delete(s.sessions, token)
@@ -216,6 +217,7 @@ func (s *adminSessionStore) requireAuth(next http.Handler) http.Handler {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
+		// pruneSessions must be called while holding s.mu.
 		s.mu.Lock()
 		s.pruneSessions(time.Now())
 		expiresAt, ok := s.sessions[token]
