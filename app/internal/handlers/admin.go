@@ -645,7 +645,7 @@ type adminVaultAddedEvent struct {
 	Key string `json:"key"`
 }
 
-func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, env config.Environment, vaultRegistry *vault.Registry, vaultStatusClients map[string]vault.Client) {
+func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, env config.Environment, vaultRegistry *vault.Registry, vaultStatusClients map[string]vault.Client, cacheClient vault.Client) {
 	// Load settings to get admin password
 	settingsStore := newAdminSettingsStore(settingsPath, env)
 	settings, err := settingsStore.load()
@@ -746,6 +746,18 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 	})
 	router.Group(func(r chi.Router) {
 		r.Use(sessions.requireAuth)
+		r.Post("/api/cache/invalidate", func(w http.ResponseWriter, r *http.Request) {
+			if cacheClient == nil {
+				http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
+				return
+			}
+			cacheClient.InvalidateCache()
+			w.WriteHeader(http.StatusNoContent)
+			requestID := middleware.GetRequestID(r.Context())
+			logger.HTTPEvent(r.Method, r.URL.Path, http.StatusNoContent, 0).
+				Str("request_id", requestID).
+				Msg("invalidated cache")
+		})
 		r.Post("/admin/settings", func(w http.ResponseWriter, r *http.Request) {
 			language := i18n.ResolveLanguage(r)
 			messages := i18n.MessagesForLanguage(language)

@@ -1,7 +1,6 @@
 package handlers_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -145,18 +144,14 @@ func TestGetCertificatePEM_Error(t *testing.T) {
 	mockVault.AssertExpectations(t)
 }
 
-func TestInvalidateCache(t *testing.T) {
+func TestInvalidateCache_NotRegisteredOnCertRoutes(t *testing.T) {
 	mockVault := new(vault.MockClient)
-	mockVault.On("InvalidateCache").Return()
 	router := setupRouter(mockVault)
-
-	req := httptest.NewRequest(http.MethodPost, "/api/cache/invalidate", bytes.NewBuffer(nil))
+	req := httptest.NewRequest(http.MethodPost, "/api/cache/invalidate", nil)
 	rec := httptest.NewRecorder()
-
 	router.ServeHTTP(rec, req)
-
-	assert.Equal(t, http.StatusNoContent, rec.Code)
-	mockVault.AssertExpectations(t)
+	assert.Equal(t, http.StatusNotFound, rec.Code)
+	mockVault.AssertNotCalled(t, "InvalidateCache")
 }
 
 type failingResponseWriter struct {

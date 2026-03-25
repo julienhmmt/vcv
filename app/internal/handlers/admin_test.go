@@ -30,6 +30,7 @@ import (
 // mockVaultClient is a test double for vault.Client
 type mockVaultClient struct {
 	checkConnectionFunc func(ctx context.Context) error
+	cacheInvalidated    bool
 }
 
 func (m *mockVaultClient) CheckConnection(ctx context.Context) error {
@@ -47,7 +48,7 @@ func (m *mockVaultClient) GetCertificatePEM(ctx context.Context, serialNumber st
 	return certs.PEMResponse{}, nil
 }
 
-func (m *mockVaultClient) InvalidateCache() {}
+func (m *mockVaultClient) InvalidateCache() { m.cacheInvalidated = true }
 
 func (m *mockVaultClient) ListCertificates(ctx context.Context) ([]certs.Certificate, error) {
 	return []certs.Certificate{}, nil
@@ -77,7 +78,7 @@ func TestRegisterAdminRoutes_DisabledWithoutPassword(t *testing.T) {
 	// Create settings file without admin password
 	settingsContent := `{"app":{"env":"dev","port":52000},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/admin", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
@@ -90,7 +91,7 @@ func TestRegisterAdminRoutes_DisabledWithPlaintextPassword(t *testing.T) {
 	// Create settings file with plaintext password (invalid)
 	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"secret"},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil, nil)
 	req := httptest.NewRequest(http.MethodGet, "/admin", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
@@ -257,7 +258,7 @@ func TestAdminRoutes_HTMXPanelLoginLogoutAndVaultActions(t *testing.T) {
 	adminPassword := mustBcryptPasswordHash(t, "secret")
 	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil, nil)
 
 	panelReq := httptest.NewRequest(http.MethodGet, "/admin/panel", nil)
 	panelRec := httptest.NewRecorder()
@@ -311,7 +312,7 @@ func TestAdminRoutes_SettingsPost_ErrorsAndSuccess(t *testing.T) {
 	adminPassword := mustBcryptPasswordHash(t, "secret")
 	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
 	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0644))
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil, nil)
 
 	loginReq := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
 	loginReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -464,7 +465,7 @@ func TestAdminRoutes_VaultRemove_PersistsToSettings(t *testing.T) {
 	require.NoError(t, os.WriteFile(settingsPath, []byte(initialWithAdmin), 0o644))
 
 	router := chi.NewRouter()
-	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil)
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil, nil)
 
 	loginReq := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
 	loginReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -591,4 +592,41 @@ func TestBuildAdminPanelData_NilVaultClients(t *testing.T) {
 	assert.False(t, view.Connected)
 	assert.Equal(t, "vcv-status-disconnected", view.StatusClass)
 	assert.Equal(t, "Disconnected", view.StatusText)
+}
+
+func TestAdminRoutes_InvalidateCache_RequiresAuth(t *testing.T) {
+	settingsPath := filepath.Join(t.TempDir(), "settings.json")
+	adminPassword := mustBcryptPasswordHash(t, "secret")
+	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
+	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0o644))
+	router := chi.NewRouter()
+	cacheClient := &mockVaultClient{}
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil, cacheClient)
+	req := httptest.NewRequest(http.MethodPost, "/api/cache/invalidate", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	assert.False(t, cacheClient.cacheInvalidated)
+}
+
+func TestAdminRoutes_InvalidateCache_Authed(t *testing.T) {
+	settingsPath := filepath.Join(t.TempDir(), "settings.json")
+	adminPassword := mustBcryptPasswordHash(t, "secret")
+	settingsContent := `{"app":{"env":"dev","port":52000},"admin":{"password":"` + adminPassword + `"},"vaults":[]}`
+	require.NoError(t, os.WriteFile(settingsPath, []byte(settingsContent), 0o644))
+	router := chi.NewRouter()
+	cacheClient := &mockVaultClient{}
+	RegisterAdminRoutes(router, newAdminWebFS(), settingsPath, config.EnvDev, nil, nil, cacheClient)
+	loginReq := httptest.NewRequest(http.MethodPost, "/admin/login", strings.NewReader("username=admin&password=secret"))
+	loginReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	loginRec := httptest.NewRecorder()
+	router.ServeHTTP(loginRec, loginReq)
+	cookies := loginRec.Result().Cookies()
+	require.NotEmpty(t, cookies)
+	req := httptest.NewRequest(http.MethodPost, "/api/cache/invalidate", nil)
+	req.AddCookie(cookies[0])
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	assert.True(t, cacheClient.cacheInvalidated)
 }

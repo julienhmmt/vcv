@@ -152,7 +152,7 @@ func (c *realClient) CheckConnection(ctx context.Context) error {
 		Msg("vault liveness check successful")
 
 	// Check if token is usable
-	_, err = c.client.Auth().Token().LookupSelf()
+	_, err = c.client.Auth().Token().LookupSelfWithContext(ctx)
 	if err != nil {
 		logger.Get().Error().
 			Str("vault_addr", c.addr).

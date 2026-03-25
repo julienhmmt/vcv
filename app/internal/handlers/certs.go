@@ -175,15 +175,6 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			Str("serial_number", certificateID).
 			Msg("downloaded certificate PEM")
 	})
-
-	r.Post("/api/cache/invalidate", func(w http.ResponseWriter, req *http.Request) {
-		vaultClient.InvalidateCache()
-		w.WriteHeader(http.StatusNoContent)
-		requestID := middleware.GetRequestID(req.Context())
-		logger.HTTPEvent(req.Method, req.URL.Path, http.StatusNoContent, 0).
-			Str("request_id", requestID).
-			Msg("invalidated cache")
-	})
 }
 
 func decodeCertificateIDParam(req *http.Request) (string, int, error) {

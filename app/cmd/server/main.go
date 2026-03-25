@@ -120,7 +120,7 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 	handlers.RegisterI18nRoutes(r)
 	handlers.RegisterCertRoutes(r, multiVaultClient)
 	handlers.RegisterUIRoutes(r, multiVaultClient, cfg.AllVaults, statusClients, webFS, cfg.ExpirationThresholds, vaultRegistry)
-	handlers.RegisterAdminRoutes(r, webFS, settingsPath, cfg.Env, vaultRegistry, statusClients)
+	handlers.RegisterAdminRoutes(r, webFS, settingsPath, cfg.Env, vaultRegistry, statusClients, multiVaultClient)
 
 	return r, nil
 }
