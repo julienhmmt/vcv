@@ -468,8 +468,8 @@ func TestGetCertificateDetails_CacheHit(t *testing.T) {
 	}))
 	defer server.Close()
 	client := newRealClientForTest(t, server.URL, []string{"pki"})
-	cacheKey := "details_pki:aa"
-	client.cache.Set(cacheKey, certs.DetailedCertificate{SerialNumber: "aa"})
+	cacheKey := "v2:details_pki:aa"
+	client.cache.Set(cacheKey, certs.DetailedCertificate{Certificate: certs.Certificate{SerialNumber: "aa"}})
 	result, err := client.GetCertificateDetails(context.Background(), "pki:aa")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)

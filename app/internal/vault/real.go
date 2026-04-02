@@ -21,6 +21,8 @@ import (
 	"github.com/hashicorp/vault/api"
 )
 
+const cacheVersion = "v2"
+
 type realClient struct {
 	client   *api.Client
 	mounts   []string
@@ -93,6 +95,9 @@ func NewClientFromConfig(cfg config.VaultConfig) (Client, error) {
 		cache:    cache.New(15 * time.Minute),
 		stopChan: make(chan struct{}),
 	}
+
+	// Clear cache on startup to invalidate old schema versions
+	c.cache.Clear()
 
 	logger.Get().Info().
 		Str("vault_addr", cfg.Addr).
@@ -178,7 +183,7 @@ func (c *realClient) Shutdown() {
 
 func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate, error) {
 	// Try cache first
-	if cached, found := c.cache.Get("certificates"); found {
+	if cached, found := c.cache.Get(cacheVersion + ":certificates"); found {
 		if certificates, ok := cached.([]certs.Certificate); ok {
 			logger.Get().Debug().
 				Str("vault_addr", c.addr).
@@ -245,7 +250,7 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 	})
 
 	// Cache the result
-	c.cache.Set("certificates", allCertificates)
+	c.cache.Set(cacheVersion+":certificates", allCertificates)
 
 	logger.Get().Debug().
 		Str("vault_addr", c.addr).
@@ -323,6 +328,10 @@ func (c *realClient) fetchRevokedSerialsFromMount(ctx context.Context, mount str
 }
 
 func (c *realClient) readCertificateFromMount(ctx context.Context, mount, serial string) (certs.Certificate, error) {
+	if serial == "" {
+		return certs.Certificate{}, fmt.Errorf("serial number cannot be empty")
+	}
+
 	path := fmt.Sprintf("%s/cert/%s", mount, serial)
 	secret, err := c.client.Logical().ReadWithContext(ctx, path)
 	if err != nil {
@@ -356,12 +365,13 @@ func (c *realClient) readCertificateFromMount(ctx context.Context, mount, serial
 
 	// Prefix ID with mount to avoid collisions across mounts
 	return certs.Certificate{
-		ID:         fmt.Sprintf("%s:%s", mount, serial),
-		CommonName: x509Certificate.Subject.CommonName,
-		Sans:       subjectAlternativeNames,
-		CreatedAt:  x509Certificate.NotBefore.UTC(),
-		ExpiresAt:  x509Certificate.NotAfter.UTC(),
-		Revoked:    false,
+		ID:           fmt.Sprintf("%s:%s", mount, serial),
+		SerialNumber: serial,
+		CommonName:   x509Certificate.Subject.CommonName,
+		Sans:         subjectAlternativeNames,
+		CreatedAt:    x509Certificate.NotBefore.UTC(),
+		ExpiresAt:    x509Certificate.NotAfter.UTC(),
+		Revoked:      false,
 	}, nil
 }
 
@@ -371,6 +381,9 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 	if err != nil {
 		return certs.DetailedCertificate{}, err
 	}
+	if serial == "" {
+		return certs.DetailedCertificate{}, fmt.Errorf("serial number cannot be empty")
+	}
 
 	logger.Get().Debug().
 		Str("vault_addr", c.addr).
@@ -379,7 +392,7 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 		Msg("getting certificate details")
 
 	// Try cache first
-	cacheKey := fmt.Sprintf("details_%s", serialNumber)
+	cacheKey := fmt.Sprintf("%s:details_%s", cacheVersion, serialNumber)
 	if cached, found := c.cache.Get(cacheKey); found {
 		if details, ok := cached.(certs.DetailedCertificate); ok {
 			logger.Get().Debug().
@@ -456,14 +469,14 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 
 	details := certs.DetailedCertificate{
 		Certificate: certs.Certificate{
-			ID:         serialNumber, // Keep the prefixed ID
-			CommonName: x509Certificate.Subject.CommonName,
-			Sans:       subjectAlternativeNames,
-			CreatedAt:  x509Certificate.NotBefore.UTC(),
-			ExpiresAt:  x509Certificate.NotAfter.UTC(),
-			Revoked:    revokedSet[serial],
+			ID:           serialNumber, // Keep the prefixed ID
+			SerialNumber: serial,       // Store only the serial part
+			CommonName:   x509Certificate.Subject.CommonName,
+			Sans:         subjectAlternativeNames,
+			CreatedAt:    x509Certificate.NotBefore.UTC(),
+			ExpiresAt:    x509Certificate.NotAfter.UTC(),
+			Revoked:      revokedSet[serial],
 		},
-		SerialNumber:      serial, // Store only the serial part
 		Issuer:            x509Certificate.Issuer.String(),
 		Subject:           x509Certificate.Subject.String(),
 		KeyAlgorithm:      x509Certificate.SignatureAlgorithm.String(),

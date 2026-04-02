@@ -108,7 +108,7 @@ func TestGetCertificateDetailsUI(t *testing.T) {
 			name: "success unescapes id",
 			path: "/ui/certs/pki_dev%3A33%3Aaa/details",
 			setupMock: func(mockVault *vault.MockClient) {
-				mockVault.On("GetCertificateDetails", mock.Anything, "pki_dev:33:aa").Return(certs.DetailedCertificate{Certificate: certs.Certificate{ID: "pki_dev:33:aa", CommonName: "cn", ExpiresAt: time.Now()}, SerialNumber: "33:aa"}, nil)
+				mockVault.On("GetCertificateDetails", mock.Anything, "pki_dev:33:aa").Return(certs.DetailedCertificate{Certificate: certs.Certificate{ID: "pki_dev:33:aa", SerialNumber: "33:aa", CommonName: "cn", ExpiresAt: time.Now()}}, nil)
 			},
 			expectedStatus:       http.StatusOK,
 			expectedBodyContains: "pki_dev:33:aa",
@@ -161,9 +161,9 @@ func TestGetCertificatesFragment(t *testing.T) {
 		"templates/certs-sort.html":            &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
 	}
 	certificates := []certs.Certificate{
-		{ID: "pki:a", CommonName: "alpha.example", Sans: []string{"alpha"}, CreatedAt: time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2026, 1, 1, 10, 0, 0, 0, time.UTC)},
-		{ID: "pki:b", CommonName: "beta.example", Sans: []string{"beta"}, CreatedAt: time.Date(2025, 2, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2027, 1, 1, 10, 0, 0, 0, time.UTC)},
-		{ID: "pki:c", CommonName: "gamma.example", Sans: []string{"gamma"}, CreatedAt: time.Date(2025, 3, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2028, 1, 1, 10, 0, 0, 0, time.UTC)},
+		{ID: "pki:11:22:33", SerialNumber: "11:22:33", CommonName: "alpha.example", Sans: []string{"alpha"}, CreatedAt: time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2026, 1, 1, 10, 0, 0, 0, time.UTC)},
+		{ID: "pki:44:55:66", SerialNumber: "44:55:66", CommonName: "beta.example", Sans: []string{"beta"}, CreatedAt: time.Date(2025, 2, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2027, 1, 1, 10, 0, 0, 0, time.UTC)},
+		{ID: "pki:77:88:99", SerialNumber: "77:88:99", CommonName: "gamma.example", Sans: []string{"gamma"}, CreatedAt: time.Date(2025, 3, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2028, 1, 1, 10, 0, 0, 0, time.UTC)},
 	}
 	tests := []struct {
 		name          string
@@ -181,8 +181,17 @@ func TestGetCertificatesFragment(t *testing.T) {
 			},
 		},
 		{
-			name: "search filters",
+			name: "search filters by common name",
 			path: "/ui/certs?search=beta",
+			assertBody: func(t *testing.T, body string) {
+				assert.NotContains(t, body, "alpha.example")
+				assert.Contains(t, body, "beta.example")
+				assert.NotContains(t, body, "gamma.example")
+			},
+		},
+		{
+			name: "search filters by serial number",
+			path: "/ui/certs?search=44:55",
 			assertBody: func(t *testing.T, body string) {
 				assert.NotContains(t, body, "alpha.example")
 				assert.Contains(t, body, "beta.example")

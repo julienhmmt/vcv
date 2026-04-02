@@ -97,7 +97,7 @@ func TestMultiClient_GetCertificateDetails_RoutesByExplicitVault(t *testing.T) {
 	instances := []config.VaultInstance{{ID: "v1"}, {ID: "v2"}}
 	c1 := &MockClient{}
 	c2 := &MockClient{}
-	expected := certs.DetailedCertificate{Certificate: certs.Certificate{ID: "pki:aa", CommonName: "cn"}, SerialNumber: "aa"}
+	expected := certs.DetailedCertificate{Certificate: certs.Certificate{ID: "pki:aa", SerialNumber: "aa", CommonName: "cn"}}
 	c2.On("GetCertificateDetails", mock.Anything, "pki:aa").Return(expected, nil)
 	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2}, nil)
 	result, err := m.GetCertificateDetails(context.Background(), "v2|pki:aa")

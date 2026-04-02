@@ -89,14 +89,14 @@ func TestDetailedCertificate_JSONSerialization(t *testing.T) {
 			name: "valid detailed certificate",
 			detailedCertificate: DetailedCertificate{
 				Certificate: Certificate{
-					ID:         "vault-mount-serial",
-					CommonName: "detailed.example.com",
-					Sans:       []string{"detailed.example.com", "www.detailed.example.com"},
-					CreatedAt:  time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
-					ExpiresAt:  time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
-					Revoked:    false,
+					ID:           "vault-mount-serial",
+					SerialNumber: "1234567890ABCDEF",
+					CommonName:   "detailed.example.com",
+					Sans:         []string{"detailed.example.com", "www.detailed.example.com"},
+					CreatedAt:    time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
+					ExpiresAt:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
+					Revoked:      false,
 				},
-				SerialNumber:      "1234567890ABCDEF",
 				Issuer:            "CN=Test CA",
 				Subject:           "CN=detailed.example.com",
 				KeyAlgorithm:      "RSA",
@@ -112,14 +112,14 @@ func TestDetailedCertificate_JSONSerialization(t *testing.T) {
 			name: "detailed certificate with minimal fields",
 			detailedCertificate: DetailedCertificate{
 				Certificate: Certificate{
-					ID:         "minimal",
-					CommonName: "minimal.example.com",
-					Sans:       []string{},
-					CreatedAt:  time.Time{},
-					ExpiresAt:  time.Time{},
-					Revoked:    false,
+					ID:           "minimal",
+					SerialNumber: "",
+					CommonName:   "minimal.example.com",
+					Sans:         []string{},
+					CreatedAt:    time.Time{},
+					ExpiresAt:    time.Time{},
+					Revoked:      false,
 				},
-				SerialNumber:      "",
 				Issuer:            "",
 				Subject:           "",
 				KeyAlgorithm:      "",
@@ -163,11 +163,11 @@ func TestDetailedCertificate_Inheritance(t *testing.T) {
 		Revoked:    false,
 	}
 
+	baseCert.SerialNumber = "1111222233334444"
 	detailedCert := DetailedCertificate{
-		Certificate:  baseCert,
-		SerialNumber: "1111222233334444",
-		Issuer:       "CN=Test Issuer",
-		Subject:      "CN=inherit.example.com",
+		Certificate: baseCert,
+		Issuer:      "CN=Test Issuer",
+		Subject:     "CN=inherit.example.com",
 	}
 
 	// Verify that the Certificate fields are accessible through DetailedCertificate
@@ -258,14 +258,14 @@ func TestCertificateFieldTypes(t *testing.T) {
 func TestDetailedCertificateFieldTypes(t *testing.T) {
 	detailedCert := DetailedCertificate{
 		Certificate: Certificate{
-			ID:         "test-id",
-			CommonName: "test.example.com",
-			Sans:       []string{"test.example.com"},
-			CreatedAt:  time.Now(),
-			ExpiresAt:  time.Now().Add(365 * 24 * time.Hour),
-			Revoked:    false,
+			ID:           "test-id",
+			SerialNumber: "1234567890",
+			CommonName:   "test.example.com",
+			Sans:         []string{"test.example.com"},
+			CreatedAt:    time.Now(),
+			ExpiresAt:    time.Now().Add(365 * 24 * time.Hour),
+			Revoked:      false,
 		},
-		SerialNumber:      "1234567890",
 		Issuer:            "CN=Test CA",
 		Subject:           "CN=test.example.com",
 		KeyAlgorithm:      "RSA",

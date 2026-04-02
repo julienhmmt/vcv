@@ -29,7 +29,7 @@ func setupRouter(mockVault *vault.MockClient) *chi.Mux {
 func TestListCertificates_Success(t *testing.T) {
 	mockVault := new(vault.MockClient)
 	certsList := []certs.Certificate{
-		{ID: "1", CommonName: "a", ExpiresAt: time.Now()},
+		{ID: "1", SerialNumber: "1", CommonName: "a", ExpiresAt: time.Now()},
 	}
 	mockVault.On("ListCertificates", mock.Anything).Return(certsList, nil)
 	router := setupRouter(mockVault)
@@ -64,11 +64,11 @@ func TestGetCertificateDetails_Success(t *testing.T) {
 	mockVault := new(vault.MockClient)
 	expected := certs.DetailedCertificate{
 		Certificate: certs.Certificate{
-			ID:         "serial",
-			CommonName: "cn",
-			ExpiresAt:  time.Now(),
+			ID:           "serial",
+			SerialNumber: "serial",
+			CommonName:   "cn",
+			ExpiresAt:    time.Now(),
 		},
-		SerialNumber: "serial",
 	}
 	mockVault.On("GetCertificateDetails", mock.Anything, "serial").Return(expected, nil)
 	router := setupRouter(mockVault)
@@ -174,7 +174,7 @@ func (w *failingResponseWriter) WriteHeader(statusCode int) {
 
 func TestListCertificates_MountsQuery_AllSentinelReturnsAll(t *testing.T) {
 	mockVault := new(vault.MockClient)
-	certsList := []certs.Certificate{{ID: "pki:a", CommonName: "a", ExpiresAt: time.Now()}, {ID: "pki:b", CommonName: "b", ExpiresAt: time.Now()}}
+	certsList := []certs.Certificate{{ID: "pki:a", SerialNumber: "a", CommonName: "a", ExpiresAt: time.Now()}, {ID: "pki:b", SerialNumber: "b", CommonName: "b", ExpiresAt: time.Now()}}
 	mockVault.On("ListCertificates", mock.Anything).Return(certsList, nil)
 	router := setupRouter(mockVault)
 	req := httptest.NewRequest(http.MethodGet, "/api/certs?mounts=__all__", nil)
@@ -189,7 +189,7 @@ func TestListCertificates_MountsQuery_AllSentinelReturnsAll(t *testing.T) {
 
 func TestListCertificates_MountsQuery_EmptyReturnsEmpty(t *testing.T) {
 	mockVault := new(vault.MockClient)
-	certsList := []certs.Certificate{{ID: "pki:a", CommonName: "a", ExpiresAt: time.Now()}}
+	certsList := []certs.Certificate{{ID: "pki:a", SerialNumber: "a", CommonName: "a", ExpiresAt: time.Now()}}
 	mockVault.On("ListCertificates", mock.Anything).Return(certsList, nil)
 	router := setupRouter(mockVault)
 	req := httptest.NewRequest(http.MethodGet, "/api/certs?mounts=", nil)
@@ -214,7 +214,7 @@ func TestListCertificates_EncodingError_DoesNotPanic(t *testing.T) {
 
 func TestGetCertificateDetails_EncodingError_DoesNotPanic(t *testing.T) {
 	mockVault := new(vault.MockClient)
-	expected := certs.DetailedCertificate{Certificate: certs.Certificate{ID: "serial", CommonName: "cn", ExpiresAt: time.Now()}, SerialNumber: "serial"}
+	expected := certs.DetailedCertificate{Certificate: certs.Certificate{ID: "serial", SerialNumber: "serial", CommonName: "cn", ExpiresAt: time.Now()}}
 	mockVault.On("GetCertificateDetails", mock.Anything, "serial").Return(expected, nil)
 	router := setupRouter(mockVault)
 	req := httptest.NewRequest(http.MethodGet, "/api/certs/serial/details", nil)

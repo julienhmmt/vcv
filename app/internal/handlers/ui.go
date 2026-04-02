@@ -885,6 +885,10 @@ func applyCertificateFilters(items []certs.Certificate, state certsQueryState, s
 		maxDays = parseInt(state.ExpiryFilter, -1)
 	}
 	statusFilters := parseStatusFilters(state.StatusFilter)
+	normalizedSearchTerm := ""
+	if loweredTerm != "" {
+		normalizedSearchTerm = certs.NormalizeSerialNumber(loweredTerm)
+	}
 	filtered := make([]certs.Certificate, 0, len(items))
 	for _, certificate := range items {
 		vaultID, mountName := extractVaultIDAndMountName(certificate.ID)
@@ -913,7 +917,8 @@ func applyCertificateFilters(items []certs.Certificate, state certsQueryState, s
 		if loweredTerm != "" {
 			cn := strings.ToLower(certificate.CommonName)
 			sans := strings.ToLower(strings.Join(certificate.Sans, " "))
-			if !strings.Contains(cn, loweredTerm) && !strings.Contains(sans, loweredTerm) {
+			serial := certs.NormalizeSerialNumber(certificate.SerialNumber)
+			if !strings.Contains(cn, loweredTerm) && !strings.Contains(sans, loweredTerm) && !strings.Contains(serial, normalizedSearchTerm) {
 				continue
 			}
 		}

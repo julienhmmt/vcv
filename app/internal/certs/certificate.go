@@ -2,7 +2,10 @@ package certs
 
 import (
 	"crypto/rsa"
+	"crypto/sha1"
+	"crypto/sha256"
 	"crypto/x509"
+	"encoding/hex"
 	"encoding/pem"
 	"fmt"
 	"strings"
@@ -10,17 +13,17 @@ import (
 )
 
 type Certificate struct {
-	ID         string    `json:"id"`
-	CommonName string    `json:"commonName"`
-	Sans       []string  `json:"sans"`
-	CreatedAt  time.Time `json:"createdAt"`
-	ExpiresAt  time.Time `json:"expiresAt"`
-	Revoked    bool      `json:"revoked"`
+	ID           string    `json:"id"`
+	SerialNumber string    `json:"serialNumber"`
+	CommonName   string    `json:"commonName"`
+	Sans         []string  `json:"sans"`
+	CreatedAt    time.Time `json:"createdAt"`
+	ExpiresAt    time.Time `json:"expiresAt"`
+	Revoked      bool      `json:"revoked"`
 }
 
 type DetailedCertificate struct {
 	Certificate
-	SerialNumber      string   `json:"serialNumber"`
 	Issuer            string   `json:"issuer"`
 	Subject           string   `json:"subject"`
 	KeyAlgorithm      string   `json:"keyAlgorithm"`
@@ -34,6 +37,14 @@ type DetailedCertificate struct {
 type PEMResponse struct {
 	SerialNumber string `json:"serialNumber"`
 	PEM          string `json:"pem"`
+}
+
+// NormalizeSerialNumber removes colons, hyphens, spaces and converts to lowercase for consistent comparison
+func NormalizeSerialNumber(serial string) string {
+	normalized := strings.ReplaceAll(serial, ":", "")
+	normalized = strings.ReplaceAll(normalized, "-", "")
+	normalized = strings.ReplaceAll(normalized, " ", "")
+	return strings.ToLower(normalized)
 }
 
 // IsExpired returns true if the certificate has expired
@@ -87,16 +98,25 @@ func ParsePEM(pemData string) (*DetailedCertificate, error) {
 		return nil, fmt.Errorf("failed to parse certificate: %w", err)
 	}
 
+	serialNumber := cert.SerialNumber.String()
+
+	// Calculate fingerprints
+	sha1Fingerprint := sha1.Sum(cert.Raw)
+	sha256Fingerprint := sha256.Sum256(cert.Raw)
+
 	detailed := &DetailedCertificate{
 		Certificate: Certificate{
-			CommonName: cert.Subject.CommonName,
-			CreatedAt:  cert.NotBefore,
-			ExpiresAt:  cert.NotAfter,
-			Revoked:    false, // This would need to be determined from external source
+			ID:           serialNumber, // Use serial as ID when parsing standalone PEM
+			SerialNumber: serialNumber,
+			CommonName:   cert.Subject.CommonName,
+			CreatedAt:    cert.NotBefore,
+			ExpiresAt:    cert.NotAfter,
+			Revoked:      false, // This would need to be determined from external source
 		},
-		SerialNumber: cert.SerialNumber.String(),
-		Issuer:       cert.Issuer.CommonName,
-		Subject:      cert.Subject.CommonName,
+		Issuer:            cert.Issuer.String(),
+		Subject:           cert.Subject.String(),
+		FingerprintSHA1:   hex.EncodeToString(sha1Fingerprint[:]),
+		FingerprintSHA256: hex.EncodeToString(sha256Fingerprint[:]),
 	}
 
 	detailed.Usage = getUsage(cert)
