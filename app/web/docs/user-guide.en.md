@@ -12,8 +12,7 @@ VaultCertsViewer (VCV) is a lightweight web interface designed to visualize and 
 - **Search & filter**: Search by Common Name (CN) or Subject Alternative Names (SAN). Filter by status via the dashboard cards.
 - **Sorting**: Sort the certificate table by Common Name, Created date, Expiry date, Vault name, or PKI mount. Click a column header to toggle ascending/descending.
 - **Pagination**: Server-side pagination with configurable page sizes (25, 50, 100, or All).
-- **Detailed view**: Access full certificate metadata in a clean, organized modal: identity (subject, issuer, serial number, SANs), validity dates with expiry status, and technical details (key algorithm, key usage, fingerprints SHA-1/SHA-256).
-- **PEM download**: Download certificate PEM files directly from the table.
+- **Detailed view**: Access full certificate metadata in a clean, organized modal: identity (subject, issuer, serial number, SANs), validity dates with expiry status, technical details (key algorithm, key usage, fingerprints SHA-1/SHA-256), and PEM content for viewing.
 - **Vault status**: A header indicator (shield icon with status dot) shows the live connection status of your Vault instances. Click it to open a detailed status modal with per-vault health information and a refresh button.
 - **Expiration notifications**: A banner at the top of the page warns about certificates expiring within the configured thresholds (critical / warning).
 - **Toast notifications**: Real-time toast messages for Vault connection changes, errors, and user feedback.

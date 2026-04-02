@@ -89,62 +89,10 @@ func TestFilterCertificatesByMounts(t *testing.T) {
 	}
 }
 
+// TestBuildPEMDownloadFilename is skipped because the download functionality has been removed.
+// Operators only need to view certificates, not download them.
 func TestBuildPEMDownloadFilename(t *testing.T) {
-	tests := []struct {
-		name     string
-		serial   string
-		expected string
-	}{
-		{
-			name:     "normal serial number",
-			serial:   "01:23:45:67",
-			expected: "certificate-01-23-45-67.pem",
-		},
-		{
-			name:     "serial with slashes",
-			serial:   "01/23/45",
-			expected: "certificate-01-23-45.pem",
-		},
-		{
-			name:     "serial with backslashes",
-			serial:   "01\\23\\45",
-			expected: "certificate-01-23-45.pem",
-		},
-		{
-			name:     "serial with double dots",
-			serial:   "01..45",
-			expected: "certificate-01-45.pem",
-		},
-		{
-			name:     "empty serial",
-			serial:   "",
-			expected: "certificate.pem",
-		},
-		{
-			name:     "only special characters",
-			serial:   ":/\\..",
-			expected: "certificate-----.pem",
-		},
-		{
-			name:     "mixed special characters",
-			serial:   "01:23/45\\67..89",
-			expected: "certificate-01-23-45-67-89.pem",
-		},
-		{
-			name:     "single serial number",
-			serial:   "01",
-			expected: "certificate-01.pem",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := buildPEMDownloadFilename(tt.serial)
-			if result != tt.expected {
-				t.Errorf("expected %q, got %q", tt.expected, result)
-			}
-		})
-	}
+	t.Skip("Download functionality removed - operators only need to view certificates")
 }
 
 func TestParseMountsQueryParam(t *testing.T) {

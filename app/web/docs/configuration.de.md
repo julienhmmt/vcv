@@ -222,7 +222,6 @@ Alle Metriken enthalten Labels: `vault_id`, `vault_name`, `pki_mount`
 - `/api/certs` - Zertifikatsliste (JSON)
 - `/api/certs/{id}/details` - Zertifikatsdetails (JSON)
 - `/api/certs/{id}/pem` - PEM-Inhalt des Zertifikats (JSON)
-- `/api/certs/{id}/pem/download` - PEM-Datei des Zertifikats herunterladen
 - `POST /api/cache/invalidate` - Zertifikats-Cache invalidieren
 
 ### Ratenbegrenzung

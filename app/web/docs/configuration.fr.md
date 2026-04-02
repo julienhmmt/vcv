@@ -222,7 +222,6 @@ Toutes les métriques incluent les labels : `vault_id`, `vault_name`, `pki_mount
 - `/api/certs` - Liste des certificats (JSON)
 - `/api/certs/{id}/details` - Détails d'un certificat (JSON)
 - `/api/certs/{id}/pem` - Contenu PEM d'un certificat (JSON)
-- `/api/certs/{id}/pem/download` - Téléchargement du fichier PEM d'un certificat
 - `POST /api/cache/invalidate` - Invalidation du cache des certificats
 
 ### Limitation de débit

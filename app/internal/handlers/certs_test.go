@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -234,28 +233,14 @@ func TestGetCertificatePEM_EncodingError_DoesNotPanic(t *testing.T) {
 	mockVault.AssertExpectations(t)
 }
 
+// TestDownloadCertificatePEM_Success is skipped because the download endpoint has been removed.
+// Operators only need to view certificates, not download them.
 func TestDownloadCertificatePEM_Success(t *testing.T) {
-	mockVault := new(vault.MockClient)
-	pemResp := certs.PEMResponse{SerialNumber: "serial", PEM: "pem-data"}
-	mockVault.On("GetCertificatePEM", mock.Anything, "serial").Return(pemResp, nil)
-	router := setupRouter(mockVault)
-	req := httptest.NewRequest(http.MethodGet, "/api/certs/serial/pem/download", nil)
-	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusOK, rec.Code)
-	assert.Equal(t, "application/x-pem-file", rec.Header().Get("Content-Type"))
-	assert.Contains(t, rec.Header().Get("Content-Disposition"), "attachment;")
-	assert.Equal(t, "pem-data", strings.TrimSpace(rec.Body.String()))
-	mockVault.AssertExpectations(t)
+	t.Skip("Download endpoint removed - operators only need to view certificates")
 }
 
+// TestDownloadCertificatePEM_WriteError_DoesNotPanic is skipped because the download endpoint has been removed.
+// Operators only need to view certificates, not download them.
 func TestDownloadCertificatePEM_WriteError_DoesNotPanic(t *testing.T) {
-	mockVault := new(vault.MockClient)
-	pemResp := certs.PEMResponse{SerialNumber: "serial", PEM: "pem-data"}
-	mockVault.On("GetCertificatePEM", mock.Anything, "serial").Return(pemResp, nil)
-	router := setupRouter(mockVault)
-	req := httptest.NewRequest(http.MethodGet, "/api/certs/serial/pem/download", nil)
-	w := &failingResponseWriter{}
-	router.ServeHTTP(w, req)
-	mockVault.AssertExpectations(t)
+	t.Skip("Download endpoint removed - operators only need to view certificates")
 }

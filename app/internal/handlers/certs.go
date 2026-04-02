@@ -138,43 +138,44 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			Msg("served certificate PEM")
 	})
 
-	r.Get("/api/certs/{id}/pem/download", func(w http.ResponseWriter, req *http.Request) {
-		certificateID, statusCode, decodeErr := decodeCertificateIDParam(req)
-		if statusCode != http.StatusOK {
-			requestID := middleware.GetRequestID(req.Context())
-			logger.HTTPError(req.Method, req.URL.Path, statusCode, decodeErr).
-				Str("request_id", requestID).
-				Msg("missing certificate id in path")
-			http.Error(w, http.StatusText(statusCode), statusCode)
-			return
-		}
-		pemResponse, err := vaultClient.GetCertificatePEM(req.Context(), certificateID)
-		if err != nil {
-			requestID := middleware.GetRequestID(req.Context())
-			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
-				Str("request_id", requestID).
-				Str("serial_number", certificateID).
-				Msg("failed to get certificate PEM")
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		filename := buildPEMDownloadFilename(pemResponse.SerialNumber)
-		w.Header().Set("Content-Type", "application/x-pem-file")
-		w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+"\"")
-		w.WriteHeader(http.StatusOK)
-		if _, writeErr := w.Write([]byte(pemResponse.PEM)); writeErr != nil {
-			requestID := middleware.GetRequestID(req.Context())
-			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, writeErr).
-				Str("request_id", requestID).
-				Msg("failed to write certificate PEM download")
-			return
-		}
-		requestID := middleware.GetRequestID(req.Context())
-		logger.HTTPEvent(req.Method, req.URL.Path, http.StatusOK, 0).
-			Str("request_id", requestID).
-			Str("serial_number", certificateID).
-			Msg("downloaded certificate PEM")
-	})
+	// Download endpoint disabled - operators only need to view certificates
+	// r.Get("/api/certs/{id}/pem/download", func(w http.ResponseWriter, req *http.Request) {
+	// 	certificateID, statusCode, decodeErr := decodeCertificateIDParam(req)
+	// 	if statusCode != http.StatusOK {
+	// 		requestID := middleware.GetRequestID(req.Context())
+	// 		logger.HTTPError(req.Method, req.URL.Path, statusCode, decodeErr).
+	// 			Str("request_id", requestID).
+	// 			Msg("missing certificate id in path")
+	// 		http.Error(w, http.StatusText(statusCode), statusCode)
+	// 		return
+	// 	}
+	// 	pemResponse, err := vaultClient.GetCertificatePEM(req.Context(), certificateID)
+	// 	if err != nil {
+	// 		requestID := middleware.GetRequestID(req.Context())
+	// 		logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
+	// 			Str("request_id", requestID).
+	// 			Str("serial_number", certificateID).
+	// 			Msg("failed to get certificate PEM")
+	// 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	// 		return
+	// 	}
+	// 	filename := buildPEMDownloadFilename(pemResponse.SerialNumber)
+	// 	w.Header().Set("Content-Type", "application/x-pem-file")
+	// 	w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+"\"")
+	// 	w.WriteHeader(http.StatusOK)
+	// 	if _, writeErr := w.Write([]byte(pemResponse.PEM)); writeErr != nil {
+	// 		requestID := middleware.GetRequestID(req.Context())
+	// 		logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, writeErr).
+	// 			Str("request_id", requestID).
+	// 			Msg("failed to write certificate PEM download")
+	// 		return
+	// 	}
+	// 	requestID := middleware.GetRequestID(req.Context())
+	// 	logger.HTTPEvent(req.Method, req.URL.Path, http.StatusOK, 0).
+	// 		Str("request_id", requestID).
+	// 		Str("serial_number", certificateID).
+	// 		Msg("downloaded certificate PEM")
+	// })
 }
 
 func decodeCertificateIDParam(req *http.Request) (string, int, error) {
@@ -281,11 +282,12 @@ func extractVaultMountFromCertificateID(value string) (string, string) {
 	return vaultID + "|" + mountName, mountName
 }
 
-func buildPEMDownloadFilename(serialNumber string) string {
-	replacer := strings.NewReplacer(":", "-", "/", "-", "\\", "-", "..", "-", "\r", "", "\n", "", "\"", "", ";", "")
-	safe := strings.TrimSpace(replacer.Replace(serialNumber))
-	if safe == "" {
-		return "certificate.pem"
-	}
-	return "certificate-" + safe + ".pem"
-}
+// Download helper disabled - operators only need to view certificates
+// func buildPEMDownloadFilename(serialNumber string) string {
+// 	replacer := strings.NewReplacer(":", "-", "/", "-", "\\", "-", "..", "-", "\r", "", "\n", "", "\"", "", ";", "")
+// 	safe := strings.TrimSpace(replacer.Replace(serialNumber))
+// 	if safe == "" {
+// 		return "certificate.pem"
+// 	}
+// 	return "certificate-" + safe + ".pem"
+// }

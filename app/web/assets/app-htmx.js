@@ -500,7 +500,8 @@ function applyTranslations() {
   }
   const textBindings = [
     ["certificate-modal-close", messages.buttonClose],
-    ["certificate-modal-pem", messages.buttonDownloadPEM],
+    // Download button disabled - operators only need to view certificates
+    // ["certificate-modal-pem", messages.buttonDownloadPEM],
     ["dashboard-expired-label", messages.dashboardExpired],
     ["dashboard-expired-desc", messages.dashboardExpiredDesc],
     ["dashboard-warning-label", messages.dashboardWarning],
@@ -1194,34 +1195,16 @@ function deselectAllVaultMounts(vaultId, event) {
 }
 
 function openCertificateModal() {
-  const pemBtn = document.getElementById("certificate-modal-pem");
-  if (pemBtn) {
-    pemBtn.style.display = "none";
-    pemBtn.href = "#";
-  }
   setModalVisibility("certificate-modal", true);
 }
 
 function closeCertificateModal() {
-  const pemBtn = document.getElementById("certificate-modal-pem");
-  if (pemBtn) {
-    pemBtn.style.display = "none";
-    pemBtn.href = "#";
-  }
   setModalVisibility("certificate-modal", false);
 }
 
+// Download functionality removed
 function updateCertModalPemLink(path) {
-  const match = path.match(/\/ui\/certs\/([^/]+)\/details/);
-  if (!match) {
-    return;
-  }
-  const pemBtn = document.getElementById("certificate-modal-pem");
-  if (!pemBtn) {
-    return;
-  }
-  pemBtn.href = "/api/certs/" + match[1] + "/pem/download";
-  pemBtn.style.display = "";
+  // No-op: download button has been removed from the UI
 }
 
 let currentDocType = "user";

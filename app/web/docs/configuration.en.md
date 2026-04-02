@@ -222,7 +222,6 @@ All metrics include labels: `vault_id`, `vault_name`, `pki_mount`
 - `/api/certs` - Certificate list (JSON)
 - `/api/certs/{id}/details` - Certificate details (JSON)
 - `/api/certs/{id}/pem` - Certificate PEM content (JSON)
-- `/api/certs/{id}/pem/download` - Download certificate PEM file
 - `POST /api/cache/invalidate` - Invalidate the certificate cache
 
 ### Rate limiting
