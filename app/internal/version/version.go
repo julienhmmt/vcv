@@ -3,7 +3,7 @@ package version
 // Build information set via ldflags at compile time.
 var (
 	// Version is the semantic version of the application.
-	Version = "1.6.1"
+	Version = "1.6.2"
 )
 
 // Info returns version information as a structured map.

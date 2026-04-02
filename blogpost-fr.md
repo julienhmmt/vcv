@@ -180,7 +180,7 @@ docker run -d \
   -v "$(pwd)/settings.json:/app/settings.json:rw" \
   -v "$(pwd)/logs:/var/log/app:rw" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
-  -p 52000:52000 jhmmt/vcv:1.6.1
+  -p 52000:52000 jhmmt/vcv:1.6.2
 ```
 
 ### Mise en production avec un fichier docker-compose
@@ -191,7 +191,7 @@ Créez ce fichier `docker-compose.yml` et saisissez ces informations :
 ---
 services:
   vcv:
-    image: jhmmt/vcv:1.6.1
+    image: jhmmt/vcv:1.6.2
     container_name: vcv
     restart: unless-stopped
     ports:
@@ -250,7 +250,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: vcv
-          image: jhmmt/vcv:1.6.1
+          image: jhmmt/vcv:1.6.2
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

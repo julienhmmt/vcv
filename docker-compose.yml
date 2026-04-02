@@ -1,7 +1,7 @@
 ---
 services:
   vcv:
-    image: jhmmt/vcv:1.6.1
+    image: jhmmt/vcv:1.6.2
     container_name: vcv
     restart: unless-stopped
     ports:
