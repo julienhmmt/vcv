@@ -7,7 +7,7 @@ require (
 	github.com/hashicorp/vault/api v1.23.0
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.5
-	github.com/rs/zerolog v1.34.0
+	github.com/rs/zerolog v1.35.0
 	github.com/stretchr/testify v1.11.1
 	github.com/yuin/goldmark v1.8.2
 	golang.org/x/crypto v0.49.0
@@ -18,7 +18,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/go-jose/go-jose/v4 v4.1.3 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
