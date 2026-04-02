@@ -1,0 +1,40 @@
+{
+  "app": {
+    "env": "prod",
+    "port": 52000,
+    "logging": {
+      "level": "info",
+      "format": "json",
+      "output": "stdout"
+    }
+  },
+  "certificates": {
+    "expiration_thresholds": {
+      "critical": 7,
+      "warning": 30
+    }
+  },
+  "metrics": {
+    "per_certificate": false,
+    "enhanced_metrics": true,
+    "pinned_certificates": [
+      "api.production.local",
+      "loadbalancer.production.local",
+      "gateway.production.local",
+      "*.critical-service.local",
+      "vault-main|pki:13:71:e8:49:c4:54:b5:3b"
+    ]
+  },
+  "cors": {
+    "allowed_origins": [],
+    "allow_credentials": true
+  },
+  "vaults": [
+    {
+      "id": "vault-main",
+      "address": "https://vault.production.local:8200",
+      "token": "${VAULT_TOKEN}",
+      "pki_mounts": ["pki", "pki_dev", "pki_stage", "pki_production"]
+    }
+  ]
+}

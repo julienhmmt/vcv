@@ -59,8 +59,9 @@ type ExpirationThresholds struct {
 
 // MetricsConfig holds metrics collection configuration.
 type MetricsConfig struct {
-	PerCertificate  bool `json:"per_certificate"`
-	EnhancedMetrics bool `json:"enhanced_metrics"`
+	PerCertificate     bool     `json:"per_certificate"`
+	EnhancedMetrics    bool     `json:"enhanced_metrics"`
+	PinnedCertificates []string `json:"pinned_certificates"`
 }
 
 type SettingsFile struct {
@@ -95,8 +96,9 @@ type CertificateSettings struct {
 }
 
 type MetricsSettings struct {
-	PerCertificate  *bool `json:"per_certificate"`
-	EnhancedMetrics *bool `json:"enhanced_metrics"`
+	PerCertificate     *bool    `json:"per_certificate"`
+	EnhancedMetrics    *bool    `json:"enhanced_metrics"`
+	PinnedCertificates []string `json:"pinned_certificates"`
 }
 
 type AdminSettings struct {
@@ -211,13 +213,16 @@ func buildConfigFromSettings(settings SettingsFile) Config {
 	if settings.Certificates.ExpirationThresholds.Warning > 0 {
 		expirations.Warning = settings.Certificates.ExpirationThresholds.Warning
 	}
-	metrics := MetricsConfig{PerCertificate: false, EnhancedMetrics: true}
+	metrics := MetricsConfig{PerCertificate: false, EnhancedMetrics: true, PinnedCertificates: []string{}}
 	// Check if metrics section exists in settings (non-nil pointers)
 	if settings.Metrics.PerCertificate != nil {
 		metrics.PerCertificate = *settings.Metrics.PerCertificate
 	}
 	if settings.Metrics.EnhancedMetrics != nil {
 		metrics.EnhancedMetrics = *settings.Metrics.EnhancedMetrics
+	}
+	if len(settings.Metrics.PinnedCertificates) > 0 {
+		metrics.PinnedCertificates = settings.Metrics.PinnedCertificates
 	}
 	// Otherwise, keep defaults (PerCertificate: false, EnhancedMetrics: true)
 	return Config{

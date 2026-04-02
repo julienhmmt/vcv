@@ -102,6 +102,99 @@ Or via environment variables (legacy):
 
 **Use case**: Debugging specific certificates, drill-down analysis. Not recommended for large deployments (>1000 certificates).
 
+## Pinned certificate metrics (selective monitoring)
+
+**✅ Recommended**: Track specific critical certificates without full per-certificate metrics overhead.
+
+| Metric                                            | Type  | Labels                                                       | Description                                        |
+| ------------------------------------------------- | ----- | ------------------------------------------------------------ | -------------------------------------------------- |
+| `vcv_pinned_certificate_expiry_timestamp_seconds` | Gauge | `certificate_id`, `common_name`, `status`, `vault_id`, `pki` | Expiration timestamp for pinned certificates       |
+| `vcv_pinned_certificate_days_until_expiry`        | Gauge | `certificate_id`, `common_name`, `status`, `vault_id`, `pki` | Days until expiry for pinned certificates          |
+
+**Configuration**: Add certificate identifiers (CN, ID, or SAN) to `settings.json`. Supports wildcard patterns:
+
+```json
+{
+  "metrics": {
+    "pinned_certificates": [
+      "api.production.local",
+      "*.critical-service.local",
+      "loadbalancer.production.local",
+      "vault-main|pki:13:71:e8:49:c4:54:b5:3b"
+    ]
+  }
+}
+```
+
+**Wildcard Support**: Use `*` for pattern matching (e.g., `*.production.local` matches any subdomain).
+
+**Use case**: Monitor 10-50 critical certificates (API gateways, load balancers, etc.) without enabling full per-certificate metrics.
+
+## Certificate issuer metrics (enhanced)
+
+> ⚠️ **PLACEHOLDER DATA**: Currently uses domain-based heuristics. Requires PEM parsing for accurate issuer CN.
+
+| Metric                              | Type  | Labels                       | Description                                |
+| ----------------------------------- | ----- | ---------------------------- | ------------------------------------------ |
+| `vcv_certificates_by_issuer_total`  | Gauge | `vault_id`, `pki`, `issuer_cn` | Total certificates grouped by issuer CN    |
+
+**Use case**: Identify certificate sources, track CA distribution, detect unauthorized issuers (after PEM parsing implementation).
+
+## Cryptographic strength metrics (enhanced)
+
+> ⚠️ **PLACEHOLDER DATA**: Returns hardcoded "RSA 2048" for all certificates. Weak key detection **non-functional** until PEM parsing implemented. Do not use for security decisions.
+
+| Metric                                | Type  | Labels                                   | Description                                        |
+| ------------------------------------- | ----- | ---------------------------------------- | -------------------------------------------------- |
+| `vcv_certificates_by_key_type_total`  | Gauge | `vault_id`, `pki`, `algorithm`, `key_size` | Total certificates by key algorithm and size       |
+| `vcv_certificates_weak_keys_total`    | Gauge | `vault_id`, `pki`                        | Number of certificates with weak keys ⚠️ **Always 0** |
+
+**Weak key criteria** (not yet functional):
+- RSA keys < 2048 bits (requires PEM parsing)
+- DSA keys (any size) (requires PEM parsing)
+
+**Use case**: Security auditing, compliance verification, identify certificates requiring rotation (after PEM parsing implementation).
+
+## Subject Alternative Names metrics (enhanced)
+
+| Metric                                  | Type  | Labels                       | Description                                        |
+| --------------------------------------- | ----- | ---------------------------- | -------------------------------------------------- |
+| `vcv_certificates_with_sans_total`      | Gauge | `vault_id`, `pki`            | Number of certificates with SANs                   |
+| `vcv_certificates_san_count_bucket`     | Gauge | `vault_id`, `pki`, `bucket`  | Certificates grouped by SAN count range            |
+
+**SAN count buckets**:
+- `0` - No SANs
+- `1-5` - 1 to 5 SANs
+- `6-10` - 6 to 10 SANs
+- `11+` - More than 10 SANs
+
+**Use case**: Track multi-domain certificates, identify wildcard usage patterns.
+
+## Certificate age metrics (enhanced)
+
+| Metric                           | Type  | Labels                       | Description                                        |
+| -------------------------------- | ----- | ---------------------------- | -------------------------------------------------- |
+| `vcv_certificates_age_bucket`    | Gauge | `vault_id`, `pki`, `bucket`  | Certificates grouped by age since issuance         |
+
+**Age buckets**:
+- `0-30d` - Issued in last 30 days
+- `30-90d` - Issued 30-90 days ago
+- `90-180d` - Issued 90-180 days ago
+- `180-365d` - Issued 180-365 days ago
+- `1y+` - Issued over 1 year ago
+
+**Use case**: Understand certificate lifecycle, identify stale certificates, track rotation patterns.
+
+## Certificate renewal metrics (enhanced)
+
+| Metric                               | Type  | Labels                | Description                                        |
+| ------------------------------------ | ----- | --------------------- | -------------------------------------------------- |
+| `vcv_certificates_issued_last_24h`   | Gauge | `vault_id`, `pki`     | Certificates issued in last 24 hours               |
+| `vcv_certificates_issued_last_7d`    | Gauge | `vault_id`, `pki`     | Certificates issued in last 7 days                 |
+| `vcv_certificates_issued_last_30d`   | Gauge | `vault_id`, `pki`     | Certificates issued in last 30 days                |
+
+**Use case**: Track renewal activity, detect automation issues, capacity planning, anomaly detection.
+
 ## Label values
 
 ### Special label values
@@ -165,6 +258,76 @@ vcv_certificates_expiring_soon_count{level="critical", vault_id!="__all__"}
 
 # Vault listing duration
 vcv_vault_list_certificates_duration_seconds{vault_id!="__all__"}
+```
+
+### Pinned certificate monitoring
+
+```promql
+# Days until expiry for specific pinned certificate
+vcv_pinned_certificate_days_until_expiry{common_name="api.production.local"}
+
+# All pinned certificates expiring in next 30 days
+vcv_pinned_certificate_days_until_expiry < 30
+
+# Pinned certificate status
+vcv_pinned_certificate_expiry_timestamp_seconds{status="valid"}
+```
+
+### Security and compliance
+
+```promql
+# Total weak keys across all vaults
+sum(vcv_certificates_weak_keys_total)
+
+# Weak keys per vault
+vcv_certificates_weak_keys_total{vault_id!="__all__"}
+
+# RSA key size distribution
+sum by (key_size) (vcv_certificates_by_key_type_total{algorithm="RSA"})
+
+# Certificates by issuer
+topk(10, sum by (issuer_cn) (vcv_certificates_by_issuer_total))
+
+# Percentage of certificates with weak keys
+sum(vcv_certificates_weak_keys_total) / sum(vcv_certificates_total{status="valid"}) * 100
+```
+
+### Certificate lifecycle analysis
+
+```promql
+# Certificate age distribution
+sum by (bucket) (vcv_certificates_age_bucket{vault_id="__all__", pki="__all__"})
+
+# Certificates older than 1 year
+sum(vcv_certificates_age_bucket{bucket="1y+"})
+
+# Recent issuance activity (last 24h)
+sum(vcv_certificates_issued_last_24h)
+
+# Weekly renewal rate
+sum(vcv_certificates_issued_last_7d) / 7
+
+# Monthly renewal trend
+sum(vcv_certificates_issued_last_30d)
+
+# Renewal rate per vault
+sum by (vault_id) (vcv_certificates_issued_last_7d{vault_id!="__all__"})
+```
+
+### SAN analysis
+
+```promql
+# Certificates with SANs
+sum(vcv_certificates_with_sans_total)
+
+# SAN count distribution
+sum by (bucket) (vcv_certificates_san_count_bucket{vault_id="__all__", pki="__all__"})
+
+# Multi-domain certificates (6+ SANs)
+sum(vcv_certificates_san_count_bucket{bucket=~"6-10|11+"})
+
+# Percentage of certificates with SANs
+sum(vcv_certificates_with_sans_total) / sum(vcv_certificates_total{status="valid"}) * 100
 ```
 
 ## Alert rules
@@ -240,6 +403,49 @@ groups:
   annotations:
     summary: "High certificate expiry rate"
     description: "{{ $value }} certificates are expiring in the next 7 days."
+
+- alert: VCVWeakKeysDetected
+  expr: sum(vcv_certificates_weak_keys_total) > 0
+  for: 5m
+  labels:
+    severity: warning
+  annotations:
+    summary: "Weak cryptographic keys detected"
+    description: "{{ $value }} certificates with weak keys detected. Review and rotate immediately."
+
+- alert: VCVPinnedCertificateExpiring
+  expr: vcv_pinned_certificate_days_until_expiry < 30
+  labels:
+    severity: warning
+  annotations:
+    summary: "Pinned certificate expiring soon"
+    description: "Critical certificate '{{ $labels.common_name }}' expires in {{ $value }} days."
+
+- alert: VCVPinnedCertificateCritical
+  expr: vcv_pinned_certificate_days_until_expiry < 7
+  labels:
+    severity: critical
+  annotations:
+    summary: "Pinned certificate expiring critically soon"
+    description: "Critical certificate '{{ $labels.common_name }}' expires in {{ $value }} days!"
+
+- alert: VCVRenewalAnomalyDetected
+  expr: rate(vcv_certificates_issued_last_24h[1h]) < 0.5 * rate(vcv_certificates_issued_last_24h[24h] offset 7d)
+  for: 2h
+  labels:
+    severity: warning
+  annotations:
+    summary: "Certificate renewal rate anomaly"
+    description: "Certificate issuance rate has dropped significantly. Check automation."
+
+- alert: VCVStaleCertificates
+  expr: sum(vcv_certificates_age_bucket{bucket="1y+"}) > 100
+  for: 1h
+  labels:
+    severity: info
+  annotations:
+    summary: "High number of stale certificates"
+    description: "{{ $value }} certificates are older than 1 year. Consider cleanup."
 ```
 
 ## Grafana dashboard queries

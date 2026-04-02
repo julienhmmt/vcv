@@ -37,16 +37,28 @@ var (
 	partialScrapeDesc          = prometheus.NewDesc("vcv_certificates_partial_scrape", "Whether the last scrape was partial (1) due to per-vault errors", []string{"vault_id"}, nil)
 	configuredVaultsDesc       = prometheus.NewDesc("vcv_vaults_configured", "Number of Vault instances configured", nil, nil)
 	configuredMountsDesc       = prometheus.NewDesc("vcv_pki_mounts_configured", "Number of PKI mounts configured for a vault", []string{"vault_id"}, nil)
+	certsByIssuerDesc          = prometheus.NewDesc("vcv_certificates_by_issuer_total", "Total certificates grouped by issuer CN", []string{"vault_id", "pki", "issuer_cn"}, nil)
+	certsByKeyTypeDesc         = prometheus.NewDesc("vcv_certificates_by_key_type_total", "Total certificates grouped by key algorithm and size", []string{"vault_id", "pki", "algorithm", "key_size"}, nil)
+	weakKeysDesc               = prometheus.NewDesc("vcv_certificates_weak_keys_total", "Number of certificates with weak cryptographic keys", []string{"vault_id", "pki"}, nil)
+	certsWithSansDesc          = prometheus.NewDesc("vcv_certificates_with_sans_total", "Number of certificates with Subject Alternative Names", []string{"vault_id", "pki"}, nil)
+	sanCountBucketDesc         = prometheus.NewDesc("vcv_certificates_san_count_bucket", "Number of certificates grouped by SAN count range", []string{"vault_id", "pki", "bucket"}, nil)
+	ageBucketDesc              = prometheus.NewDesc("vcv_certificates_age_bucket", "Number of certificates grouped by age since issuance", []string{"vault_id", "pki", "bucket"}, nil)
+	issuedLast24hDesc          = prometheus.NewDesc("vcv_certificates_issued_last_24h", "Number of certificates issued in the last 24 hours", []string{"vault_id", "pki"}, nil)
+	issuedLast7dDesc           = prometheus.NewDesc("vcv_certificates_issued_last_7d", "Number of certificates issued in the last 7 days", []string{"vault_id", "pki"}, nil)
+	issuedLast30dDesc          = prometheus.NewDesc("vcv_certificates_issued_last_30d", "Number of certificates issued in the last 30 days", []string{"vault_id", "pki"}, nil)
+	pinnedCertExpiryDesc       = prometheus.NewDesc("vcv_pinned_certificate_expiry_timestamp_seconds", "Expiration timestamp for pinned certificates", []string{"certificate_id", "common_name", "status", "vault_id", "pki"}, nil)
+	pinnedCertDaysDesc         = prometheus.NewDesc("vcv_pinned_certificate_days_until_expiry", "Days until expiry for pinned certificates", []string{"certificate_id", "common_name", "status", "vault_id", "pki"}, nil)
 )
 
 type certificateCollector struct {
-	vaultClient      vault.Client
-	statusClients    map[string]vault.Client
-	thresholds       config.ExpirationThresholds
-	perCertificate   bool
-	enhancedMetrics  bool
-	configuredVaults []config.VaultInstance
-	now              func() time.Time
+	vaultClient        vault.Client
+	statusClients      map[string]vault.Client
+	thresholds         config.ExpirationThresholds
+	perCertificate     bool
+	enhancedMetrics    bool
+	pinnedCertificates []string
+	configuredVaults   []config.VaultInstance
+	now                func() time.Time
 }
 
 // NewCertificateCollector returns a Prometheus collector exposing certificate inventory and expiry status.
@@ -65,13 +77,14 @@ func NewCertificateCollector(vaultClient vault.Client, statusClients map[string]
 		clients = map[string]vault.Client{}
 	}
 	return &certificateCollector{
-		vaultClient:      vaultClient,
-		statusClients:    clients,
-		thresholds:       config.ExpirationThresholds{Critical: critical, Warning: warning},
-		perCertificate:   metricsConfig.PerCertificate,
-		enhancedMetrics:  metricsConfig.EnhancedMetrics,
-		configuredVaults: []config.VaultInstance{},
-		now:              time.Now,
+		vaultClient:        vaultClient,
+		statusClients:      clients,
+		thresholds:         config.ExpirationThresholds{Critical: critical, Warning: warning},
+		perCertificate:     metricsConfig.PerCertificate,
+		enhancedMetrics:    metricsConfig.EnhancedMetrics,
+		pinnedCertificates: metricsConfig.PinnedCertificates,
+		configuredVaults:   []config.VaultInstance{},
+		now:                time.Now,
 	}
 }
 
@@ -105,6 +118,17 @@ func (collector *certificateCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- partialScrapeDesc
 	ch <- configuredVaultsDesc
 	ch <- configuredMountsDesc
+	ch <- certsByIssuerDesc
+	ch <- certsByKeyTypeDesc
+	ch <- weakKeysDesc
+	ch <- certsWithSansDesc
+	ch <- sanCountBucketDesc
+	ch <- ageBucketDesc
+	ch <- issuedLast24hDesc
+	ch <- issuedLast7dDesc
+	ch <- issuedLast30dDesc
+	ch <- pinnedCertExpiryDesc
+	ch <- pinnedCertDaysDesc
 }
 
 func (collector *certificateCollector) Collect(ch chan<- prometheus.Metric) {
@@ -149,7 +173,13 @@ func (collector *certificateCollector) Collect(ch chan<- prometheus.Metric) {
 	collector.emitPerCertificateMetrics(ch, certificates, now)
 	if collector.enhancedMetrics {
 		collector.emitEnhancedMetrics(ch, certificates, now)
+		collector.emitIssuerMetrics(ch, certificates)
+		collector.emitKeyTypeMetrics(ch, certificates)
+		collector.emitSANMetrics(ch, certificates)
+		collector.emitAgeMetrics(ch, certificates, now)
+		collector.emitRenewalMetrics(ch, certificates, now)
 	}
+	collector.emitPinnedCertificateMetrics(ch, certificates, now)
 }
 
 func (collector *certificateCollector) listCertificates() ([]certs.Certificate, error) {
