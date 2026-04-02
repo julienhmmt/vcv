@@ -1325,7 +1325,7 @@ col.vcv-col-status {
 }
 
 .vcv-cn-name {
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--vcv-color-text-strong);
@@ -1449,10 +1449,6 @@ col.vcv-col-status {
   background: transparent;
 }
 
-.vcv-table tbody tr:hover {
-  background: var(--vcv-color-bg);
-}
-
 /* Clickable rows */
 .vcv-row-clickable {
   cursor: pointer;
@@ -1482,7 +1478,7 @@ col.vcv-col-status {
 
 /* Expiry hero: prominent countdown */
 .vcv-expiry-count {
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.2;
@@ -1507,7 +1503,7 @@ col.vcv-col-status {
 }
 
 .vcv-expiry-date {
-  font-size: 0.8125rem;
+  font-size: 1.0625rem;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -1542,32 +1538,32 @@ col.vcv-col-status {
 
 /* Maintain indicator on hover */
 .vcv-row-valid:hover {
-  background: var(--vcv-color-bg);
+  background: rgb(16 185 129 / 12%);
   box-shadow: inset 3px 0 0 0 var(--vcv-color-primary);
 }
 
 .vcv-row-warning:hover {
-  background: rgb(245 158 11 / 8%);
+  background: rgb(245 158 11 / 20%);
   box-shadow: inset 3px 0 0 0 var(--vcv-color-warning);
 }
 
 .vcv-row-critical:hover {
-  background: rgb(220 38 38 / 8%);
+  background: rgb(220 38 38 / 20%);
   box-shadow: inset 3px 0 0 0 var(--vcv-color-danger);
 }
 
 .vcv-row-expired:hover {
-  background: rgb(79 70 229 / 8%);
+  background: rgb(79 70 229 / 20%);
   box-shadow: inset 3px 0 0 0 var(--vcv-color-expired);
 }
 
 .vcv-row-revoked:hover {
-  background: var(--vcv-color-bg);
+  background: rgb(107 114 128 / 18%);
   box-shadow: inset 3px 0 0 0 var(--vcv-color-revoked);
 }
 
 .vcv-row-expired.vcv-row-revoked:hover {
-  background: var(--vcv-color-bg);
+  background: rgb(107 114 128 / 18%);
   box-shadow: inset 3px 0 0 0 var(--vcv-color-revoked);
 }
 
