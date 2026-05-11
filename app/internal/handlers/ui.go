@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
@@ -154,6 +155,7 @@ type certsFragmentTemplateData struct {
 	DashboardRevoked    int
 	DashboardCertsLabel string
 	AdminDocsTitle      string `json:"adminDocsTitle"`
+	FilteredCount       int
 }
 
 type dashboardStatsTemplateData struct {
@@ -1328,9 +1330,29 @@ func renderCertsFragment(w http.ResponseWriter, templates *template.Template, ce
 		return fmt.Errorf("templates not available")
 	}
 	data := buildCertsFragmentData(certificates, expirationThresholds, messages, queryState, vaultDisplayNames, showVaultMount)
+	if trigger := buildFiltersAppliedTrigger(queryState, data.FilteredCount); trigger != "" {
+		w.Header().Set("HX-Trigger", trigger)
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	return templates.ExecuteTemplate(w, "certs-fragment.html", data)
+}
+
+func buildFiltersAppliedTrigger(state certsQueryState, count int) string {
+	payload := map[string]any{
+		"vcv:filters-applied": map[string]any{
+			"count":    count,
+			"search":   state.SearchTerm,
+			"status":   state.StatusFilter,
+			"certType": state.CertTypeFilter,
+			"mounts":   state.SelectedMounts,
+		},
+	}
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return ""
+	}
+	return string(b)
 }
 
 func buildCertsFragmentData(certificates []certs.Certificate, expirationThresholds config.ExpirationThresholds, messages i18n.Messages, queryState certsQueryState, vaultDisplayNames map[string]string, showVaultMount bool) certsFragmentTemplateData {
@@ -1381,6 +1403,7 @@ func buildCertsFragmentData(certificates []certs.Certificate, expirationThreshol
 		DashboardRevoked:    dashboardStats.Revoked,
 		DashboardCertsLabel: messages.DashboardCertsLabel,
 		AdminDocsTitle:      messages.AdminDocsTitle,
+		FilteredCount:       len(visible),
 	}
 }
 

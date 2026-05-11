@@ -80,6 +80,7 @@ function applyMountSelectionChange(shouldRenderSelector) {
   renderMountModalList();
   refreshHtmxCertsTable();
   updateFilterBadge();
+  renderActiveFilters();
 }
 
 function shouldSuppressErrorToast(detail) {
@@ -926,19 +927,32 @@ function renderMountSelector() {
   if (!container) {
     return;
   }
-  const label = typeof state.messages.mountSelectorTitle === "string" && state.messages.mountSelectorTitle !== "" ? state.messages.mountSelectorTitle : "Sources";
+  const baseLabel = typeof state.messages.mountSelectorTitle === "string" && state.messages.mountSelectorTitle !== "" ? state.messages.mountSelectorTitle : "Sources";
   const tooltip = typeof state.messages.mountSelectorTooltip === "string" && state.messages.mountSelectorTooltip !== "" ? state.messages.mountSelectorTooltip : "Select which certificate sources to display";
   const filterIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="4" y1="21" y2="14"/><line x1="4" x2="4" y1="10" y2="3"/><line x1="12" x2="12" y1="21" y2="12"/><line x1="12" x2="12" y1="8" y2="3"/><line x1="20" x2="20" y1="21" y2="16"/><line x1="20" x2="20" y1="12" y2="3"/><line x1="2" x2="6" y1="14" y2="14"/><line x1="10" x2="14" y1="8" y2="8"/><line x1="18" x2="22" y1="16" y2="16"/></svg>';
   const selected = state.selectedMounts.length;
   const total = state.availableMounts.length;
-  const allSelected = total > 0 && selected === total;
-  const badge = total > 0 && !allSelected ? ` <span class="vcv-mount-trigger-badge">${selected}/${total}</span>` : "";
-  container.innerHTML = `
-    <button type="button" class="vcv-button vcv-button-ghost vcv-mount-trigger" onclick="VCV.openMountModal()" title="${tooltip}">
-      ${filterIcon}
-      <span class="vcv-mount-trigger-label">${label}</span>${badge}
-    </button>
-  `;
+  const partial = total > 0 && selected < total;
+  let label = baseLabel;
+  if (total > 0) {
+    const tpl = partial
+      ? (state.messages.sourcesButtonPartial || "Sources: {selected}/{total}")
+      : (state.messages.sourcesButtonAll || "Sources: {total}/{total}");
+    label = tpl.replace("{selected}", String(selected)).replace("{total}", String(total)).replace("{total}", String(total));
+  }
+  const triggerClass = partial ? "vcv-button vcv-button-ghost vcv-mount-trigger vcv-mount-trigger-partial" : "vcv-button vcv-button-ghost vcv-mount-trigger";
+  container.replaceChildren();
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = triggerClass;
+  btn.title = tooltip;
+  btn.addEventListener("click", openMountModal);
+  btn.insertAdjacentHTML("beforeend", filterIcon);
+  const labelSpan = document.createElement("span");
+  labelSpan.className = "vcv-mount-trigger-label";
+  labelSpan.textContent = label;
+  btn.appendChild(labelSpan);
+  container.appendChild(btn);
 }
 
 function updateMountStats() {
@@ -1423,6 +1437,203 @@ function updateFilterBadge() {
   }
 }
 
+const ACTIVE_CHIP_X_SVG = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>';
+
+function buildActiveChip(options) {
+  const chip = document.createElement("span");
+  chip.className = "vcv-active-chip";
+  if (options.variant) {
+    chip.classList.add(`vcv-active-chip-${options.variant}`);
+  }
+  chip.dataset.chipKey = options.key;
+  if (options.dotClass) {
+    const dot = document.createElement("span");
+    dot.className = `vcv-active-chip-dot ${options.dotClass}`;
+    dot.setAttribute("aria-hidden", "true");
+    chip.appendChild(dot);
+  }
+  if (options.prefix) {
+    const prefix = document.createElement("span");
+    prefix.className = "vcv-active-chip-prefix";
+    prefix.textContent = options.prefix;
+    chip.appendChild(prefix);
+  }
+  const value = document.createElement("span");
+  value.className = "vcv-active-chip-value";
+  value.textContent = options.value;
+  chip.appendChild(value);
+  const clear = document.createElement("button");
+  clear.type = "button";
+  clear.className = "vcv-active-chip-clear";
+  clear.setAttribute("aria-label", options.clearAriaLabel || "Clear");
+  clear.insertAdjacentHTML("beforeend", ACTIVE_CHIP_X_SVG);
+  clear.addEventListener("click", options.onClear);
+  chip.appendChild(clear);
+  return chip;
+}
+
+function renderActiveFilters(count) {
+  const container = document.getElementById("vcv-active-filters");
+  if (!container) {
+    return;
+  }
+  const messages = state.messages || {};
+  const searchEl = document.getElementById("vcv-search");
+  const certTypeEl = document.getElementById("vcv-cert-type-filter");
+  const statusEl = document.getElementById("vcv-status-filter");
+  const search = searchEl ? String(searchEl.value || "") : "";
+  const certType = certTypeEl ? String(certTypeEl.value || "all") : "all";
+  const status = statusEl ? String(statusEl.value || "all") : "all";
+  const selectedMounts = state.selectedMounts.length;
+  const totalMounts = state.availableMounts.length;
+  const mountsPartial = totalMounts > 0 && selectedMounts < totalMounts;
+
+  const statusLabels = {
+    valid: messages.dashboardValid || "Valid",
+    warning: messages.dashboardWarning || "Warning",
+    critical: messages.dashboardCritical || "Critical",
+    expired: messages.dashboardExpired || "Expired",
+    revoked: messages.dashboardRevoked || "Revoked",
+  };
+  const certTypeLabels = {
+    machine: messages.certTypeFilterMachine || "Machine",
+    user: messages.certTypeFilterUser || "User",
+    both: messages.certTypeFilterBoth || "Both",
+    unknown: messages.certTypeFilterUnknown || "Unknown",
+  };
+
+  const statusList = status && status !== "all" ? status.split(",").map((s) => s.trim()).filter((s) => s !== "" && s !== "all") : [];
+  const trimmedSearch = search.trim();
+  const hasAnyFilter = trimmedSearch !== "" || statusList.length > 0 || (certType && certType !== "all") || mountsPartial;
+
+  container.replaceChildren();
+  if (!hasAnyFilter) {
+    container.classList.add("vcv-hidden");
+    return;
+  }
+  container.classList.remove("vcv-hidden");
+
+  const inner = document.createElement("div");
+  inner.className = "vcv-active-filters-inner";
+
+  if (trimmedSearch !== "") {
+    inner.appendChild(buildActiveChip({
+      key: "search",
+      prefix: messages.filterChipSearch || "Search",
+      value: search,
+      onClear: () => clearActiveFilter("search"),
+    }));
+  }
+  statusList.forEach((s) => {
+    inner.appendChild(buildActiveChip({
+      key: `status:${s}`,
+      variant: `status-${s}`,
+      dotClass: `vcv-active-chip-dot-${s}`,
+      value: statusLabels[s] || s,
+      onClear: () => clearActiveFilter(`status:${s}`),
+    }));
+  });
+  if (certType && certType !== "all") {
+    inner.appendChild(buildActiveChip({
+      key: "certType",
+      prefix: messages.filterChipCertType || "Type",
+      value: certTypeLabels[certType] || certType,
+      onClear: () => clearActiveFilter("certType"),
+    }));
+  }
+  if (mountsPartial) {
+    inner.appendChild(buildActiveChip({
+      key: "mounts",
+      prefix: messages.filterChipSources || "Sources",
+      value: `${selectedMounts}/${totalMounts}`,
+      onClear: () => clearActiveFilter("mounts"),
+    }));
+  }
+
+  if (typeof count === "number" && count >= 0) {
+    let resultsText;
+    if (trimmedSearch !== "") {
+      const tpl = messages.resultsCountFor || '{count} results for "{query}"';
+      resultsText = tpl.replace("{count}", String(count)).replace("{query}", search);
+    } else {
+      const tpl = messages.resultsCount || "{count} results";
+      resultsText = tpl.replace("{count}", String(count));
+    }
+    const resultsSpan = document.createElement("span");
+    resultsSpan.className = "vcv-active-results";
+    resultsSpan.textContent = resultsText;
+    inner.appendChild(resultsSpan);
+  }
+
+  const resetBtn = document.createElement("button");
+  resetBtn.type = "button";
+  resetBtn.className = "vcv-active-reset";
+  resetBtn.textContent = messages.filterChipReset || "Reset filters";
+  resetBtn.addEventListener("click", resetAllFilters);
+  inner.appendChild(resetBtn);
+
+  container.appendChild(inner);
+}
+
+function clearActiveFilter(key) {
+  if (key === "search") {
+    const el = document.getElementById("vcv-search");
+    if (el) {
+      el.value = "";
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  } else if (key === "status") {
+    clearStatusFilter();
+  } else if (key.startsWith("status:")) {
+    const status = key.slice("status:".length);
+    if (status !== "") {
+      filterByDashboardCard(status);
+    }
+  } else if (key === "certType") {
+    const el = document.getElementById("vcv-cert-type-filter");
+    if (el) {
+      el.value = "all";
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  } else if (key === "mounts") {
+    selectAllMounts();
+  }
+  renderActiveFilters();
+}
+
+function resetAllFilters() {
+  const searchEl = document.getElementById("vcv-search");
+  if (searchEl) {
+    searchEl.value = "";
+  }
+  const certTypeEl = document.getElementById("vcv-cert-type-filter");
+  if (certTypeEl) {
+    certTypeEl.value = "all";
+  }
+  clearStatusFilter();
+  if (state.availableMounts.length > 0 && state.selectedMounts.length < state.availableMounts.length) {
+    selectAllMounts();
+  } else {
+    refreshHtmxCertsTable();
+  }
+  renderActiveFilters();
+}
+
+function initActiveFiltersListeners() {
+  document.body.addEventListener("vcv:filters-applied", (evt) => {
+    const detail = (evt && evt.detail) || {};
+    renderActiveFilters(typeof detail.count === "number" ? detail.count : undefined);
+  });
+  const searchInput = document.getElementById("vcv-search");
+  if (searchInput) {
+    searchInput.addEventListener("input", () => renderActiveFilters());
+  }
+  const certTypeSelect = document.getElementById("vcv-cert-type-filter");
+  if (certTypeSelect) {
+    certTypeSelect.addEventListener("change", () => renderActiveFilters());
+  }
+}
+
 function initFilterBadgeListeners() {
   const searchInput = document.getElementById("vcv-search");
   if (searchInput) {
@@ -1456,6 +1667,7 @@ async function main() {
     initDashboardKeyboard();
     initVaultConnectionNotifications();
     initFilterBadgeListeners();
+    initActiveFiltersListeners();
     // Load remaining non-critical startup data
     await messagesPromise;
     applyTranslations();
@@ -1466,6 +1678,7 @@ async function main() {
     renderMountSelector();
     setMountsHiddenField();
     updateFilterBadge();
+    renderActiveFilters();
   } else {
     // Admin page or other pages
     initModalHandlers();
@@ -1501,5 +1714,7 @@ window.VCV = {
   openVaultStatusModal: openVaultStatusModal,
   closeVaultStatusModal: closeVaultStatusModal,
   handleVaultRefresh: handleVaultRefresh,
+  clearActiveFilter: clearActiveFilter,
+  resetAllFilters: resetAllFilters,
 };
 })();
