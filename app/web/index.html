@@ -130,6 +130,7 @@
             </div>
           </div>
         </div>
+        <div id="vcv-active-filters" class="vcv-active-filters vcv-hidden" aria-live="polite"></div>
       </header>
 
       <!-- Mount selector modal -->
@@ -379,7 +380,10 @@
                 </div>
               </td>
               <td class="vcv-col-status">
-                {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
+                <div class="vcv-status-cell">
+                  <div class="vcv-status-badges">{{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}</div>
+                  <span class="vcv-row-chevron" aria-hidden="true">›</span>
+                </div>
               </td>
             </tr>
             {{end}}

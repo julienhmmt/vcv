@@ -121,6 +121,16 @@ type Messages struct {
 	PaginationPrev              string `json:"paginationPrev"`
 	SearchPlaceholder           string `json:"searchPlaceholder"`
 	SelectAll                   string `json:"selectAll"`
+	FilterChipSearch            string `json:"filterChipSearch"`
+	FilterChipStatus            string `json:"filterChipStatus"`
+	FilterChipCertType          string `json:"filterChipCertType"`
+	FilterChipSources           string `json:"filterChipSources"`
+	FilterChipReset             string `json:"filterChipReset"`
+	ResultsCount                string `json:"resultsCount"`
+	ResultsCountFor             string `json:"resultsCountFor"`
+	SourcesButtonAll            string `json:"sourcesButtonAll"`
+	SourcesButtonPartial        string `json:"sourcesButtonPartial"`
+	RowDetailsLabel             string `json:"rowDetailsLabel"`
 	StatusFilterAll             string `json:"statusFilterAll"`
 	StatusFilterExpired         string `json:"statusFilterExpired"`
 	StatusFilterExpiring        string `json:"statusFilterExpiring"`
@@ -291,6 +301,16 @@ var englishMessages = Messages{
 	PaginationPrev:              "Previous",
 	SearchPlaceholder:           "Search by Serial Number, Common Name (CN) or SAN",
 	SelectAll:                   "Select all",
+	FilterChipSearch:            "Search",
+	FilterChipStatus:            "Status",
+	FilterChipCertType:          "Type",
+	FilterChipSources:           "Sources",
+	FilterChipReset:             "Reset filters",
+	ResultsCount:                "{count} results",
+	ResultsCountFor:             "{count} results for \"{query}\"",
+	SourcesButtonAll:            "Sources: {total}/{total}",
+	SourcesButtonPartial:        "Sources: {selected}/{total}",
+	RowDetailsLabel:             "View details",
 	StatusFilterAll:             "All",
 	StatusFilterExpired:         "Expired",
 	StatusFilterExpiring:        "Expiring soon",
@@ -455,6 +475,16 @@ var frenchMessages = Messages{
 	PaginationPrev:              "Précédent",
 	SearchPlaceholder:           "Rechercher par numéro de série, nom commun (CN) ou SAN",
 	SelectAll:                   "Tout sélectionner",
+	FilterChipSearch:            "Recherche",
+	FilterChipStatus:            "Statut",
+	FilterChipCertType:          "Type",
+	FilterChipSources:           "Sources",
+	FilterChipReset:             "Réinitialiser les filtres",
+	ResultsCount:                "{count} résultats",
+	ResultsCountFor:             "{count} résultats pour « {query} »",
+	SourcesButtonAll:            "Sources : {total}/{total}",
+	SourcesButtonPartial:        "Sources : {selected}/{total}",
+	RowDetailsLabel:             "Voir les détails",
 	StatusFilterAll:             "Tous",
 	StatusFilterExpired:         "Expiré",
 	StatusFilterExpiring:        "Expiration proche",
@@ -619,6 +649,16 @@ var spanishMessages = Messages{
 	PaginationPrev:              "Anterior",
 	SearchPlaceholder:           "Buscar por Número de Serie, Nombre Común (CN) o SAN",
 	SelectAll:                   "Seleccionar todo",
+	FilterChipSearch:            "Search",
+	FilterChipStatus:            "Status",
+	FilterChipCertType:          "Type",
+	FilterChipSources:           "Sources",
+	FilterChipReset:             "Reset filters",
+	ResultsCount:                "{count} results",
+	ResultsCountFor:             "{count} results for \"{query}\"",
+	SourcesButtonAll:            "Sources: {total}/{total}",
+	SourcesButtonPartial:        "Sources: {selected}/{total}",
+	RowDetailsLabel:             "View details",
 	StatusFilterAll:             "Todos",
 	StatusFilterExpired:         "Caducado",
 	StatusFilterExpiring:        "Próximo a caducar",
@@ -783,6 +823,16 @@ var germanMessages = Messages{
 	PaginationPrev:              "Zurück",
 	SearchPlaceholder:           "Suche nach Seriennummer, Common Name (CN) oder SAN",
 	SelectAll:                   "Alle auswählen",
+	FilterChipSearch:            "Search",
+	FilterChipStatus:            "Status",
+	FilterChipCertType:          "Type",
+	FilterChipSources:           "Sources",
+	FilterChipReset:             "Reset filters",
+	ResultsCount:                "{count} results",
+	ResultsCountFor:             "{count} results for \"{query}\"",
+	SourcesButtonAll:            "Sources: {total}/{total}",
+	SourcesButtonPartial:        "Sources: {selected}/{total}",
+	RowDetailsLabel:             "View details",
 	StatusFilterAll:             "Alle",
 	StatusFilterExpired:         "Abgelaufen",
 	StatusFilterExpiring:        "Bald ablaufend",
@@ -946,6 +996,16 @@ var italianMessages = Messages{
 	PaginationPrev:              "Precedente",
 	SearchPlaceholder:           "Cerca per Numero di Serie, Nome Comune (CN) o SAN",
 	SelectAll:                   "Seleziona tutto",
+	FilterChipSearch:            "Search",
+	FilterChipStatus:            "Status",
+	FilterChipCertType:          "Type",
+	FilterChipSources:           "Sources",
+	FilterChipReset:             "Reset filters",
+	ResultsCount:                "{count} results",
+	ResultsCountFor:             "{count} results for \"{query}\"",
+	SourcesButtonAll:            "Sources: {total}/{total}",
+	SourcesButtonPartial:        "Sources: {selected}/{total}",
+	RowDetailsLabel:             "View details",
 	StatusFilterAll:             "Tutti",
 	StatusFilterExpired:         "Scaduto",
 	StatusFilterExpiring:        "In scadenza",

@@ -1456,11 +1456,191 @@ col.vcv-col-status {
 /* Clickable rows */
 .vcv-row-clickable {
   cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.vcv-row-clickable:hover {
+  background-color: var(--vcv-color-surface-hover, rgba(127, 127, 127, 0.06));
 }
 
 .vcv-row-clickable:focus-visible {
   outline: 2px solid var(--vcv-color-primary);
   outline-offset: -2px;
+}
+
+.vcv-status-cell {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.vcv-status-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.vcv-row-chevron {
+  color: var(--vcv-color-muted);
+  flex-shrink: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  opacity: 0.55;
+  transform: translateX(0);
+  transition:
+    transform 0.12s ease,
+    opacity 0.12s ease,
+    color 0.12s ease;
+}
+
+.vcv-row-clickable:hover .vcv-row-chevron,
+.vcv-row-clickable:focus-visible .vcv-row-chevron {
+  color: var(--vcv-color-primary);
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+/* Active filter chips bar */
+.vcv-active-filters {
+  margin-top: 0.625rem;
+}
+
+.vcv-active-filters-inner {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  row-gap: 0.5rem;
+}
+
+.vcv-active-chip {
+  align-items: center;
+  background: var(--vcv-color-surface, #fff);
+  border: 1px solid var(--vcv-color-border, rgba(15, 23, 42, 0.12));
+  border-radius: 9999px;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.02);
+  color: var(--vcv-color-text, #0f172a);
+  display: inline-flex;
+  font-size: 0.75rem;
+  font-weight: 500;
+  gap: 0.375rem;
+  height: 1.625rem;
+  line-height: 1;
+  padding: 0 0.25rem 0 0.625rem;
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.vcv-active-chip:hover {
+  border-color: var(--vcv-color-border-strong, rgba(15, 23, 42, 0.2));
+}
+
+.vcv-active-chip-dot {
+  background: currentColor;
+  border-radius: 9999px;
+  flex-shrink: 0;
+  height: 0.5rem;
+  width: 0.5rem;
+}
+
+.vcv-active-chip-dot-valid { color: var(--vcv-color-primary, #10b981); }
+.vcv-active-chip-dot-warning { color: var(--vcv-color-warning, #f59e0b); }
+.vcv-active-chip-dot-critical { color: var(--vcv-color-danger, #ef4444); }
+.vcv-active-chip-dot-expired { color: var(--vcv-color-expired, #6b7280); }
+.vcv-active-chip-dot-revoked { color: var(--vcv-color-revoked, #8b5cf6); }
+
+.vcv-active-chip-prefix {
+  color: var(--vcv-color-muted, #64748b);
+  font-weight: 500;
+}
+
+.vcv-active-chip-prefix::after {
+  content: ":";
+  margin-left: 0.0625rem;
+}
+
+.vcv-active-chip-value {
+  color: var(--vcv-color-text, #0f172a);
+  font-weight: 600;
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vcv-active-chip-clear {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 9999px;
+  color: var(--vcv-color-muted, #64748b);
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.25rem;
+  justify-content: center;
+  line-height: 1;
+  margin-left: 0.125rem;
+  padding: 0;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+  width: 1.25rem;
+}
+
+.vcv-active-chip-clear:hover,
+.vcv-active-chip-clear:focus-visible {
+  background: rgba(15, 23, 42, 0.08);
+  color: var(--vcv-color-text, #0f172a);
+  outline: none;
+}
+
+.vcv-active-results {
+  color: var(--vcv-color-muted, #64748b);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  margin-left: 0.25rem;
+  white-space: nowrap;
+}
+
+.vcv-active-reset {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--vcv-color-primary, #10b981);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-left: auto;
+  padding: 0.25rem 0.5rem;
+  transition: background-color 0.12s ease;
+}
+
+.vcv-active-reset:hover,
+.vcv-active-reset:focus-visible {
+  background: rgba(16, 185, 129, 0.1);
+  outline: none;
+}
+
+[data-theme="dark"] .vcv-active-chip {
+  background: var(--vcv-color-surface-elevated, rgba(255, 255, 255, 0.04));
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+
+[data-theme="dark"] .vcv-active-chip:hover {
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme="dark"] .vcv-active-chip-clear:hover,
+[data-theme="dark"] .vcv-active-chip-clear:focus-visible {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.vcv-mount-trigger-partial {
+  border-color: var(--vcv-color-primary, currentColor);
 }
 
 /* SAN hint below cert name */
