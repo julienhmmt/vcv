@@ -52,6 +52,23 @@ services:
       - ./vault-dev-init.sh:/vault-dev-init.sh:ro
       - ./vault-init-simple.sh:/vault-init-simple.sh:ro
 
+  vault-dev-4:
+    image: hashicorp/vault:2.0.0
+    container_name: vault-dev-4
+    ports:
+      - "8204:8200/tcp"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: "sh /vault-init-simple.sh vcv-4"
+    networks:
+      - vcv-network
+    volumes:
+      - ./vault-dev-init.sh:/vault-dev-init.sh:ro
+      - ./vault-init-simple.sh:/vault-init-simple.sh:ro
+
   openbao-dev-1:
     image: docker.io/openbao/openbao:2.5.1
     container_name: openbao-dev-1
@@ -62,11 +79,43 @@ services:
       - OPENBAO_DEV_LISTEN_ADDRESS=0.0.0.0:1337
     cap_add:
       - IPC_LOCK
-    command: "sh /openbao-dev-init-1.sh"
+    command: "sh /openbao-dev-init.sh"
     networks:
       - vcv-network
     volumes:
-      - ./openbao-dev-init-1.sh:/openbao-dev-init-1.sh:ro
+      - ./openbao-dev-init.sh:/openbao-dev-init.sh:ro
+
+  openbao-dev-2:
+    image: docker.io/openbao/openbao:2.5.2
+    container_name: openbao-dev-2
+    ports:
+      - "1338:1337/tcp"
+    environment:
+      - OPENBAO_DEV_ROOT_TOKEN_ID=root
+      - OPENBAO_DEV_LISTEN_ADDRESS=0.0.0.0:1337
+    cap_add:
+      - IPC_LOCK
+    command: "sh /openbao-dev-init.sh"
+    networks:
+      - vcv-network
+    volumes:
+      - ./openbao-dev-init.sh:/openbao-dev-init.sh:ro
+
+  openbao-dev-3:
+    image: docker.io/openbao/openbao:2.5.3
+    container_name: openbao-dev-3
+    ports:
+      - "1339:1337/tcp"
+    environment:
+      - OPENBAO_DEV_ROOT_TOKEN_ID=root
+      - OPENBAO_DEV_LISTEN_ADDRESS=0.0.0.0:1337
+    cap_add:
+      - IPC_LOCK
+    command: "sh /openbao-dev-init.sh"
+    networks:
+      - vcv-network
+    volumes:
+      - ./openbao-dev-init.sh:/openbao-dev-init.sh:ro
 
   app:
     build:
@@ -82,6 +131,8 @@ services:
       - vault-dev-2
       - vault-dev-3
       - openbao-dev-1
+      - openbao-dev-2
+      - openbao-dev-3
     read_only: true
     security_opt:
       - no-new-privileges:true
