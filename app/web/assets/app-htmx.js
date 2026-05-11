@@ -1634,6 +1634,22 @@ function initActiveFiltersListeners() {
   }
 }
 
+function initSearchShortcut() {
+  document.addEventListener("keydown", (evt) => {
+    if (evt.key !== "/") return;
+    if (evt.ctrlKey || evt.metaKey || evt.altKey) return;
+    const target = evt.target;
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.tagName === "SELECT" || target.isContentEditable)) {
+      return;
+    }
+    const search = document.getElementById("vcv-search");
+    if (!search) return;
+    evt.preventDefault();
+    search.focus();
+    if (typeof search.select === "function") search.select();
+  });
+}
+
 function initFilterBadgeListeners() {
   const searchInput = document.getElementById("vcv-search");
   if (searchInput) {
@@ -1668,6 +1684,7 @@ async function main() {
     initVaultConnectionNotifications();
     initFilterBadgeListeners();
     initActiveFiltersListeners();
+    initSearchShortcut();
     // Load remaining non-critical startup data
     await messagesPromise;
     applyTranslations();

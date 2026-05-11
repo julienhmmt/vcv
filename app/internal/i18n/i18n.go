@@ -21,6 +21,7 @@ const (
 // Messages contains all translatable UI strings used by the web interface.
 type Messages struct {
 	AppTitle                    string `json:"appTitle"`
+	AppSubtitle                 string `json:"appSubtitle"`
 	ButtonToggleTheme           string `json:"buttonToggleTheme"`
 	ButtonClose                 string `json:"buttonClose"`
 	ButtonDetails               string `json:"buttonDetails"`
@@ -120,6 +121,7 @@ type Messages struct {
 	PaginationPageSizeLabel     string `json:"paginationPageSizeLabel"`
 	PaginationPrev              string `json:"paginationPrev"`
 	SearchPlaceholder           string `json:"searchPlaceholder"`
+	SearchShortcutHint          string `json:"searchShortcutHint"`
 	SelectAll                   string `json:"selectAll"`
 	FilterChipSearch            string `json:"filterChipSearch"`
 	FilterChipStatus            string `json:"filterChipStatus"`
@@ -201,6 +203,8 @@ type Response struct {
 
 var englishMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
+	AppSubtitle:                 "Monitor Vault/OpenBao certificate expirations",
+	SearchShortcutHint:          "Press / to focus search",
 	ButtonToggleTheme:           "Toggle theme",
 	ButtonClose:                 "Close",
 	ButtonDetails:               "Details",
@@ -375,6 +379,8 @@ var englishMessages = Messages{
 
 var frenchMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
+	AppSubtitle:                 "Surveillez les expirations de certificats Vault/OpenBao",
+	SearchShortcutHint:          "Appuyez sur / pour cibler la recherche",
 	ButtonToggleTheme:           "Changer de thème",
 	ButtonClose:                 "Fermer",
 	ButtonDetails:               "Détails",
@@ -549,6 +555,8 @@ var frenchMessages = Messages{
 
 var spanishMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
+	AppSubtitle:                 "Monitor Vault/OpenBao certificate expirations",
+	SearchShortcutHint:          "Press / to focus search",
 	ButtonToggleTheme:           "Cambiar tema",
 	ButtonClose:                 "Cerrar",
 	ButtonDetails:               "Detalles",
@@ -723,6 +731,8 @@ var spanishMessages = Messages{
 
 var germanMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
+	AppSubtitle:                 "Monitor Vault/OpenBao certificate expirations",
+	SearchShortcutHint:          "Press / to focus search",
 	ButtonToggleTheme:           "Design umschalten",
 	ButtonClose:                 "Schließen",
 	ButtonDetails:               "Details",
@@ -897,6 +907,8 @@ var germanMessages = Messages{
 
 var italianMessages = Messages{
 	AppTitle:                    "VaultCertsViewer",
+	AppSubtitle:                 "Monitor Vault/OpenBao certificate expirations",
+	SearchShortcutHint:          "Press / to focus search",
 	ButtonToggleTheme:           "Cambia tema",
 	ButtonClose:                 "Chiudi",
 	ButtonDetails:               "Dettagli",

@@ -26,6 +26,7 @@
         <div class="vcv-header-bar">
           <div class="vcv-header-brand">
             <h1 class="vcv-title">{{.Messages.AppTitle}} <span class="vcv-title-version">v{{.AppVersionText}}</span></h1>
+            <p class="vcv-title-subtitle">{{.Messages.AppSubtitle}}</p>
           </div>
           <div class="vcv-header-actions">
             <div
@@ -87,16 +88,18 @@
 
         <div id="vcv-filter-bar" class="vcv-filter-bar">
           <div class="vcv-filter-bar-inner">
-            <div class="vcv-filter-bar-row">
-              <div class="vcv-filter-item vcv-filter-item-mount">
+            <div class="vcv-filter-palette">
+              <div class="vcv-palette-item">
+                <span class="vcv-palette-label">{{.Messages.FilterChipSources}}</span>
                 <div id="mount-selector" class="vcv-mount-filter"></div>
                 <input id="vcv-mounts" name="mounts" type="hidden" value="__all__" class="vcv-cert-param" />
               </div>
-              <div class="vcv-filter-item vcv-filter-item-select">
-                <label id="vcv-cert-type-filter-label" class="vcv-filter-label" for="vcv-cert-type-filter">{{.Messages.LabelCertificateType}}</label>
+              <span class="vcv-palette-separator" aria-hidden="true"></span>
+              <div class="vcv-palette-item">
+                <label id="vcv-cert-type-filter-label" class="vcv-palette-label" for="vcv-cert-type-filter">{{.Messages.LabelCertificateType}}</label>
                 <select
                   id="vcv-cert-type-filter"
-                  class="vcv-select vcv-cert-param"
+                  class="vcv-select vcv-select-compact vcv-cert-param"
                   name="certType"
                   hx-get="/ui/certs"
                   hx-trigger="change"
@@ -112,21 +115,24 @@
                   <option value="unknown">{{.Messages.CertTypeFilterUnknown}}</option>
                 </select>
               </div>
-              <div class="vcv-filter-item vcv-filter-item-search">
-                <input
-                  id="vcv-search"
-                  class="vcv-input vcv-cert-param"
-                  type="search"
-                  placeholder="{{.Messages.SearchPlaceholder}}"
-                  name="search"
-                  hx-get="/ui/certs"
-                  hx-trigger="input changed delay:300ms"
-                  hx-target="#vcv-certs-body"
-                  hx-swap="innerHTML"
-                  hx-sync="#vcv-certs-body:replace"
-                  hx-include=".vcv-cert-param"
-                />
-              </div>
+            </div>
+            <div class="vcv-search-wrapper">
+              <svg class="vcv-search-icon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input
+                id="vcv-search"
+                class="vcv-input vcv-input-search vcv-cert-param"
+                type="search"
+                placeholder="{{.Messages.SearchPlaceholder}}"
+                title="{{.Messages.SearchShortcutHint}}"
+                name="search"
+                hx-get="/ui/certs"
+                hx-trigger="input changed delay:300ms"
+                hx-target="#vcv-certs-body"
+                hx-swap="innerHTML"
+                hx-sync="#vcv-certs-body:replace"
+                hx-include=".vcv-cert-param"
+              />
+              <kbd class="vcv-search-shortcut" title="{{.Messages.SearchShortcutHint}}" aria-label="{{.Messages.SearchShortcutHint}}">/</kbd>
             </div>
           </div>
         </div>
