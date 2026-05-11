@@ -87,7 +87,7 @@ func TestToggleThemeFragment(t *testing.T) {
 
 func TestGetCertificateDetailsUI(t *testing.T) {
 	webFS := fstest.MapFS{
-		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div>")},
+		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div><div id=\"cert-type\">{{.CertTypeLabel}}</div>")},
 		"templates/status-indicator.html":      &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
 		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{template \"certs-rows\" .}}{{template \"dashboard-fragment\" .}}{{template \"certs-state\" .}}{{template \"certs-pagination\" .}}{{template \"certs-sort\" .}}")},
 		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{range .Rows}}<div class=\"row\">{{.CommonName}}</div>{{end}}{{end}}")},
@@ -102,23 +102,23 @@ func TestGetCertificateDetailsUI(t *testing.T) {
 		path                 string
 		setupMock            func(mockVault *vault.MockClient)
 		expectedStatus       int
-		expectedBodyContains string
+		expectedBodyContains []string
 	}{
 		{
 			name: "success unescapes id",
 			path: "/ui/certs/pki_dev%3A33%3Aaa/details",
 			setupMock: func(mockVault *vault.MockClient) {
-				mockVault.On("GetCertificateDetails", mock.Anything, "pki_dev:33:aa").Return(certs.DetailedCertificate{Certificate: certs.Certificate{ID: "pki_dev:33:aa", SerialNumber: "33:aa", CommonName: "cn", ExpiresAt: time.Now()}}, nil)
+				mockVault.On("GetCertificateDetails", mock.Anything, "pki_dev:33:aa").Return(certs.DetailedCertificate{Certificate: certs.Certificate{ID: "pki_dev:33:aa", SerialNumber: "33:aa", CommonName: "cn", CertType: "user", ExpiresAt: time.Now()}}, nil)
 			},
 			expectedStatus:       http.StatusOK,
-			expectedBodyContains: "pki_dev:33:aa",
+			expectedBodyContains: []string{"pki_dev:33:aa", "User"},
 		},
 		{
 			name:                 "bad request when id is missing",
 			path:                 "/ui/certs//details",
 			setupMock:            func(mockVault *vault.MockClient) {},
 			expectedStatus:       http.StatusBadRequest,
-			expectedBodyContains: "",
+			expectedBodyContains: nil,
 		},
 		{
 			name: "internal server error when vault fails",
@@ -127,7 +127,7 @@ func TestGetCertificateDetailsUI(t *testing.T) {
 				mockVault.On("GetCertificateDetails", mock.Anything, "pki_dev:33:aa").Return(certs.DetailedCertificate{}, errors.New("boom"))
 			},
 			expectedStatus:       http.StatusInternalServerError,
-			expectedBodyContains: "",
+			expectedBodyContains: nil,
 		},
 	}
 	for _, tt := range tests {
@@ -140,8 +140,8 @@ func TestGetCertificateDetailsUI(t *testing.T) {
 			rec := httptest.NewRecorder()
 			router.ServeHTTP(rec, req)
 			assert.Equal(t, tt.expectedStatus, rec.Code)
-			if tt.expectedBodyContains != "" {
-				assert.Contains(t, rec.Body.String(), tt.expectedBodyContains)
+			for _, expected := range tt.expectedBodyContains {
+				assert.Contains(t, rec.Body.String(), expected)
 			}
 			mockVault.AssertExpectations(t)
 		})
@@ -161,9 +161,9 @@ func TestGetCertificatesFragment(t *testing.T) {
 		"templates/certs-sort.html":            &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
 	}
 	certificates := []certs.Certificate{
-		{ID: "pki:11:22:33", SerialNumber: "11:22:33", CommonName: "alpha.example", Sans: []string{"alpha"}, CreatedAt: time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2026, 1, 1, 10, 0, 0, 0, time.UTC)},
-		{ID: "pki:44:55:66", SerialNumber: "44:55:66", CommonName: "beta.example", Sans: []string{"beta"}, CreatedAt: time.Date(2025, 2, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2027, 1, 1, 10, 0, 0, 0, time.UTC)},
-		{ID: "pki:77:88:99", SerialNumber: "77:88:99", CommonName: "gamma.example", Sans: []string{"gamma"}, CreatedAt: time.Date(2025, 3, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2028, 1, 1, 10, 0, 0, 0, time.UTC)},
+		{ID: "pki:11:22:33", SerialNumber: "11:22:33", CommonName: "alpha.example", Sans: []string{"alpha"}, CertType: "machine", CreatedAt: time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2026, 1, 1, 10, 0, 0, 0, time.UTC)},
+		{ID: "pki:44:55:66", SerialNumber: "44:55:66", CommonName: "beta.example", Sans: []string{"beta"}, CertType: "user", CreatedAt: time.Date(2025, 2, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2027, 1, 1, 10, 0, 0, 0, time.UTC)},
+		{ID: "pki:77:88:99", SerialNumber: "77:88:99", CommonName: "gamma.example", Sans: []string{"gamma"}, CertType: "both", CreatedAt: time.Date(2025, 3, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2028, 1, 1, 10, 0, 0, 0, time.UTC)},
 	}
 	tests := []struct {
 		name          string
@@ -229,6 +229,15 @@ func TestGetCertificatesFragment(t *testing.T) {
 				assert.Contains(t, body, "alpha.example")
 				assert.Contains(t, body, "beta.example")
 				assert.Contains(t, body, "gamma.example")
+			},
+		},
+		{
+			name: "certificate type filters machine certificates",
+			path: "/ui/certs?certType=machine",
+			assertBody: func(t *testing.T, body string) {
+				assert.Contains(t, body, "alpha.example")
+				assert.NotContains(t, body, "beta.example")
+				assert.NotContains(t, body, "gamma.example")
 			},
 		},
 	}

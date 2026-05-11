@@ -97,6 +97,33 @@ func TestBuildUsageSummary(t *testing.T) {
 	}
 }
 
+func TestBuildCertTypeLabel(t *testing.T) {
+	messages := i18n.Messages{
+		CertTypeFilterBoth:    "Machine + user",
+		CertTypeFilterMachine: "Machine",
+		CertTypeFilterUnknown: "Unknown type",
+		CertTypeFilterUser:    "User",
+	}
+	tests := []struct {
+		name     string
+		certType string
+		expected string
+	}{
+		{name: "machine", certType: "machine", expected: "Machine"},
+		{name: "user", certType: "user", expected: "User"},
+		{name: "both", certType: "both", expected: "Machine + user"},
+		{name: "unknown", certType: "unknown", expected: "Unknown type"},
+		{name: "blank defaults to unknown", certType: "", expected: "Unknown type"},
+		{name: "trims and lowercases", certType: " Machine ", expected: "Machine"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, buildCertTypeLabel(tt.certType, messages))
+		})
+	}
+}
+
 func TestInterpolatePlaceholder(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -916,4 +943,20 @@ func TestMatchesStatusFilter_MultiSelect(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 	}
+}
+
+func TestApplyCertificateFilters_CertTypeFilter(t *testing.T) {
+	thresholds := config.ExpirationThresholds{Warning: 30, Critical: 7}
+	certificates := []certs.Certificate{
+		{ID: "pki:01", CommonName: "machine.example.com", CertType: "machine", ExpiresAt: time.Now().Add(90 * 24 * time.Hour)},
+		{ID: "pki:02", CommonName: "user.example.com", CertType: "user", ExpiresAt: time.Now().Add(90 * 24 * time.Hour)},
+		{ID: "pki:03", CommonName: "both.example.com", CertType: "both", ExpiresAt: time.Now().Add(90 * 24 * time.Hour)},
+	}
+
+	filtered := applyCertificateFilters(certificates, certsQueryState{CertTypeFilter: "machine"}, "commonName", "asc", thresholds)
+	assert.Len(t, filtered, 1)
+	assert.Equal(t, "machine.example.com", filtered[0].CommonName)
+
+	unfiltered := applyCertificateFilters(certificates, certsQueryState{CertTypeFilter: "all"}, "commonName", "asc", thresholds)
+	assert.Len(t, unfiltered, 3)
 }

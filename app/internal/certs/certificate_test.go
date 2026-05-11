@@ -27,6 +27,7 @@ func TestCertificate_JSONSerialization(t *testing.T) {
 				ID:         "test-vault-test-mount-1234567890",
 				CommonName: "test.example.com",
 				Sans:       []string{"test.example.com", "www.test.example.com"},
+				CertType:   "machine",
 				CreatedAt:  time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 				ExpiresAt:  time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 				Revoked:    false,
@@ -39,6 +40,7 @@ func TestCertificate_JSONSerialization(t *testing.T) {
 				ID:         "",
 				CommonName: "",
 				Sans:       []string{},
+				CertType:   "unknown",
 				CreatedAt:  time.Time{},
 				ExpiresAt:  time.Time{},
 				Revoked:    false,
@@ -51,6 +53,7 @@ func TestCertificate_JSONSerialization(t *testing.T) {
 				ID:         "vault-mount-serial",
 				CommonName: "revoked.example.com",
 				Sans:       []string{"revoked.example.com"},
+				CertType:   "user",
 				CreatedAt:  time.Date(2023, 6, 1, 0, 0, 0, 0, time.UTC),
 				ExpiresAt:  time.Date(2025, 6, 1, 0, 0, 0, 0, time.UTC),
 				Revoked:    true,
@@ -93,6 +96,7 @@ func TestDetailedCertificate_JSONSerialization(t *testing.T) {
 					SerialNumber: "1234567890ABCDEF",
 					CommonName:   "detailed.example.com",
 					Sans:         []string{"detailed.example.com", "www.detailed.example.com"},
+					CertType:     "machine",
 					CreatedAt:    time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC),
 					ExpiresAt:    time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC),
 					Revoked:      false,
@@ -116,6 +120,7 @@ func TestDetailedCertificate_JSONSerialization(t *testing.T) {
 					SerialNumber: "",
 					CommonName:   "minimal.example.com",
 					Sans:         []string{},
+					CertType:     "unknown",
 					CreatedAt:    time.Time{},
 					ExpiresAt:    time.Time{},
 					Revoked:      false,
@@ -608,10 +613,33 @@ func TestParsePEM(t *testing.T) {
 				assert.Equal(t, "RSA", result.KeyAlgorithm)
 				assert.GreaterOrEqual(t, result.KeySize, 2048) // RSA 2048 should be >= 2048
 				assert.NotEmpty(t, result.SerialNumber)
+				assert.Equal(t, "machine", result.CertType)
 				assert.NotEmpty(t, result.Usage)
 			}
 		})
 	}
+}
+
+func TestInferCertType(t *testing.T) {
+	tests := []struct {
+		name     string
+		usages   []x509.ExtKeyUsage
+		expected string
+	}{
+		{name: "server auth is machine", usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}, expected: "machine"},
+		{name: "client auth is user", usages: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth}, expected: "user"},
+		{name: "server and client auth is both", usages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth, x509.ExtKeyUsageClientAuth}, expected: "both"},
+		{name: "missing usage is unknown", usages: nil, expected: "unknown"},
+		{name: "other usage is unknown", usages: []x509.ExtKeyUsage{x509.ExtKeyUsageCodeSigning}, expected: "unknown"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			certificate := &x509.Certificate{ExtKeyUsage: tt.usages}
+			assert.Equal(t, tt.expected, InferCertType(certificate))
+		})
+	}
+	assert.Equal(t, "unknown", InferCertType(nil))
 }
 
 func TestGetKeySize(t *testing.T) {

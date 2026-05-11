@@ -113,6 +113,7 @@
   --vcv-radius-sm: 0.375rem;
   --vcv-radius-md: 0.5rem;
   --vcv-radius-lg: 0.75rem;
+  --vcv-radius-full: 9999px;
 }
 
 [data-theme="dark"] {
@@ -430,6 +431,13 @@ body {
 
 .vcv-filter-item-select {
   flex-shrink: 0;
+}
+
+.vcv-filter-label {
+  color: var(--vcv-color-muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 /* Mobile responsive */
@@ -1923,7 +1931,7 @@ col.vcv-col-status {
 .vcv-modal-content {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 1.25rem;
 }
 
 .vcv-modal-actions {
@@ -1939,62 +1947,138 @@ col.vcv-col-status {
 .vcv-details-content {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
-/* Certificate detail modal — hero */
-.vcv-cd-hero {
+/* Certificate detail modal */
+.vcv-cd-passport {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  margin: -1.25rem;
+  min-height: 30rem;
+  background: var(--vcv-color-surface);
+}
+
+.vcv-cd-passport-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem 1.25rem;
+  border-right: 1px solid var(--vcv-color-border);
+  background:
+    radial-gradient(circle at top left, rgb(255 255 255 / 55%), transparent 45%),
+    var(--vcv-color-surface-muted);
+}
+
+.vcv-cd-passport-ok .vcv-cd-passport-sidebar {
+  background:
+    radial-gradient(circle at top left, rgb(16 185 129 / 22%), transparent 48%),
+    var(--vcv-color-surface-muted);
+}
+
+.vcv-cd-passport-warning .vcv-cd-passport-sidebar {
+  background:
+    radial-gradient(circle at top left, rgb(245 158 11 / 24%), transparent 48%),
+    var(--vcv-color-surface-muted);
+}
+
+.vcv-cd-passport-critical .vcv-cd-passport-sidebar {
+  background:
+    radial-gradient(circle at top left, rgb(220 38 38 / 18%), transparent 48%),
+    var(--vcv-color-surface-muted);
+}
+
+.vcv-cd-passport-expired .vcv-cd-passport-sidebar {
+  background:
+    radial-gradient(circle at top left, rgb(79 70 229 / 24%), transparent 48%),
+    var(--vcv-color-surface-muted);
+}
+
+.vcv-cd-emblem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 1rem;
+  color: var(--vcv-color-text-strong);
+  background: var(--vcv-color-surface);
+  border: 1px solid var(--vcv-color-border);
+  box-shadow: 0 8px 20px rgb(15 23 42 / 10%);
+}
+
+.vcv-cd-sidebar-status {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.vcv-cd-countdown {
+  font-size: 1.65rem;
+  line-height: 1.1;
+  letter-spacing: -0.04em;
+}
+
+.vcv-cd-date-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+  margin-top: auto;
+}
+
+.vcv-cd-date-stack div {
+  padding: 0.75rem;
+  border: 1px solid var(--vcv-color-border);
+  border-radius: var(--vcv-radius-lg);
+  background: rgb(255 255 255 / 55%);
+}
+
+.vcv-cd-date-stack span {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--vcv-color-muted);
+}
+
+.vcv-cd-date-stack strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1rem;
+  color: var(--vcv-color-text-strong);
+}
+
+.vcv-cd-date-stack small {
+  display: block;
+  margin-top: 0.125rem;
+  font-size: 0.75rem;
+  color: var(--vcv-color-muted);
+}
+
+.vcv-cd-passport-main {
+  min-width: 0;
+  padding: 1.5rem;
+}
+
+.vcv-cd-passport-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 1.5rem;
-  padding: 1.25rem 1.5rem;
-  margin: -1.5rem -1.5rem 1.25rem;
-  border-left: 4px solid transparent;
-  background: var(--vcv-color-surface-muted);
+  gap: 1rem;
+  padding-bottom: 1.25rem;
   border-bottom: 1px solid var(--vcv-color-border);
-}
-
-.vcv-cd-hero-ok {
-  border-left-color: var(--vcv-color-primary);
-}
-
-.vcv-cd-hero-warning {
-  border-left-color: var(--vcv-color-warning);
-}
-
-.vcv-cd-hero-critical {
-  border-left-color: var(--vcv-color-danger);
-}
-
-.vcv-cd-hero-expired {
-  border-left-color: var(--vcv-color-expired);
-}
-
-.vcv-cd-hero-neutral {
-  border-left-color: var(--vcv-color-border-strong);
-}
-
-.vcv-cd-hero-identity {
-  flex: 1;
-  min-width: 0;
-}
-
-.vcv-cd-hero-name-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  flex-wrap: wrap;
 }
 
 .vcv-cd-cn {
   margin: 0;
   font-size: 1.125rem;
-  font-weight: 700;
+  font-weight: 800;
   color: var(--vcv-color-text-strong);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
   word-break: normal;
   overflow-wrap: anywhere;
+  line-height: 1.2;
 }
 
 .vcv-cd-badges {
@@ -2009,151 +2093,158 @@ col.vcv-col-status {
   color: var(--vcv-color-muted);
   word-break: normal;
   overflow-wrap: anywhere;
+  line-height: 1.4;
 }
 
-.vcv-cd-hero-expiry {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.75rem;
-  flex-shrink: 0;
-  text-align: right;
+.vcv-cd-hero-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background: var(--vcv-color-surface);
+  border: 1px solid var(--vcv-color-border-strong);
+  border-radius: var(--vcv-radius-full);
+  width: fit-content;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 5%);
 }
 
-.vcv-cd-hero-countdown {
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
-}
-
-.vcv-cd-hero-date {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.25rem;
-}
-
-.vcv-cd-hero-date-label {
+.vcv-cd-hero-meta-label {
   font-size: 0.6875rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--vcv-color-muted);
-  margin-bottom: 0.125rem;
 }
 
-.vcv-cd-hero-date span:not(.vcv-cd-hero-date-label) {
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
+.vcv-cd-hero-meta-value {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--vcv-color-text-strong);
 }
 
-.vcv-cd-time {
-  font-size: 0.75rem !important;
-  font-weight: 500 !important;
-  color: var(--vcv-color-muted) !important;
-  margin-top: -0.125rem;
+.vcv-cd-info-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
 }
 
-/* Legacy compat */
-.vcv-cd-expiry-hint {
-  display: none;
-}
-
-.vcv-cd-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.vcv-cd-section {
+.vcv-cd-strip-item {
+  padding: 0.875rem 1rem;
   border: 1px solid var(--vcv-color-border);
   border-radius: var(--vcv-radius-lg);
-  overflow: hidden;
+  background: var(--vcv-color-surface-muted);
 }
 
-.vcv-cd-section-title {
-  padding: 0.625rem 1rem;
-  background: var(--vcv-color-surface-muted);
+.vcv-cd-strip-item span,
+.vcv-cd-detail-row > span {
   font-size: 0.6875rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--vcv-color-muted);
-  border-bottom: 1px solid var(--vcv-color-border);
 }
 
-.vcv-cd-props {
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.vcv-cd-strip-item strong {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.9375rem;
+  color: var(--vcv-color-text-strong);
 }
 
-.vcv-cd-prop {
+.vcv-cd-detail-list {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.75rem 1rem;
+  border: 1px solid var(--vcv-color-border);
+  border-radius: var(--vcv-radius-lg);
+  overflow: hidden;
+}
+
+.vcv-cd-detail-row {
+  display: grid;
+  grid-template-columns: 11rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 0.875rem 1rem;
   border-bottom: 1px solid var(--vcv-color-border);
 }
 
-.vcv-cd-prop:last-child {
+.vcv-cd-detail-row:last-child {
   border-bottom: none;
 }
 
-.vcv-cd-prop:nth-child(odd) {
-  border-right: 1px solid var(--vcv-color-border);
-}
-
-.vcv-cd-prop:nth-last-child(-n + 2):nth-child(odd),
-.vcv-cd-prop:nth-last-child(-n + 2):nth-child(even) {
-  border-bottom: none;
-}
-
-.vcv-cd-prop-full {
-  grid-column: 1 / -1;
-  border-right: none;
-}
-
-.vcv-cd-prop-full:not(:last-child) {
-  border-bottom: 1px solid var(--vcv-color-border);
-}
-
-.vcv-cd-prop-full:last-child {
-  border-bottom: none;
-}
-
-.vcv-cd-prop dt {
-  font-size: 0.6875rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--vcv-color-muted);
-}
-
-.vcv-cd-prop dd {
-  margin: 0;
+.vcv-cd-detail-row strong {
   font-size: 0.875rem;
   color: var(--vcv-color-text-strong);
   word-break: normal;
   overflow-wrap: anywhere;
+  line-height: 1.4;
 }
 
-.vcv-cd-prop dd code {
+.vcv-cd-detail-row-stack {
+  align-items: start;
+}
+
+.vcv-cd-copy-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.vcv-cd-serial {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.8125rem;
-  background: var(--vcv-color-surface-muted);
-  padding: 0.125rem 0.375rem;
-  border-radius: 0.25rem;
-  color: var(--vcv-color-text);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  color: var(--vcv-color-text-subtle);
+  background: transparent;
+  word-break: break-all;
+  flex: 1;
+  min-width: 0;
 }
 
-.vcv-cd-time {
-  font-size: 0.75rem;
+.vcv-cd-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  background: transparent;
+  border: 1px solid var(--vcv-color-border);
+  border-radius: var(--vcv-radius-md);
   color: var(--vcv-color-muted);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+}
+
+.vcv-cd-copy-btn:hover {
+  background: var(--vcv-color-primary-soft);
+  color: var(--vcv-color-primary-strong);
+  border-color: var(--vcv-color-primary);
+}
+
+.vcv-cd-copy-btn.vcv-cd-copy-done {
+  background: var(--vcv-color-success-surface);
+  color: var(--vcv-color-success-text);
+  border-color: var(--vcv-color-success-border);
+}
+
+.vcv-cd-fingerprint {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  background: var(--vcv-color-surface-muted);
+  padding: 0.375rem 0.625rem;
+  border-radius: 0.375rem;
+  color: var(--vcv-color-text);
+  display: inline-block;
+  line-height: 1.5;
+  flex: 1;
+  min-width: 0;
 }
 
 .vcv-cd-expiry-value-neutral {
@@ -2194,39 +2285,34 @@ col.vcv-col-status {
   font-size: 0.75rem;
   background: var(--vcv-color-surface-muted);
   border: 1px solid var(--vcv-color-border);
-  padding: 0.2rem 0.5rem;
+  padding: 0.25rem 0.625rem;
   border-radius: 0.375rem;
   color: var(--vcv-color-text);
 }
 
-.vcv-cd-fingerprint {
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-  font-size: 0.75rem;
-  word-break: break-all;
-  overflow-wrap: anywhere;
-  background: var(--vcv-color-surface-muted);
-  padding: 0.25rem 0.5rem;
-  border-radius: 0.25rem;
-  color: var(--vcv-color-text);
-  display: inline-block;
-  line-height: 1.5;
+/* Legacy compat */
+.vcv-cd-expiry-hint {
+  display: none;
 }
 
 @media (640px >= width) {
-  .vcv-cd-props {
+  .vcv-cd-passport {
     grid-template-columns: 1fr;
   }
 
-  .vcv-cd-prop {
+  .vcv-cd-passport-sidebar {
+    border-right: none;
     border-bottom: 1px solid var(--vcv-color-border);
   }
 
-  .vcv-cd-prop:nth-child(odd) {
-    border-right: none;
+  .vcv-cd-passport-header,
+  .vcv-cd-info-strip,
+  .vcv-cd-detail-row {
+    grid-template-columns: 1fr;
   }
 
-  .vcv-cd-prop:last-child {
-    border-bottom: none;
+  .vcv-cd-date-stack {
+    margin-top: 0;
   }
 }
 
@@ -3006,4 +3092,14 @@ col.vcv-col-status {
   .vcv-table {
     min-width: 900px;
   }
+}
+
+[data-theme="dark"] .vcv-cd-date-stack div {
+  background: rgb(255 255 255 / 5%);
+}
+
+[data-theme="dark"] .vcv-cd-passport-expired .vcv-cd-passport-sidebar {
+  background:
+    radial-gradient(circle at top left, rgb(129 140 248 / 24%), transparent 48%),
+    var(--vcv-color-surface-muted);
 }

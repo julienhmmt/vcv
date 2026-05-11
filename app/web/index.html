@@ -92,6 +92,26 @@
                 <div id="mount-selector" class="vcv-mount-filter"></div>
                 <input id="vcv-mounts" name="mounts" type="hidden" value="__all__" class="vcv-cert-param" />
               </div>
+              <div class="vcv-filter-item vcv-filter-item-select">
+                <label id="vcv-cert-type-filter-label" class="vcv-filter-label" for="vcv-cert-type-filter">{{.Messages.LabelCertificateType}}</label>
+                <select
+                  id="vcv-cert-type-filter"
+                  class="vcv-select vcv-cert-param"
+                  name="certType"
+                  hx-get="/ui/certs"
+                  hx-trigger="change"
+                  hx-target="#vcv-certs-body"
+                  hx-swap="innerHTML"
+                  hx-sync="#vcv-certs-body:replace"
+                  hx-include=".vcv-cert-param"
+                >
+                  <option value="all">{{.Messages.CertTypeFilterAll}}</option>
+                  <option value="machine">{{.Messages.CertTypeFilterMachine}}</option>
+                  <option value="user">{{.Messages.CertTypeFilterUser}}</option>
+                  <option value="both">{{.Messages.CertTypeFilterBoth}}</option>
+                  <option value="unknown">{{.Messages.CertTypeFilterUnknown}}</option>
+                </select>
+              </div>
               <div class="vcv-filter-item vcv-filter-item-search">
                 <input
                   id="vcv-search"

@@ -50,6 +50,9 @@ func newVaultTestCertificatePEM(t *testing.T) string {
 		NotBefore: time.Now().Add(-1 * time.Hour),
 		NotAfter:  time.Now().Add(24 * time.Hour),
 		DNSNames:  []string{"test.example.com"},
+		ExtKeyUsage: []x509.ExtKeyUsage{
+			x509.ExtKeyUsageServerAuth,
+		},
 	}
 	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &privateKey.PublicKey, privateKey)
 	if err != nil {
@@ -338,12 +341,18 @@ func TestRealClient_ListCertificates_And_Details(t *testing.T) {
 	if len(certificates) != 2 {
 		t.Fatalf("expected 2 certificates, got %d", len(certificates))
 	}
+	if certificates[0].CertType != "machine" {
+		t.Fatalf("expected machine certificate type, got %q", certificates[0].CertType)
+	}
 	details, err := client.GetCertificateDetails(ctx, "pki:aa")
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
 	if details.SerialNumber != "aa" {
 		t.Fatalf("expected serial %q, got %q", "aa", details.SerialNumber)
+	}
+	if details.CertType != "machine" {
+		t.Fatalf("expected machine certificate type, got %q", details.CertType)
 	}
 	if details.PEM == "" {
 		t.Fatalf("expected pem")
