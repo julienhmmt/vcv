@@ -17,6 +17,7 @@ type Certificate struct {
 	SerialNumber string    `json:"serialNumber"`
 	CommonName   string    `json:"commonName"`
 	Sans         []string  `json:"sans"`
+	CertType     string    `json:"certType"`
 	CreatedAt    time.Time `json:"createdAt"`
 	ExpiresAt    time.Time `json:"expiresAt"`
 	Revoked      bool      `json:"revoked"`
@@ -111,6 +112,7 @@ func ParsePEM(pemData string) (*DetailedCertificate, error) {
 			CommonName:   cert.Subject.CommonName,
 			CreatedAt:    cert.NotBefore,
 			ExpiresAt:    cert.NotAfter,
+			CertType:     InferCertType(cert),
 			Revoked:      false, // This would need to be determined from external source
 		},
 		Issuer:            cert.Issuer.String(),
@@ -131,6 +133,32 @@ func ParsePEM(pemData string) (*DetailedCertificate, error) {
 	detailed.PEM = pemData
 
 	return detailed, nil
+}
+
+func InferCertType(cert *x509.Certificate) string {
+	if cert == nil {
+		return "unknown"
+	}
+	hasServerAuth := false
+	hasClientAuth := false
+	for _, extUsage := range cert.ExtKeyUsage {
+		switch extUsage {
+		case x509.ExtKeyUsageServerAuth:
+			hasServerAuth = true
+		case x509.ExtKeyUsageClientAuth:
+			hasClientAuth = true
+		}
+	}
+	switch {
+	case hasServerAuth && hasClientAuth:
+		return "both"
+	case hasServerAuth:
+		return "machine"
+	case hasClientAuth:
+		return "user"
+	default:
+		return "unknown"
+	}
 }
 
 // getKeySize extracts the key size from the certificate

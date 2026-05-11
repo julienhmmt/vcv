@@ -2,6 +2,7 @@
 (function () {
 const MOUNTS_ALL_SENTINEL = "__all__";
 const DEFAULT_CERTS_VALUES = {
+  certType: "all",
   expiry: "all",
   mounts: "",
   page: "0",
@@ -97,6 +98,7 @@ function buildCertsPageUrl() {
   if (langSelect && typeof langSelect.value === "string" && langSelect.value !== "") {
     params.set("lang", langSelect.value);
   }
+  params.set("certType", values.certType);
   params.set("expiry", values.expiry);
   params.set("mounts", values.mounts);
   params.set("page", values.page);
@@ -125,6 +127,7 @@ function applyCertsStateFromUrl() {
   }
   syncControlFromUrlParam(params, "vcv-search", "search", "");
   syncControlFromUrlParam(params, "vcv-status-filter", "status", "all");
+  syncControlFromUrlParam(params, "vcv-cert-type-filter", "certType", "all");
   syncControlFromUrlParam(params, "vcv-expiry-filter", "expiry", "all");
   syncControlFromUrlParam(params, "vcv-page-size", "pageSize", "25");
   syncControlFromUrlParam(params, "vcv-page", "page", "0");
@@ -547,6 +550,16 @@ function applyTranslations() {
     setText(expirySelect.querySelector("option[value='30']"), messages.expiryFilter30Days);
     setText(expirySelect.querySelector("option[value='90']"), messages.expiryFilter90Days);
   }
+  const certTypeSelect = document.getElementById("vcv-cert-type-filter");
+  if (certTypeSelect) {
+    setText(certTypeSelect.querySelector("option[value='all']"), messages.certTypeFilterAll);
+    setText(certTypeSelect.querySelector("option[value='machine']"), messages.certTypeFilterMachine);
+    setText(certTypeSelect.querySelector("option[value='user']"), messages.certTypeFilterUser);
+    setText(certTypeSelect.querySelector("option[value='both']"), messages.certTypeFilterBoth);
+    setText(certTypeSelect.querySelector("option[value='unknown']"), messages.certTypeFilterUnknown);
+    certTypeSelect.setAttribute("aria-label", messages.labelCertificateType || "Certificate type");
+  }
+  setText(document.getElementById("vcv-cert-type-filter-label"), messages.labelCertificateType);
   const pageSizeSelect = document.getElementById("vcv-page-size");
   if (pageSizeSelect) {
     setText(pageSizeSelect.querySelector("option[value='all']"), messages.paginationAll);
@@ -624,6 +637,7 @@ function setMountsHiddenField() {
 
 function getCertsHtmxValues() {
   const controlIds = {
+    certType: "vcv-cert-type-filter",
     expiry: "vcv-expiry-filter",
     mounts: "vcv-mounts",
     page: "vcv-page",
@@ -1385,6 +1399,10 @@ function countActiveFilters() {
   if (expiry && expiry.value !== "all") {
     count++;
   }
+  const certType = document.getElementById("vcv-cert-type-filter");
+  if (certType && certType.value !== "all") {
+    count++;
+  }
   if (state.availableMounts.length > 0 && state.selectedMounts.length < state.availableMounts.length) {
     count++;
   }
@@ -1413,6 +1431,10 @@ function initFilterBadgeListeners() {
   const expirySelect = document.getElementById("vcv-expiry-filter");
   if (expirySelect) {
     expirySelect.addEventListener("change", updateFilterBadge);
+  }
+  const certTypeSelect = document.getElementById("vcv-cert-type-filter");
+  if (certTypeSelect) {
+    certTypeSelect.addEventListener("change", updateFilterBadge);
   }
 }
 

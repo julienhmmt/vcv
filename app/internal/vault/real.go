@@ -369,6 +369,7 @@ func (c *realClient) readCertificateFromMount(ctx context.Context, mount, serial
 		SerialNumber: serial,
 		CommonName:   x509Certificate.Subject.CommonName,
 		Sans:         subjectAlternativeNames,
+		CertType:     certs.InferCertType(x509Certificate),
 		CreatedAt:    x509Certificate.NotBefore.UTC(),
 		ExpiresAt:    x509Certificate.NotAfter.UTC(),
 		Revoked:      false,
@@ -473,6 +474,7 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 			SerialNumber: serial,       // Store only the serial part
 			CommonName:   x509Certificate.Subject.CommonName,
 			Sans:         subjectAlternativeNames,
+			CertType:     certs.InferCertType(x509Certificate),
 			CreatedAt:    x509Certificate.NotBefore.UTC(),
 			ExpiresAt:    x509Certificate.NotAfter.UTC(),
 			Revoked:      revokedSet[serial],

@@ -917,3 +917,19 @@ func TestMatchesStatusFilter_MultiSelect(t *testing.T) {
 		})
 	}
 }
+
+func TestApplyCertificateFilters_CertTypeFilter(t *testing.T) {
+	thresholds := config.ExpirationThresholds{Warning: 30, Critical: 7}
+	certificates := []certs.Certificate{
+		{ID: "pki:01", CommonName: "machine.example.com", CertType: "machine", ExpiresAt: time.Now().Add(90 * 24 * time.Hour)},
+		{ID: "pki:02", CommonName: "user.example.com", CertType: "user", ExpiresAt: time.Now().Add(90 * 24 * time.Hour)},
+		{ID: "pki:03", CommonName: "both.example.com", CertType: "both", ExpiresAt: time.Now().Add(90 * 24 * time.Hour)},
+	}
+
+	filtered := applyCertificateFilters(certificates, certsQueryState{CertTypeFilter: "machine"}, "commonName", "asc", thresholds)
+	assert.Len(t, filtered, 1)
+	assert.Equal(t, "machine.example.com", filtered[0].CommonName)
+
+	unfiltered := applyCertificateFilters(certificates, certsQueryState{CertTypeFilter: "all"}, "commonName", "asc", thresholds)
+	assert.Len(t, unfiltered, 3)
+}

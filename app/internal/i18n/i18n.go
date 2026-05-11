@@ -64,6 +64,12 @@ type Messages struct {
 	DownloadPEMNetworkError     string `json:"downloadPEMNetworkError"`
 	DownloadPEMSuccess          string `json:"downloadPEMSuccess"`
 	AdminDocsTitle              string `json:"adminDocsTitle"`
+	CertTypeFilterAll           string `json:"certTypeFilterAll"`
+	CertTypeFilterBoth          string `json:"certTypeFilterBoth"`
+	CertTypeFilterMachine       string `json:"certTypeFilterMachine"`
+	CertTypeFilterUnknown       string `json:"certTypeFilterUnknown"`
+	CertTypeFilterUser          string `json:"certTypeFilterUser"`
+	LabelCertificateType        string `json:"labelCertificateType"`
 	ExpiryFilter30Days          string `json:"expiryFilter30Days"`
 	ExpiryFilter7Days           string `json:"expiryFilter7Days"`
 	ExpiryFilter90Days          string `json:"expiryFilter90Days"`
@@ -228,6 +234,11 @@ var englishMessages = Messages{
 	DownloadPEMNetworkError:     "Network error downloading certificate PEM. Please try again.",
 	DownloadPEMSuccess:          "Certificate PEM downloaded successfully",
 	AdminDocsTitle:              "Admin documentation",
+	CertTypeFilterAll:           "All types",
+	CertTypeFilterBoth:          "Machine + user",
+	CertTypeFilterMachine:       "Machine",
+	CertTypeFilterUnknown:       "Unknown type",
+	CertTypeFilterUser:          "User",
 	ExpiryFilter30Days:          "≤ 30 days",
 	ExpiryFilter7Days:           "≤ 7 days",
 	ExpiryFilter90Days:          "≤ 90 days",
@@ -242,6 +253,7 @@ var englishMessages = Messages{
 	LabelKeyAlgorithm:           "Key Algorithm",
 	LabelLanguage:               "Language",
 	LabelLoading:                "Loading...",
+	LabelCertificateType:        "Certificate type",
 	LabelPEM:                    "PEM Certificate",
 	LabelSerialNumber:           "Serial Number",
 	LabelSubject:                "Subject",
@@ -386,6 +398,11 @@ var frenchMessages = Messages{
 	DownloadPEMNetworkError:     "Erreur réseau lors du téléchargement du certificat PEM. Veuillez réessayer.",
 	DownloadPEMSuccess:          "Certificat PEM téléchargé avec succès",
 	AdminDocsTitle:              "Documentation admin",
+	CertTypeFilterAll:           "Tous les types",
+	CertTypeFilterBoth:          "Machine + utilisateur",
+	CertTypeFilterMachine:       "Machine",
+	CertTypeFilterUnknown:       "Type inconnu",
+	CertTypeFilterUser:          "Utilisateur",
 	ExpiryFilter30Days:          "≤ 30 jours",
 	ExpiryFilter7Days:           "≤ 7 jours",
 	ExpiryFilter90Days:          "≤ 90 jours",
@@ -400,6 +417,7 @@ var frenchMessages = Messages{
 	LabelKeyAlgorithm:           "Algorithme de clé",
 	LabelLanguage:               "Langue",
 	LabelLoading:                "Chargement...",
+	LabelCertificateType:        "Type de certificat",
 	LabelPEM:                    "Certificat PEM",
 	LabelSerialNumber:           "Numéro de série",
 	LabelSubject:                "Sujet",
@@ -544,6 +562,11 @@ var spanishMessages = Messages{
 	DownloadPEMNetworkError:     "Error de red al descargar el certificado PEM. Por favor intente nuevamente.",
 	DownloadPEMSuccess:          "Certificado PEM descargado exitosamente",
 	AdminDocsTitle:              "Documentación admin",
+	CertTypeFilterAll:           "Todos los tipos",
+	CertTypeFilterBoth:          "Máquina + usuario",
+	CertTypeFilterMachine:       "Máquina",
+	CertTypeFilterUnknown:       "Tipo desconocido",
+	CertTypeFilterUser:          "Usuario",
 	ExpiryFilter30Days:          "≤ 30 días",
 	ExpiryFilter7Days:           "≤ 7 días",
 	ExpiryFilter90Days:          "≤ 90 días",
@@ -558,6 +581,7 @@ var spanishMessages = Messages{
 	LabelKeyAlgorithm:           "Algoritmo de clave",
 	LabelLanguage:               "Idioma",
 	LabelLoading:                "Cargando...",
+	LabelCertificateType:        "Tipo de certificado",
 	LabelPEM:                    "Certificado PEM",
 	LabelSerialNumber:           "Número de serie",
 	LabelSubject:                "Sujeto",
@@ -702,6 +726,11 @@ var germanMessages = Messages{
 	DownloadPEMNetworkError:     "Netzwerkfehler beim Herunterladen des Zertifikat-PEM. Bitte versuchen Sie es erneut.",
 	DownloadPEMSuccess:          "Zertifikat-PEM erfolgreich heruntergeladen",
 	AdminDocsTitle:              "Admin-dokumentation",
+	CertTypeFilterAll:           "Alle Typen",
+	CertTypeFilterBoth:          "Maschine + Benutzer",
+	CertTypeFilterMachine:       "Maschine",
+	CertTypeFilterUnknown:       "Unbekannter Typ",
+	CertTypeFilterUser:          "Benutzer",
 	ExpiryFilter30Days:          "≤ 30 Tage",
 	ExpiryFilter7Days:           "≤ 7 Tage",
 	ExpiryFilter90Days:          "≤ 90 Tage",
@@ -716,6 +745,7 @@ var germanMessages = Messages{
 	LabelKeyAlgorithm:           "Schlüsselalgorithmus",
 	LabelLanguage:               "Sprache",
 	LabelLoading:                "Wird geladen...",
+	LabelCertificateType:        "Zertifikatstyp",
 	LabelPEM:                    "PEM-Zertifikat",
 	LabelSerialNumber:           "Seriennummer",
 	LabelSubject:                "Betreff",
@@ -860,6 +890,11 @@ var italianMessages = Messages{
 	DownloadPEMNetworkError:     "Errore di rete durante il download del certificato PEM. Riprova.",
 	DownloadPEMSuccess:          "Certificato PEM scaricato con successo",
 	AdminDocsTitle:              "Documentazione admin",
+	CertTypeFilterAll:           "Tutti i tipi",
+	CertTypeFilterBoth:          "Macchina + utente",
+	CertTypeFilterMachine:       "Macchina",
+	CertTypeFilterUnknown:       "Tipo sconosciuto",
+	CertTypeFilterUser:          "Utente",
 	ExpiryFilter30Days:          "≤ 30 giorni",
 	ExpiryFilter7Days:           "≤ 7 giorni",
 	ExpiryFilter90Days:          "≤ 90 giorni",
@@ -874,6 +909,7 @@ var italianMessages = Messages{
 	LabelKeyAlgorithm:           "Algoritmo della chiave",
 	LabelLanguage:               "Lingua",
 	LabelLoading:                "Caricamento...",
+	LabelCertificateType:        "Tipo di certificato",
 	LabelPEM:                    "Certificato PEM",
 	LabelSerialNumber:           "Numero di serie",
 	LabelSubject:                "Soggetto",

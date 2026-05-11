@@ -161,9 +161,9 @@ func TestGetCertificatesFragment(t *testing.T) {
 		"templates/certs-sort.html":            &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
 	}
 	certificates := []certs.Certificate{
-		{ID: "pki:11:22:33", SerialNumber: "11:22:33", CommonName: "alpha.example", Sans: []string{"alpha"}, CreatedAt: time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2026, 1, 1, 10, 0, 0, 0, time.UTC)},
-		{ID: "pki:44:55:66", SerialNumber: "44:55:66", CommonName: "beta.example", Sans: []string{"beta"}, CreatedAt: time.Date(2025, 2, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2027, 1, 1, 10, 0, 0, 0, time.UTC)},
-		{ID: "pki:77:88:99", SerialNumber: "77:88:99", CommonName: "gamma.example", Sans: []string{"gamma"}, CreatedAt: time.Date(2025, 3, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2028, 1, 1, 10, 0, 0, 0, time.UTC)},
+		{ID: "pki:11:22:33", SerialNumber: "11:22:33", CommonName: "alpha.example", Sans: []string{"alpha"}, CertType: "machine", CreatedAt: time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2026, 1, 1, 10, 0, 0, 0, time.UTC)},
+		{ID: "pki:44:55:66", SerialNumber: "44:55:66", CommonName: "beta.example", Sans: []string{"beta"}, CertType: "user", CreatedAt: time.Date(2025, 2, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2027, 1, 1, 10, 0, 0, 0, time.UTC)},
+		{ID: "pki:77:88:99", SerialNumber: "77:88:99", CommonName: "gamma.example", Sans: []string{"gamma"}, CertType: "both", CreatedAt: time.Date(2025, 3, 1, 10, 0, 0, 0, time.UTC), ExpiresAt: time.Date(2028, 1, 1, 10, 0, 0, 0, time.UTC)},
 	}
 	tests := []struct {
 		name          string
@@ -229,6 +229,15 @@ func TestGetCertificatesFragment(t *testing.T) {
 				assert.Contains(t, body, "alpha.example")
 				assert.Contains(t, body, "beta.example")
 				assert.Contains(t, body, "gamma.example")
+			},
+		},
+		{
+			name: "certificate type filters machine certificates",
+			path: "/ui/certs?certType=machine",
+			assertBody: func(t *testing.T, body string) {
+				assert.Contains(t, body, "alpha.example")
+				assert.NotContains(t, body, "beta.example")
+				assert.NotContains(t, body, "gamma.example")
 			},
 		},
 	}

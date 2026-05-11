@@ -196,6 +196,7 @@ type certsQueryState struct {
 	SearchTerm     string
 	StatusFilter   string
 	ExpiryFilter   string
+	CertTypeFilter string
 	VaultFilter    string
 	PKIFilter      string
 	PageSize       string
@@ -696,6 +697,7 @@ func parseCertsQueryState(r *http.Request) certsQueryState {
 		SearchTerm:     strings.TrimSpace(query.Get("search")),
 		StatusFilter:   strings.TrimSpace(query.Get("status")),
 		ExpiryFilter:   strings.TrimSpace(query.Get("expiry")),
+		CertTypeFilter: strings.TrimSpace(query.Get("certType")),
 		VaultFilter:    strings.TrimSpace(query.Get("vault")),
 		PKIFilter:      strings.TrimSpace(query.Get("pki")),
 		PageSize:       strings.TrimSpace(query.Get("pageSize")),
@@ -712,6 +714,9 @@ func parseCertsQueryState(r *http.Request) certsQueryState {
 	}
 	if state.ExpiryFilter == "" {
 		state.ExpiryFilter = "all"
+	}
+	if state.CertTypeFilter == "" {
+		state.CertTypeFilter = "all"
 	}
 	if state.VaultFilter == "" {
 		state.VaultFilter = "all"
@@ -760,7 +765,7 @@ func shouldResetPageIndex(triggerID string, pageAction string) bool {
 		return false
 	}
 	switch triggerID {
-	case "vcv-search", "vcv-status-filter", "vcv-expiry-filter", "vcv-vault-filter", "vcv-pki-filter", "vcv-page-size", "vcv-mounts", "mount-selector", "vcv-sort-commonName", "vcv-sort-createdAt", "vcv-sort-expiresAt":
+	case "vcv-search", "vcv-status-filter", "vcv-expiry-filter", "vcv-cert-type-filter", "vcv-vault-filter", "vcv-pki-filter", "vcv-page-size", "vcv-mounts", "mount-selector", "vcv-sort-commonName", "vcv-sort-createdAt", "vcv-sort-expiresAt":
 		return true
 	default:
 		return false
@@ -877,6 +882,7 @@ func matchesStatusFilter(certificate certs.Certificate, statusFilters []string, 
 
 func applyCertificateFilters(items []certs.Certificate, state certsQueryState, sortKey string, sortDirection string, thresholds config.ExpirationThresholds) []certs.Certificate {
 	loweredTerm := strings.ToLower(strings.TrimSpace(state.SearchTerm))
+	certTypeFilter := strings.ToLower(strings.TrimSpace(state.CertTypeFilter))
 	vaultFilter := strings.ToLower(strings.TrimSpace(state.VaultFilter))
 	pkiFilter := strings.ToLower(strings.TrimSpace(state.PKIFilter))
 	now := time.Now().UTC()
@@ -913,6 +919,9 @@ func applyCertificateFilters(items []certs.Certificate, state certsQueryState, s
 			if days < 0 || days > maxDays {
 				continue
 			}
+		}
+		if certTypeFilter != "" && certTypeFilter != "all" && strings.ToLower(certificate.CertType) != certTypeFilter {
+			continue
 		}
 		if loweredTerm != "" {
 			cn := strings.ToLower(certificate.CommonName)
