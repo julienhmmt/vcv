@@ -10,13 +10,11 @@ services:
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     cap_add:
       - IPC_LOCK
-    # command: "server -dev -dev-root-token-id=root -dev-listen-address=0.0.0.0:8200"
-    command: "sh /vault-init-simple.sh vcv"
+    command: "sh /vault-dev-init.sh vault-main pki pki_dev pki_stage pki_production"
     networks:
       - vcv-network
     volumes:
       - ./vault-dev-init.sh:/vault-dev-init.sh:ro
-      - ./vault-init-simple.sh:/vault-init-simple.sh:ro
 
   vault-dev-2:
     image: hashicorp/vault:1.21.3
@@ -28,12 +26,11 @@ services:
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     cap_add:
       - IPC_LOCK
-    command: "sh /vault-init-simple.sh vcv-2"
+    command: "sh /vault-dev-init.sh vault-dev-2 pki_vault2 pki_corporate pki_external pki_partners"
     networks:
       - vcv-network
     volumes:
       - ./vault-dev-init.sh:/vault-dev-init.sh:ro
-      - ./vault-init-simple.sh:/vault-init-simple.sh:ro
 
   vault-dev-3:
     image: hashicorp/vault:1.21.4
@@ -45,12 +42,27 @@ services:
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     cap_add:
       - IPC_LOCK
-    command: "sh /vault-init-simple.sh vcv-3"
+    command: "sh /vault-dev-init.sh vault-dev-3 pki_vault3 pki_cloud pki_edge pki_iot pki_blockchain"
     networks:
       - vcv-network
     volumes:
       - ./vault-dev-init.sh:/vault-dev-init.sh:ro
-      - ./vault-init-simple.sh:/vault-init-simple.sh:ro
+
+  vault-dev-5:
+    image: hashicorp/vault:2.0.0
+    container_name: vault-dev-5
+    ports:
+      - "8204:8200/tcp"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: "sh /vault-dev-init.sh vault-dev-5 pki_vault5 pki_cloud pki_edge pki_iot pki_blockchain"
+    networks:
+      - vcv-network
+    volumes:
+      - ./vault-dev-init.sh:/vault-dev-init.sh:ro
 
   openbao-dev-1:
     image: docker.io/openbao/openbao:2.5.1
@@ -62,11 +74,43 @@ services:
       - OPENBAO_DEV_LISTEN_ADDRESS=0.0.0.0:1337
     cap_add:
       - IPC_LOCK
-    command: "sh /openbao-dev-init-1.sh"
+    command: "sh /openbao-dev-init.sh openbao-dev-1 pki_openbao pki_openbao_dev pki_openbao_stage pki_openbao_prod"
     networks:
       - vcv-network
     volumes:
-      - ./openbao-dev-init-1.sh:/openbao-dev-init-1.sh:ro
+      - ./openbao-dev-init.sh:/openbao-dev-init.sh:ro
+
+  openbao-dev-2:
+    image: docker.io/openbao/openbao:2.5.2
+    container_name: openbao-dev-2
+    ports:
+      - "1338:1337/tcp"
+    environment:
+      - OPENBAO_DEV_ROOT_TOKEN_ID=root
+      - OPENBAO_DEV_LISTEN_ADDRESS=0.0.0.0:1337
+    cap_add:
+      - IPC_LOCK
+    command: "sh /openbao-dev-init.sh openbao-dev-2 pki_openbao2 pki_openbao_dev pki_openbao_stage pki_openbao_prod"
+    networks:
+      - vcv-network
+    volumes:
+      - ./openbao-dev-init.sh:/openbao-dev-init.sh:ro
+
+  openbao-dev-3:
+    image: docker.io/openbao/openbao:2.5.3
+    container_name: openbao-dev-3
+    ports:
+      - "1339:1337/tcp"
+    environment:
+      - OPENBAO_DEV_ROOT_TOKEN_ID=root
+      - OPENBAO_DEV_LISTEN_ADDRESS=0.0.0.0:1337
+    cap_add:
+      - IPC_LOCK
+    command: "sh /openbao-dev-init.sh openbao-dev-3 pki_openbao3 pki_openbao_dev pki_openbao_stage pki_openbao_prod"
+    networks:
+      - vcv-network
+    volumes:
+      - ./openbao-dev-init.sh:/openbao-dev-init.sh:ro
 
   app:
     build:
@@ -81,7 +125,10 @@ services:
       - vault-dev-1
       - vault-dev-2
       - vault-dev-3
+      - vault-dev-5
       - openbao-dev-1
+      - openbao-dev-2
+      - openbao-dev-3
     read_only: true
     security_opt:
       - no-new-privileges:true
