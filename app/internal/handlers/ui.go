@@ -41,6 +41,7 @@ type certDetailsTemplateData struct {
 	ExpiryHint    string
 	ExpiryState   string
 	ExpiryTone    string
+	CertTypeLabel string
 	KeySummary    string
 	Language      i18n.Language
 	Messages      i18n.Messages
@@ -570,6 +571,7 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 			Certificate:   details,
 			Messages:      messages,
 			Badges:        badgeViews,
+			CertTypeLabel: buildCertTypeLabel(details.CertType, messages),
 			KeySummary:    buildKeySummary(details),
 			UsageSummary:  buildUsageSummary(details.Usage),
 			Language:      language,
@@ -680,6 +682,21 @@ func buildUsageSummary(usages []string) string {
 		return "—"
 	}
 	return strings.Join(trimmed, ", ")
+}
+
+func buildCertTypeLabel(certType string, messages i18n.Messages) string {
+	switch strings.ToLower(strings.TrimSpace(certType)) {
+	case "machine":
+		return messages.CertTypeFilterMachine
+	case "user":
+		return messages.CertTypeFilterUser
+	case "both":
+		return messages.CertTypeFilterBoth
+	case "unknown":
+		return messages.CertTypeFilterUnknown
+	default:
+		return messages.CertTypeFilterUnknown
+	}
 }
 
 func interpolatePlaceholder(templateValue, key, value string) string {

@@ -87,7 +87,7 @@ func TestToggleThemeFragment(t *testing.T) {
 
 func TestGetCertificateDetailsUI(t *testing.T) {
 	webFS := fstest.MapFS{
-		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div>")},
+		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div><div id=\"cert-type\">{{.CertTypeLabel}}</div>")},
 		"templates/status-indicator.html":      &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
 		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{template \"certs-rows\" .}}{{template \"dashboard-fragment\" .}}{{template \"certs-state\" .}}{{template \"certs-pagination\" .}}{{template \"certs-sort\" .}}")},
 		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{range .Rows}}<div class=\"row\">{{.CommonName}}</div>{{end}}{{end}}")},
@@ -102,23 +102,23 @@ func TestGetCertificateDetailsUI(t *testing.T) {
 		path                 string
 		setupMock            func(mockVault *vault.MockClient)
 		expectedStatus       int
-		expectedBodyContains string
+		expectedBodyContains []string
 	}{
 		{
 			name: "success unescapes id",
 			path: "/ui/certs/pki_dev%3A33%3Aaa/details",
 			setupMock: func(mockVault *vault.MockClient) {
-				mockVault.On("GetCertificateDetails", mock.Anything, "pki_dev:33:aa").Return(certs.DetailedCertificate{Certificate: certs.Certificate{ID: "pki_dev:33:aa", SerialNumber: "33:aa", CommonName: "cn", ExpiresAt: time.Now()}}, nil)
+				mockVault.On("GetCertificateDetails", mock.Anything, "pki_dev:33:aa").Return(certs.DetailedCertificate{Certificate: certs.Certificate{ID: "pki_dev:33:aa", SerialNumber: "33:aa", CommonName: "cn", CertType: "user", ExpiresAt: time.Now()}}, nil)
 			},
 			expectedStatus:       http.StatusOK,
-			expectedBodyContains: "pki_dev:33:aa",
+			expectedBodyContains: []string{"pki_dev:33:aa", "User"},
 		},
 		{
 			name:                 "bad request when id is missing",
 			path:                 "/ui/certs//details",
 			setupMock:            func(mockVault *vault.MockClient) {},
 			expectedStatus:       http.StatusBadRequest,
-			expectedBodyContains: "",
+			expectedBodyContains: nil,
 		},
 		{
 			name: "internal server error when vault fails",
@@ -127,7 +127,7 @@ func TestGetCertificateDetailsUI(t *testing.T) {
 				mockVault.On("GetCertificateDetails", mock.Anything, "pki_dev:33:aa").Return(certs.DetailedCertificate{}, errors.New("boom"))
 			},
 			expectedStatus:       http.StatusInternalServerError,
-			expectedBodyContains: "",
+			expectedBodyContains: nil,
 		},
 	}
 	for _, tt := range tests {
@@ -140,8 +140,8 @@ func TestGetCertificateDetailsUI(t *testing.T) {
 			rec := httptest.NewRecorder()
 			router.ServeHTTP(rec, req)
 			assert.Equal(t, tt.expectedStatus, rec.Code)
-			if tt.expectedBodyContains != "" {
-				assert.Contains(t, rec.Body.String(), tt.expectedBodyContains)
+			for _, expected := range tt.expectedBodyContains {
+				assert.Contains(t, rec.Body.String(), expected)
 			}
 			mockVault.AssertExpectations(t)
 		})

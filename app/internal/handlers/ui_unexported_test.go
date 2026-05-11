@@ -97,6 +97,33 @@ func TestBuildUsageSummary(t *testing.T) {
 	}
 }
 
+func TestBuildCertTypeLabel(t *testing.T) {
+	messages := i18n.Messages{
+		CertTypeFilterBoth:    "Machine + user",
+		CertTypeFilterMachine: "Machine",
+		CertTypeFilterUnknown: "Unknown type",
+		CertTypeFilterUser:    "User",
+	}
+	tests := []struct {
+		name     string
+		certType string
+		expected string
+	}{
+		{name: "machine", certType: "machine", expected: "Machine"},
+		{name: "user", certType: "user", expected: "User"},
+		{name: "both", certType: "both", expected: "Machine + user"},
+		{name: "unknown", certType: "unknown", expected: "Unknown type"},
+		{name: "blank defaults to unknown", certType: "", expected: "Unknown type"},
+		{name: "trims and lowercases", certType: " Machine ", expected: "Machine"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, buildCertTypeLabel(tt.certType, messages))
+		})
+	}
+}
+
 func TestInterpolatePlaceholder(t *testing.T) {
 	tests := []struct {
 		name     string
