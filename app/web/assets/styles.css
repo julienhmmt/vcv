@@ -3345,9 +3345,9 @@ col.vcv-col-status {
 /* Dashboard Layout */
 .vcv-dashboard-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  gap: 1.5rem;
+  gap: 1.75rem;
   width: 100%;
 }
 
@@ -3356,6 +3356,11 @@ col.vcv-col-status {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  padding: 0.875rem;
+  background: var(--vcv-color-surface-elevated);
+  border: 1px solid var(--vcv-color-border-subtle);
+  border-radius: var(--vcv-radius-lg);
+  box-shadow: var(--vcv-shadow-card);
 }
 
 .vcv-donut-wrapper {
@@ -3365,12 +3370,12 @@ col.vcv-col-status {
 }
 
 .vcv-dashboard-donut-compact .vcv-donut-wrapper {
-  width: 96px;
-  height: 96px;
+  width: 108px;
+  height: 108px;
 }
 
 .vcv-dashboard-donut-compact .vcv-donut-center-value {
-  font-size: 1.25rem;
+  font-size: 1.375rem;
 }
 
 .vcv-dashboard-donut-compact .vcv-donut-center-label {
