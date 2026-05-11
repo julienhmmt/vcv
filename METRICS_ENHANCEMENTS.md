@@ -222,9 +222,10 @@ See `settings.enhanced-metrics.example.json` for complete configuration.
 ```json
 {
   "metrics": {
-    "per_certificate": false,          // Disable full per-cert metrics
-    "enhanced_metrics": true,           // Enable all enhancements
-    "pinned_certificates": [            // Track specific certificates
+    "per_certificate": false, // Disable full per-cert metrics
+    "enhanced_metrics": true, // Enable all enhancements
+    "pinned_certificates": [
+      // Track specific certificates
       "api.production.local",
       "*.critical-service.local"
     ]

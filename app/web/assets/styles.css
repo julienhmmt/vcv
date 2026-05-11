@@ -1199,10 +1199,6 @@ body {
   transform: translateY(-1px);
 }
 
-.vcv-button-icon:hover:not(:disabled) span {
-  transform: scale(1.1);
-}
-
 .vcv-button-primary {
   background: var(--vcv-color-primary);
   border: 1px solid var(--vcv-color-primary-strong);
@@ -1966,7 +1962,11 @@ col.vcv-col-status {
   padding: 1.5rem 1.25rem;
   border-right: 1px solid var(--vcv-color-border);
   background:
-    radial-gradient(circle at top left, rgb(255 255 255 / 55%), transparent 45%),
+    radial-gradient(
+      circle at top left,
+      rgb(255 255 255 / 55%),
+      transparent 45%
+    ),
     var(--vcv-color-surface-muted);
 }
 
@@ -2146,6 +2146,10 @@ col.vcv-col-status {
   color: var(--vcv-color-muted);
 }
 
+.vcv-button-icon:hover:not(:disabled) span {
+  transform: scale(1.1);
+}
+
 .vcv-cd-strip-item strong {
   display: block;
   margin-top: 0.25rem;
@@ -2216,7 +2220,10 @@ col.vcv-col-status {
   border-radius: var(--vcv-radius-md);
   color: var(--vcv-color-muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s;
   flex-shrink: 0;
 }
 
@@ -3100,6 +3107,10 @@ col.vcv-col-status {
 
 [data-theme="dark"] .vcv-cd-passport-expired .vcv-cd-passport-sidebar {
   background:
-    radial-gradient(circle at top left, rgb(129 140 248 / 24%), transparent 48%),
+    radial-gradient(
+      circle at top left,
+      rgb(129 140 248 / 24%),
+      transparent 48%
+    ),
     var(--vcv-color-surface-muted);
 }

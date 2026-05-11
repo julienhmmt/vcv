@@ -106,10 +106,10 @@ Or via environment variables (legacy):
 
 **✅ Recommended**: Track specific critical certificates without full per-certificate metrics overhead.
 
-| Metric                                            | Type  | Labels                                                       | Description                                        |
-| ------------------------------------------------- | ----- | ------------------------------------------------------------ | -------------------------------------------------- |
-| `vcv_pinned_certificate_expiry_timestamp_seconds` | Gauge | `certificate_id`, `common_name`, `status`, `vault_id`, `pki` | Expiration timestamp for pinned certificates       |
-| `vcv_pinned_certificate_days_until_expiry`        | Gauge | `certificate_id`, `common_name`, `status`, `vault_id`, `pki` | Days until expiry for pinned certificates          |
+| Metric                                            | Type  | Labels                                                       | Description                                  |
+| ------------------------------------------------- | ----- | ------------------------------------------------------------ | -------------------------------------------- |
+| `vcv_pinned_certificate_expiry_timestamp_seconds` | Gauge | `certificate_id`, `common_name`, `status`, `vault_id`, `pki` | Expiration timestamp for pinned certificates |
+| `vcv_pinned_certificate_days_until_expiry`        | Gauge | `certificate_id`, `common_name`, `status`, `vault_id`, `pki` | Days until expiry for pinned certificates    |
 
 **Configuration**: Add certificate identifiers (CN, ID, or SAN) to `settings.json`. Supports wildcard patterns:
 
@@ -134,9 +134,9 @@ Or via environment variables (legacy):
 
 > ⚠️ **PLACEHOLDER DATA**: Currently uses domain-based heuristics. Requires PEM parsing for accurate issuer CN.
 
-| Metric                              | Type  | Labels                       | Description                                |
-| ----------------------------------- | ----- | ---------------------------- | ------------------------------------------ |
-| `vcv_certificates_by_issuer_total`  | Gauge | `vault_id`, `pki`, `issuer_cn` | Total certificates grouped by issuer CN    |
+| Metric                             | Type  | Labels                         | Description                             |
+| ---------------------------------- | ----- | ------------------------------ | --------------------------------------- |
+| `vcv_certificates_by_issuer_total` | Gauge | `vault_id`, `pki`, `issuer_cn` | Total certificates grouped by issuer CN |
 
 **Use case**: Identify certificate sources, track CA distribution, detect unauthorized issuers (after PEM parsing implementation).
 
@@ -144,12 +144,13 @@ Or via environment variables (legacy):
 
 > ⚠️ **PLACEHOLDER DATA**: Returns hardcoded "RSA 2048" for all certificates. Weak key detection **non-functional** until PEM parsing implemented. Do not use for security decisions.
 
-| Metric                                | Type  | Labels                                   | Description                                        |
-| ------------------------------------- | ----- | ---------------------------------------- | -------------------------------------------------- |
-| `vcv_certificates_by_key_type_total`  | Gauge | `vault_id`, `pki`, `algorithm`, `key_size` | Total certificates by key algorithm and size       |
-| `vcv_certificates_weak_keys_total`    | Gauge | `vault_id`, `pki`                        | Number of certificates with weak keys ⚠️ **Always 0** |
+| Metric                               | Type  | Labels                                     | Description                                           |
+| ------------------------------------ | ----- | ------------------------------------------ | ----------------------------------------------------- |
+| `vcv_certificates_by_key_type_total` | Gauge | `vault_id`, `pki`, `algorithm`, `key_size` | Total certificates by key algorithm and size          |
+| `vcv_certificates_weak_keys_total`   | Gauge | `vault_id`, `pki`                          | Number of certificates with weak keys ⚠️ **Always 0** |
 
 **Weak key criteria** (not yet functional):
+
 - RSA keys < 2048 bits (requires PEM parsing)
 - DSA keys (any size) (requires PEM parsing)
 
@@ -157,12 +158,13 @@ Or via environment variables (legacy):
 
 ## Subject Alternative Names metrics (enhanced)
 
-| Metric                                  | Type  | Labels                       | Description                                        |
-| --------------------------------------- | ----- | ---------------------------- | -------------------------------------------------- |
-| `vcv_certificates_with_sans_total`      | Gauge | `vault_id`, `pki`            | Number of certificates with SANs                   |
-| `vcv_certificates_san_count_bucket`     | Gauge | `vault_id`, `pki`, `bucket`  | Certificates grouped by SAN count range            |
+| Metric                              | Type  | Labels                      | Description                             |
+| ----------------------------------- | ----- | --------------------------- | --------------------------------------- |
+| `vcv_certificates_with_sans_total`  | Gauge | `vault_id`, `pki`           | Number of certificates with SANs        |
+| `vcv_certificates_san_count_bucket` | Gauge | `vault_id`, `pki`, `bucket` | Certificates grouped by SAN count range |
 
 **SAN count buckets**:
+
 - `0` - No SANs
 - `1-5` - 1 to 5 SANs
 - `6-10` - 6 to 10 SANs
@@ -172,11 +174,12 @@ Or via environment variables (legacy):
 
 ## Certificate age metrics (enhanced)
 
-| Metric                           | Type  | Labels                       | Description                                        |
-| -------------------------------- | ----- | ---------------------------- | -------------------------------------------------- |
-| `vcv_certificates_age_bucket`    | Gauge | `vault_id`, `pki`, `bucket`  | Certificates grouped by age since issuance         |
+| Metric                        | Type  | Labels                      | Description                                |
+| ----------------------------- | ----- | --------------------------- | ------------------------------------------ |
+| `vcv_certificates_age_bucket` | Gauge | `vault_id`, `pki`, `bucket` | Certificates grouped by age since issuance |
 
 **Age buckets**:
+
 - `0-30d` - Issued in last 30 days
 - `30-90d` - Issued 30-90 days ago
 - `90-180d` - Issued 90-180 days ago
@@ -187,11 +190,11 @@ Or via environment variables (legacy):
 
 ## Certificate renewal metrics (enhanced)
 
-| Metric                               | Type  | Labels                | Description                                        |
-| ------------------------------------ | ----- | --------------------- | -------------------------------------------------- |
-| `vcv_certificates_issued_last_24h`   | Gauge | `vault_id`, `pki`     | Certificates issued in last 24 hours               |
-| `vcv_certificates_issued_last_7d`    | Gauge | `vault_id`, `pki`     | Certificates issued in last 7 days                 |
-| `vcv_certificates_issued_last_30d`   | Gauge | `vault_id`, `pki`     | Certificates issued in last 30 days                |
+| Metric                             | Type  | Labels            | Description                          |
+| ---------------------------------- | ----- | ----------------- | ------------------------------------ |
+| `vcv_certificates_issued_last_24h` | Gauge | `vault_id`, `pki` | Certificates issued in last 24 hours |
+| `vcv_certificates_issued_last_7d`  | Gauge | `vault_id`, `pki` | Certificates issued in last 7 days   |
+| `vcv_certificates_issued_last_30d` | Gauge | `vault_id`, `pki` | Certificates issued in last 30 days  |
 
 **Use case**: Track renewal activity, detect automation issues, capacity planning, anomaly detection.
 
