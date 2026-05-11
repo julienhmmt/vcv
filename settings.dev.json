@@ -79,6 +79,22 @@
       "enabled": false
     },
     {
+      "id": "vault-dev-5",
+      "address": "http://vault-dev-5:8200",
+      "token": "root",
+      "pki_mount": "pki_vault5",
+      "pki_mounts": [
+        "pki_vault5",
+        "pki_cloud",
+        "pki_edge",
+        "pki_iot",
+        "pki_blockchain"
+      ],
+      "display_name": "Vault dev-5",
+      "tls_insecure": true,
+      "enabled": true
+    },
+    {
       "id": "openbao-dev-1",
       "address": "http://openbao-dev-1:1337",
       "token": "root",
@@ -90,6 +106,36 @@
         "pki_openbao_prod"
       ],
       "display_name": "OpenBao dev-1",
+      "tls_insecure": true,
+      "enabled": true
+    },
+    {
+      "id": "openbao-dev-2",
+      "address": "http://openbao-dev-2:1337",
+      "token": "root",
+      "pki_mount": "pki_openbao2",
+      "pki_mounts": [
+        "pki_openbao2",
+        "pki_openbao_dev",
+        "pki_openbao_stage",
+        "pki_openbao_prod"
+      ],
+      "display_name": "OpenBao dev-2",
+      "tls_insecure": true,
+      "enabled": true
+    },
+    {
+      "id": "openbao-dev-3",
+      "address": "http://openbao-dev-3:1337",
+      "token": "root",
+      "pki_mount": "pki_openbao3",
+      "pki_mounts": [
+        "pki_openbao3",
+        "pki_openbao_dev",
+        "pki_openbao_stage",
+        "pki_openbao_prod"
+      ],
+      "display_name": "OpenBao dev-3",
       "tls_insecure": true,
       "enabled": true
     }
