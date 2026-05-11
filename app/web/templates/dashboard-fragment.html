@@ -5,7 +5,7 @@
 <span class="vcv-stat-value" id="dashboard-expired" hx-swap-oob="true">{{.DashboardExpired}}</span>
 <span class="vcv-stat-value" id="dashboard-revoked" hx-swap-oob="true">{{.DashboardRevoked}}</span>
 {{$total := add .DashboardValid .DashboardWarning .DashboardCritical .DashboardExpired .DashboardRevoked}}
-<div id="dashboard-chart" class="vcv-dashboard-donut" hx-swap-oob="true"
+<div id="dashboard-chart" class="vcv-dashboard-donut vcv-dashboard-donut-compact" hx-swap-oob="true"
   style="--chart-valid: {{.DashboardValid}}; --chart-warning: {{.DashboardWarning}}; --chart-critical: {{.DashboardCritical}}; --chart-expired: {{.DashboardExpired}}; --chart-revoked: {{.DashboardRevoked}}; --chart-total: {{$total}};">
   <div class="vcv-donut-wrapper">
     <div class="vcv-donut{{if eq $total 0}} vcv-donut-empty{{end}}"></div>

@@ -47,6 +47,8 @@ type Messages struct {
 	DashboardWarning            string `json:"dashboardWarning"`
 	DashboardWarningDesc        string `json:"dashboardWarningDesc"`
 	DashboardFilterHint         string `json:"dashboardFilterHint"`
+	DashboardGroupAttention     string `json:"dashboardGroupAttention"`
+	DashboardGroupHealthy       string `json:"dashboardGroupHealthy"`
 	DashboardRevoked            string `json:"dashboardRevoked"`
 	DashboardRevokedDesc        string `json:"dashboardRevokedDesc"`
 	DashboardTotal              string `json:"dashboardTotal"`
@@ -230,6 +232,8 @@ var englishMessages = Messages{
 	DashboardWarning:            "Valid expiring soon",
 	DashboardWarningDesc:        "Valid certificates expiring within the warning threshold",
 	DashboardFilterHint:         "Click a status to filter the table",
+	DashboardGroupAttention:     "Needs attention",
+	DashboardGroupHealthy:       "Healthy",
 	DashboardRevoked:            "Revoked certificates",
 	DashboardRevokedDesc:        "Certificates explicitly revoked in Vault",
 	DashboardTotal:              "Total certificates",
@@ -406,6 +410,8 @@ var frenchMessages = Messages{
 	DashboardWarning:            "Certificats valides expirant bientôt",
 	DashboardWarningDesc:        "Certificats valides expirant dans le seuil d'avertissement",
 	DashboardFilterHint:         "Cliquez sur un statut pour filtrer le tableau",
+	DashboardGroupAttention:     "À traiter",
+	DashboardGroupHealthy:       "Sains",
 	DashboardRevoked:            "Certificats révoqués",
 	DashboardRevokedDesc:        "Certificats explicitement révoqués dans Vault",
 	DashboardTotal:              "Total des certificats",
@@ -582,6 +588,8 @@ var spanishMessages = Messages{
 	DashboardWarning:            "Válidos que caducan pronto",
 	DashboardWarningDesc:        "Certificados válidos que caducan dentro del umbral de advertencia",
 	DashboardFilterHint:         "Haga clic en un estado para filtrar la tabla",
+	DashboardGroupAttention:     "Requiere atención",
+	DashboardGroupHealthy:       "Sanos",
 	DashboardRevoked:            "Certificados revocados",
 	DashboardRevokedDesc:        "Certificados explícitamente revocados en Vault",
 	DashboardTotal:              "Total de certificados",
@@ -758,6 +766,8 @@ var germanMessages = Messages{
 	DashboardWarning:            "Gültige laufen bald ab",
 	DashboardWarningDesc:        "Gültige Zertifikate, die innerhalb des Warnschwellenwerts ablaufen",
 	DashboardFilterHint:         "Klicken Sie auf einen Status, um die Tabelle zu filtern",
+	DashboardGroupAttention:     "Erfordert Aufmerksamkeit",
+	DashboardGroupHealthy:       "Gesund",
 	DashboardRevoked:            "Widerrufene Zertifikate",
 	DashboardRevokedDesc:        "Zertifikate, die explizit in Vault widerrufen wurden",
 	DashboardTotal:              "Zertifikate gesamt",
@@ -934,6 +944,8 @@ var italianMessages = Messages{
 	DashboardWarning:            "Validi in scadenza",
 	DashboardWarningDesc:        "Certificati validi in scadenza entro la soglia di avviso",
 	DashboardFilterHint:         "Clicca su uno stato per filtrare la tabella",
+	DashboardGroupAttention:     "Da gestire",
+	DashboardGroupHealthy:       "Sani",
 	DashboardRevoked:            "Certificati revocati",
 	DashboardRevokedDesc:        "Certificati esplicitamente revocati in Vault",
 	DashboardTotal:              "Certificati totali",

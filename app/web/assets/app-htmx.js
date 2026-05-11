@@ -514,6 +514,8 @@ function applyTranslations() {
     ["dashboard-critical-desc", messages.dashboardCriticalDesc],
     ["dashboard-clear-filter-text", messages.dashboardClearFilter],
     ["dashboard-filter-hint", messages.dashboardFilterHint],
+    ["dashboard-group-attention-label", messages.dashboardGroupAttention],
+    ["dashboard-group-healthy-label", messages.dashboardGroupHealthy],
     ["dashboard-revoked-label", messages.dashboardRevoked],
     ["dashboard-revoked-desc", messages.dashboardRevokedDesc],
     ["dashboard-donut-label", messages.dashboardCertsLabel],
