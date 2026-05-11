@@ -35,19 +35,19 @@ tasks:
     cmds:
       - "VAULT_ADDR=http://localhost:8200 VAULT_TOKEN=root go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out"
 
-  update-go:
+  go-update:
     desc: Update go version
     dir: app
     cmds:
       - go get -u all && go mod tidy -v && go clean -cache -v
 
-  lint:
+  go-lint:
     desc: Run go fmt and go vet
     dir: app
     cmds:
       - go fmt ./... && go vet ./...
 
-  coverage:
+  go-coverage:
     desc: Run unit tests with coverage
     dir: app
     cmds:
