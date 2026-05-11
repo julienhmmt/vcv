@@ -6,6 +6,10 @@
         {{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}
       </div>
     </div>
+    <div class="vcv-cd-hero-meta">
+      <span class="vcv-cd-hero-meta-label">{{.Messages.LabelCertificateType}}</span>
+      <span class="vcv-cd-hero-meta-value">{{.CertTypeLabel}}</span>
+    </div>
     {{if .Certificate.Subject}}
     <div class="vcv-cd-hero-subject">{{.Certificate.Subject}}</div>
     {{end}}
@@ -66,10 +70,6 @@
       <div class="vcv-cd-prop">
         <dt>{{.Messages.LabelKeyAlgorithm}}</dt>
         <dd>{{.KeySummary}}</dd>
-      </div>
-      <div class="vcv-cd-prop">
-        <dt>{{.Messages.LabelCertificateType}}</dt>
-        <dd>{{.CertTypeLabel}}</dd>
       </div>
       <div class="vcv-cd-prop">
         <dt>{{.Messages.LabelUsage}}</dt>
