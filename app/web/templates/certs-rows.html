@@ -1,4 +1,9 @@
 {{define "certs-rows"}}
+{{if eq (len .Rows) 0}}
+<tr>
+  <td colspan="3">{{.Messages.NoData}}</td>
+</tr>
+{{else}}
 {{range .Rows}}
 <tr class="{{.RowClass}} vcv-row-clickable"
     hx-get="/ui/certs/{{urlquery .ID}}/details"
@@ -30,5 +35,6 @@
     </div>
   </td>
 </tr>
+{{end}}
 {{end}}
 {{end}}

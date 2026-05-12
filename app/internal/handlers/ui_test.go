@@ -35,6 +35,7 @@ func TestStatusFragment_MultiVaultAddsSummaryPill(t *testing.T) {
 		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div></div>")},
 		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{define \"certs-fragment\"}}{{end}}")},
 		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{end}}")},
+		"templates/certs-mobile-cards.html":    &fstest.MapFile{Data: []byte("{{define \"certs-mobile-cards\"}}{{end}}")},
 		"templates/certs-state.html":           &fstest.MapFile{Data: []byte("{{define \"certs-state\"}}{{end}}")},
 		"templates/certs-pagination.html":      &fstest.MapFile{Data: []byte("{{define \"certs-pagination\"}}{{end}}")},
 		"templates/certs-sort.html":            &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
@@ -67,6 +68,7 @@ func TestToggleThemeFragment(t *testing.T) {
 		"templates/status-indicator.html":      &fstest.MapFile{Data: []byte("<div></div>")},
 		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{define \"certs-fragment\"}}{{end}}")},
 		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{end}}")},
+		"templates/certs-mobile-cards.html":    &fstest.MapFile{Data: []byte("{{define \"certs-mobile-cards\"}}{{end}}")},
 		"templates/certs-state.html":           &fstest.MapFile{Data: []byte("{{define \"certs-state\"}}{{end}}")},
 		"templates/certs-pagination.html":      &fstest.MapFile{Data: []byte("{{define \"certs-pagination\"}}{{end}}")},
 		"templates/certs-sort.html":            &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
@@ -91,6 +93,7 @@ func TestGetCertificateDetailsUI(t *testing.T) {
 		"templates/status-indicator.html":      &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
 		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{template \"certs-rows\" .}}{{template \"dashboard-fragment\" .}}{{template \"certs-state\" .}}{{template \"certs-pagination\" .}}{{template \"certs-sort\" .}}")},
 		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{range .Rows}}<div class=\"row\">{{.CommonName}}</div>{{end}}{{end}}")},
+		"templates/certs-mobile-cards.html":    &fstest.MapFile{Data: []byte("{{define \"certs-mobile-cards\"}}{{end}}")},
 		"templates/dashboard-fragment.html":    &fstest.MapFile{Data: []byte("{{define \"dashboard-fragment\"}}{{end}}")},
 		"templates/theme-toggle-fragment.html": &fstest.MapFile{Data: []byte("<span id=\"theme-icon\" hx-swap-oob=\"true\">{{.Icon}}</span><input id=\"vcv-theme-value\" hx-swap-oob=\"true\" value=\"{{.Theme}}\" />")},
 		"templates/certs-state.html":           &fstest.MapFile{Data: []byte("{{define \"certs-state\"}}<input id=\"vcv-page\" value=\"{{.PageIndex}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-key\" value=\"{{.SortKey}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-dir\" value=\"{{.SortDirection}}\" hx-swap-oob=\"true\" />{{end}}")},
@@ -152,8 +155,9 @@ func TestGetCertificatesFragment(t *testing.T) {
 	webFS := fstest.MapFS{
 		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div>")},
 		"templates/status-indicator.html":      &fstest.MapFile{Data: []byte("<div>{{.VersionText}}</div>")},
-		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{template \"certs-rows\" .}}{{template \"certs-state\" .}}{{template \"certs-pagination\" .}}{{template \"certs-sort\" .}}{{template \"dashboard-fragment\" .}}")},
+		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{template \"certs-rows\" .}}{{template \"certs-mobile-cards\" .}}{{template \"certs-state\" .}}{{template \"certs-pagination\" .}}{{template \"certs-sort\" .}}{{template \"dashboard-fragment\" .}}")},
 		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{range .Rows}}<div class=\"row\">{{.CommonName}}</div>{{end}}{{end}}")},
+		"templates/certs-mobile-cards.html":    &fstest.MapFile{Data: []byte("{{define \"certs-mobile-cards\"}}<div id=\"vcv-certs-mobile-cards\" hx-swap-oob=\"true\">{{range .Rows}}<article class=\"vcv-cert-card\">{{.CommonName}}</article>{{end}}</div>{{end}}")},
 		"templates/dashboard-fragment.html":    &fstest.MapFile{Data: []byte("{{define \"dashboard-fragment\"}}{{end}}")},
 		"templates/theme-toggle-fragment.html": &fstest.MapFile{Data: []byte("<span id=\"theme-icon\" hx-swap-oob=\"true\">{{.Icon}}</span><input id=\"vcv-theme-value\" hx-swap-oob=\"true\" value=\"{{.Theme}}\" />")},
 		"templates/certs-state.html":           &fstest.MapFile{Data: []byte("{{define \"certs-state\"}}<input id=\"vcv-page\" value=\"{{.PageIndex}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-key\" value=\"{{.SortKey}}\" hx-swap-oob=\"true\" /><input id=\"vcv-sort-dir\" value=\"{{.SortDirection}}\" hx-swap-oob=\"true\" />{{end}}")},
@@ -178,6 +182,8 @@ func TestGetCertificatesFragment(t *testing.T) {
 				assert.Contains(t, body, "alpha.example")
 				assert.Contains(t, body, "beta.example")
 				assert.Contains(t, body, "gamma.example")
+				assert.Contains(t, body, "id=\"vcv-certs-mobile-cards\"")
+				assert.Contains(t, body, "vcv-cert-card")
 			},
 		},
 		{
