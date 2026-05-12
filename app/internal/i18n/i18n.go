@@ -29,6 +29,7 @@ type Messages struct {
 	ButtonDownloadPEM           string `json:"buttonDownloadPEM"`
 	ButtonRefresh               string `json:"buttonRefresh"`
 	ButtonToggleFilters         string `json:"buttonToggleFilters"`
+	ButtonViewCA                string `json:"buttonViewCA"`
 	CacheInvalidateFailed       string `json:"cacheInvalidateFailed"`
 	CacheInvalidated            string `json:"cacheInvalidated"`
 	CertificateInformationTitle string `json:"certificateInformationTitle"`
@@ -88,6 +89,8 @@ type Messages struct {
 	LabelLanguage               string `json:"labelLanguage"`
 	LabelLoading                string `json:"labelLoading"`
 	LabelPEM                    string `json:"labelPem"`
+	LabelRootCA                 string `json:"labelRootCA"`
+	LabelIntermediateCA         string `json:"labelIntermediateCA"`
 	LabelSerialNumber           string `json:"labelSerialNumber"`
 	LabelSubject                string `json:"labelSubject"`
 	LabelUsage                  string `json:"labelUsage"`
@@ -107,6 +110,7 @@ type Messages struct {
 	LoadUnexpectedFormat        string `json:"loadUnexpectedFormat"`
 	LoadingDetails              string `json:"loadingDetails"`
 	ModalDetailsTitle           string `json:"modalDetailsTitle"`
+	ModalCATitle                string `json:"modalCATitle"`
 	ModalVaultStatusTitle       string `json:"modalVaultStatusTitle"`
 	MountSearchPlaceholder      string `json:"mountSearchPlaceholder"`
 	MountSelectorTitle          string `json:"mountSelectorTitle"`
@@ -214,6 +218,7 @@ var englishMessages = Messages{
 	ButtonDownloadPEM:           "Download PEM",
 	ButtonRefresh:               "Refresh",
 	ButtonToggleFilters:         "Toggle filters",
+	ButtonViewCA:                "View intermediate CA",
 	CacheInvalidateFailed:       "Failed to clear cache",
 	CacheInvalidated:            "Cache cleared and data refreshed",
 	CertificateInformationTitle: "Certificate information",
@@ -273,6 +278,8 @@ var englishMessages = Messages{
 	LabelLoading:                "Loading...",
 	LabelCertificateType:        "Certificate type",
 	LabelPEM:                    "PEM Certificate",
+	LabelRootCA:                 "Root CA",
+	LabelIntermediateCA:         "Intermediate CA",
 	LabelSerialNumber:           "Serial Number",
 	LabelSubject:                "Subject",
 	LabelUsage:                  "Usage",
@@ -292,6 +299,7 @@ var englishMessages = Messages{
 	LoadUnexpectedFormat:        "Unexpected response format from server",
 	LoadingDetails:              "Loading certificate details...",
 	ModalDetailsTitle:           "Certificate details",
+	ModalCATitle:                "Intermediate CA",
 	ModalVaultStatusTitle:       "Vault status",
 	MountSearchPlaceholder:      "Search vaults or PKI engines...",
 	MountSelectorTitle:          "Certificate sources",
@@ -392,6 +400,7 @@ var frenchMessages = Messages{
 	ButtonDownloadPEM:           "Télécharger PEM",
 	ButtonRefresh:               "Rafraîchir",
 	ButtonToggleFilters:         "Afficher/masquer les filtres",
+	ButtonViewCA:                "Voir l'autorité intermédiaire",
 	CacheInvalidateFailed:       "Échec du vidage du cache",
 	CacheInvalidated:            "Cache vidé et données actualisées",
 	CertificateInformationTitle: "Informations du certificat",
@@ -451,6 +460,8 @@ var frenchMessages = Messages{
 	LabelLoading:                "Chargement...",
 	LabelCertificateType:        "Type de certificat",
 	LabelPEM:                    "Certificat PEM",
+	LabelRootCA:                 "Autorité racine",
+	LabelIntermediateCA:         "Autorité intermédiaire",
 	LabelSerialNumber:           "Numéro de série",
 	LabelSubject:                "Sujet",
 	LabelUsage:                  "Utilisation",
@@ -470,6 +481,7 @@ var frenchMessages = Messages{
 	LoadUnexpectedFormat:        "Format de réponse inattendu du serveur",
 	LoadingDetails:              "Chargement des détails du certificat...",
 	ModalDetailsTitle:           "Détails du certificat",
+	ModalCATitle:                "Autorité intermédiaire",
 	ModalVaultStatusTitle:       "Statut Vaults",
 	MountSearchPlaceholder:      "Rechercher des vaults ou moteurs PKI...",
 	MountSelectorTitle:          "Sources des certificats",
@@ -570,6 +582,7 @@ var spanishMessages = Messages{
 	ButtonDownloadPEM:           "Descargar PEM",
 	ButtonRefresh:               "Actualizar",
 	ButtonToggleFilters:         "Mostrar/ocultar filtros",
+	ButtonViewCA:                "Ver CA intermedia",
 	CacheInvalidateFailed:       "Error al borrar el caché",
 	CacheInvalidated:            "Caché borrado y datos actualizados",
 	CertificateInformationTitle: "Información del certificado",
@@ -629,6 +642,8 @@ var spanishMessages = Messages{
 	LabelLoading:                "Cargando...",
 	LabelCertificateType:        "Tipo de certificado",
 	LabelPEM:                    "Certificado PEM",
+	LabelRootCA:                 "CA raíz",
+	LabelIntermediateCA:         "CA intermedia",
 	LabelSerialNumber:           "Número de serie",
 	LabelSubject:                "Sujeto",
 	LabelUsage:                  "Uso",
@@ -648,6 +663,7 @@ var spanishMessages = Messages{
 	LoadUnexpectedFormat:        "Formato de respuesta inesperado del servidor",
 	LoadingDetails:              "Cargando detalles del certificado...",
 	ModalDetailsTitle:           "Detalles del certificado",
+	ModalCATitle:                "CA intermedia",
 	ModalVaultStatusTitle:       "Estado Vault",
 	MountSearchPlaceholder:      "Buscar vaults o motores PKI...",
 	MountSelectorTitle:          "Fuentes de certificados",
@@ -748,6 +764,7 @@ var germanMessages = Messages{
 	ButtonDownloadPEM:           "PEM herunterladen",
 	ButtonRefresh:               "Aktualisieren",
 	ButtonToggleFilters:         "Filter ein-/ausblenden",
+	ButtonViewCA:                "Zwischen-CA anzeigen",
 	CacheInvalidateFailed:       "Cache konnte nicht geleert werden",
 	CacheInvalidated:            "Cache geleert und Daten aktualisiert",
 	CertificateInformationTitle: "Zertifikatsinformationen",
@@ -807,6 +824,8 @@ var germanMessages = Messages{
 	LabelLoading:                "Wird geladen...",
 	LabelCertificateType:        "Zertifikatstyp",
 	LabelPEM:                    "PEM-Zertifikat",
+	LabelRootCA:                 "Stamm-CA",
+	LabelIntermediateCA:         "Zwischen-CA",
 	LabelSerialNumber:           "Seriennummer",
 	LabelSubject:                "Betreff",
 	LabelUsage:                  "Verwendung",
@@ -826,6 +845,7 @@ var germanMessages = Messages{
 	LoadUnexpectedFormat:        "Unerwartetes Antwortformat vom Server",
 	LoadingDetails:              "Zertifikatsdetails werden geladen...",
 	ModalDetailsTitle:           "Zertifikatsdetails",
+	ModalCATitle:                "Zwischen-CA",
 	ModalVaultStatusTitle:       "Vault-Status",
 	MountSearchPlaceholder:      "Vaults oder PKI-Motoren suchen...",
 	MountSelectorTitle:          "Zertifikatsquellen",
@@ -926,6 +946,7 @@ var italianMessages = Messages{
 	ButtonDownloadPEM:           "Scarica PEM",
 	ButtonRefresh:               "Aggiorna",
 	ButtonToggleFilters:         "Mostra/nascondi filtri",
+	ButtonViewCA:                "Visualizza CA intermedia",
 	CacheInvalidateFailed:       "Impossibile cancellare la cache",
 	CacheInvalidated:            "Cache cancellata e dati aggiornati",
 	CertificateInformationTitle: "Informazioni sul certificato",
@@ -985,6 +1006,8 @@ var italianMessages = Messages{
 	LabelLoading:                "Caricamento...",
 	LabelCertificateType:        "Tipo di certificato",
 	LabelPEM:                    "Certificato PEM",
+	LabelRootCA:                 "CA radice",
+	LabelIntermediateCA:         "CA intermedia",
 	LabelSerialNumber:           "Numero di serie",
 	LabelSubject:                "Soggetto",
 	LabelUsage:                  "Utilizzo",
@@ -1003,6 +1026,7 @@ var italianMessages = Messages{
 	LoadSuccess:                 "Certificati caricati correttamente",
 	LoadUnexpectedFormat:        "Formato di risposta inatteso dal server",
 	ModalDetailsTitle:           "Dettagli del certificato",
+	ModalCATitle:                "CA intermedia",
 	ModalVaultStatusTitle:       "Stato Vault",
 	MountSearchPlaceholder:      "Cerca vaults o motori PKI...",
 	MountSelectorTitle:          "Fonti dei certificati",

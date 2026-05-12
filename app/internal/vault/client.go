@@ -12,6 +12,7 @@ type Client interface {
 	CheckConnection(ctx context.Context) error
 	GetCertificateDetails(ctx context.Context, serialNumber string) (certs.DetailedCertificate, error)
 	GetCertificatePEM(ctx context.Context, serialNumber string) (certs.PEMResponse, error)
+	GetIntermediateCA(ctx context.Context, mount string) (certs.DetailedCertificate, error)
 	InvalidateCache()
 	ListCertificates(ctx context.Context) ([]certs.Certificate, error)
 	Shutdown()

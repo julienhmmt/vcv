@@ -151,6 +151,71 @@ func TestGetCertificateDetailsUI(t *testing.T) {
 	}
 }
 
+func TestGetIntermediateCADetailsUI(t *testing.T) {
+	webFS := fstest.MapFS{
+		"templates/ca-details.html":            &fstest.MapFile{Data: []byte("<div id=\"ca-cn\">{{.Certificate.CommonName}}</div><div id=\"ca-mount\">{{.MountName}}</div>")},
+		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div></div>")},
+		"templates/status-indicator.html":      &fstest.MapFile{Data: []byte("<div></div>")},
+		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{define \"certs-fragment\"}}{{end}}")},
+		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{end}}")},
+		"templates/certs-mobile-cards.html":    &fstest.MapFile{Data: []byte("{{define \"certs-mobile-cards\"}}{{end}}")},
+		"templates/dashboard-fragment.html":    &fstest.MapFile{Data: []byte("{{define \"dashboard-fragment\"}}{{end}}")},
+		"templates/theme-toggle-fragment.html": &fstest.MapFile{Data: []byte("<span id=\"theme-icon\" hx-swap-oob=\"true\">{{.Icon}}</span><input id=\"vcv-theme-value\" hx-swap-oob=\"true\" value=\"{{.Theme}}\" />")},
+		"templates/certs-state.html":           &fstest.MapFile{Data: []byte("{{define \"certs-state\"}}{{end}}")},
+		"templates/certs-pagination.html":      &fstest.MapFile{Data: []byte("{{define \"certs-pagination\"}}{{end}}")},
+		"templates/certs-sort.html":            &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
+	}
+	tests := []struct {
+		name                 string
+		path                 string
+		setupMock            func(mockVault *vault.MockClient)
+		expectedStatus       int
+		expectedBodyContains []string
+	}{
+		{
+			name: "success returns ca details",
+			path: "/ui/certs/pki%3Aaa/ca",
+			setupMock: func(mockVault *vault.MockClient) {
+				mockVault.On("GetIntermediateCA", mock.Anything, "pki").Return(certs.DetailedCertificate{Certificate: certs.Certificate{CommonName: "Test CA", SerialNumber: "ca-serial"}}, nil)
+			},
+			expectedStatus:       http.StatusOK,
+			expectedBodyContains: []string{"Test CA", "pki"},
+		},
+		{
+			name:                 "bad request when id is missing",
+			path:                 "/ui/certs//ca",
+			setupMock:            func(mockVault *vault.MockClient) {},
+			expectedStatus:       http.StatusBadRequest,
+			expectedBodyContains: nil,
+		},
+		{
+			name: "internal server error when vault fails",
+			path: "/ui/certs/pki%3Aaa/ca",
+			setupMock: func(mockVault *vault.MockClient) {
+				mockVault.On("GetIntermediateCA", mock.Anything, "pki").Return(certs.DetailedCertificate{}, errors.New("boom"))
+			},
+			expectedStatus:       http.StatusInternalServerError,
+			expectedBodyContains: nil,
+		},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			mockVault := new(vault.MockClient)
+			tt.setupMock(mockVault)
+			router := setupUIRouter(mockVault, webFS)
+			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+			assert.Equal(t, tt.expectedStatus, rec.Code)
+			for _, expected := range tt.expectedBodyContains {
+				assert.Contains(t, rec.Body.String(), expected)
+			}
+			mockVault.AssertExpectations(t)
+		})
+	}
+}
+
 func TestGetCertificatesFragment(t *testing.T) {
 	webFS := fstest.MapFS{
 		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div id=\"cert-id\">{{.CertificateID}}</div>")},

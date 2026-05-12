@@ -48,6 +48,10 @@ func (m *mockVaultClient) GetCertificatePEM(ctx context.Context, serialNumber st
 	return certs.PEMResponse{}, nil
 }
 
+func (m *mockVaultClient) GetIntermediateCA(ctx context.Context, mount string) (certs.DetailedCertificate, error) {
+	return certs.DetailedCertificate{}, nil
+}
+
 func (m *mockVaultClient) InvalidateCache() { m.cacheInvalidated = true }
 
 func (m *mockVaultClient) ListCertificates(ctx context.Context) ([]certs.Certificate, error) {

@@ -548,6 +548,112 @@ func (c *realClient) GetCertificatePEM(ctx context.Context, serialNumber string)
 	}, nil
 }
 
+func (c *realClient) GetIntermediateCA(ctx context.Context, mount string) (certs.DetailedCertificate, error) {
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
+		Str("mount", mount).
+		Msg("getting intermediate CA certificate")
+
+	if mount == "" {
+		return certs.DetailedCertificate{}, fmt.Errorf("mount cannot be empty")
+	}
+
+	// Try cache first
+	cacheKey := fmt.Sprintf("%s:ca_%s", cacheVersion, mount)
+	if cached, found := c.cache.Get(cacheKey); found {
+		if details, ok := cached.(certs.DetailedCertificate); ok {
+			logger.Get().Debug().
+				Str("vault_addr", c.addr).
+				Str("mount", mount).
+				Msg("serving CA from cache")
+			return details, nil
+		}
+	}
+
+	// Vault PKI exposes the issuing CA cert as JSON at <mount>/cert/ca.
+	// The <mount>/ca endpoint returns raw DER and cannot be read via Logical().
+	path := fmt.Sprintf("%s/cert/ca", mount)
+	secret, err := c.client.Logical().ReadWithContext(ctx, path)
+	if err != nil {
+		logger.Get().Error().
+			Str("vault_addr", c.addr).
+			Str("mount", mount).
+			Str("path", path).
+			Err(err).
+			Msg("failed to read CA certificate from vault")
+		return certs.DetailedCertificate{}, fmt.Errorf("failed to read CA for mount %s: %w", mount, err)
+	}
+	if secret == nil || secret.Data == nil {
+		logger.Get().Warn().
+			Str("vault_addr", c.addr).
+			Str("mount", mount).
+			Str("path", path).
+			Msg("CA endpoint returned nil data")
+		return certs.DetailedCertificate{}, fmt.Errorf("CA not found in mount %s", mount)
+	}
+
+	caPEM, _ := secret.Data["certificate"].(string)
+	if caPEM == "" {
+		logger.Get().Warn().
+			Str("vault_addr", c.addr).
+			Str("mount", mount).
+			Str("path", path).
+			Interface("data_keys", getMapKeys(secret.Data)).
+			Msg("certificate field missing in CA response")
+		return certs.DetailedCertificate{}, fmt.Errorf("certificate field missing in CA response (keys: %v)", getMapKeys(secret.Data))
+	}
+
+	block, _ := pem.Decode([]byte(caPEM))
+	if block == nil {
+		return certs.DetailedCertificate{}, fmt.Errorf("failed to decode PEM for CA in mount %s", mount)
+	}
+
+	x509Certificate, parseError := x509.ParseCertificate(block.Bytes)
+	if parseError != nil {
+		return certs.DetailedCertificate{}, fmt.Errorf("failed to parse CA in mount %s: %w", mount, parseError)
+	}
+
+	caType := "intermediate"
+	if x509Certificate.Subject.String() == x509Certificate.Issuer.String() {
+		caType = "root"
+	}
+
+	// Calculate fingerprints
+	sha1Fingerprint := sha1.Sum(x509Certificate.Raw)
+	sha256Fingerprint := sha256.Sum256(x509Certificate.Raw)
+
+	details := certs.DetailedCertificate{
+		Certificate: certs.Certificate{
+			ID:           fmt.Sprintf("%s:ca", mount),
+			SerialNumber: x509Certificate.SerialNumber.String(),
+			CommonName:   x509Certificate.Subject.CommonName,
+			Sans:         append([]string(nil), x509Certificate.DNSNames...),
+			CertType:     certs.InferCertType(x509Certificate),
+			CreatedAt:    x509Certificate.NotBefore.UTC(),
+			ExpiresAt:    x509Certificate.NotAfter.UTC(),
+			Revoked:      false,
+		},
+		Issuer:            x509Certificate.Issuer.String(),
+		Subject:           x509Certificate.Subject.String(),
+		KeyAlgorithm:      x509Certificate.SignatureAlgorithm.String(),
+		FingerprintSHA1:   hex.EncodeToString(sha1Fingerprint[:]),
+		FingerprintSHA256: hex.EncodeToString(sha256Fingerprint[:]),
+		PEM:               caPEM,
+		CAType:            caType,
+	}
+
+	// Cache the result
+	c.cache.Set(cacheKey, details)
+
+	logger.Get().Debug().
+		Str("vault_addr", c.addr).
+		Str("mount", mount).
+		Str("common_name", x509Certificate.Subject.CommonName).
+		Msg("successfully retrieved and cached intermediate CA")
+
+	return details, nil
+}
+
 func (c *realClient) InvalidateCache() {
 	logger.Get().Debug().
 		Str("vault_addr", c.addr).
@@ -564,3 +670,12 @@ func (c *realClient) CacheSize() int {
 	}
 	return c.cache.Size()
 }
+
+func getMapKeys(m map[string]interface{}) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	return keys
+}
+

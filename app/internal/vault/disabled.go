@@ -28,6 +28,10 @@ func (c *disabledClient) GetCertificatePEM(_ context.Context, _ string) (certs.P
 	return certs.PEMResponse{}, ErrVaultNotConfigured
 }
 
+func (c *disabledClient) GetIntermediateCA(_ context.Context, _ string) (certs.DetailedCertificate, error) {
+	return certs.DetailedCertificate{}, ErrVaultNotConfigured
+}
+
 func (c *disabledClient) InvalidateCache() {
 }
 

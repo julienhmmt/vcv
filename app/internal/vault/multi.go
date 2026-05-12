@@ -137,6 +137,23 @@ func (c *multiClient) GetCertificatePEM(ctx context.Context, serialNumber string
 	return client.GetCertificatePEM(ctx, mountSerial)
 }
 
+func (c *multiClient) GetIntermediateCA(ctx context.Context, mount string) (certs.DetailedCertificate, error) {
+	vaultID, pureMount, err := parseCompositeCAID(c.orderedVaultIDs, mount)
+	if err != nil {
+		return certs.DetailedCertificate{}, err
+	}
+	client := c.clientsByVault[vaultID]
+	if client == nil {
+		return certs.DetailedCertificate{}, fmt.Errorf("missing vault client for %s", vaultID)
+	}
+	details, err := client.GetIntermediateCA(ctx, pureMount)
+	if err != nil {
+		return certs.DetailedCertificate{}, err
+	}
+	details.ID = fmt.Sprintf("%s|%s", vaultID, details.ID)
+	return details, nil
+}
+
 func (c *multiClient) InvalidateCache() {
 	unique := make(map[Client]struct{})
 	for _, client := range c.clientsByVault {
@@ -324,4 +341,24 @@ func parseCompositeCertificateID(orderedVaultIDs []string, value string) (string
 		return "", "", fmt.Errorf("invalid certificate id")
 	}
 	return orderedVaultIDs[0], mountSerial, nil
+}
+
+func parseCompositeCAID(orderedVaultIDs []string, value string) (string, string, error) {
+	parts := strings.SplitN(value, "|", 2)
+	if len(parts) == 2 {
+		vaultID := strings.TrimSpace(parts[0])
+		pureMount := strings.TrimSpace(parts[1])
+		if vaultID == "" || pureMount == "" {
+			return "", "", fmt.Errorf("invalid ca mount")
+		}
+		return vaultID, pureMount, nil
+	}
+	if len(orderedVaultIDs) == 0 {
+		return "", "", fmt.Errorf("no vaults configured")
+	}
+	mount := strings.TrimSpace(value)
+	if mount == "" {
+		return "", "", fmt.Errorf("mount cannot be empty")
+	}
+	return orderedVaultIDs[0], mount, nil
 }

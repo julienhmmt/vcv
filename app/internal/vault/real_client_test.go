@@ -85,7 +85,7 @@ func newVaultTestServer(state vaultTestServerState) *httptest.Server {
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"keys": []string{"bb"}}})
 			return
 		}
-		if r.Method == http.MethodGet && (r.URL.Path == "/v1/pki/cert/aa" || r.URL.Path == "/v1/pki/cert/bb") {
+		if r.Method == http.MethodGet && (r.URL.Path == "/v1/pki/cert/aa" || r.URL.Path == "/v1/pki/cert/bb" || r.URL.Path == "/v1/pki/cert/ca") {
 			w.WriteHeader(http.StatusOK)
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"certificate": state.certificatePEM}})
 			return
@@ -369,6 +369,50 @@ func TestRealClient_ListCertificates_And_Details(t *testing.T) {
 	}
 	client.InvalidateCache()
 	client.Shutdown()
+}
+
+func TestRealClient_GetIntermediateCA(t *testing.T) {
+	certificatePEM := newVaultTestCertificatePEM(t)
+	server := newVaultTestServer(vaultTestServerState{certificatePEM: certificatePEM})
+	defer server.Close()
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+	ctx := context.Background()
+	caDetails, err := client.GetIntermediateCA(ctx, "pki")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if caDetails.CommonName != "test.example.com" {
+		t.Fatalf("expected common name %q, got %q", "test.example.com", caDetails.CommonName)
+	}
+	if caDetails.PEM == "" {
+		t.Fatalf("expected pem")
+	}
+	// Cache hit
+	caDetails2, err := client.GetIntermediateCA(ctx, "pki")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if caDetails2.CommonName != "test.example.com" {
+		t.Fatalf("expected cached common name %q, got %q", "test.example.com", caDetails2.CommonName)
+	}
+}
+
+func TestRealClient_GetIntermediateCA_BadResponse(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/v1/pki/ca/pem" {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"ca_chain": []string{"not a pem"}}})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+	_, err := client.GetIntermediateCA(context.Background(), "pki")
+	if err == nil {
+		t.Fatalf("expected error")
+	}
 }
 
 func TestCheckConnection_NotInitialized(t *testing.T) {

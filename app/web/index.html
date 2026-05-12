@@ -494,6 +494,26 @@
       </div>
     </div>
 
+    <!-- Intermediate CA modal -->
+    <div id="ca-modal" class="vcv-modal-backdrop vcv-hidden" role="dialog" aria-modal="true" aria-labelledby="ca-modal-title">
+      <div class="vcv-modal">
+        <div class="vcv-modal-header">
+          <h2 class="vcv-modal-title" id="ca-modal-title">{{.Messages.ModalCATitle}}</h2>
+          <button type="button" class="vcv-modal-close" onclick="VCV.closeCaModal()" aria-label="{{.Messages.ButtonClose}}">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+          </button>
+        </div>
+        <div class="vcv-modal-content">
+          <div id="ca-details-content" class="vcv-details-content">
+            <!-- Content will be populated by HTMX -->
+          </div>
+        </div>
+        <div class="vcv-modal-actions">
+          <button id="ca-modal-close" type="button" class="vcv-button vcv-button-secondary" onclick="VCV.closeCaModal()">{{.Messages.ButtonClose}}</button>
+        </div>
+      </div>
+    </div>
+
     <script src="/assets/htmx.min.js"></script>
     <script src="/assets/app-htmx.js"></script>
   </body>

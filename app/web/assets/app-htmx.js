@@ -68,6 +68,7 @@ function setModalVisibility(modalId, isOpen) {
 
 function closeAllModals() {
   closeCertificateModal();
+  closeCaModal();
   closeMountModal();
   closeDocumentationModal();
   closeVaultStatusModal();
@@ -223,13 +224,17 @@ function initModalHandlers() {
       closeAllModals();
     }
   });
-  const backdrops = document.querySelectorAll(".vcv-modal-backdrop");
-  backdrops.forEach((backdrop) => {
-    backdrop.addEventListener("click", (event) => {
-      if (event.target === backdrop) {
+  
+  // Handle backdrop clicks to close modals
+  document.addEventListener("click", (event) => {
+    const backdrop = event.target.closest(".vcv-modal-backdrop");
+    if (backdrop) {
+      // Check if the click is on the backdrop or outside the modal content
+      const modalContent = event.target.closest(".vcv-modal");
+      if (!modalContent) {
         closeAllModals();
       }
-    });
+    }
   });
 }
 
@@ -1232,6 +1237,14 @@ function closeCertificateModal() {
   setModalVisibility("certificate-modal", false);
 }
 
+function openCaModal() {
+  setModalVisibility("ca-modal", true);
+}
+
+function closeCaModal() {
+  setModalVisibility("ca-modal", false);
+}
+
 // Download functionality removed
 function updateCertModalPemLink(path) {
   // No-op: download button has been removed from the UI
@@ -1720,6 +1733,8 @@ window.VCV = {
   toggleVaultSection: toggleVaultSection,
   openCertificateModal: openCertificateModal,
   closeCertificateModal: closeCertificateModal,
+  openCaModal: openCaModal,
+  closeCaModal: closeCaModal,
   openDocumentationModal: openDocumentationModal,
   closeDocumentationModal: closeDocumentationModal,
   dismissNotifications: dismissNotifications,

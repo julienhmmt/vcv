@@ -70,6 +70,58 @@ func TestParseCompositeCertificateID(t *testing.T) {
 	}
 }
 
+func TestParseCompositeCAID(t *testing.T) {
+	tests := []struct {
+		name         string
+		orderedVault []string
+		value        string
+		expectErr    bool
+		expectVault  string
+		expectMount  string
+	}{
+		{name: "explicit", orderedVault: []string{"v1"}, value: "v2|pki", expectErr: false, expectVault: "v2", expectMount: "pki"},
+		{name: "explicit invalid empty vault", orderedVault: []string{"v1"}, value: "|pki", expectErr: true},
+		{name: "explicit invalid empty mount", orderedVault: []string{"v1"}, value: "v2|", expectErr: true},
+		{name: "implicit uses first", orderedVault: []string{"v1"}, value: "pki", expectErr: false, expectVault: "v1", expectMount: "pki"},
+		{name: "implicit empty list", orderedVault: []string{}, value: "pki", expectErr: true},
+		{name: "empty value", orderedVault: []string{"v1"}, value: " ", expectErr: true},
+	}
+	for _, tt := range tests {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			vaultID, pureMount, err := parseCompositeCAID(tt.orderedVault, tt.value)
+			if tt.expectErr {
+				assert.Error(t, err)
+				return
+			}
+			assert.NoError(t, err)
+			assert.Equal(t, tt.expectVault, vaultID)
+			assert.Equal(t, tt.expectMount, pureMount)
+		})
+	}
+}
+
+func TestMultiClient_GetIntermediateCA_RoutesByExplicitVault(t *testing.T) {
+	instances := []config.VaultInstance{{ID: "v1"}, {ID: "v2"}}
+	c1 := &MockClient{}
+	c2 := &MockClient{}
+	expected := certs.DetailedCertificate{Certificate: certs.Certificate{ID: "ca-id", SerialNumber: "ca-serial", CommonName: "ca-cn"}}
+	c2.On("GetIntermediateCA", mock.Anything, "pki").Return(expected, nil)
+	m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2}, nil)
+	result, err := m.GetIntermediateCA(context.Background(), "v2|pki")
+	assert.NoError(t, err)
+	assert.Equal(t, "v2|ca-id", result.ID)
+	assert.Equal(t, "ca-serial", result.SerialNumber)
+	c2.AssertExpectations(t)
+}
+
+func TestMultiClient_GetIntermediateCA_MissingClient(t *testing.T) {
+	instances := []config.VaultInstance{{ID: "v1"}}
+	m := NewMultiClient(instances, map[string]Client{}, nil)
+	_, err := m.GetIntermediateCA(context.Background(), "v1|pki")
+	assert.Error(t, err)
+}
+
 func TestMultiClient_CheckConnection(t *testing.T) {
 	t.Run("not configured", func(t *testing.T) {
 		m := NewMultiClient([]config.VaultInstance{}, map[string]Client{}, nil)

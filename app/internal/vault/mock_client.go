@@ -28,6 +28,11 @@ func (m *MockClient) GetCertificatePEM(ctx context.Context, serialNumber string)
 	return args.Get(0).(certs.PEMResponse), args.Error(1)
 }
 
+func (m *MockClient) GetIntermediateCA(ctx context.Context, mount string) (certs.DetailedCertificate, error) {
+	args := m.Called(ctx, mount)
+	return args.Get(0).(certs.DetailedCertificate), args.Error(1)
+}
+
 func (m *MockClient) InvalidateCache() {
 	m.Called()
 }

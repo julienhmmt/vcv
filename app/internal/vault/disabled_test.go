@@ -29,6 +29,12 @@ func TestDisabledClient_Functions(t *testing.T) {
 	assert.Equal(t, ErrVaultNotConfigured, err)
 	assert.Equal(t, certs.PEMResponse{}, pemResp)
 
+	// Test GetIntermediateCA
+	caDetails, err := client.GetIntermediateCA(context.Background(), "pki")
+	assert.Error(t, err)
+	assert.Equal(t, ErrVaultNotConfigured, err)
+	assert.Equal(t, certs.DetailedCertificate{}, caDetails)
+
 	// Test InvalidateCache (should not panic)
 	assert.NotPanics(t, func() {
 		client.InvalidateCache()
@@ -56,6 +62,8 @@ func TestDisabledClient_ErrorConsistency(t *testing.T) {
 	_, err := client.GetCertificateDetails(context.Background(), "test")
 	assert.Equal(t, expectedErr, err)
 	_, err = client.GetCertificatePEM(context.Background(), "test")
+	assert.Equal(t, expectedErr, err)
+	_, err = client.GetIntermediateCA(context.Background(), "test")
 	assert.Equal(t, expectedErr, err)
 
 	// ListCertificates should return nil error

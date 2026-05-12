@@ -33,6 +33,7 @@ type DetailedCertificate struct {
 	FingerprintSHA256 string   `json:"fingerprintSHA256"`
 	Usage             []string `json:"usage"`
 	PEM               string   `json:"pem"`
+	CAType            string   `json:"caType"` // "intermediate" or "root"
 }
 
 type PEMResponse struct {

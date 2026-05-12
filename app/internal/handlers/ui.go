@@ -49,6 +49,20 @@ type certDetailsTemplateData struct {
 	UsageSummary  string
 }
 
+type caDetailsTemplateData struct {
+	Certificate   certs.DetailedCertificate
+	CertTypeLabel string
+	CATypeLabel   string
+	CreatedAtDate string
+	CreatedAtTime string
+	ExpiresAtDate string
+	ExpiresAtTime string
+	KeySummary    string
+	Messages      i18n.Messages
+	MountName     string
+	UsageSummary  string
+}
+
 type statusIndicatorTemplateData struct {
 	Messages    i18n.Messages
 	VersionText string
@@ -601,6 +615,68 @@ func RegisterUIRoutes(router chi.Router, vaultClient vault.Client, vaultInstance
 			Str("request_id", requestID).
 			Str("serial_number", certificateID).
 			Msg("rendered certificate details")
+	})
+
+	router.Get("/ui/certs/{id:[^/]*}/ca", func(w http.ResponseWriter, r *http.Request) {
+		if templates == nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		certificateID, statusCode, decodeErr := decodeCertificateIDParam(r)
+		if statusCode != http.StatusOK {
+			requestID := middleware.GetRequestID(r.Context())
+			logger.HTTPError(r.Method, r.URL.Path, statusCode, decodeErr).
+				Str("request_id", requestID).
+				Msg("missing certificate id in ca path")
+			http.Error(w, http.StatusText(statusCode), statusCode)
+			return
+		}
+		vaultMountKey, _ := extractVaultMountFromCertificateID(certificateID)
+		caDetails, err := vaultClient.GetIntermediateCA(r.Context(), vaultMountKey)
+		if err != nil {
+			requestID := middleware.GetRequestID(r.Context())
+			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
+				Str("request_id", requestID).
+				Str("certificate_id", certificateID).
+				Msg("failed to get intermediate CA")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		language := i18n.ResolveLanguage(r)
+		messages := i18n.MessagesForLanguage(language)
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(http.StatusOK)
+		caTypeLabel := ""
+		if caDetails.CAType == "root" {
+			caTypeLabel = messages.LabelRootCA
+		} else {
+			caTypeLabel = messages.LabelIntermediateCA
+		}
+		data := caDetailsTemplateData{
+			Certificate:   caDetails,
+			Messages:      messages,
+			CertTypeLabel: buildCertTypeLabel(caDetails.CertType, messages),
+			CATypeLabel:   caTypeLabel,
+			KeySummary:    buildKeySummary(caDetails),
+			UsageSummary:  buildUsageSummary(caDetails.Usage),
+			MountName:     vaultMountKey,
+			CreatedAtDate: formatDate(caDetails.CreatedAt),
+			CreatedAtTime: formatClock(caDetails.CreatedAt),
+			ExpiresAtDate: formatDate(caDetails.ExpiresAt),
+			ExpiresAtTime: formatClock(caDetails.ExpiresAt),
+		}
+		if err := templates.ExecuteTemplate(w, "ca-details.html", data); err != nil {
+			requestID := middleware.GetRequestID(r.Context())
+			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
+				Str("request_id", requestID).
+				Msg("failed to render ca details template")
+			return
+		}
+		requestID := middleware.GetRequestID(r.Context())
+		logger.HTTPEvent(r.Method, r.URL.Path, http.StatusOK, 0).
+			Str("request_id", requestID).
+			Str("mount", vaultMountKey).
+			Msg("rendered intermediate CA details")
 	})
 
 	router.Get("/ui/docs/user-guide", func(w http.ResponseWriter, r *http.Request) {
