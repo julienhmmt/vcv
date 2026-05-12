@@ -234,6 +234,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+.vcv-certs-mobile-cards {
+  display: none;
+}
+
 /* Layout */
 .vcv-layout {
   max-width: 1440px;
@@ -1479,10 +1483,6 @@ body {
   border-collapse: collapse;
   font-size: 0.8125rem;
   table-layout: fixed;
-}
-
-.vcv-certs-mobile-cards {
-  display: none;
 }
 
 .vcv-table th {
