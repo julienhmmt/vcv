@@ -1777,6 +1777,7 @@ col.vcv-col-status {
 
 .vcv-cert-card-action {
   align-self: flex-start;
+  color: var(--vcv-color-primary-strong);
   font-size: 0.8125rem;
   font-weight: 700;
 }

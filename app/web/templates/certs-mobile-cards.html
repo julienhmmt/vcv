@@ -4,7 +4,15 @@
   <p class="vcv-certs-mobile-empty">{{.Messages.NoData}}</p>
   {{else}}
   {{range .Rows}}
-  <article class="{{.RowClass}} vcv-cert-card">
+  <article class="{{.RowClass}} vcv-cert-card vcv-row-clickable"
+      hx-get="/ui/certs/{{urlquery .ID}}/details"
+      hx-target="#details-content"
+      hx-swap="innerHTML"
+      hx-include="#vcv-lang-select"
+      onclick="VCV.openCertificateModal()"
+      tabindex="0"
+      role="button"
+      aria-label="{{.CommonName}}">
     <div class="vcv-cert-card-header">
       <div class="vcv-cert-card-title">
         <span class="vcv-cert-card-label">{{$.Messages.ColumnCommonName}}</span>
@@ -29,17 +37,7 @@
       </div>
     </div>
     {{if .Sans}}<div class="vcv-san-row"><span class="vcv-san-tag" title="{{.Sans}}">{{.Sans}}</span></div>{{end}}
-    <button
-      type="button"
-      class="vcv-button vcv-button-small vcv-button-primary vcv-cert-card-action"
-      hx-get="/ui/certs/{{urlquery .ID}}/details"
-      hx-target="#details-content"
-      hx-swap="innerHTML"
-      hx-include="#vcv-lang-select"
-      onclick="VCV.openCertificateModal()"
-    >
-      {{.ButtonDetailsText}}
-    </button>
+    <span class="vcv-cert-card-action">{{.ButtonDetailsText}}</span>
   </article>
   {{end}}
   {{end}}
