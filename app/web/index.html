@@ -366,47 +366,11 @@
             hx-swap="innerHTML"
             hx-include=".vcv-cert-param"
           >
-            {{if eq (len .Certs.Rows) 0}}
-            <tr>
-              <td colspan="3">{{.Messages.NoData}}</td>
-            </tr>
-            {{else}}
-            {{range .Certs.Rows}}
-            <tr class="{{.RowClass}} vcv-row-clickable"
-                hx-get="/ui/certs/{{urlquery .ID}}/details"
-                hx-target="#details-content"
-                hx-swap="innerHTML"
-                hx-include="#vcv-lang-select"
-                onclick="VCV.openCertificateModal()"
-                tabindex="0"
-                role="button"
-                aria-label="{{.CommonName}}">
-              <td class="vcv-col-cert">
-                <div class="vcv-cert-header">
-                  <span class="vcv-cn-name">{{.CommonName}}</span>
-                  {{if .ShowVaultMount}}<span class="vcv-cert-meta-item">{{.VaultName}}</span><span class="vcv-cert-meta-item">{{.MountName}}</span>{{end}}
-                </div>
-                {{if .Sans}}<div class="vcv-san-row"><span class="vcv-san-tag" title="{{.Sans}}">{{.Sans}}</span></div>{{end}}
-              </td>
-              <td class="vcv-col-expiry {{.ExpiresCellClass}}">
-                <div class="vcv-expiry-count {{.DaysRemainingClass}}{{if not .DaysRemainingText}} vcv-days-remaining vcv-expiry-count-empty{{end}}">{{if .DaysRemainingText}}{{.DaysRemainingText}}{{else}}&nbsp;{{end}}</div>
-                <div class="vcv-expiry-datetime">
-                  <span class="{{.ExpiresDateClass}} vcv-expiry-date">{{.ExpiresAtDate}}</span>
-                  <span class="vcv-date-secondary">· {{.ExpiresAtTime}} UTC</span>
-                </div>
-              </td>
-              <td class="vcv-col-status">
-                <div class="vcv-status-cell">
-                  <div class="vcv-status-badges">{{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}</div>
-                  <span class="vcv-row-chevron" aria-hidden="true">›</span>
-                </div>
-              </td>
-            </tr>
-            {{end}}
-            {{end}}
+            {{template "certs-rows" .Certs}}
           </tbody>
         </table>
       </div>
+      {{template "certs-mobile-cards" .Certs}}
       </main>
       <footer class="vcv-footer" aria-label="Footer">
         <div class="vcv-footer-legend">

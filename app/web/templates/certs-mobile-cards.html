@@ -1,0 +1,47 @@
+{{define "certs-mobile-cards"}}
+<div id="vcv-certs-mobile-cards" class="vcv-certs-mobile-cards" hx-swap-oob="true">
+  {{if eq (len .Rows) 0}}
+  <p class="vcv-certs-mobile-empty">{{.Messages.NoData}}</p>
+  {{else}}
+  {{range .Rows}}
+  <article class="{{.RowClass}} vcv-cert-card">
+    <div class="vcv-cert-card-header">
+      <div class="vcv-cert-card-title">
+        <span class="vcv-cert-card-label">{{$.Messages.ColumnCommonName}}</span>
+        <span class="vcv-cn-name">{{.CommonName}}</span>
+      </div>
+      <span class="vcv-row-chevron" aria-hidden="true">›</span>
+    </div>
+    <div class="vcv-cert-card-status">
+      <span class="vcv-cert-card-label">{{$.Messages.ColumnStatus}}</span>
+      <div class="vcv-status-badges">{{range .Badges}}<span class="{{.Class}}">{{.Label}}</span>{{end}}</div>
+    </div>
+    <div class="vcv-cert-card-meta">
+      <div class="vcv-cert-card-field {{.ExpiresCellClass}}">
+        <span class="vcv-cert-card-label">{{$.Messages.ColumnExpiresAt}}</span>
+        <span class="{{.ExpiresDateClass}} vcv-expiry-date">{{.ExpiresAtDate}}</span>
+        <span class="vcv-date-secondary">· {{.ExpiresAtTime}} UTC</span>
+        {{if .DaysRemainingText}}<span class="{{.DaysRemainingClass}}">{{.DaysRemainingText}}</span>{{end}}
+      </div>
+      <div class="vcv-cert-card-field">
+        <span class="vcv-cert-card-label">{{$.Messages.FilterChipSources}}</span>
+        <span class="vcv-cert-card-source">{{.VaultName}} / {{.MountName}}</span>
+      </div>
+    </div>
+    {{if .Sans}}<div class="vcv-san-row"><span class="vcv-san-tag" title="{{.Sans}}">{{.Sans}}</span></div>{{end}}
+    <button
+      type="button"
+      class="vcv-button vcv-button-small vcv-button-primary vcv-cert-card-action"
+      hx-get="/ui/certs/{{urlquery .ID}}/details"
+      hx-target="#details-content"
+      hx-swap="innerHTML"
+      hx-include="#vcv-lang-select"
+      onclick="VCV.openCertificateModal()"
+    >
+      {{.ButtonDetailsText}}
+    </button>
+  </article>
+  {{end}}
+  {{end}}
+</div>
+{{end}}
