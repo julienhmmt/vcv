@@ -1,8 +1,47 @@
 <script lang="ts">
-  // Admin root.
+  import { onMount } from 'svelte'
+  import AdminLogin from '$lib/components/admin/AdminLogin.svelte'
+  import AdminPanel from '$lib/components/admin/AdminPanel.svelte'
+  import { createAdminStore } from '$lib/stores/admin.svelte'
+  import { createThemeStore } from '$lib/stores/theme.svelte'
+
+  const admin = createAdminStore()
+  createThemeStore()
+
+  onMount(async () => {
+    await admin.checkSession()
+    if (admin.authenticated) {
+      await admin.loadSettings()
+    }
+  })
+
+  async function handleLogin(username: string, password: string): Promise<void> {
+    const ok = await admin.login(username, password)
+    if (ok) {
+      await admin.loadSettings()
+    }
+  }
 </script>
 
-<main class="min-h-svh bg-background text-foreground p-8">
-  <h1 class="text-3xl font-semibold">VCV Admin</h1>
-  <p class="text-muted-foreground mt-2">Admin panel — Svelte scaffold ready.</p>
+<main class="min-h-svh bg-background text-foreground">
+  <div class="mx-auto max-w-4xl p-6">
+    {#if !admin.authenticated}
+      <AdminLogin loading={admin.loading} error={admin.error} onSubmit={handleLogin} />
+    {:else if admin.settings}
+      <AdminPanel
+        settings={admin.settings}
+        statuses={admin.vaultStatuses}
+        loading={admin.loading}
+        error={admin.error}
+        successMessage={admin.successMessage}
+        onSave={(next) => void admin.saveSettings(next)}
+        onAddVault={() => void admin.addVault()}
+        onRemoveVault={(id) => void admin.removeVault(id)}
+        onInvalidateCache={() => void admin.invalidateCache()}
+        onLogout={() => void admin.logout()}
+      />
+    {:else}
+      <p class="text-sm text-muted-foreground">Loading…</p>
+    {/if}
+  </div>
 </main>

@@ -726,6 +726,8 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 			return
 		}
 	})
+	registerAdminAPIRoutes(router, sessions, store, vaultStatusClients, refreshRegistry)
+
 	router.Post("/admin/login", func(w http.ResponseWriter, r *http.Request) {
 		language := i18n.ResolveLanguage(r)
 		messages := i18n.MessagesForLanguage(language)

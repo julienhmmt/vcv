@@ -5,6 +5,7 @@
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card'
   import CertTable from '$lib/components/CertTable.svelte'
   import CertDetailDialog from '$lib/components/CertDetailDialog.svelte'
+  import CADetailDialog from '$lib/components/CADetailDialog.svelte'
   import MountFilter from '$lib/components/MountFilter.svelte'
   import StatusHeader from '$lib/components/StatusHeader.svelte'
   import { createCertsStore } from '$lib/stores/certs.svelte'
@@ -20,6 +21,8 @@
 
   let selected = $state<Certificate | null>(null)
   let dialogOpen = $state(false)
+  let caCertId = $state<string | null>(null)
+  let caDialogOpen = $state(false)
   let mounts = $state<string[] | null>(null)
 
   let allCertificates = $state<Certificate[]>([])
@@ -105,6 +108,16 @@
       cert={selected}
       open={dialogOpen}
       onOpenChange={(value) => (dialogOpen = value)}
+      onShowCA={(id) => {
+        caCertId = id
+        caDialogOpen = true
+      }}
+    />
+
+    <CADetailDialog
+      certId={caCertId}
+      open={caDialogOpen}
+      onOpenChange={(value) => (caDialogOpen = value)}
     />
   </div>
 </main>

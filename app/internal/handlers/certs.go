@@ -100,6 +100,43 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			Msg("fetched certificate details")
 	})
 
+	r.Get("/api/certs/{id}/ca", func(w http.ResponseWriter, req *http.Request) {
+		certificateID, statusCode, decodeErr := decodeCertificateIDParam(req)
+		if statusCode != http.StatusOK {
+			requestID := middleware.GetRequestID(req.Context())
+			logger.HTTPError(req.Method, req.URL.Path, statusCode, decodeErr).
+				Str("request_id", requestID).
+				Msg("missing certificate id in ca path")
+			http.Error(w, http.StatusText(statusCode), statusCode)
+			return
+		}
+		vaultMountKey, _ := extractVaultMountFromCertificateID(certificateID)
+		caDetails, err := vaultClient.GetIntermediateCA(req.Context(), vaultMountKey)
+		if err != nil {
+			requestID := middleware.GetRequestID(req.Context())
+			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
+				Str("request_id", requestID).
+				Str("certificate_id", certificateID).
+				Msg("failed to get intermediate CA")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(caDetails); err != nil {
+			requestID := middleware.GetRequestID(req.Context())
+			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
+				Str("request_id", requestID).
+				Msg("failed to encode CA response")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		requestID := middleware.GetRequestID(req.Context())
+		logger.HTTPEvent(req.Method, req.URL.Path, http.StatusOK, 0).
+			Str("request_id", requestID).
+			Str("mount", vaultMountKey).
+			Msg("served intermediate CA")
+	})
+
 	r.Get("/api/certs/{id}/pem", func(w http.ResponseWriter, req *http.Request) {
 		certificateID, statusCode, decodeErr := decodeCertificateIDParam(req)
 		if statusCode != http.StatusOK {

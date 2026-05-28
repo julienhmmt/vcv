@@ -54,3 +54,71 @@ export interface ExpirationThresholds {
   critical: number
   warning: number
 }
+
+export interface VaultInstance {
+  id: string
+  address: string
+  token: string
+  pki_mount?: string
+  pki_mounts?: string[]
+  display_name?: string
+  tls_insecure?: boolean
+  tls_ca_cert?: string
+  tls_ca_cert_base64?: string
+  tls_ca_path?: string
+  tls_server_name?: string
+  enabled?: boolean | null
+}
+
+export interface CertificateSettings {
+  expiration_thresholds: ExpirationThresholds
+}
+
+export interface MetricsSettings {
+  per_certificate?: boolean | null
+  enhanced_metrics?: boolean | null
+  pinned_certificates?: string[]
+}
+
+export interface CORSSettings {
+  allowed_origins?: string[]
+  allow_credentials?: boolean
+}
+
+export interface AppSettings {
+  env: string
+  port: number
+}
+
+export interface AdminSettings {
+  password?: string
+}
+
+export interface SettingsFile {
+  app: AppSettings
+  admin?: AdminSettings
+  certificates: CertificateSettings
+  metrics: MetricsSettings
+  cors: CORSSettings
+  vaults: VaultInstance[]
+}
+
+export interface AdminVaultStatus {
+  id: string
+  enabled: boolean
+  connected: boolean
+}
+
+export interface AdminSettingsResponse {
+  settings: SettingsFile
+  vault_statuses: AdminVaultStatus[]
+}
+
+export interface AdminSessionResponse {
+  authenticated: boolean
+}
+
+export interface AdminVaultAddedResponse {
+  key: string
+  vault: VaultInstance
+}

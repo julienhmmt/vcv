@@ -15,9 +15,10 @@
     cert: Certificate | null
     open: boolean
     onOpenChange: (open: boolean) => void
+    onShowCA?: (certId: string) => void
   }
 
-  const { cert, open, onOpenChange }: Props = $props()
+  const { cert, open, onOpenChange, onShowCA }: Props = $props()
 
   let details = $state<DetailedCertificate | null>(null)
   let loading = $state(false)
@@ -96,6 +97,21 @@
                 <Badge variant="secondary">{use}</Badge>
               {/each}
             </div>
+          </div>
+        {/if}
+
+        {#if cert && onShowCA}
+          <div>
+            <Button
+              size="sm"
+              variant="outline"
+              onclick={() => {
+                onOpenChange(false)
+                onShowCA(cert.id)
+              }}
+            >
+              View issuer CA
+            </Button>
           </div>
         {/if}
 
