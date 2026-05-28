@@ -2,6 +2,7 @@
 FROM node:24-alpine AS web-builder
 
 WORKDIR /web/frontend
+ENV CI=true
 
 RUN corepack enable
 

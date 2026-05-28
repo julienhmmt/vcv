@@ -1,0 +1,4 @@
+web/frontend/node_modules
+web/frontend/.svelte-kit
+web/frontend/dist
+web/dist
