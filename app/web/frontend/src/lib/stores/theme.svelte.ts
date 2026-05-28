@@ -22,8 +22,9 @@ function applyToDocument(theme: Theme): void {
 }
 
 export function createThemeStore(): ThemeStore {
-  let theme = $state<Theme>(detectInitial())
-  applyToDocument(theme)
+  const initial = detectInitial()
+  let theme = $state<Theme>(initial)
+  applyToDocument(initial)
 
   function set(next: Theme): void {
     theme = next

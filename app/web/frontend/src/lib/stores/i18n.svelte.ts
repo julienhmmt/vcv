@@ -21,7 +21,8 @@ function detectInitial(): string {
 }
 
 export function createI18nStore(): I18nStore {
-  let lang = $state(detectInitial())
+  const initial = detectInitial()
+  let lang = $state(initial)
   let messages = $state<Record<string, string>>({})
   let loading = $state(false)
   let error = $state<string | null>(null)
@@ -39,7 +40,7 @@ export function createI18nStore(): I18nStore {
     }
   }
 
-  void load(lang)
+  void load(initial)
 
   async function setLang(next: string): Promise<void> {
     lang = next
