@@ -3,6 +3,30 @@ version: "3"
 tasks:
   default: task --list
 
+  web-install:
+    desc: Install frontend dependencies (pnpm)
+    dir: app/web/frontend
+    cmds:
+      - pnpm install
+
+  web-dev:
+    desc: Run Vite dev server (proxies /api + /i18n to Go on :52000)
+    dir: app/web/frontend
+    cmds:
+      - pnpm dev
+
+  web-build:
+    desc: Build Svelte frontend to app/web/dist
+    dir: app/web/frontend
+    cmds:
+      - pnpm build
+
+  web-check:
+    desc: svelte-check + tsc on frontend
+    dir: app/web/frontend
+    cmds:
+      - pnpm check
+
   dev:
     desc: Construit le binaire Go et le container docker
     cmds:
