@@ -1,15 +1,13 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { toast } from 'svelte-sonner'
-  import {
-    BookOpen,
-    Globe,
-    Moon,
-    RefreshCw,
-    Search,
-    Sun,
-    ChevronRight,
-  } from '@lucide/svelte'
+  import BookOpen from '@lucide/svelte/icons/book-open'
+  import ChevronRight from '@lucide/svelte/icons/chevron-right'
+  import Globe from '@lucide/svelte/icons/globe'
+  import Moon from '@lucide/svelte/icons/moon'
+  import RefreshCw from '@lucide/svelte/icons/refresh-cw'
+  import Search from '@lucide/svelte/icons/search'
+  import Sun from '@lucide/svelte/icons/sun'
   import { Toaster } from '$lib/components/ui/sonner'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import CertDetailModal from '$lib/components/CertDetailModal.svelte'

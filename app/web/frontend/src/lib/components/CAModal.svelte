@@ -1,5 +1,7 @@
 <script lang="ts">
-  import { Copy, Check, Landmark } from '@lucide/svelte'
+  import Check from '@lucide/svelte/icons/check'
+  import Copy from '@lucide/svelte/icons/copy'
+  import Landmark from '@lucide/svelte/icons/landmark'
   import * as Dialog from '$lib/components/ui/dialog'
   import { ScrollArea } from '$lib/components/ui/scroll-area'
   import { api, ApiError } from '$lib/api'

@@ -1,6 +1,8 @@
 <script lang="ts">
   import * as HoverCard from '$lib/components/ui/hover-card'
-  import { Activity, CircleAlert, CircleCheck } from '@lucide/svelte'
+  import Activity from '@lucide/svelte/icons/activity'
+  import CircleAlert from '@lucide/svelte/icons/circle-alert'
+  import CircleCheck from '@lucide/svelte/icons/circle-check'
   import type { StatusResponse } from '$lib/types'
 
   interface Props {

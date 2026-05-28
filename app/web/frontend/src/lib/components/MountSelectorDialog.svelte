@@ -1,7 +1,9 @@
 <script lang="ts">
   import * as Command from '$lib/components/ui/command'
   import * as Dialog from '$lib/components/ui/dialog'
-  import { Check, Square, SquareCheck } from '@lucide/svelte'
+  import Check from '@lucide/svelte/icons/check'
+  import Square from '@lucide/svelte/icons/square'
+  import SquareCheck from '@lucide/svelte/icons/square-check'
 
   interface Props {
     open: boolean

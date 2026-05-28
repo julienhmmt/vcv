@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { X } from '@lucide/svelte'
+  import X from '@lucide/svelte/icons/x'
   import type { CertTypeFilter, StatusFilter } from '$lib/utils/cert-filter'
 
   interface Props {
