@@ -1,5 +1,6 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
+@import './styles/vcv.css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -120,4 +121,136 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Extras layered over legacy vcv styles. */
+.vcv-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.vcv-detail-grid {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.vcv-detail-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.vcv-detail-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--vcv-text-muted, #6b7280);
+}
+
+.vcv-detail-value {
+  word-break: break-word;
+}
+
+.vcv-detail-section {
+  margin-top: 16px;
+}
+
+.vcv-detail-section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 6px;
+  color: var(--vcv-text-muted, #6b7280);
+}
+
+.vcv-detail-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.vcv-tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.vcv-tag {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--vcv-surface-2, rgba(0, 0, 0, 0.05));
+  color: inherit;
+}
+
+.vcv-pem {
+  max-height: 300px;
+  overflow: auto;
+  background: var(--vcv-surface-2, rgba(0, 0, 0, 0.05));
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre;
+}
+
+.vcv-error {
+  color: var(--vcv-danger, #dc2626);
+}
+
+.vcv-vault-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--vcv-border, #e5e7eb);
+  background: transparent;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.vcv-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.vcv-vault-status-pill.vcv-status-state-ok {
+  color: #10b981;
+}
+
+.vcv-vault-status-pill.vcv-status-state-error {
+  color: #ef4444;
+}
+
+.vcv-vault-status-pill.vcv-status-state-neutral {
+  color: var(--vcv-text-muted, #6b7280);
+}
+
+.vcv-stat.vcv-stat-active {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.vcv-days-expired,
+.vcv-days-revoked {
+  color: #ef4444;
+}
+
+.vcv-days-critical {
+  color: #f97316;
+}
+
+.vcv-days-warning {
+  color: #eab308;
+}
+
+.vcv-days-valid {
+  color: #10b981;
 }

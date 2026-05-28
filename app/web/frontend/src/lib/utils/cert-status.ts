@@ -23,17 +23,37 @@ export function certStatus(
   return 'valid'
 }
 
-export function statusVariant(status: CertStatus): 'default' | 'secondary' | 'destructive' | 'outline' {
+export function statusBadgeClass(status: CertStatus): string {
   switch (status) {
     case 'valid':
-      return 'default'
+      return 'vcv-badge vcv-badge-valid'
     case 'warning':
-      return 'secondary'
+      return 'vcv-badge vcv-badge-warning'
     case 'critical':
+      return 'vcv-badge vcv-badge-critical'
     case 'expired':
+      return 'vcv-badge vcv-badge-expired'
     case 'revoked':
-      return 'destructive'
-    default:
-      return 'outline'
+      return 'vcv-badge vcv-badge-revoked'
   }
+}
+
+export function rowClassForStatus(status: CertStatus): string {
+  return `vcv-row-${status}`
+}
+
+export interface CertParts {
+  vault: string
+  mount: string
+  mountKey: string
+}
+
+export function parseCertID(id: string): CertParts {
+  const parts = id.split('|')
+  if (parts.length === 2) {
+    const mountName = parts[1].split(':')[0]?.trim() ?? ''
+    return { vault: parts[0], mount: mountName, mountKey: `${parts[0]}|${mountName}` }
+  }
+  const mountName = id.split(':')[0]?.trim() ?? ''
+  return { vault: '', mount: mountName, mountKey: mountName }
 }
