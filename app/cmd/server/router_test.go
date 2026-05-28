@@ -27,17 +27,10 @@ type configResponse struct {
 
 func newServerWebFS() fs.FS {
 	return fstest.MapFS{
-		"index.html":                           &fstest.MapFile{Data: []byte(`<!DOCTYPE html><html lang="{{.Language}}"><head><title>{{.Messages.AppTitle}}</title></head><body>ok</body></html>`)},
-		"assets/app.js":                        &fstest.MapFile{Data: []byte("console.log('ok')")},
-		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div></div>")},
-		"templates/status-indicator.html":      &fstest.MapFile{Data: []byte("<div></div>")},
-		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{template \"certs-rows\" .}}{{template \"dashboard-fragment\" .}}{{template \"certs-state\" .}}{{template \"certs-pagination\" .}}{{template \"certs-sort\" .}}")},
-		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{end}}")},
-		"templates/dashboard-fragment.html":    &fstest.MapFile{Data: []byte("{{define \"dashboard-fragment\"}}{{end}}")},
-		"templates/theme-toggle-fragment.html": &fstest.MapFile{Data: []byte("<div></div>")},
-		"templates/certs-state.html":           &fstest.MapFile{Data: []byte("{{define \"certs-state\"}}{{end}}")},
-		"templates/certs-pagination.html":      &fstest.MapFile{Data: []byte("{{define \"certs-pagination\"}}{{end}}")},
-		"templates/certs-sort.html":            &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
+		"dist/index.html":     &fstest.MapFile{Data: []byte("<!doctype html><html><body>ok</body></html>")},
+		"dist/admin.html":     &fstest.MapFile{Data: []byte("<!doctype html><html><body>admin</body></html>")},
+		"dist/assets/app.js":  &fstest.MapFile{Data: []byte("console.log('ok')")},
+		"dist/favicon.ico":    &fstest.MapFile{Data: []byte("\x00")},
 	}
 }
 
@@ -68,12 +61,27 @@ func TestBuildRouter_BasicEndpoints(t *testing.T) {
 		assert.Contains(t, rec.Body.String(), "ok")
 	})
 
+	t.Run("serves admin html", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/admin", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Contains(t, rec.Body.String(), "admin")
+	})
+
 	t.Run("serves asset", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/assets/app.js", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Contains(t, rec.Body.String(), "console.log")
+	})
+
+	t.Run("serves favicon", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/favicon.ico", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		assert.Equal(t, http.StatusOK, rec.Code)
 	})
 
 	t.Run("health", func(t *testing.T) {
@@ -133,8 +141,7 @@ func TestBuildRouter_MissingAssets_Returns404(t *testing.T) {
 	multi := &vault.MockClient{}
 	registry := prometheus.NewRegistry()
 	webFS := fstest.MapFS{
-		"index.html":                      &fstest.MapFile{Data: []byte("ok")},
-		"templates/status-indicator.html": &fstest.MapFile{Data: []byte("<div></div>")},
+		"dist/index.html": &fstest.MapFile{Data: []byte("ok")},
 	}
 	router, err := buildRouter(cfg, primary, map[string]vault.Client{}, multi, registry, webFS, "", nil)
 	assert.NotNil(t, router)
@@ -145,27 +152,18 @@ func TestBuildRouter_MissingAssets_Returns404(t *testing.T) {
 	assert.Equal(t, http.StatusNotFound, rec.Code)
 }
 
-func TestBuildRouter_MissingIndex_Returns500(t *testing.T) {
+func TestBuildRouter_MissingIndex_Returns404(t *testing.T) {
 	cfg := config.Config{Env: config.EnvDev}
 	primary := &vault.MockClient{}
 	multi := &vault.MockClient{}
 	registry := prometheus.NewRegistry()
 	webFS := fstest.MapFS{
-		"assets/app.js":                        &fstest.MapFile{Data: []byte("console.log('ok')")},
-		"templates/cert-details.html":          &fstest.MapFile{Data: []byte("<div></div>")},
-		"templates/footer-status.html":         &fstest.MapFile{Data: []byte("<div></div>")},
-		"templates/certs-fragment.html":        &fstest.MapFile{Data: []byte("{{define \"certs-fragment\"}}{{end}}")},
-		"templates/certs-rows.html":            &fstest.MapFile{Data: []byte("{{define \"certs-rows\"}}{{end}}")},
-		"templates/dashboard-fragment.html":    &fstest.MapFile{Data: []byte("{{define \"dashboard-fragment\"}}{{end}}")},
-		"templates/theme-toggle-fragment.html": &fstest.MapFile{Data: []byte("<div></div>")},
-		"templates/certs-state.html":           &fstest.MapFile{Data: []byte("{{define \"certs-state\"}}{{end}}")},
-		"templates/certs-pagination.html":      &fstest.MapFile{Data: []byte("{{define \"certs-pagination\"}}{{end}}")},
-		"templates/certs-sort.html":            &fstest.MapFile{Data: []byte("{{define \"certs-sort\"}}{{end}}")},
+		"dist/assets/app.js": &fstest.MapFile{Data: []byte("console.log('ok')")},
 	}
 	router, err := buildRouter(cfg, primary, map[string]vault.Client{}, multi, registry, webFS, "", nil)
 	assert.NoError(t, err)
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
-	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	assert.Equal(t, http.StatusNotFound, rec.Code)
 }

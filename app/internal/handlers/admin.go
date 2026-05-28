@@ -1,20 +1,14 @@
 package handlers
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"html/template"
-	"io/fs"
 	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
-	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -26,48 +20,14 @@ import (
 	"vcv/internal/config"
 	vcverrors "vcv/internal/errors"
 	"vcv/internal/httputil"
-	"vcv/internal/i18n"
 	"vcv/internal/logger"
 	"vcv/internal/middleware"
 	"vcv/internal/vault"
-	"vcv/internal/version"
 )
 
 const adminCookieName string = "vcv_admin_session"
 const adminUsername string = "admin"
-
 const adminMaxSessions int = 1024
-
-type adminLoginTemplateData struct {
-	Messages  i18n.Messages
-	ErrorText string
-}
-
-type adminVaultViewData struct {
-	Messages    i18n.Messages
-	Enabled     bool
-	Connected   bool
-	StatusClass string
-	StatusText  string
-	Key         string
-	MountsText  string
-	Open        bool
-	TLSInsecure bool
-	Vault       config.VaultInstance
-}
-
-type adminPanelTemplateData struct {
-	Messages        i18n.Messages
-	CorsOriginsText string
-	ErrorText       string
-	Settings        config.SettingsFile
-	SuccessText     string
-	VaultViews      []adminVaultViewData
-	MetricsView     struct {
-		PerCertificate  bool
-		EnhancedMetrics bool
-	}
-}
 
 type adminSessionStore struct {
 	mu            sync.Mutex
@@ -83,8 +43,13 @@ func newAdminSessionStore(password string, secureCookies bool) *adminSessionStor
 	if secureCookies {
 		ttl = 4 * time.Hour
 	}
-	store := &adminSessionStore{password: password, sessions: make(map[string]time.Time), sessionTTL: ttl, secureCookies: secureCookies, limiter: newAdminLoginLimiter(5, 3*time.Minute)}
-	return store
+	return &adminSessionStore{
+		password:      password,
+		sessions:      make(map[string]time.Time),
+		sessionTTL:    ttl,
+		secureCookies: secureCookies,
+		limiter:       newAdminLoginLimiter(5, 3*time.Minute),
+	}
 }
 
 type adminLoginLimiter struct {
@@ -126,7 +91,6 @@ func (s *adminSessionStore) allowLoginAttempt(r *http.Request) bool {
 }
 
 func (s *adminSessionStore) pruneSessions(now time.Time) {
-	// pruneSessions must be called while holding s.mu.
 	for token, expiresAt := range s.sessions {
 		if now.After(expiresAt) {
 			delete(s.sessions, token)
@@ -173,36 +137,17 @@ func (s *adminSessionStore) verify(username string, password string) bool {
 	return false
 }
 
-func (s *adminSessionStore) loginFromForm(w http.ResponseWriter, r *http.Request) (bool, string) {
-	if !s.allowLoginAttempt(r) {
-		return false, "Too many attempts"
-	}
-	if err := r.ParseForm(); err != nil {
-		return false, "Invalid credentials"
-	}
-	username := strings.TrimSpace(r.PostForm.Get("username"))
-	password := r.PostForm.Get("password")
-	if !s.verify(username, password) {
-		return false, "Invalid credentials"
-	}
-	token, err := s.createToken()
-	if err != nil {
-		return false, "Invalid credentials"
-	}
-	expiresAt := time.Now().Add(s.sessionTTL)
-	s.mu.Lock()
-	if oldCookie, cookieErr := r.Cookie(adminCookieName); cookieErr == nil && oldCookie.Value != "" {
-		delete(s.sessions, oldCookie.Value)
-	}
-	s.pruneSessions(time.Now())
-	s.sessions[token] = expiresAt
-	s.mu.Unlock()
-	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: token, Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: s.secureCookies, Expires: expiresAt})
-	return true, ""
-}
-
 func (s *adminSessionStore) clearCookie(w http.ResponseWriter) {
-	http.SetCookie(w, &http.Cookie{Name: adminCookieName, Value: "", Path: "/", HttpOnly: true, SameSite: http.SameSiteStrictMode, Secure: s.secureCookies, Expires: time.Unix(0, 0), MaxAge: -1})
+	http.SetCookie(w, &http.Cookie{
+		Name:     adminCookieName,
+		Value:    "",
+		Path:     "/",
+		HttpOnly: true,
+		SameSite: http.SameSiteStrictMode,
+		Secure:   s.secureCookies,
+		Expires:  time.Unix(0, 0),
+		MaxAge:   -1,
+	})
 }
 
 func (s *adminSessionStore) requireAuth(next http.Handler) http.Handler {
@@ -217,7 +162,6 @@ func (s *adminSessionStore) requireAuth(next http.Handler) http.Handler {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
-		// pruneSessions must be called while holding s.mu.
 		s.mu.Lock()
 		s.pruneSessions(time.Now())
 		expiresAt, ok := s.sessions[token]
@@ -325,8 +269,7 @@ func fallbackWriteSettings(path string, payload []byte, originalErr error) error
 	if !shouldFallbackToDirectWrite(originalErr) {
 		return originalErr
 	}
-	writeErr := os.WriteFile(path, payload, 0o600)
-	if writeErr != nil {
+	if writeErr := os.WriteFile(path, payload, 0o600); writeErr != nil {
 		return originalErr
 	}
 	return nil
@@ -339,13 +282,7 @@ func shouldFallbackToDirectWrite(err error) bool {
 	if os.IsPermission(err) {
 		return true
 	}
-	if errors.Is(err, syscall.EROFS) {
-		return true
-	}
-	if errors.Is(err, syscall.EPERM) {
-		return true
-	}
-	if errors.Is(err, syscall.EACCES) {
+	if errors.Is(err, syscall.EROFS) || errors.Is(err, syscall.EPERM) || errors.Is(err, syscall.EACCES) {
 		return true
 	}
 	return false
@@ -385,252 +322,6 @@ func validateSettings(settings config.SettingsFile) error {
 	return nil
 }
 
-func parseTemplates(webFS fs.FS) (*template.Template, error) {
-	return template.New("").Funcs(templateFuncMap()).ParseFS(webFS, "templates/*.html")
-}
-
-func renderAdminTemplate(w http.ResponseWriter, templates *template.Template, name string, data interface{}) error {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	if err := templates.ExecuteTemplate(w, name, data); err != nil {
-		logger.Get().Error().Err(err).Str("template", name).Msg("failed to render admin template")
-		return err
-	}
-	return nil
-}
-
-func buildAdminPanelData(settings config.SettingsFile, successText string, errorText string, messages i18n.Messages, vaultClients map[string]vault.Client) adminPanelTemplateData {
-	corsOriginsText := strings.Join(settings.CORS.AllowedOrigins, ",")
-
-	// Read actual metrics values from settings, with defaults if nil
-	perCertificate := false
-	enhancedMetrics := true
-	if settings.Metrics.PerCertificate != nil {
-		perCertificate = *settings.Metrics.PerCertificate
-	}
-	if settings.Metrics.EnhancedMetrics != nil {
-		enhancedMetrics = *settings.Metrics.EnhancedMetrics
-	}
-
-	// First pass: collect vault data and prepare connection checks
-	type vaultCheck struct {
-		index   int
-		vault   config.VaultInstance
-		enabled bool
-		client  vault.Client
-	}
-	checks := make([]vaultCheck, 0, len(settings.Vaults))
-	for i, v := range settings.Vaults {
-		enabled := config.IsVaultEnabled(v)
-		var client vault.Client
-		if enabled && vaultClients != nil {
-			if c, ok := vaultClients[v.ID]; ok && c != nil {
-				client = c
-			}
-		}
-		checks = append(checks, vaultCheck{index: i, vault: v, enabled: enabled, client: client})
-	}
-
-	// Second pass: run connection checks concurrently
-	type checkResult struct {
-		index     int
-		connected bool
-	}
-	results := make([]bool, len(checks))
-	resultChan := make(chan checkResult, len(checks))
-	var wg sync.WaitGroup
-	for i, check := range checks {
-		if !check.enabled || check.client == nil {
-			results[i] = false
-			continue
-		}
-		wg.Add(1)
-		go func(idx int, client vault.Client, vaultID string) {
-			defer wg.Done()
-			checkCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			if err := client.CheckConnection(checkCtx); err != nil {
-				logger.Get().Debug().
-					Err(err).
-					Str("vault_id", vaultID).
-					Msg("vault connection check failed")
-				resultChan <- checkResult{index: idx, connected: false}
-			} else {
-				resultChan <- checkResult{index: idx, connected: true}
-			}
-		}(i, check.client, check.vault.ID)
-	}
-	wg.Wait()
-	close(resultChan)
-	for res := range resultChan {
-		results[res.index] = res.connected
-	}
-
-	// Build view data with results
-	views := make([]adminVaultViewData, 0, len(checks))
-	for i, check := range checks {
-		vault := check.vault
-		mounts := vault.PKIMounts
-		if len(mounts) == 0 {
-			mount := strings.TrimSpace(vault.PKIMount)
-			if mount != "" {
-				mounts = []string{mount}
-			}
-		}
-		mountsText := strings.Join(mounts, ",")
-		key := fmt.Sprintf("%d", check.index)
-
-		// Determine status class and text
-		statusClass := "vcv-status-disabled"
-		statusText := messages.AdminVaultDisabled
-		if check.enabled {
-			if results[i] {
-				statusClass = "vcv-status-connected"
-				statusText = messages.AdminVaultConnected
-			} else {
-				statusClass = "vcv-status-disconnected"
-				statusText = messages.AdminVaultDisconnected
-			}
-		}
-
-		views = append(views, adminVaultViewData{
-			Messages:    messages,
-			Enabled:     check.enabled,
-			Connected:   results[i],
-			StatusClass: statusClass,
-			StatusText:  statusText,
-			Key:         key,
-			MountsText:  mountsText,
-			Open:        false,
-			TLSInsecure: vault.TLSInsecure,
-			Vault:       vault,
-		})
-	}
-	return adminPanelTemplateData{
-		Messages:        messages,
-		CorsOriginsText: corsOriginsText,
-		ErrorText:       errorText,
-		Settings:        settings,
-		SuccessText:     successText,
-		VaultViews:      views,
-		MetricsView: struct {
-			PerCertificate  bool
-			EnhancedMetrics bool
-		}{
-			PerCertificate:  perCertificate,
-			EnhancedMetrics: enhancedMetrics,
-		},
-	}
-}
-
-func parseSettingsUpdateForm(r *http.Request, existing config.SettingsFile) (config.SettingsFile, error) {
-	if err := r.ParseForm(); err != nil {
-		return config.SettingsFile{}, err
-	}
-	updated := existing
-	criticalText := strings.TrimSpace(r.PostForm.Get("expire_critical"))
-	warningText := strings.TrimSpace(r.PostForm.Get("expire_warning"))
-	critical, err := strconv.Atoi(defaultString(criticalText, "0"))
-	if err != nil {
-		return config.SettingsFile{}, vcverrors.ErrInvalidThreshold
-	}
-	warning, err := strconv.Atoi(defaultString(warningText, "0"))
-	if err != nil {
-		return config.SettingsFile{}, vcverrors.ErrInvalidThreshold
-	}
-	if critical <= 0 || critical > 3650 || warning <= 0 || warning > 3650 {
-		return config.SettingsFile{}, vcverrors.ErrInvalidThreshold
-	}
-	if critical >= warning {
-		return config.SettingsFile{}, vcverrors.ErrInvalidThreshold
-	}
-	updated.Certificates.ExpirationThresholds.Critical = critical
-	updated.Certificates.ExpirationThresholds.Warning = warning
-
-	// Parse metrics settings
-	perCertificate := r.PostForm.Get("metrics_per_certificate") == "on"
-	enhancedMetrics := r.PostForm.Get("metrics_enhanced") == "on"
-	updated.Metrics.PerCertificate = &perCertificate
-	updated.Metrics.EnhancedMetrics = &enhancedMetrics
-
-	updated.CORS.AllowedOrigins = splitAndTrim(r.PostForm.Get("cors_origins"))
-	updated.Vaults = parseVaultsFromForm(r.PostForm, existing.Vaults)
-	return updated, nil
-}
-
-func defaultString(value string, fallback string) string {
-	if value == "" {
-		return fallback
-	}
-	return value
-}
-
-func splitAndTrim(value string) []string {
-	parts := strings.Split(value, ",")
-	trimmed := make([]string, 0, len(parts))
-	for _, part := range parts {
-		item := strings.TrimSpace(part)
-		if item == "" {
-			continue
-		}
-		trimmed = append(trimmed, item)
-	}
-	return trimmed
-}
-
-func parseVaultsFromForm(form url.Values, existingVaults []config.VaultInstance) []config.VaultInstance {
-	existingTokens := make(map[string]string, len(existingVaults))
-	for _, v := range existingVaults {
-		existingTokens[v.ID] = v.Token
-	}
-	keys := extractVaultKeys(form)
-	vaults := make([]config.VaultInstance, 0, len(keys))
-	for _, key := range keys {
-		id := strings.TrimSpace(form.Get("vault_id_" + key))
-		displayName := strings.TrimSpace(form.Get("vault_display_" + key))
-		address := strings.TrimSpace(form.Get("vault_address_" + key))
-		token := form.Get("vault_token_" + key)
-		if token == "" {
-			token = existingTokens[id]
-		}
-		mounts := splitAndTrim(form.Get("vault_mounts_" + key))
-		tlsCACertBase64 := strings.TrimSpace(form.Get("vault_tls_ca_cert_base64_" + key))
-		tlsCACert := strings.TrimSpace(form.Get("vault_tls_ca_cert_" + key))
-		tlsCAPath := strings.TrimSpace(form.Get("vault_tls_ca_path_" + key))
-		tlsServerName := strings.TrimSpace(form.Get("vault_tls_server_name_" + key))
-		pkiMount := "pki"
-		if len(mounts) > 0 {
-			pkiMount = mounts[0]
-		}
-		tlsInsecure := form.Get("vault_tls_"+key) != ""
-		enabledValue := form.Get("vault_enabled_"+key) != ""
-		enabled := enabledValue
-		vault := config.VaultInstance{ID: id, Address: address, Token: token, PKIMount: pkiMount, PKIMounts: mounts, DisplayName: displayName, TLSInsecure: tlsInsecure, TLSCACertBase64: tlsCACertBase64, TLSCACert: tlsCACert, TLSCAPath: tlsCAPath, TLSServerName: tlsServerName, Enabled: &enabled}
-		vaults = append(vaults, vault)
-	}
-	return vaults
-}
-
-func extractVaultKeys(form url.Values) []string {
-	set := make(map[string]struct{})
-	for name := range form {
-		if !strings.HasPrefix(name, "vault_id_") {
-			continue
-		}
-		suffix := strings.TrimPrefix(name, "vault_id_")
-		if suffix == "" {
-			continue
-		}
-		set[suffix] = struct{}{}
-	}
-	keys := make([]string, 0, len(set))
-	for key := range set {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	return keys
-}
-
 func newVaultKey() (string, error) {
 	buf := make([]byte, 12)
 	if _, err := rand.Read(buf); err != nil {
@@ -639,38 +330,26 @@ func newVaultKey() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(buf), nil
 }
 
-type adminPageTemplateData struct {
-	AppVersionText string
-	Language       i18n.Language
-	Messages       i18n.Messages
-}
-
-type adminVaultAddedEvent struct {
-	Key string `json:"key"`
-}
-
-func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, env config.Environment, vaultRegistry *vault.Registry, vaultStatusClients map[string]vault.Client, cacheClient vault.Client) {
-	// Load settings to get admin password
+// RegisterAdminRoutes wires the JSON admin API. HTMX routes have been removed
+// in favor of the Svelte admin panel that talks to /api/admin/*.
+func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Environment, vaultRegistry *vault.Registry, vaultStatusClients map[string]vault.Client, cacheClient vault.Client) {
 	settingsStore := newAdminSettingsStore(settingsPath, env)
 	settings, err := settingsStore.load()
 	if err != nil {
-		// If we can't load settings, don't register admin routes
 		return
 	}
 
 	password := strings.TrimSpace(settings.Admin.Password)
 	if password == "" {
-		// No admin password configured, don't register admin routes
 		return
 	}
 	if !strings.HasPrefix(password, "$2a$") && !strings.HasPrefix(password, "$2b$") && !strings.HasPrefix(password, "$2y$") {
-		// Invalid bcrypt hash, don't register admin routes
 		return
 	}
 
 	secureCookies := env == config.EnvProd
 	sessions := newAdminSessionStore(password, secureCookies)
-	store := settingsStore // Use the already created store
+	store := settingsStore
 	refreshRegistry := func() {
 		if vaultRegistry == nil {
 			return
@@ -679,77 +358,9 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 			vaultRegistry.Update(s.Vaults)
 		}
 	}
-	templates, templatesErr := parseTemplates(webFS)
-	if templatesErr != nil {
-		panic(templatesErr)
-	}
-	router.Get("/admin", func(w http.ResponseWriter, r *http.Request) {
-		language := i18n.ResolveLanguage(r)
-		messages := i18n.MessagesForLanguage(language)
-		data := adminPageTemplateData{
-			AppVersionText: version.Version,
-			Language:       language,
-			Messages:       messages,
-		}
-		if err := renderAdminTemplate(w, templates, "admin-page.html", data); err != nil {
-			requestID := middleware.GetRequestID(r.Context())
-			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
-				Str("request_id", requestID).
-				Msg("failed to render admin page")
-			return
-		}
-	})
-	router.Get("/admin/panel", func(w http.ResponseWriter, r *http.Request) {
-		language := i18n.ResolveLanguage(r)
-		messages := i18n.MessagesForLanguage(language)
-		if !sessions.isAuthed(r) {
-			if err := renderAdminTemplate(w, templates, "admin-login-fragment.html", adminLoginTemplateData{Messages: messages}); err != nil {
-				requestID := middleware.GetRequestID(r.Context())
-				logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
-					Str("request_id", requestID).
-					Msg("failed to render admin login")
-				return
-			}
-			return
-		}
-		settings, err := store.load()
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-		data := buildAdminPanelData(settings, "", "", messages, vaultStatusClients)
-		if err := renderAdminTemplate(w, templates, "admin-panel-fragment.html", data); err != nil {
-			requestID := middleware.GetRequestID(r.Context())
-			logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
-				Str("request_id", requestID).
-				Msg("failed to render admin panel")
-			return
-		}
-	})
+
 	registerAdminAPIRoutes(router, sessions, store, vaultStatusClients, refreshRegistry)
 
-	router.Post("/admin/login", func(w http.ResponseWriter, r *http.Request) {
-		language := i18n.ResolveLanguage(r)
-		messages := i18n.MessagesForLanguage(language)
-		ok, errorText := sessions.loginFromForm(w, r)
-		if ok {
-			settings, err := store.load()
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			data := buildAdminPanelData(settings, "", "", messages, vaultStatusClients)
-			_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
-			return
-		}
-		_ = renderAdminTemplate(w, templates, "admin-login-fragment.html", adminLoginTemplateData{Messages: messages, ErrorText: errorText})
-	})
-	router.Post("/admin/logout", func(w http.ResponseWriter, r *http.Request) {
-		language := i18n.ResolveLanguage(r)
-		messages := i18n.MessagesForLanguage(language)
-		sessions.clearCookie(w)
-		_ = renderAdminTemplate(w, templates, "admin-login-fragment.html", adminLoginTemplateData{Messages: messages})
-	})
 	router.Group(func(r chi.Router) {
 		r.Use(sessions.requireAuth)
 		r.Post("/api/cache/invalidate", func(w http.ResponseWriter, r *http.Request) {
@@ -763,86 +374,6 @@ func RegisterAdminRoutes(router chi.Router, webFS fs.FS, settingsPath string, en
 			logger.HTTPEvent(r.Method, r.URL.Path, http.StatusNoContent, 0).
 				Str("request_id", requestID).
 				Msg("invalidated cache")
-		})
-		r.Post("/admin/settings", func(w http.ResponseWriter, r *http.Request) {
-			language := i18n.ResolveLanguage(r)
-			messages := i18n.MessagesForLanguage(language)
-			current, err := store.load()
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			updated, err := parseSettingsUpdateForm(r, current)
-			if err != nil {
-				data := buildAdminPanelData(current, "", err.Error(), messages, vaultStatusClients)
-				_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
-				return
-			}
-			if err := store.save(updated); err != nil {
-				data := buildAdminPanelData(updated, "", err.Error(), messages, vaultStatusClients)
-				_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
-				return
-			}
-			refreshRegistry()
-			settings, err := store.load()
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			data := buildAdminPanelData(settings, messages.AdminSettingsSaved, "", messages, vaultStatusClients)
-			_ = renderAdminTemplate(w, templates, "admin-panel-fragment.html", data)
-		})
-		r.Post("/admin/vault/add", func(w http.ResponseWriter, r *http.Request) {
-			language := i18n.ResolveLanguage(r)
-			messages := i18n.MessagesForLanguage(language)
-			key, err := newVaultKey()
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			vault := config.VaultInstance{ID: "", Address: "", Token: "", PKIMount: "pki", PKIMounts: []string{"pki"}, DisplayName: "", TLSInsecure: false}
-			data := adminVaultViewData{Messages: messages, Enabled: true, Key: key, MountsText: "pki", Open: true, TLSInsecure: false, Vault: vault, StatusClass: "vcv-status-disconnected", StatusText: messages.AdminVaultDisconnected}
-			hxTriggerAfterSwap, err := json.Marshal(map[string]adminVaultAddedEvent{"adminVaultAdded": {Key: key}})
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			w.Header().Set("HX-Trigger-After-Swap", string(hxTriggerAfterSwap))
-			_ = renderAdminTemplate(w, templates, "admin-vault-item.html", data)
-		})
-		r.Post("/admin/vault/remove", func(w http.ResponseWriter, r *http.Request) {
-			if err := r.ParseForm(); err != nil {
-				http.Error(w, http.StatusText(http.StatusBadRequest), http.StatusBadRequest)
-				return
-			}
-			vaultID := strings.TrimSpace(r.PostForm.Get("vaultId"))
-			if vaultID == "" {
-				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				w.WriteHeader(http.StatusOK)
-				return
-			}
-			settings, err := store.load()
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			updatedVaults := make([]config.VaultInstance, 0, len(settings.Vaults))
-			for _, vault := range settings.Vaults {
-				if strings.TrimSpace(vault.ID) == vaultID {
-					continue
-				}
-				updatedVaults = append(updatedVaults, vault)
-			}
-			settings.Vaults = updatedVaults
-			if err := store.save(settings); err != nil {
-				logger.HTTPError(r.Method, r.URL.Path, http.StatusInternalServerError, err).
-					Msg("failed to save settings after vault removal")
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-				return
-			}
-			refreshRegistry()
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			w.WriteHeader(http.StatusOK)
 		})
 	})
 }

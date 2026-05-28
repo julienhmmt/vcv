@@ -79,9 +79,9 @@ func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, status
 
 func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClients map[string]vault.Client, multiVaultClient vault.Client, registry *prometheus.Registry, webFS fs.FS, settingsPath string, vaultRegistry *vault.Registry) (*chi.Mux, error) {
 	r := chi.NewRouter()
-	assetsFS, assetsError := fs.Sub(webFS, "assets")
-	if assetsError != nil {
-		return nil, assetsError
+	distFS, distError := fs.Sub(webFS, "dist")
+	if distError != nil {
+		return nil, distError
 	}
 	corsConfig := middleware.DefaultCORSConfig()
 	corsConfig.AllowedOrigins = cfg.CORS.AllowedOrigins
@@ -104,8 +104,7 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 	r.Use(middleware.BodyLimit(routerMaxBodyBytes))
 	r.Use(middleware.CSRFProtection)
 
-	staticHandler := http.StripPrefix("/assets/", http.FileServer(http.FS(assetsFS)))
-	r.Handle("/assets/*", staticHandler)
+	handlers.RegisterStaticRoutes(r, distFS)
 
 	// Health and readiness probes
 	r.Get("/api/health", handlers.HealthCheck)
@@ -119,8 +118,7 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 	r.Get("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP)
 	handlers.RegisterI18nRoutes(r)
 	handlers.RegisterCertRoutes(r, multiVaultClient)
-	handlers.RegisterUIRoutes(r, multiVaultClient, cfg.AllVaults, statusClients, webFS, cfg.ExpirationThresholds, vaultRegistry)
-	handlers.RegisterAdminRoutes(r, webFS, settingsPath, cfg.Env, vaultRegistry, statusClients, multiVaultClient)
+	handlers.RegisterAdminRoutes(r, settingsPath, cfg.Env, vaultRegistry, statusClients, multiVaultClient)
 
 	return r, nil
 }

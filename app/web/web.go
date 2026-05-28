@@ -2,7 +2,8 @@ package web
 
 import "embed"
 
-// EmbeddedFS contains the compiled-in static assets for the UI.
+// EmbeddedFS contains the compiled-in Svelte frontend (dist).
+// Populated by `task web-build` (Vite). Run it before `go build`.
 //
-//go:embed *
+//go:embed all:dist
 var EmbeddedFS embed.FS

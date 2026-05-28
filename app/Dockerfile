@@ -1,25 +1,41 @@
+# syntax=docker/dockerfile:1.7
+FROM node:24-alpine AS web-builder
+
+WORKDIR /web/frontend
+
+RUN corepack enable
+
+# Cache pnpm install
+COPY web/frontend/package.json web/frontend/pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+# Copy the rest of the frontend sources
+COPY web/frontend/ ./
+
+# Build to /web/dist (vite.config.ts outputs to ../dist)
+RUN pnpm build
+
 FROM golang:1.26.1-alpine AS builder
 
 ARG VERSION=${VERSION}
 
 WORKDIR /app
 
-# Copy go mod files first for better caching
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy only necessary source files (exclude img/, docs/, etc.)
 COPY cmd/ ./cmd/
 COPY internal/ ./internal/
-COPY web/ ./web/
+COPY web/web.go ./web/web.go
 
-# Build the application with version info
+# Pull the compiled Svelte bundle into the Go embed target.
+COPY --from=web-builder /web/dist ./web/dist
+
 RUN CGO_ENABLED=0 GOOS=linux go build -trimpath \
     -ldflags="-w -s \
     -X vcv/internal/version.Version=${VERSION}" \
     -o /vcv-backend ./cmd/server
 
-# Final stage
 FROM gcr.io/distroless/static-debian13:nonroot
 
 WORKDIR /app

@@ -20,6 +20,7 @@ tasks:
     dir: app/web/frontend
     cmds:
       - pnpm build
+      - touch ../dist/.gitkeep
 
   web-check:
     desc: svelte-check + tsc on frontend
@@ -30,6 +31,7 @@ tasks:
   dev:
     desc: Construit le binaire Go et le container docker
     cmds:
+      - task: web-build
       - "cd /Users/jh/git/gh/vcv && go clean -cache && go build -C app -o ../vcv ./cmd/server"
       - rm -f vcv.log
       - touch vcv.log

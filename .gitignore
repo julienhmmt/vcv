@@ -12,5 +12,9 @@ test-offline.log
 # node_modules
 node_modules
 vendor
-dist
 build
+
+# Vite output (kept directory + .gitkeep for go:embed)
+app/web/dist/*
+!app/web/dist/.gitkeep
+app/web/frontend/dist/

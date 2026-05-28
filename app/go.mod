@@ -9,7 +9,6 @@ require (
 	github.com/prometheus/common v0.67.5
 	github.com/rs/zerolog v1.35.1
 	github.com/stretchr/testify v1.11.1
-	github.com/yuin/goldmark v1.8.2
 	golang.org/x/crypto v0.51.0
 )
 
