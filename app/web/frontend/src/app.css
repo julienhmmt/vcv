@@ -254,3 +254,165 @@
 .vcv-days-valid {
   color: #10b981;
 }
+
+/* Active filter chips */
+.vcv-active-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 16px;
+  border-top: 1px solid var(--vcv-border, #e5e7eb);
+}
+
+.vcv-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--vcv-border, #e5e7eb);
+  background: var(--vcv-surface, #fff);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 120ms;
+}
+
+.vcv-filter-chip:hover {
+  background: var(--vcv-surface-2, rgba(0, 0, 0, 0.04));
+}
+
+.vcv-filter-chip strong {
+  font-weight: 600;
+}
+
+.vcv-filter-chip-expired,
+.vcv-filter-chip-revoked {
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.vcv-filter-chip-critical {
+  border-color: rgba(249, 115, 22, 0.4);
+  color: #f97316;
+}
+
+.vcv-filter-chip-warning {
+  border-color: rgba(234, 179, 8, 0.4);
+  color: #ca8a04;
+}
+
+.vcv-filter-chip-valid {
+  border-color: rgba(16, 185, 129, 0.4);
+  color: #10b981;
+}
+
+/* Skeleton placeholder */
+.vcv-table-skeleton {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vcv-skeleton-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.vcv-empty-row {
+  text-align: center;
+  padding: 32px;
+  color: var(--vcv-text-muted, #6b7280);
+}
+
+/* Header lang wrapper */
+.vcv-lang-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.vcv-lang-wrapper .vcv-lang-icon {
+  position: absolute;
+  left: 8px;
+  pointer-events: none;
+  color: var(--vcv-text-muted, #6b7280);
+}
+
+.vcv-lang-wrapper .vcv-lang-select {
+  padding-left: 28px;
+}
+
+/* Vault status hover card */
+.vcv-hover-card {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vcv-hover-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.vcv-hover-card-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--vcv-text-muted, #6b7280);
+  font-weight: 600;
+}
+
+.vcv-hover-card-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.vcv-hover-card-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 13px;
+}
+
+.vcv-hover-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vcv-hover-card-name {
+  font-weight: 500;
+}
+
+.vcv-hover-card-error {
+  font-size: 11px;
+  color: #ef4444;
+  word-break: break-word;
+}
+
+.vcv-hover-card-empty {
+  font-size: 13px;
+  color: var(--vcv-text-muted, #6b7280);
+  margin: 0;
+}
+
+.vcv-pulse {
+  animation: vcv-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes vcv-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}

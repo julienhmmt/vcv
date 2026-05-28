@@ -1,9 +1,24 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { toast } from 'svelte-sonner'
+  import {
+    BookOpen,
+    Globe,
+    Moon,
+    RefreshCw,
+    Search,
+    Sun,
+    ChevronRight,
+  } from '@lucide/svelte'
+  import { Toaster } from '$lib/components/ui/sonner'
+  import { Skeleton } from '$lib/components/ui/skeleton'
   import CertDetailModal from '$lib/components/CertDetailModal.svelte'
   import CAModal from '$lib/components/CAModal.svelte'
+  import CertTypeSelect from '$lib/components/CertTypeSelect.svelte'
+  import VaultStatusPill from '$lib/components/VaultStatusPill.svelte'
+  import ActiveFilters from '$lib/components/ActiveFilters.svelte'
+  import MountSelectorDialog from '$lib/components/MountSelectorDialog.svelte'
   import Donut from '$lib/components/Donut.svelte'
-  import Modal from '$lib/components/Modal.svelte'
   import { createCertsStore } from '$lib/stores/certs.svelte'
   import { createStatusStore } from '$lib/stores/status.svelte'
   import { createThemeStore } from '$lib/stores/theme.svelte'
@@ -21,6 +36,8 @@
     paginate,
     dashboardCounts,
     daysRemainingLabel,
+    formatDate,
+    formatTime,
     type CertTypeFilter,
     type SortDirection,
     type SortKey,
@@ -47,7 +64,7 @@
   let caCertId = $state<string | null>(null)
   let caModalOpen = $state(false)
   let mountModalOpen = $state(false)
-  let vaultModalOpen = $state(false)
+  let initialLoad = $state(true)
 
   const filtered = $derived(
     certs.certificates.filter((cert) =>
@@ -70,27 +87,31 @@
   })
   const showVaultMount = $derived(allMounts.length > 1)
 
-  const vaultSummary = $derived.by(() => {
-    if (!status.status) return { text: '—', cls: 'vcv-status-state-neutral' }
-    const total = status.status.vaults.length
-    const up = status.status.vaults.filter((v) => v.connected).length
-    if (total === 0) return { text: 'No vaults', cls: 'vcv-status-state-neutral' }
-    return {
-      text: total > 1 ? `${up}/${total} vaults` : (status.status.vaults[0].display_name || status.status.vaults[0].id),
-      cls: up === total ? 'vcv-status-state-ok' : 'vcv-status-state-error',
-    }
-  })
-
   onMount(() => {
-    void certs.refresh()
-    void status.refresh()
+    void load(true)
     const id = setInterval(() => void status.refresh(), 10_000)
     return () => clearInterval(id)
   })
 
-  function refresh(): void {
-    void certs.refresh()
-    void status.refresh()
+  async function load(initial = false): Promise<void> {
+    const promises = [certs.refresh(), status.refresh()]
+    if (initial) {
+      try {
+        await Promise.all(promises)
+      } finally {
+        initialLoad = false
+      }
+      return
+    }
+    await Promise.all(promises)
+  }
+
+  async function manualRefresh(): Promise<void> {
+    toast.promise(load(), {
+      loading: 'Refreshing…',
+      success: () => `Loaded ${certs.certificates.length} certificates`,
+      error: 'Refresh failed',
+    })
   }
 
   function toggleSort(key: SortKey): void {
@@ -112,29 +133,11 @@
     pageIndex = 0
   }
 
-  function clearStatus(): void {
+  function clearAllFilters(): void {
+    search = ''
     statusFilter = 'all'
-    pageIndex = 0
-  }
-
-  function toggleMount(key: string): void {
-    if (mountFilter === null) {
-      mountFilter = allMounts.filter((m) => m !== key)
-    } else if (mountFilter.includes(key)) {
-      mountFilter = mountFilter.filter((m) => m !== key)
-    } else {
-      mountFilter = [...mountFilter, key]
-    }
-    pageIndex = 0
-  }
-
-  function selectAllMounts(): void {
+    certTypeFilter = 'all'
     mountFilter = null
-    pageIndex = 0
-  }
-
-  function deselectAllMounts(): void {
-    mountFilter = []
     pageIndex = 0
   }
 
@@ -153,9 +156,15 @@
       el?.focus()
     }
   }
+
+  $effect(() => {
+    if (certs.error) toast.error(certs.error)
+  })
 </script>
 
 <svelte:window onkeydown={onSearchKeydown} />
+
+<Toaster richColors position="bottom-right" />
 
 <a href="#vcv-main-content" class="vcv-skip-link">Skip to main content</a>
 
@@ -170,20 +179,15 @@
         <p class="vcv-title-subtitle">{i18n.t('app.subtitle', 'Inspect certificates across Vault / OpenBao PKI mounts')}</p>
       </div>
       <div class="vcv-header-actions">
-        <div id="vcv-vault-status">
-          <button type="button" class="vcv-vault-status-pill {vaultSummary.cls}" onclick={() => (vaultModalOpen = true)}>
-            <span class="vcv-status-dot"></span>
-            <span>{vaultSummary.text}</span>
-          </button>
-        </div>
+        <VaultStatusPill status={status.status} loading={status.loading} onRefresh={() => void status.refresh()} />
         <button
           class="vcv-button vcv-button-icon"
           type="button"
-          title={i18n.t('common.refresh', 'Refresh')}
-          onclick={refresh}
+          title="Refresh"
+          onclick={manualRefresh}
           disabled={certs.loading}
         >
-          <span class="vcv-refresh-icon">↻</span>
+          <RefreshCw class="h-4 w-4 {certs.loading ? 'animate-spin' : ''}" />
         </button>
         <button
           class="vcv-button vcv-button-icon vcv-theme-toggle"
@@ -192,20 +196,30 @@
           aria-label="Toggle dark mode"
           onclick={theme.toggle}
         >
-          <span aria-hidden="true">{theme.theme === 'dark' ? '☀️' : '🌙'}</span>
+          {#if theme.theme === 'dark'}
+            <Sun class="h-4 w-4" />
+          {:else}
+            <Moon class="h-4 w-4" />
+          {/if}
         </button>
-        <select
-          class="vcv-select vcv-lang-select"
-          aria-label="Language"
-          value={i18n.lang}
-          onchange={(event) => void i18n.setLang((event.target as HTMLSelectElement).value)}
-        >
-          <option value="de">DE</option>
-          <option value="en">EN</option>
-          <option value="es">ES</option>
-          <option value="fr">FR</option>
-          <option value="it">IT</option>
-        </select>
+        <a class="vcv-button vcv-button-icon" href="/admin" title="Admin">
+          <BookOpen class="h-4 w-4" />
+        </a>
+        <div class="vcv-lang-wrapper">
+          <Globe class="vcv-lang-icon h-4 w-4" />
+          <select
+            class="vcv-select vcv-lang-select"
+            aria-label="Language"
+            value={i18n.lang}
+            onchange={(event) => void i18n.setLang((event.target as HTMLSelectElement).value)}
+          >
+            <option value="de">DE</option>
+            <option value="en">EN</option>
+            <option value="es">ES</option>
+            <option value="fr">FR</option>
+            <option value="it">IT</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -215,9 +229,7 @@
           <div class="vcv-palette-item">
             <span class="vcv-palette-label">{i18n.t('filter.sources', 'Sources')}</span>
             <button type="button" class="vcv-mount-filter" onclick={() => (mountModalOpen = true)}>
-              {#if mountFilter === null}
-                All mounts ({allMounts.length})
-              {:else if mountFilter.length === allMounts.length}
+              {#if mountFilter === null || mountFilter.length === allMounts.length}
                 All mounts ({allMounts.length})
               {:else}
                 {mountFilter.length} / {allMounts.length} mounts
@@ -226,28 +238,17 @@
           </div>
           <span class="vcv-palette-separator" aria-hidden="true"></span>
           <div class="vcv-palette-item">
-            <label class="vcv-palette-label" for="vcv-cert-type-filter">{i18n.t('label.certType', 'Type')}</label>
-            <select
-              id="vcv-cert-type-filter"
-              class="vcv-select vcv-select-compact"
-              bind:value={certTypeFilter}
-              onchange={() => (pageIndex = 0)}
-            >
-              <option value="all">All</option>
-              <option value="machine">Machine</option>
-              <option value="user">User</option>
-              <option value="both">Both</option>
-              <option value="unknown">Unknown</option>
-            </select>
+            <span class="vcv-palette-label">{i18n.t('label.certType', 'Type')}</span>
+            <CertTypeSelect value={certTypeFilter} onChange={(next) => { certTypeFilter = next; pageIndex = 0 }} />
           </div>
         </div>
         <div class="vcv-search-wrapper">
-          <svg class="vcv-search-icon" aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <Search class="vcv-search-icon h-[18px] w-[18px]" aria-hidden="true" />
           <input
             id="vcv-search"
             class="vcv-input vcv-input-search"
             type="search"
-            placeholder={i18n.t('search.placeholder', 'Search certificates…')}
+            placeholder={i18n.t('search.placeholder', 'Search certificates, serials, SANs…')}
             bind:value={search}
             oninput={() => (pageIndex = 0)}
           />
@@ -255,6 +256,19 @@
         </div>
       </div>
     </div>
+
+    <ActiveFilters
+      {search}
+      {statusFilter}
+      {certTypeFilter}
+      {mountFilter}
+      allMountsCount={allMounts.length}
+      onClearSearch={() => (search = '')}
+      onClearStatus={() => (statusFilter = 'all')}
+      onClearCertType={() => (certTypeFilter = 'all')}
+      onClearMounts={() => (mountFilter = null)}
+      onClearAll={clearAllFilters}
+    />
   </header>
 
   <main id="vcv-main-content">
@@ -264,83 +278,53 @@
           <div class="vcv-stat-group vcv-stat-group-attention">
             <span class="vcv-stat-group-label">{i18n.t('dashboard.attention', 'Attention')}</span>
             <div class="vcv-stat-group-cards">
-              <button
-                type="button"
-                class="vcv-stat vcv-stat-risk vcv-stat-expired vcv-stat-clickable {statusFilter === 'expired' ? 'vcv-stat-active' : ''}"
-                onclick={() => setStatus('expired')}
-              >
-                <div class="vcv-stat-header">
-                  <span class="vcv-stat-dot"></span>
-                  <span class="vcv-stat-label">Expired</span>
-                </div>
-                <span class="vcv-stat-value">{counts.expired}</span>
-                <span class="vcv-stat-desc">Past expiry date</span>
-              </button>
-              <button
-                type="button"
-                class="vcv-stat vcv-stat-risk vcv-stat-critical vcv-stat-clickable {statusFilter === 'critical' ? 'vcv-stat-active' : ''}"
-                onclick={() => setStatus('critical')}
-              >
-                <div class="vcv-stat-header">
-                  <span class="vcv-stat-dot"></span>
-                  <span class="vcv-stat-label">Critical</span>
-                </div>
-                <span class="vcv-stat-value">{counts.critical}</span>
-                <span class="vcv-stat-desc">≤ {DEFAULT_THRESHOLDS.critical} days left</span>
-              </button>
-              <button
-                type="button"
-                class="vcv-stat vcv-stat-risk vcv-stat-revoked vcv-stat-clickable {statusFilter === 'revoked' ? 'vcv-stat-active' : ''}"
-                onclick={() => setStatus('revoked')}
-              >
-                <div class="vcv-stat-header">
-                  <span class="vcv-stat-dot"></span>
-                  <span class="vcv-stat-label">Revoked</span>
-                </div>
-                <span class="vcv-stat-value">{counts.revoked}</span>
-                <span class="vcv-stat-desc">Marked revoked</span>
-              </button>
+              {#each [
+                { key: 'expired', label: 'Expired', desc: 'Past expiry' },
+                { key: 'critical', label: 'Critical', desc: `≤ ${DEFAULT_THRESHOLDS.critical} days` },
+                { key: 'revoked', label: 'Revoked', desc: 'Marked revoked' },
+              ] as item (item.key)}
+                <button
+                  type="button"
+                  class="vcv-stat vcv-stat-risk vcv-stat-{item.key} vcv-stat-clickable {statusFilter === item.key ? 'vcv-stat-active' : ''}"
+                  onclick={() => setStatus(item.key as StatusFilter)}
+                >
+                  <div class="vcv-stat-header">
+                    <span class="vcv-stat-dot"></span>
+                    <span class="vcv-stat-label">{item.label}</span>
+                  </div>
+                  <span class="vcv-stat-value">{counts[item.key as keyof typeof counts]}</span>
+                  <span class="vcv-stat-desc">{item.desc}</span>
+                </button>
+              {/each}
             </div>
           </div>
           <div class="vcv-stat-group vcv-stat-group-healthy">
             <span class="vcv-stat-group-label">{i18n.t('dashboard.healthy', 'Healthy')}</span>
             <div class="vcv-stat-group-cards">
-              <button
-                type="button"
-                class="vcv-stat vcv-stat-quiet vcv-stat-valid vcv-stat-clickable {statusFilter === 'valid' ? 'vcv-stat-active' : ''}"
-                onclick={() => setStatus('valid')}
-              >
-                <div class="vcv-stat-header">
-                  <span class="vcv-stat-dot"></span>
-                  <span class="vcv-stat-label">Valid</span>
-                </div>
-                <span class="vcv-stat-value">{counts.valid}</span>
-                <span class="vcv-stat-desc">All good</span>
-              </button>
-              <button
-                type="button"
-                class="vcv-stat vcv-stat-quiet vcv-stat-warning vcv-stat-clickable {statusFilter === 'warning' ? 'vcv-stat-active' : ''}"
-                onclick={() => setStatus('warning')}
-              >
-                <div class="vcv-stat-header">
-                  <span class="vcv-stat-dot"></span>
-                  <span class="vcv-stat-label">Warning</span>
-                </div>
-                <span class="vcv-stat-value">{counts.warning}</span>
-                <span class="vcv-stat-desc">≤ {DEFAULT_THRESHOLDS.warning} days left</span>
-              </button>
+              {#each [
+                { key: 'valid', label: 'Valid', desc: 'All good' },
+                { key: 'warning', label: 'Warning', desc: `≤ ${DEFAULT_THRESHOLDS.warning} days` },
+              ] as item (item.key)}
+                <button
+                  type="button"
+                  class="vcv-stat vcv-stat-quiet vcv-stat-{item.key} vcv-stat-clickable {statusFilter === item.key ? 'vcv-stat-active' : ''}"
+                  onclick={() => setStatus(item.key as StatusFilter)}
+                >
+                  <div class="vcv-stat-header">
+                    <span class="vcv-stat-dot"></span>
+                    <span class="vcv-stat-label">{item.label}</span>
+                  </div>
+                  <span class="vcv-stat-value">{counts[item.key as keyof typeof counts]}</span>
+                  <span class="vcv-stat-desc">{item.desc}</span>
+                </button>
+              {/each}
             </div>
           </div>
         </div>
-        <Donut counts={{ valid: counts.valid, warning: counts.warning, critical: counts.critical, expired: counts.expired, revoked: counts.revoked }} label="certs" />
-      </div>
-      <div class="vcv-dashboard-actions">
-        <span class="vcv-dashboard-hint">Click a status to filter the table</span>
-        {#if statusFilter !== 'all'}
-          <button type="button" class="vcv-button vcv-button-small vcv-clear-filter" onclick={clearStatus}>
-            ✕ Clear filter
-          </button>
-        {/if}
+        <Donut
+          counts={{ valid: counts.valid, warning: counts.warning, critical: counts.critical, expired: counts.expired, revoked: counts.revoked }}
+          label="certs"
+        />
       </div>
     </div>
 
@@ -386,114 +370,126 @@
     </div>
 
     <div class="vcv-table-wrapper">
-      <table class="vcv-table">
-        <colgroup>
-          <col class="vcv-col-cert" />
-          <col class="vcv-col-expiry" />
-          <col class="vcv-col-status" />
-        </colgroup>
-        <thead>
-          <tr>
-            <th scope="col">
-              <button
-                type="button"
-                class="vcv-sort"
-                data-direction={sortKey === 'commonName' ? sortDir : 'asc'}
-                onclick={() => toggleSort('commonName')}
-              >
-                <span class="vcv-sort-label">Common Name</span>
-                <span class="vcv-sort-indicator" aria-hidden="true"></span>
-              </button>
-              {#if showVaultMount}
-                <div class="vcv-sort-meta">
-                  <button
-                    type="button"
-                    class="vcv-sort"
-                    data-direction={sortKey === 'vault' ? sortDir : 'asc'}
-                    onclick={() => toggleSort('vault')}
-                  >
-                    <span class="vcv-sort-label">Vault</span>
-                    <span class="vcv-sort-indicator" aria-hidden="true"></span>
-                  </button>
-                  <button
-                    type="button"
-                    class="vcv-sort"
-                    data-direction={sortKey === 'pki' ? sortDir : 'asc'}
-                    onclick={() => toggleSort('pki')}
-                  >
-                    <span class="vcv-sort-label">PKI</span>
-                    <span class="vcv-sort-indicator" aria-hidden="true"></span>
-                  </button>
-                </div>
-              {/if}
-            </th>
-            <th scope="col">
-              <button
-                type="button"
-                class="vcv-sort"
-                data-direction={sortKey === 'expiresAt' ? sortDir : 'asc'}
-                onclick={() => toggleSort('expiresAt')}
-              >
-                <span class="vcv-sort-label">Expires</span>
-                <span class="vcv-sort-indicator" aria-hidden="true"></span>
-              </button>
-            </th>
-            <th scope="col" class="vcv-col-status">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {#if paged.length === 0}
+      {#if initialLoad && certs.certificates.length === 0}
+        <div class="vcv-table-skeleton">
+          {#each Array(8) as _, i (i)}
+            <div class="vcv-skeleton-row">
+              <Skeleton class="h-5 flex-1" />
+              <Skeleton class="h-5 w-24" />
+              <Skeleton class="h-5 w-20" />
+            </div>
+          {/each}
+        </div>
+      {:else}
+        <table class="vcv-table">
+          <colgroup>
+            <col class="vcv-col-cert" />
+            <col class="vcv-col-expiry" />
+            <col class="vcv-col-status" />
+          </colgroup>
+          <thead>
             <tr>
-              <td colspan="3" style="text-align:center;padding:24px;color:var(--vcv-text-muted)">
-                {certs.loading ? 'Loading…' : 'No certificates'}
-              </td>
+              <th scope="col">
+                <button
+                  type="button"
+                  class="vcv-sort"
+                  data-direction={sortKey === 'commonName' ? sortDir : 'asc'}
+                  onclick={() => toggleSort('commonName')}
+                >
+                  <span class="vcv-sort-label">Common Name</span>
+                  <span class="vcv-sort-indicator" aria-hidden="true"></span>
+                </button>
+                {#if showVaultMount}
+                  <div class="vcv-sort-meta">
+                    <button
+                      type="button"
+                      class="vcv-sort"
+                      data-direction={sortKey === 'vault' ? sortDir : 'asc'}
+                      onclick={() => toggleSort('vault')}
+                    >
+                      <span class="vcv-sort-label">Vault</span>
+                      <span class="vcv-sort-indicator" aria-hidden="true"></span>
+                    </button>
+                    <button
+                      type="button"
+                      class="vcv-sort"
+                      data-direction={sortKey === 'pki' ? sortDir : 'asc'}
+                      onclick={() => toggleSort('pki')}
+                    >
+                      <span class="vcv-sort-label">PKI</span>
+                      <span class="vcv-sort-indicator" aria-hidden="true"></span>
+                    </button>
+                  </div>
+                {/if}
+              </th>
+              <th scope="col">
+                <button
+                  type="button"
+                  class="vcv-sort"
+                  data-direction={sortKey === 'expiresAt' ? sortDir : 'asc'}
+                  onclick={() => toggleSort('expiresAt')}
+                >
+                  <span class="vcv-sort-label">Expires</span>
+                  <span class="vcv-sort-indicator" aria-hidden="true"></span>
+                </button>
+              </th>
+              <th scope="col" class="vcv-col-status">Status</th>
             </tr>
-          {:else}
-            {#each paged as cert (cert.id)}
-              {@const s = certStatus(cert, DEFAULT_THRESHOLDS)}
-              {@const parts = parseCertID(cert.id)}
-              <tr
-                class="{rowClassForStatus(s)} vcv-row-clickable"
-                onclick={() => selectCert(cert)}
-                onkeydown={(event) => event.key === 'Enter' && selectCert(cert)}
-                tabindex="0"
-                role="button"
-                aria-label={cert.commonName}
-              >
-                <td class="vcv-col-cert">
-                  <div class="vcv-cert-header">
-                    <span class="vcv-cn-name">{cert.commonName || '—'}</span>
-                    {#if showVaultMount}
-                      <span class="vcv-cert-meta-item">{parts.vault || '—'}</span>
-                      <span class="vcv-cert-meta-item">{parts.mount || '—'}</span>
-                    {/if}
-                  </div>
-                  {#if cert.sans.length > 0}
-                    <div class="vcv-san-row">
-                      <span class="vcv-san-tag" title={cert.sans.join(', ')}>{cert.sans.join(', ')}</span>
-                    </div>
-                  {/if}
-                </td>
-                <td class="vcv-col-expiry">
-                  <div class="vcv-expiry-count vcv-days-{s}">{daysRemainingLabel(cert)}</div>
-                  <div class="vcv-expiry-datetime">
-                    <span class="vcv-expiry-date">{new Date(cert.expiresAt).toISOString().split('T')[0]}</span>
-                    <span class="vcv-date-secondary">· {new Date(cert.expiresAt).toISOString().split('T')[1].slice(0, 5)} UTC</span>
-                  </div>
-                </td>
-                <td class="vcv-col-status">
-                  <div class="vcv-status-cell">
-                    <div class="vcv-status-badges">
-                      <span class={statusBadgeClass(s)}>{s}</span>
-                    </div>
-                    <span class="vcv-row-chevron" aria-hidden="true">›</span>
-                  </div>
+          </thead>
+          <tbody>
+            {#if paged.length === 0}
+              <tr>
+                <td colspan="3" class="vcv-empty-row">
+                  {certs.loading ? 'Loading…' : 'No certificates match the current filters.'}
                 </td>
               </tr>
-            {/each}
-          {/if}
-        </tbody>
-      </table>
+            {:else}
+              {#each paged as cert (cert.id)}
+                {@const s = certStatus(cert, DEFAULT_THRESHOLDS)}
+                {@const parts = parseCertID(cert.id)}
+                <tr
+                  class="{rowClassForStatus(s)} vcv-row-clickable"
+                  onclick={() => selectCert(cert)}
+                  onkeydown={(event) => event.key === 'Enter' && selectCert(cert)}
+                  tabindex="0"
+                  role="button"
+                  aria-label={cert.commonName}
+                >
+                  <td class="vcv-col-cert">
+                    <div class="vcv-cert-header">
+                      <span class="vcv-cn-name">{cert.commonName || '—'}</span>
+                      {#if showVaultMount}
+                        <span class="vcv-cert-meta-item">{parts.vault || '—'}</span>
+                        <span class="vcv-cert-meta-item">{parts.mount || '—'}</span>
+                      {/if}
+                    </div>
+                    {#if cert.sans.length > 0}
+                      <div class="vcv-san-row">
+                        <span class="vcv-san-tag" title={cert.sans.join(', ')}>{cert.sans.join(', ')}</span>
+                      </div>
+                    {/if}
+                  </td>
+                  <td class="vcv-col-expiry">
+                    <div class="vcv-expiry-count vcv-days-{s}">{daysRemainingLabel(cert)}</div>
+                    <div class="vcv-expiry-datetime">
+                      <span class="vcv-expiry-date">{formatDate(cert.expiresAt)}</span>
+                      <span class="vcv-date-secondary">· {formatTime(cert.expiresAt)} UTC</span>
+                    </div>
+                  </td>
+                  <td class="vcv-col-status">
+                    <div class="vcv-status-cell">
+                      <div class="vcv-status-badges">
+                        <span class={statusBadgeClass(s)}>{s}</span>
+                      </div>
+                      <ChevronRight class="vcv-row-chevron h-4 w-4" aria-hidden="true" />
+                    </div>
+                  </td>
+                </tr>
+              {/each}
+            {/if}
+          </tbody>
+        </table>
+      {/if}
     </div>
   </main>
 
@@ -534,64 +530,26 @@
 <CertDetailModal
   cert={selected}
   open={certModalOpen}
-  onClose={() => (certModalOpen = false)}
+  onOpenChange={(value) => (certModalOpen = value)}
   onShowCA={(id) => {
     caCertId = id
     caModalOpen = true
   }}
 />
 
-<CAModal certId={caCertId} open={caModalOpen} onClose={() => (caModalOpen = false)} />
+<CAModal
+  certId={caCertId}
+  open={caModalOpen}
+  onOpenChange={(value) => (caModalOpen = value)}
+/>
 
-<Modal open={mountModalOpen} title="Sources" large onClose={() => (mountModalOpen = false)}>
-  <div class="vcv-mount-modal-body">
-    <div class="vcv-mount-actions" style="display:flex;gap:12px;margin-bottom:12px">
-      <button type="button" class="vcv-mount-link-btn" onclick={selectAllMounts}>Select all</button>
-      <span class="vcv-mount-header-divider"></span>
-      <button type="button" class="vcv-mount-link-btn" onclick={deselectAllMounts}>Deselect all</button>
-    </div>
-    <div class="vcv-mount-modal-list">
-      {#each allMounts as key}
-        {@const selected = mountFilter === null || mountFilter.includes(key)}
-        <label class="vcv-mount-row" style="display:flex;align-items:center;gap:8px;padding:6px 0">
-          <input
-            type="checkbox"
-            checked={selected}
-            onchange={() => toggleMount(key)}
-          />
-          <span class="vcv-mono">{key}</span>
-        </label>
-      {/each}
-      {#if allMounts.length === 0}
-        <p>No mounts available.</p>
-      {/if}
-    </div>
-  </div>
-  {#snippet actions()}
-    <button type="button" class="vcv-button vcv-button-primary" onclick={() => (mountModalOpen = false)}>Done</button>
-  {/snippet}
-</Modal>
-
-<Modal open={vaultModalOpen} title="Vault Status" onClose={() => (vaultModalOpen = false)}>
-  {#if status.status}
-    <div class="vcv-details-content">
-      {#each status.status.vaults as vault (vault.id)}
-        <div class="vcv-detail-row">
-          <span class="vcv-detail-label">{vault.display_name || vault.id}</span>
-          <span class={statusBadgeClass(vault.connected ? 'valid' : 'expired')}>
-            {vault.connected ? 'Connected' : (vault.error || 'Down')}
-          </span>
-        </div>
-      {/each}
-      {#if status.status.vaults.length === 0}
-        <p>No vaults configured.</p>
-      {/if}
-    </div>
-  {:else}
-    <p>Loading…</p>
-  {/if}
-  {#snippet actions()}
-    <button type="button" class="vcv-button vcv-button-secondary" onclick={refresh}>Refresh</button>
-    <button type="button" class="vcv-button" onclick={() => (vaultModalOpen = false)}>Close</button>
-  {/snippet}
-</Modal>
+<MountSelectorDialog
+  open={mountModalOpen}
+  onOpenChange={(value) => (mountModalOpen = value)}
+  {allMounts}
+  selected={mountFilter}
+  onChange={(next) => {
+    mountFilter = next
+    pageIndex = 0
+  }}
+/>
