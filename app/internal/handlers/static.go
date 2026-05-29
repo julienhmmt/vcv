@@ -31,7 +31,7 @@ func RegisterStaticRoutes(router chi.Router, distFS fs.FS) {
 	router.Get("/", serveFile("index.html"))
 	router.Get("/admin", serveFile("admin.html"))
 
-	router.Handle("/assets/*", fileServer)
+	router.Handle("/assets/*", immutableCache(fileServer))
 
 	// Root-level static files emitted by Vite from public/
 	rootFiles := []string{
@@ -52,4 +52,14 @@ func RegisterStaticRoutes(router chi.Router, distFS fs.FS) {
 		fileName := strings.TrimPrefix(path, "/")
 		router.Get(path, serveFile(fileName))
 	}
+}
+
+// immutableCache sets a long-lived Cache-Control header on hashed assets.
+// Vite emits filenames like `index-DJxyvc_i.js`, so content changes always
+// change the URL and stale caches cannot serve a wrong file.
+func immutableCache(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		next.ServeHTTP(w, r)
+	})
 }
