@@ -18,3 +18,4 @@ build
 app/web/dist/*
 !app/web/dist/.gitkeep
 app/web/frontend/dist/
+.gstack/
