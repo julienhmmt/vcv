@@ -15,6 +15,7 @@
   import CertTypeSelect from '$lib/components/CertTypeSelect.svelte'
   import VaultStatusPill from '$lib/components/VaultStatusPill.svelte'
   import ActiveFilters from '$lib/components/ActiveFilters.svelte'
+  import ErrorBanner from '$lib/components/ErrorBanner.svelte'
   import MountSelectorDialog from '$lib/components/MountSelectorDialog.svelte'
   import Donut from '$lib/components/Donut.svelte'
   import { createCertsStore } from '$lib/stores/certs.svelte'
@@ -63,6 +64,7 @@
   let caModalOpen = $state(false)
   let mountModalOpen = $state(false)
   let initialLoad = $state(true)
+  let dismissedFetchError = $state<string | null>(null)
 
   const filtered = $derived(
     certs.certificates.filter((cert) =>
@@ -86,7 +88,10 @@
   const showVaultMount = $derived(allMounts.length > 1)
 
   onMount(() => {
-    void load(true)
+    void (async () => {
+      await i18n.ready
+      await load(true)
+    })()
     const id = setInterval(() => void status.refresh(), 10_000)
     return () => clearInterval(id)
   })
@@ -156,7 +161,9 @@
   }
 
   $effect(() => {
-    if (certs.error) toast.error(certs.error)
+    if (certs.error && certs.error !== dismissedFetchError) {
+      toast.error(certs.error)
+    }
   })
 </script>
 
@@ -268,6 +275,10 @@
       onClearAll={clearAllFilters}
     />
   </header>
+
+  {#if certs.error && certs.error !== dismissedFetchError}
+    <ErrorBanner message={certs.error} onDismiss={() => (dismissedFetchError = certs.error)} />
+  {/if}
 
   {#if certs.vaultErrors.length > 0}
     <div class="vcv-vault-error-banner" role="status" aria-live="polite">

@@ -116,6 +116,8 @@ services:
     build:
       context: ./app
       dockerfile: Dockerfile
+      args:
+        VERSION: ${VCV_VERSION:-dev}
     container_name: vcv
     ports:
       - "52000:52000/tcp"

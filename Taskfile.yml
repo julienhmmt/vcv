@@ -30,15 +30,17 @@ tasks:
 
   dev:
     desc: Construit le binaire Go et le container docker
+    vars:
+      VCV_VERSION:
+        sh: 'echo "dev-$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"'
     cmds:
       - task: web-build
-      - "cd /Users/jh/git/gh/vcv && go clean -cache && go build -C app -o ../vcv ./cmd/server"
+      - "go clean -cache && go build -C app -ldflags=\"-X vcv/internal/version.Version={{.VCV_VERSION}}\" -o ../vcv ./cmd/server"
       - rm -f vcv.log
       - touch vcv.log
       - docker compose -f docker-compose.dev.yml down
-      - docker compose -f docker-compose.dev.yml build
-      # - "docker buildx build --platform linux/arm64 --load --build-arg VERSION=dev -t jhmmt/vcv:dev ./app"
-      - docker compose -f docker-compose.dev.yml up -d
+      - VCV_VERSION={{.VCV_VERSION}} docker compose -f docker-compose.dev.yml build
+      - VCV_VERSION={{.VCV_VERSION}} docker compose -f docker-compose.dev.yml up -d
 
   docker-build:
     desc: Construit les images docker (arm64 et amd64) et push sur Docker Hub

@@ -8,6 +8,7 @@ export interface I18nStore {
   readonly lang: string
   readonly loading: boolean
   readonly error: string | null
+  readonly ready: Promise<void>
   t(key: string, fallback?: string): string
   setLang(lang: string): Promise<void>
 }
@@ -40,7 +41,7 @@ export function createI18nStore(): I18nStore {
     }
   }
 
-  void load(initial)
+  const ready = load(initial)
 
   async function setLang(next: string): Promise<void> {
     lang = next
@@ -67,6 +68,7 @@ export function createI18nStore(): I18nStore {
     get error() {
       return error
     },
+    ready,
     t,
     setLang,
   }

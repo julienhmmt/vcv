@@ -3908,3 +3908,43 @@ col.vcv-col-status {
   padding: 1px 5px;
   border-radius: 4px;
 }
+
+.vcv-error-banner {
+  margin: 12px 24px 0;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vcv-error-banner-error {
+  border: 1px solid color-mix(in srgb, var(--destructive) 40%, transparent);
+  background: color-mix(in srgb, var(--destructive) 10%, var(--background));
+  color: var(--destructive);
+}
+
+.vcv-error-banner-warning {
+  border: 1px solid color-mix(in srgb, #d97706 40%, transparent);
+  background: color-mix(in srgb, #d97706 10%, var(--background));
+  color: #b45309;
+}
+
+.vcv-error-banner-text {
+  flex: 1;
+}
+
+.vcv-error-banner-close {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.vcv-error-banner-close:hover {
+  opacity: 0.7;
+}
