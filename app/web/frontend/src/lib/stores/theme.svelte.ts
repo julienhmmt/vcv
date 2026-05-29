@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'vcv-theme'
 const DARK_CLASS = 'dark'
+const THEME_ATTR = 'data-theme'
 
 export type Theme = 'light' | 'dark'
 
@@ -19,6 +20,7 @@ function detectInitial(): Theme {
 function applyToDocument(theme: Theme): void {
   if (typeof document === 'undefined') return
   document.documentElement.classList.toggle(DARK_CLASS, theme === 'dark')
+  document.documentElement.setAttribute(THEME_ATTR, theme)
 }
 
 export function createThemeStore(): ThemeStore {

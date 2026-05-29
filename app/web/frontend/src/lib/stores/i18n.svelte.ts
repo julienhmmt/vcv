@@ -32,7 +32,8 @@ export function createI18nStore(): I18nStore {
     loading = true
     error = null
     try {
-      messages = await api.i18n(target)
+      const response = await api.i18n(target)
+      messages = response.messages ?? {}
     } catch (err: unknown) {
       error = err instanceof ApiError ? err.message : 'Failed to load translations'
       messages = {}

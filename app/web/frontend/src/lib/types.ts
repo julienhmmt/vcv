@@ -124,6 +124,11 @@ export interface AdminSettingsResponse {
   vault_statuses: AdminVaultStatus[]
 }
 
+export interface I18nResponse {
+  language: string
+  messages: Record<string, string>
+}
+
 export interface AdminSessionResponse {
   authenticated: boolean
 }

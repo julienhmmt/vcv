@@ -181,7 +181,7 @@
           VaultCertsViewer
           {#if status.status}<span class="vcv-title-version">v{status.status.version}</span>{/if}
         </h1>
-        <p class="vcv-title-subtitle">{i18n.t('app.subtitle', 'Inspect certificates across Vault / OpenBao PKI mounts')}</p>
+        <p class="vcv-title-subtitle">{i18n.t('appSubtitle', 'Inspect certificates across Vault / OpenBao PKI mounts')}</p>
       </div>
       <div class="vcv-header-actions">
         <VaultStatusPill status={status.status} loading={status.loading} onRefresh={() => void status.refresh()} />
@@ -232,7 +232,7 @@
       <div class="vcv-filter-bar-inner">
         <div class="vcv-filter-palette">
           <div class="vcv-palette-item">
-            <span class="vcv-palette-label">{i18n.t('filter.sources', 'Sources')}</span>
+            <span class="vcv-palette-label">{i18n.t('filterChipSources', 'Sources')}</span>
             <button type="button" class="vcv-mount-filter" onclick={() => (mountModalOpen = true)}>
               {#if mountFilter === null || mountFilter.length === allMounts.length}
                 All mounts ({allMounts.length})
@@ -243,7 +243,7 @@
           </div>
           <span class="vcv-palette-separator" aria-hidden="true"></span>
           <div class="vcv-palette-item">
-            <span class="vcv-palette-label">{i18n.t('label.certType', 'Type')}</span>
+            <span class="vcv-palette-label">{i18n.t('filterChipCertType', 'Type')}</span>
             <CertTypeSelect value={certTypeFilter} onChange={(next) => { certTypeFilter = next; pageIndex = 0 }} />
           </div>
         </div>
@@ -253,7 +253,7 @@
             id="vcv-search"
             class="vcv-input vcv-input-search"
             type="search"
-            placeholder={i18n.t('search.placeholder', 'Search certificates, serials, SANs…')}
+            placeholder={i18n.t('searchPlaceholder', 'Search certificates, serials, SANs…')}
             bind:value={search}
             oninput={() => (pageIndex = 0)}
           />
@@ -300,7 +300,7 @@
       <div class="vcv-dashboard-row">
         <div class="vcv-dashboard-stats">
           <div class="vcv-stat-group vcv-stat-group-attention">
-            <span class="vcv-stat-group-label">{i18n.t('dashboard.attention', 'Attention')}</span>
+            <span class="vcv-stat-group-label">{i18n.t('dashboardGroupAttention', 'Attention')}</span>
             <div class="vcv-stat-group-cards">
               {#each [
                 { key: 'expired', label: 'Expired', desc: 'Past expiry' },
@@ -323,7 +323,7 @@
             </div>
           </div>
           <div class="vcv-stat-group vcv-stat-group-healthy">
-            <span class="vcv-stat-group-label">{i18n.t('dashboard.healthy', 'Healthy')}</span>
+            <span class="vcv-stat-group-label">{i18n.t('dashboardGroupHealthy', 'Healthy')}</span>
             <div class="vcv-stat-group-cards">
               {#each [
                 { key: 'valid', label: 'Valid', desc: 'All good' },

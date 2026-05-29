@@ -4,6 +4,7 @@ import type {
   AdminVaultAddedResponse,
   CertificatesEnvelope,
   DetailedCertificate,
+  I18nResponse,
   PemResponse,
   SettingsFile,
   StatusResponse,
@@ -30,7 +31,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...init,
   })
   if (!response.ok) {
-    throw new ApiError(response.status, `${init?.method ?? 'GET'} ${path} failed: ${response.status}`)
+    let message = `${init?.method ?? 'GET'} ${path} failed: ${response.status}`
+    try {
+      const body = (await response.json()) as { error?: string }
+      if (body?.error) message = body.error
+    } catch {
+      // non-JSON body
+    }
+    throw new ApiError(response.status, message)
   }
   return (await response.json()) as T
 }
@@ -52,9 +60,9 @@ export const api = {
   version(): Promise<VersionInfo> {
     return request<VersionInfo>('/api/version')
   },
-  i18n(lang?: string): Promise<Record<string, string>> {
+  i18n(lang?: string): Promise<I18nResponse> {
     const qs = lang ? `?lang=${encodeURIComponent(lang)}` : ''
-    return request<Record<string, string>>(`/api/i18n${qs}`)
+    return request<I18nResponse>(`/api/i18n${qs}`)
   },
   getCertificateCA(id: string): Promise<DetailedCertificate> {
     return request<DetailedCertificate>(`/api/certs/${encodeURIComponent(id)}/ca`)
