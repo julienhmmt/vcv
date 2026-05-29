@@ -2,7 +2,7 @@ import type {
   AdminSessionResponse,
   AdminSettingsResponse,
   AdminVaultAddedResponse,
-  Certificate,
+  CertificatesEnvelope,
   DetailedCertificate,
   PemResponse,
   SettingsFile,
@@ -36,9 +36,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  listCertificates(mounts?: string[]): Promise<Certificate[]> {
+  listCertificates(mounts?: string[]): Promise<CertificatesEnvelope> {
     const qs = mounts === undefined ? '' : `?mounts=${encodeURIComponent(mounts.join(','))}`
-    return request<Certificate[]>(`/api/certs${qs}`)
+    return request<CertificatesEnvelope>(`/api/certs${qs}`)
   },
   getCertificateDetails(id: string): Promise<DetailedCertificate> {
     return request<DetailedCertificate>(`/api/certs/${encodeURIComponent(id)}/details`)

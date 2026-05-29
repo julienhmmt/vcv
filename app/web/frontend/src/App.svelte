@@ -269,6 +269,21 @@
     />
   </header>
 
+  {#if certs.vaultErrors.length > 0}
+    <div class="vcv-vault-error-banner" role="status" aria-live="polite">
+      <strong>{certs.vaultErrors.length} vault{certs.vaultErrors.length === 1 ? '' : 's'} unreachable.</strong>
+      Showing partial results.
+      <details>
+        <summary>Details</summary>
+        <ul>
+          {#each certs.vaultErrors as vaultError (vaultError.vaultId)}
+            <li><code>{vaultError.vaultId}</code>: {vaultError.message}</li>
+          {/each}
+        </ul>
+      </details>
+    </div>
+  {/if}
+
   <main id="vcv-main-content">
     <div id="vcv-dashboard" class="vcv-dashboard">
       <div class="vcv-dashboard-row">

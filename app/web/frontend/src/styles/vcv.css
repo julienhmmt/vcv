@@ -3869,3 +3869,42 @@ col.vcv-col-status {
     ),
     var(--vcv-color-surface-muted);
 }
+
+.vcv-vault-error-banner {
+  margin: 12px 24px 0;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--destructive) 35%, transparent);
+  background: color-mix(in srgb, var(--destructive) 8%, var(--background));
+  color: var(--foreground);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.vcv-vault-error-banner strong {
+  margin-right: 6px;
+  color: var(--destructive);
+}
+
+.vcv-vault-error-banner details {
+  margin-top: 6px;
+}
+
+.vcv-vault-error-banner summary {
+  cursor: pointer;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.vcv-vault-error-banner ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.vcv-vault-error-banner code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  background: var(--muted);
+  padding: 1px 5px;
+  border-radius: 4px;
+}

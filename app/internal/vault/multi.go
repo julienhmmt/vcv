@@ -266,6 +266,71 @@ func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate
 	return all, nil
 }
 
+// ListCertificatesEnvelope mirrors ListCertificates but returns the full set
+// of per-vault errors alongside successful certificates. Used by the HTTP
+// handler to expose partial-success state to the frontend.
+func (c *multiClient) ListCertificatesEnvelope(ctx context.Context) ([]certs.Certificate, []VaultError) {
+	active := c.activeVaultIDs()
+	if len(active) == 0 {
+		return []certs.Certificate{}, []VaultError{}
+	}
+
+	type result struct {
+		vaultID      string
+		certificates []certs.Certificate
+		err          error
+	}
+	resultChan := make(chan result, len(active))
+	var wg sync.WaitGroup
+
+	for _, vaultID := range active {
+		client := c.clientsByVault[vaultID]
+		if client == nil {
+			resultChan <- result{vaultID: vaultID, err: fmt.Errorf("missing vault client for %s", vaultID)}
+			continue
+		}
+		wg.Add(1)
+		go func(id string, cl Client) {
+			defer wg.Done()
+			certificates, err := cl.ListCertificates(ctx)
+			if err != nil {
+				resultChan <- result{vaultID: id, err: err}
+				return
+			}
+			resultChan <- result{vaultID: id, certificates: certificates}
+		}(vaultID, client)
+	}
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+
+	all := make([]certs.Certificate, 0)
+	errs := make([]VaultError, 0)
+	for res := range resultChan {
+		if res.err != nil {
+			errs = append(errs, VaultError{VaultID: res.vaultID, Message: res.err.Error()})
+			continue
+		}
+		for _, certificate := range res.certificates {
+			prefixed := certificate
+			prefixed.ID = fmt.Sprintf("%s|%s", res.vaultID, certificate.ID)
+			all = append(all, prefixed)
+		}
+	}
+
+	sort.Slice(all, func(leftIndex int, rightIndex int) bool {
+		left := all[leftIndex]
+		right := all[rightIndex]
+		if left.CommonName != right.CommonName {
+			return left.CommonName < right.CommonName
+		}
+		return left.ID < right.ID
+	})
+	sort.Slice(errs, func(i, j int) bool { return errs[i].VaultID < errs[j].VaultID })
+	return all, errs
+}
+
 func (c *multiClient) ListCertificatesByVault(ctx context.Context) []ListCertificatesByVaultResult {
 	active := c.activeVaultIDs()
 	results := make([]ListCertificatesByVaultResult, 0, len(active))

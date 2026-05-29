@@ -23,6 +23,16 @@ export interface DetailedCertificate extends Certificate {
   caType: 'intermediate' | 'root' | ''
 }
 
+export interface VaultListError {
+  vaultId: string
+  message: string
+}
+
+export interface CertificatesEnvelope {
+  certificates: Certificate[]
+  errors: VaultListError[]
+}
+
 export interface PemResponse {
   serialNumber: string
   pem: string

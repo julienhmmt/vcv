@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -16,6 +17,29 @@ import (
 
 const mountsAllSentinel = "__all__"
 
+// certsEnvelope is the response shape for GET /api/certs. Errors carries
+// per-vault failures so the UI can surface partial-success state instead of
+// blanking out when one of several vaults is unreachable.
+type certsEnvelope struct {
+	Certificates []certs.Certificate `json:"certificates"`
+	Errors       []vault.VaultError  `json:"errors"`
+}
+
+// listCertificatesWithErrors prefers the envelope-aware API when the client
+// supports it (multiClient). Otherwise it falls back to the basic
+// ListCertificates path so single-client deployments and tests keep working.
+func listCertificatesWithErrors(ctx context.Context, client vault.Client) ([]certs.Certificate, []vault.VaultError, error) {
+	if envelope, ok := client.(vault.CertificatesEnvelopeLister); ok {
+		certificates, vaultErrors := envelope.ListCertificatesEnvelope(ctx)
+		return certificates, vaultErrors, nil
+	}
+	certificates, err := client.ListCertificates(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+	return certificates, []vault.VaultError{}, nil
+}
+
 func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 	r.Get("/api/certs", func(w http.ResponseWriter, req *http.Request) {
 		// Parse mount filter from query parameters
@@ -27,7 +51,7 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			Strs("selected_mounts", selectedMounts).
 			Msg("listing certificates with mount filters")
 
-		certificates, err := vaultClient.ListCertificates(req.Context())
+		certificates, vaultErrors, err := listCertificatesWithErrors(req.Context(), vaultClient)
 		if err != nil {
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
@@ -39,14 +63,15 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 		logger.Get().Debug().
 			Str("request_id", requestID).
 			Int("total_certificates", len(certificates)).
+			Int("vault_errors", len(vaultErrors)).
 			Msg("retrieved certificates from vault")
 
-		// Filter certificates by selected mounts
 		filteredCertificates := filterCertificatesByMounts(certificates, selectedMounts)
+		envelope := certsEnvelope{Certificates: filteredCertificates, Errors: vaultErrors}
 
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(filteredCertificates); err != nil {
-			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
+		if encodeErr := json.NewEncoder(w).Encode(envelope); encodeErr != nil {
+			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, encodeErr).
 				Str("request_id", requestID).
 				Msg("failed to encode certificates response")
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -55,6 +80,7 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 		logger.HTTPEvent(req.Method, req.URL.Path, http.StatusOK, 0).
 			Str("request_id", requestID).
 			Int("count", len(filteredCertificates)).
+			Int("vault_errors", len(vaultErrors)).
 			Strs("mounts", selectedMounts).
 			Msg("certificates listed successfully")
 	})

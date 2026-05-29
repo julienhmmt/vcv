@@ -32,3 +32,16 @@ type ListCertificatesByVaultResult struct {
 type CertificatesByVaultLister interface {
 	ListCertificatesByVault(ctx context.Context) []ListCertificatesByVaultResult
 }
+
+// VaultError reports a per-vault failure during a partial-success listing.
+type VaultError struct {
+	VaultID string `json:"vaultId"`
+	Message string `json:"message"`
+}
+
+// CertificatesEnvelopeLister returns successful certificates alongside
+// per-vault errors. Allows the handler to surface partial-success state to the
+// frontend without failing the whole request when a subset of vaults is down.
+type CertificatesEnvelopeLister interface {
+	ListCertificatesEnvelope(ctx context.Context) ([]certs.Certificate, []VaultError)
+}

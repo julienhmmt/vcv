@@ -1,6 +1,7 @@
 package handlers_test
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -25,6 +26,11 @@ func setupRouter(mockVault *vault.MockClient) *chi.Mux {
 	return r
 }
 
+type certsEnvelopeResponse struct {
+	Certificates []certs.Certificate `json:"certificates"`
+	Errors       []vault.VaultError  `json:"errors"`
+}
+
 func TestListCertificates_Success(t *testing.T) {
 	mockVault := new(vault.MockClient)
 	certsList := []certs.Certificate{
@@ -39,10 +45,43 @@ func TestListCertificates_Success(t *testing.T) {
 	router.ServeHTTP(rec, req)
 
 	assert.Equal(t, http.StatusOK, rec.Code)
-	var got []certs.Certificate
+	var got certsEnvelopeResponse
 	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
-	assert.Len(t, got, 1)
+	assert.Len(t, got.Certificates, 1)
+	assert.Empty(t, got.Errors)
 	mockVault.AssertExpectations(t)
+}
+
+type envelopeMockClient struct {
+	*vault.MockClient
+	certs  []certs.Certificate
+	errors []vault.VaultError
+}
+
+func (e *envelopeMockClient) ListCertificatesEnvelope(_ context.Context) ([]certs.Certificate, []vault.VaultError) {
+	return e.certs, e.errors
+}
+
+func TestListCertificates_Envelope_PartialSuccess(t *testing.T) {
+	envClient := &envelopeMockClient{
+		MockClient: new(vault.MockClient),
+		certs:      []certs.Certificate{{ID: "vault-a|pki:1", SerialNumber: "1", CommonName: "a", ExpiresAt: time.Now()}},
+		errors:     []vault.VaultError{{VaultID: "vault-b", Message: "dial tcp: lookup vault-b: no such host"}},
+	}
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	handlers.RegisterCertRoutes(r, envClient)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/certs", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var got certsEnvelopeResponse
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	assert.Len(t, got.Certificates, 1)
+	assert.Len(t, got.Errors, 1)
+	assert.Equal(t, "vault-b", got.Errors[0].VaultID)
 }
 
 func TestListCertificates_Error(t *testing.T) {
@@ -180,9 +219,9 @@ func TestListCertificates_MountsQuery_AllSentinelReturnsAll(t *testing.T) {
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
-	var got []certs.Certificate
+	var got certsEnvelopeResponse
 	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
-	assert.Len(t, got, 2)
+	assert.Len(t, got.Certificates, 2)
 	mockVault.AssertExpectations(t)
 }
 
@@ -195,9 +234,9 @@ func TestListCertificates_MountsQuery_EmptyReturnsEmpty(t *testing.T) {
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 	assert.Equal(t, http.StatusOK, rec.Code)
-	var got []certs.Certificate
+	var got certsEnvelopeResponse
 	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
-	assert.Len(t, got, 0)
+	assert.Len(t, got.Certificates, 0)
 	mockVault.AssertExpectations(t)
 }
 
