@@ -27,10 +27,10 @@ type configResponse struct {
 
 func newServerWebFS() fs.FS {
 	return fstest.MapFS{
-		"dist/index.html":     &fstest.MapFile{Data: []byte("<!doctype html><html><body>ok</body></html>")},
-		"dist/admin.html":     &fstest.MapFile{Data: []byte("<!doctype html><html><body>admin</body></html>")},
-		"dist/assets/app.js":  &fstest.MapFile{Data: []byte("console.log('ok')")},
-		"dist/favicon.ico":    &fstest.MapFile{Data: []byte("\x00")},
+		"dist/index.html":    &fstest.MapFile{Data: []byte("<!doctype html><html><body>ok</body></html>")},
+		"dist/admin.html":    &fstest.MapFile{Data: []byte("<!doctype html><html><body>admin</body></html>")},
+		"dist/assets/app.js": &fstest.MapFile{Data: []byte("console.log('ok')")},
+		"dist/favicon.ico":   &fstest.MapFile{Data: []byte("\x00")},
 	}
 }
 
