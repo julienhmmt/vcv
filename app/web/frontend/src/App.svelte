@@ -45,10 +45,10 @@
   } from '$lib/utils/cert-filter'
   import type { Certificate } from '$lib/types'
 
-  const certs = createCertsStore()
+  const i18n = setI18nContext(createI18nStore())
+  const certs = createCertsStore(i18n)
   const status = createStatusStore()
   const theme = createThemeStore()
-  const i18n = setI18nContext(createI18nStore())
 
   type StatusKey = 'valid' | 'warning' | 'critical' | 'expired' | 'revoked'
   const statusMeta = $derived<Record<StatusKey, { label: string; desc: string }>>({
@@ -130,9 +130,31 @@
       } finally {
         initialLoad = false
       }
+      if (!certs.error) notifyExpiry()
       return
     }
     await Promise.all(promises)
+    if (!certs.error) notifyExpiry()
+  }
+
+  /** Toast a single expiry summary after a load (critical takes precedence over warning). */
+  function notifyExpiry(): void {
+    const c = dashboardCounts(certs.certificates, DEFAULT_THRESHOLDS)
+    if (c.critical > 0) {
+      toast.warning(
+        i18n.t('notificationCritical', '{count} certificate(s) expiring within {threshold} days or fewer!', {
+          count: c.critical,
+          threshold: DEFAULT_THRESHOLDS.critical,
+        }),
+      )
+    } else if (c.warning > 0) {
+      toast(
+        i18n.t('notificationWarning', '{count} certificate(s) expiring within {threshold} days or fewer', {
+          count: c.warning,
+          threshold: DEFAULT_THRESHOLDS.warning,
+        }),
+      )
+    }
   }
 
   async function manualRefresh(): Promise<void> {
@@ -190,6 +212,27 @@
     if (certs.error && certs.error !== dismissedFetchError) {
       toast.error(certs.error)
     }
+  })
+
+  // Toast vault connectivity transitions detected by the status poll.
+  const prevConnected = new Map<string, boolean>()
+  let statusSeeded = false
+  $effect(() => {
+    const vaults = status.status?.vaults
+    if (!vaults) return
+    for (const vault of vaults) {
+      const was = prevConnected.get(vault.id)
+      if (statusSeeded && was !== undefined && was !== vault.connected) {
+        const name = vault.display_name || vault.id
+        if (vault.connected) {
+          toast.success(`${i18n.t('vaultConnectionRestored', 'Vault connection restored')} — ${name}`)
+        } else {
+          toast.error(`${i18n.t('vaultConnectionLost', 'Vault connection lost')} — ${name}`)
+        }
+      }
+      prevConnected.set(vault.id, vault.connected)
+    }
+    statusSeeded = true
   })
 </script>
 

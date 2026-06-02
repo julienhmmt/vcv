@@ -1,4 +1,5 @@
 import { api, ApiError } from '$lib/api'
+import type { I18nStore } from '$lib/stores/i18n.svelte'
 import type { AdminVaultStatus, SettingsFile } from '$lib/types'
 
 export interface AdminStore {
@@ -19,7 +20,7 @@ export interface AdminStore {
   clearMessages(): void
 }
 
-export function createAdminStore(): AdminStore {
+export function createAdminStore(i18n: I18nStore): AdminStore {
   let authenticated = $state(false)
   let settings = $state<SettingsFile | null>(null)
   let vaultStatuses = $state<AdminVaultStatus[]>([])
@@ -85,7 +86,7 @@ export function createAdminStore(): AdminStore {
       const response = await api.adminPutSettings(next)
       settings = response.settings
       vaultStatuses = response.vault_statuses
-      successMessage = 'Settings saved'
+      successMessage = i18n.t('adminSettingsSaved', 'Settings saved')
       return true
     } catch (err: unknown) {
       applyError(err, 'Failed to save settings')
@@ -120,9 +121,9 @@ export function createAdminStore(): AdminStore {
   async function invalidateCache(): Promise<void> {
     try {
       await api.adminInvalidateCache()
-      successMessage = 'Cache invalidated'
+      successMessage = i18n.t('cacheInvalidated', 'Cache invalidated')
     } catch (err: unknown) {
-      applyError(err, 'Failed to invalidate cache')
+      applyError(err, i18n.t('cacheInvalidateFailed', 'Failed to invalidate cache'))
     }
   }
 

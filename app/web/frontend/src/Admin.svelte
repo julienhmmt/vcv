@@ -6,9 +6,9 @@
   import { createThemeStore } from '$lib/stores/theme.svelte'
   import { createI18nStore, setI18nContext } from '$lib/stores/i18n.svelte'
 
-  const admin = createAdminStore()
-  createThemeStore()
   const i18n = setI18nContext(createI18nStore())
+  const admin = createAdminStore(i18n)
+  createThemeStore()
 
   onMount(async () => {
     await admin.checkSession()

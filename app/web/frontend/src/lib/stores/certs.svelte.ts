@@ -1,4 +1,5 @@
 import { api, ApiError } from '$lib/api'
+import type { I18nStore } from '$lib/stores/i18n.svelte'
 import type { Certificate, VaultListError } from '$lib/types'
 
 export interface CertsStore {
@@ -10,7 +11,7 @@ export interface CertsStore {
   refresh(mounts?: string[]): Promise<void>
 }
 
-export function createCertsStore(): CertsStore {
+export function createCertsStore(i18n: I18nStore): CertsStore {
   let certificates = $state<Certificate[]>([])
   let vaultErrors = $state<VaultListError[]>([])
   let loading = $state(false)
@@ -26,8 +27,10 @@ export function createCertsStore(): CertsStore {
       vaultErrors = envelope.errors ?? []
       lastFetched = new Date()
     } catch (err: unknown) {
-      const message = err instanceof ApiError ? err.message : 'Failed to load certificates'
-      error = message
+      error =
+        err instanceof ApiError
+          ? err.message
+          : i18n.t('loadNetworkError', 'Network error loading certificates. Please try again.')
       certificates = []
       vaultErrors = []
     } finally {
