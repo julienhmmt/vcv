@@ -4,6 +4,7 @@
   import Check from '@lucide/svelte/icons/check'
   import Square from '@lucide/svelte/icons/square'
   import SquareCheck from '@lucide/svelte/icons/square-check'
+  import { getI18n } from '$lib/stores/i18n.svelte'
 
   interface Props {
     open: boolean
@@ -14,6 +15,7 @@
   }
 
   const { open, onOpenChange, allMounts, selected, onChange }: Props = $props()
+  const i18n = getI18n()
 
   const selectedSet = $derived(
     selected === null ? new Set(allMounts) : new Set(selected),
@@ -42,16 +44,16 @@
 <Dialog.Root {open} {onOpenChange}>
   <Dialog.Content class="max-w-xl">
     <Dialog.Header>
-      <Dialog.Title>Sources</Dialog.Title>
+      <Dialog.Title>{i18n.t('mountSelectorTitle', 'Sources')}</Dialog.Title>
       <Dialog.Description>
-        Filter the table by Vault and PKI mount.
+        {i18n.t('mountSelectorTooltip', 'Filter the table by Vault and PKI mount.')}
       </Dialog.Description>
     </Dialog.Header>
 
     <Command.Root class="rounded-md border">
-      <Command.Input placeholder="Search mounts…" />
+      <Command.Input placeholder={i18n.t('mountSearchPlaceholder', 'Search mounts…')} />
       <Command.List class="max-h-72">
-        <Command.Empty>No mount matches.</Command.Empty>
+        <Command.Empty>{i18n.t('mountNoMatch', 'No mount matches.')}</Command.Empty>
         <Command.Group>
           {#each allMounts as key}
             {@const isSelected = selectedSet.has(key)}
@@ -73,17 +75,17 @@
 
     <Dialog.Footer class="flex items-center justify-between gap-2">
       <div class="flex items-center gap-2 text-xs text-muted-foreground">
-        <span>{selectedSet.size} / {allMounts.length} selected</span>
+        <span>{selectedSet.size} / {allMounts.length} {i18n.t('mountStatsSelected', 'selected')}</span>
       </div>
       <div class="flex gap-2">
         <button type="button" class="vcv-button vcv-button-small vcv-button-ghost" onclick={deselectAll}>
-          Deselect all
+          {i18n.t('deselectAll', 'Deselect all')}
         </button>
         <button type="button" class="vcv-button vcv-button-small vcv-button-ghost" onclick={selectAll}>
-          Select all
+          {i18n.t('selectAll', 'Select all')}
         </button>
         <button type="button" class="vcv-button vcv-button-primary vcv-button-small" onclick={() => onOpenChange(false)}>
-          Done
+          {i18n.t('buttonDone', 'Done')}
         </button>
       </div>
     </Dialog.Footer>

@@ -199,6 +199,45 @@ type Messages struct {
 	AdminMetricsHint            string `json:"adminMetricsHint"`
 	AdminMetricsPerCertificate  string `json:"adminMetricsPerCertificate"`
 	AdminMetricsEnhanced        string `json:"adminMetricsEnhanced"`
+
+	// Added for the Svelte UI: status labels/descriptions, pagination,
+	// banners, copy actions and admin strings the rewrite previously hardcoded.
+	StatusLabelCritical      string `json:"statusLabelCritical"`
+	StatusLabelWarning       string `json:"statusLabelWarning"`
+	StatusDescValid          string `json:"statusDescValid"`
+	StatusDescWarning        string `json:"statusDescWarning"`
+	StatusDescCritical       string `json:"statusDescCritical"`
+	StatusDescExpired        string `json:"statusDescExpired"`
+	StatusDescRevoked        string `json:"statusDescRevoked"`
+	LabelValidity            string `json:"labelValidity"`
+	LabelCopy                string `json:"labelCopy"`
+	LabelCopied              string `json:"labelCopied"`
+	LabelCopyPEM             string `json:"labelCopyPem"`
+	ButtonDone               string `json:"buttonDone"`
+	MountNoMatch             string `json:"mountNoMatch"`
+	CAIssuerCertificate      string `json:"caIssuerCertificate"`
+	AdminUsername            string `json:"adminUsername"`
+	AdminSigningIn           string `json:"adminSigningIn"`
+	AdminInvalidateCache     string `json:"adminInvalidateCache"`
+	AdminThresholdsTitle     string `json:"adminThresholdsTitle"`
+	AdminSaving              string `json:"adminSaving"`
+	AdminVaultUnknown        string `json:"adminVaultUnknown"`
+	NavAdmin                 string `json:"navAdmin"`
+	ToastRefreshing          string `json:"toastRefreshing"`
+	ToastRefreshFailed       string `json:"toastRefreshFailed"`
+	SkipToContent            string `json:"skipToContent"`
+	VaultsUnreachable        string `json:"vaultsUnreachable"`
+	VaultsUnreachableHint    string `json:"vaultsUnreachableHint"`
+	TableNoMatch             string `json:"tableNoMatch"`
+	FooterMoreInfo           string `json:"footerMoreInfo"`
+	FooterDemo               string `json:"footerDemo"`
+	FooterLicense            string `json:"footerLicense"`
+	StatusConnecting         string `json:"statusConnecting"`
+	StatusNoVaults           string `json:"statusNoVaults"`
+	StatusNoVaultsConfigured string `json:"statusNoVaultsConfigured"`
+	PaginationRange          string `json:"paginationRange"`
+	PaginationResults        string `json:"paginationResults"`
+	PaginationPageSizeAll    string `json:"paginationPageSizeAll"`
 }
 
 // Response is the payload returned by the /api/i18n endpoint.
@@ -387,6 +426,43 @@ var englishMessages = Messages{
 	AdminMetricsHint:            "Configure Prometheus metrics collection behavior.",
 	AdminMetricsPerCertificate:  "Per-certificate metrics (⚠️ high cardinality)",
 	AdminMetricsEnhanced:        "Enhanced metrics (categorize certificats by expiration time ranges)",
+
+	StatusLabelCritical:      "Critical",
+	StatusLabelWarning:       "Warning",
+	StatusDescValid:          "All good",
+	StatusDescWarning:        "≤ {days} days",
+	StatusDescCritical:       "≤ {days} days",
+	StatusDescExpired:        "Past expiry",
+	StatusDescRevoked:        "Revoked by CA",
+	LabelValidity:            "Validity",
+	LabelCopy:                "Copy",
+	LabelCopied:              "Copied!",
+	LabelCopyPEM:             "Copy PEM",
+	ButtonDone:               "Done",
+	MountNoMatch:             "No mount matches.",
+	CAIssuerCertificate:      "Issuer certificate",
+	AdminUsername:            "Username",
+	AdminSigningIn:           "Signing in…",
+	AdminInvalidateCache:     "Invalidate cache",
+	AdminThresholdsTitle:     "Expiration thresholds (days)",
+	AdminSaving:              "Saving…",
+	AdminVaultUnknown:        "Unknown",
+	NavAdmin:                 "Admin",
+	ToastRefreshing:          "Refreshing…",
+	ToastRefreshFailed:       "Refresh failed",
+	SkipToContent:            "Skip to main content",
+	VaultsUnreachable:        "{count} vault(s) unreachable",
+	VaultsUnreachableHint:    "Showing partial results.",
+	TableNoMatch:             "No certificates match the current filters.",
+	FooterMoreInfo:           "More info",
+	FooterDemo:               "Demo",
+	FooterLicense:            "License",
+	StatusConnecting:         "connecting…",
+	StatusNoVaults:           "no vaults",
+	StatusNoVaultsConfigured: "No vaults configured.",
+	PaginationRange:          "{start}–{end} of {total}",
+	PaginationResults:        "{count} results",
+	PaginationPageSizeAll:    "All",
 }
 
 var frenchMessages = Messages{
@@ -569,6 +645,43 @@ var frenchMessages = Messages{
 	AdminMetricsHint:            "Configurer le comportement de collecte des métriques Prometheus.",
 	AdminMetricsPerCertificate:  "Métriques par certificat (⚠️ haute cardinalité)",
 	AdminMetricsEnhanced:        "Métriques améliorées (catégoriser les certificats par intervalles de date d'expiration)",
+
+	StatusLabelCritical:      "Critique",
+	StatusLabelWarning:       "Avertissement",
+	StatusDescValid:          "Tout va bien",
+	StatusDescWarning:        "≤ {days} jours",
+	StatusDescCritical:       "≤ {days} jours",
+	StatusDescExpired:        "Date dépassée",
+	StatusDescRevoked:        "Révoqué par l'autorité",
+	LabelValidity:            "Validité",
+	LabelCopy:                "Copier",
+	LabelCopied:              "Copié !",
+	LabelCopyPEM:             "Copier le PEM",
+	ButtonDone:               "Terminé",
+	MountNoMatch:             "Aucun montage correspondant.",
+	CAIssuerCertificate:      "Certificat émetteur",
+	AdminUsername:            "Identifiant",
+	AdminSigningIn:           "Connexion…",
+	AdminInvalidateCache:     "Vider le cache",
+	AdminThresholdsTitle:     "Seuils d'expiration (jours)",
+	AdminSaving:              "Enregistrement…",
+	AdminVaultUnknown:        "Inconnu",
+	NavAdmin:                 "Administration",
+	ToastRefreshing:          "Actualisation…",
+	ToastRefreshFailed:       "Échec de l'actualisation",
+	SkipToContent:            "Aller au contenu principal",
+	VaultsUnreachable:        "{count} vault(s) injoignable(s)",
+	VaultsUnreachableHint:    "Résultats partiels affichés.",
+	TableNoMatch:             "Aucun certificat ne correspond aux filtres actuels.",
+	FooterMoreInfo:           "En savoir plus",
+	FooterDemo:               "Démo",
+	FooterLicense:            "Licence",
+	StatusConnecting:         "connexion…",
+	StatusNoVaults:           "aucun vault",
+	StatusNoVaultsConfigured: "Aucun vault configuré.",
+	PaginationRange:          "{start}–{end} sur {total}",
+	PaginationResults:        "{count} résultats",
+	PaginationPageSizeAll:    "Tous",
 }
 
 var spanishMessages = Messages{
@@ -751,6 +864,43 @@ var spanishMessages = Messages{
 	AdminMetricsHint:            "Configurar el comportamiento de recolección de métricas de Prometheus.",
 	AdminMetricsPerCertificate:  "Métricas por certificado (⚠️ alta cardinalidad)",
 	AdminMetricsEnhanced:        "Métricas mejoradas (categorizar certificados por intervalos de fecha de expiración)",
+
+	StatusLabelCritical:      "Crítico",
+	StatusLabelWarning:       "Advertencia",
+	StatusDescValid:          "Todo correcto",
+	StatusDescWarning:        "≤ {days} días",
+	StatusDescCritical:       "≤ {days} días",
+	StatusDescExpired:        "Fecha vencida",
+	StatusDescRevoked:        "Revocado por la autoridad",
+	LabelValidity:            "Validez",
+	LabelCopy:                "Copiar",
+	LabelCopied:              "¡Copiado!",
+	LabelCopyPEM:             "Copiar PEM",
+	ButtonDone:               "Hecho",
+	MountNoMatch:             "Ningún montaje coincide.",
+	CAIssuerCertificate:      "Certificado emisor",
+	AdminUsername:            "Usuario",
+	AdminSigningIn:           "Iniciando sesión…",
+	AdminInvalidateCache:     "Vaciar caché",
+	AdminThresholdsTitle:     "Umbrales de expiración (días)",
+	AdminSaving:              "Guardando…",
+	AdminVaultUnknown:        "Desconocido",
+	NavAdmin:                 "Administración",
+	ToastRefreshing:          "Actualizando…",
+	ToastRefreshFailed:       "Error al actualizar",
+	SkipToContent:            "Ir al contenido principal",
+	VaultsUnreachable:        "{count} vault(s) inaccesible(s)",
+	VaultsUnreachableHint:    "Mostrando resultados parciales.",
+	TableNoMatch:             "Ningún certificado coincide con los filtros actuales.",
+	FooterMoreInfo:           "Más información",
+	FooterDemo:               "Demo",
+	FooterLicense:            "Licencia",
+	StatusConnecting:         "conectando…",
+	StatusNoVaults:           "sin vaults",
+	StatusNoVaultsConfigured: "Ningún vault configurado.",
+	PaginationRange:          "{start}–{end} de {total}",
+	PaginationResults:        "{count} resultados",
+	PaginationPageSizeAll:    "Todos",
 }
 
 var germanMessages = Messages{
@@ -933,6 +1083,43 @@ var germanMessages = Messages{
 	AdminMetricsHint:            "Prometheus-Metrikensammelverhalten konfigurieren.",
 	AdminMetricsPerCertificate:  "Metriken pro Zertifikat (⚠️ hohe Kardinalität)",
 	AdminMetricsEnhanced:        "Erweiterte Metriken (Zertifikate nach Ablaufzeit kategorisieren)",
+
+	StatusLabelCritical:      "Kritisch",
+	StatusLabelWarning:       "Warnung",
+	StatusDescValid:          "Alles in Ordnung",
+	StatusDescWarning:        "≤ {days} Tage",
+	StatusDescCritical:       "≤ {days} Tage",
+	StatusDescExpired:        "Abgelaufen",
+	StatusDescRevoked:        "Von der CA widerrufen",
+	LabelValidity:            "Gültigkeit",
+	LabelCopy:                "Kopieren",
+	LabelCopied:              "Kopiert!",
+	LabelCopyPEM:             "PEM kopieren",
+	ButtonDone:               "Fertig",
+	MountNoMatch:             "Kein Mount gefunden.",
+	CAIssuerCertificate:      "Aussteller-Zertifikat",
+	AdminUsername:            "Benutzername",
+	AdminSigningIn:           "Anmeldung…",
+	AdminInvalidateCache:     "Cache leeren",
+	AdminThresholdsTitle:     "Ablaufschwellen (Tage)",
+	AdminSaving:              "Speichern…",
+	AdminVaultUnknown:        "Unbekannt",
+	NavAdmin:                 "Verwaltung",
+	ToastRefreshing:          "Aktualisierung…",
+	ToastRefreshFailed:       "Aktualisierung fehlgeschlagen",
+	SkipToContent:            "Zum Hauptinhalt springen",
+	VaultsUnreachable:        "{count} Vault(s) nicht erreichbar",
+	VaultsUnreachableHint:    "Teilergebnisse werden angezeigt.",
+	TableNoMatch:             "Keine Zertifikate entsprechen den aktuellen Filtern.",
+	FooterMoreInfo:           "Mehr Infos",
+	FooterDemo:               "Demo",
+	FooterLicense:            "Lizenz",
+	StatusConnecting:         "verbinde…",
+	StatusNoVaults:           "keine Vaults",
+	StatusNoVaultsConfigured: "Keine Vaults konfiguriert.",
+	PaginationRange:          "{start}–{end} von {total}",
+	PaginationResults:        "{count} Ergebnisse",
+	PaginationPageSizeAll:    "Alle",
 }
 
 var italianMessages = Messages{
@@ -1114,6 +1301,43 @@ var italianMessages = Messages{
 	AdminMetricsHint:            "Configura il comportamento di raccolta delle metriche di Prometheus.",
 	AdminMetricsPerCertificate:  "Metriche per certificato (⚠️ alta cardinalità)",
 	AdminMetricsEnhanced:        "Metriche avanzate (categorizzare certificati per intervallo di data di scadenza)",
+
+	StatusLabelCritical:      "Critico",
+	StatusLabelWarning:       "Avviso",
+	StatusDescValid:          "Tutto a posto",
+	StatusDescWarning:        "≤ {days} giorni",
+	StatusDescCritical:       "≤ {days} giorni",
+	StatusDescExpired:        "Data superata",
+	StatusDescRevoked:        "Revocato dalla CA",
+	LabelValidity:            "Validità",
+	LabelCopy:                "Copia",
+	LabelCopied:              "Copiato!",
+	LabelCopyPEM:             "Copia PEM",
+	ButtonDone:               "Fatto",
+	MountNoMatch:             "Nessun mount corrispondente.",
+	CAIssuerCertificate:      "Certificato emittente",
+	AdminUsername:            "Nome utente",
+	AdminSigningIn:           "Accesso…",
+	AdminInvalidateCache:     "Svuota cache",
+	AdminThresholdsTitle:     "Soglie di scadenza (giorni)",
+	AdminSaving:              "Salvataggio…",
+	AdminVaultUnknown:        "Sconosciuto",
+	NavAdmin:                 "Amministrazione",
+	ToastRefreshing:          "Aggiornamento…",
+	ToastRefreshFailed:       "Aggiornamento non riuscito",
+	SkipToContent:            "Vai al contenuto principale",
+	VaultsUnreachable:        "{count} vault non raggiungibile/i",
+	VaultsUnreachableHint:    "Risultati parziali mostrati.",
+	TableNoMatch:             "Nessun certificato corrisponde ai filtri attuali.",
+	FooterMoreInfo:           "Maggiori informazioni",
+	FooterDemo:               "Demo",
+	FooterLicense:            "Licenza",
+	StatusConnecting:         "connessione…",
+	StatusNoVaults:           "nessun vault",
+	StatusNoVaultsConfigured: "Nessun vault configurato.",
+	PaginationRange:          "{start}–{end} di {total}",
+	PaginationResults:        "{count} risultati",
+	PaginationPageSizeAll:    "Tutti",
 }
 
 // MessagesForLanguage returns the translations for a given language code.

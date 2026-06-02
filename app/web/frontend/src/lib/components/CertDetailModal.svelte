@@ -7,6 +7,7 @@
   import { api, ApiError } from '$lib/api'
   import { certStatus, daysUntilExpiry, statusBadgeClass, DEFAULT_THRESHOLDS } from '$lib/utils/cert-status'
   import { formatDate, formatTime } from '$lib/utils/cert-filter'
+  import { getI18n } from '$lib/stores/i18n.svelte'
   import type { Certificate, CertStatus, DetailedCertificate } from '$lib/types'
 
   interface Props {
@@ -17,6 +18,15 @@
   }
 
   const { cert, open, onOpenChange, onShowCA }: Props = $props()
+  const i18n = getI18n()
+
+  const statusLabels = $derived<Record<CertStatus, string>>({
+    valid: i18n.t('statusLabelValid', 'Valid'),
+    warning: i18n.t('statusLabelWarning', 'Warning'),
+    critical: i18n.t('statusLabelCritical', 'Critical'),
+    expired: i18n.t('statusLabelExpired', 'Expired'),
+    revoked: i18n.t('statusLabelRevoked', 'Revoked'),
+  })
 
   let details = $state<DetailedCertificate | null>(null)
   let loading = $state(false)
@@ -37,7 +47,7 @@
         details = data
       })
       .catch((err: unknown) => {
-        error = err instanceof ApiError ? err.message : 'Failed to load details'
+        error = err instanceof ApiError ? err.message : i18n.t('loadDetailsNetworkError', 'Failed to load details')
       })
       .finally(() => {
         loading = false
@@ -75,12 +85,12 @@
     <Dialog.Header class="px-6 pt-6">
       <Dialog.Title class="flex items-center gap-2">
         <ShieldCheck class="h-5 w-5 text-primary" />
-        Certificate
+        {i18n.t('certificateInformationTitle', 'Certificate')}
       </Dialog.Title>
     </Dialog.Header>
 
     {#if loading && !details}
-      <div class="px-6 py-8 text-sm text-muted-foreground">Loading…</div>
+      <div class="px-6 py-8 text-sm text-muted-foreground">{i18n.t('labelLoading', 'Loading…')}</div>
     {:else if error}
       <div class="px-6 py-8 text-sm text-destructive">{error}</div>
     {:else if cert && details}
@@ -92,26 +102,26 @@
             </div>
             <div class="vcv-cd-sidebar-status">
               <div class="vcv-cd-badges">
-                <span class={statusBadgeClass(status)}>{status}</span>
+                <span class={statusBadgeClass(status)}>{statusLabels[status]}</span>
               </div>
               {#if days >= 0}
                 <strong class="vcv-cd-countdown vcv-cd-expiry-value-{expiryTone}">
-                  {days}d left
+                  {i18n.t('daysRemaining', '{days} days left', { days })}
                 </strong>
               {:else}
                 <strong class="vcv-cd-countdown vcv-cd-expiry-value-critical">
-                  {Math.abs(days)}d ago
+                  {i18n.t('expiredDays', 'Expired {days} days ago', { days: Math.abs(days) })}
                 </strong>
               {/if}
             </div>
             <div class="vcv-cd-date-stack">
               <div>
-                <span>Expires</span>
+                <span>{i18n.t('columnExpiresAt', 'Expires')}</span>
                 <strong>{formatDate(cert.expiresAt)}</strong>
                 <small>{formatTime(cert.expiresAt)} UTC</small>
               </div>
               <div>
-                <span>Created</span>
+                <span>{i18n.t('columnCreatedAt', 'Created')}</span>
                 <strong>{formatDate(cert.createdAt)}</strong>
                 <small>{formatTime(cert.createdAt)} UTC</small>
               </div>
@@ -127,30 +137,30 @@
                 {/if}
               </div>
               <div class="vcv-cd-hero-meta">
-                <span class="vcv-cd-hero-meta-label">Type</span>
+                <span class="vcv-cd-hero-meta-label">{i18n.t('labelCertificateType', 'Type')}</span>
                 <span class="vcv-cd-hero-meta-value">{details.certType || '—'}</span>
               </div>
             </header>
 
             <section class="vcv-cd-info-strip">
               <div class="vcv-cd-strip-item">
-                <span>Key</span>
+                <span>{i18n.t('labelKeyAlgorithm', 'Key')}</span>
                 <strong>{details.keyAlgorithm} {details.keySize ? `(${details.keySize})` : ''}</strong>
               </div>
               <div class="vcv-cd-strip-item">
-                <span>Usage</span>
+                <span>{i18n.t('labelUsage', 'Usage')}</span>
                 <strong>{details.usage?.join(', ') || '—'}</strong>
               </div>
             </section>
 
             <section class="vcv-cd-detail-list">
               <div class="vcv-cd-detail-row">
-                <span>Issuer</span>
+                <span>{i18n.t('labelIssuer', 'Issuer')}</span>
                 <strong title={details.issuer}>{details.issuer || '—'}</strong>
               </div>
 
               <div class="vcv-cd-detail-row">
-                <span>Serial</span>
+                <span>{i18n.t('labelSerialNumber', 'Serial')}</span>
                 <div class="vcv-cd-copy-row">
                   <code class="vcv-cd-serial">{details.serialNumber}</code>
                   <button
@@ -158,7 +168,7 @@
                     class="vcv-cd-copy-btn"
                     class:vcv-cd-copy-done={copiedField === 'serial'}
                     onclick={() => copy('serial', details!.serialNumber)}
-                    aria-label="Copy serial"
+                    aria-label={i18n.t('labelCopy', 'Copy')}
                   >
                     {#if copiedField === 'serial'}
                       <Check class="h-3.5 w-3.5" />
@@ -171,7 +181,7 @@
 
               {#if details.sans?.length}
                 <div class="vcv-cd-detail-row vcv-cd-detail-row-stack">
-                  <span>SANs</span>
+                  <span>{i18n.t('columnSan', 'SANs')}</span>
                   <div class="vcv-cd-san-list">
                     {#each details.sans as san}
                       <span class="vcv-cd-san-chip"><code>{san}</code></span>
@@ -181,7 +191,7 @@
               {/if}
 
               <div class="vcv-cd-detail-row vcv-cd-detail-row-stack">
-                <span>SHA-256</span>
+                <span>{i18n.t('labelFingerprintSHA256', 'SHA-256')}</span>
                 <div class="vcv-cd-copy-row">
                   <code class="vcv-cd-fingerprint">{details!.fingerprintSHA256}</code>
                   <button
@@ -189,7 +199,7 @@
                     class="vcv-cd-copy-btn"
                     class:vcv-cd-copy-done={copiedField === 'sha256'}
                     onclick={() => copy('sha256', details!.fingerprintSHA256)}
-                    aria-label="Copy SHA-256"
+                    aria-label={i18n.t('labelCopy', 'Copy')}
                   >
                     {#if copiedField === 'sha256'}
                       <Check class="h-3.5 w-3.5" />
@@ -201,7 +211,7 @@
               </div>
 
               <div class="vcv-cd-detail-row vcv-cd-detail-row-stack">
-                <span>SHA-1</span>
+                <span>{i18n.t('labelFingerprintSHA1', 'SHA-1')}</span>
                 <div class="vcv-cd-copy-row">
                   <code class="vcv-cd-fingerprint">{details!.fingerprintSHA1}</code>
                   <button
@@ -209,7 +219,7 @@
                     class="vcv-cd-copy-btn"
                     class:vcv-cd-copy-done={copiedField === 'sha1'}
                     onclick={() => copy('sha1', details!.fingerprintSHA1)}
-                    aria-label="Copy SHA-1"
+                    aria-label={i18n.t('labelCopy', 'Copy')}
                   >
                     {#if copiedField === 'sha1'}
                       <Check class="h-3.5 w-3.5" />
@@ -231,7 +241,7 @@
                     onShowCA(cert.id)
                   }}
                 >
-                  View issuer CA
+                  {i18n.t('buttonViewCA', 'View issuer CA')}
                 </button>
               {/if}
               {#if details.pem}
@@ -240,7 +250,7 @@
                   class="vcv-button"
                   onclick={() => copy('pem', details!.pem)}
                 >
-                  {copiedField === 'pem' ? 'Copied!' : 'Copy PEM'}
+                  {copiedField === 'pem' ? i18n.t('labelCopied', 'Copied!') : i18n.t('labelCopyPem', 'Copy PEM')}
                 </button>
               {/if}
             </div>

@@ -10,6 +10,7 @@
   import Sun from '@lucide/svelte/icons/sun'
   import { Toaster } from '$lib/components/ui/sonner'
   import { Skeleton } from '$lib/components/ui/skeleton'
+  import * as Select from '$lib/components/ui/select'
   import CertDetailModal from '$lib/components/CertDetailModal.svelte'
   import CAModal from '$lib/components/CAModal.svelte'
   import CertTypeSelect from '$lib/components/CertTypeSelect.svelte'
@@ -21,7 +22,7 @@
   import { createCertsStore } from '$lib/stores/certs.svelte'
   import { createStatusStore } from '$lib/stores/status.svelte'
   import { createThemeStore } from '$lib/stores/theme.svelte'
-  import { createI18nStore } from '$lib/stores/i18n.svelte'
+  import { createI18nStore, setI18nContext, LANGUAGES } from '$lib/stores/i18n.svelte'
   import {
     certStatus,
     parseCertID,
@@ -47,7 +48,23 @@
   const certs = createCertsStore()
   const status = createStatusStore()
   const theme = createThemeStore()
-  const i18n = createI18nStore()
+  const i18n = setI18nContext(createI18nStore())
+
+  type StatusKey = 'valid' | 'warning' | 'critical' | 'expired' | 'revoked'
+  const statusMeta = $derived<Record<StatusKey, { label: string; desc: string }>>({
+    valid: { label: i18n.t('statusLabelValid', 'Valid'), desc: i18n.t('statusDescValid', 'All good') },
+    warning: {
+      label: i18n.t('statusLabelWarning', 'Warning'),
+      desc: i18n.t('statusDescWarning', '≤ {days} days', { days: DEFAULT_THRESHOLDS.warning }),
+    },
+    critical: {
+      label: i18n.t('statusLabelCritical', 'Critical'),
+      desc: i18n.t('statusDescCritical', '≤ {days} days', { days: DEFAULT_THRESHOLDS.critical }),
+    },
+    expired: { label: i18n.t('statusLabelExpired', 'Expired'), desc: i18n.t('statusDescExpired', 'Past expiry') },
+    revoked: { label: i18n.t('statusLabelRevoked', 'Revoked'), desc: i18n.t('statusDescRevoked', 'Revoked by CA') },
+  })
+  const langName = $derived(LANGUAGES.find((l) => l.code === i18n.lang)?.name ?? i18n.lang.toUpperCase())
 
   let search = $state('')
   let statusFilter = $state<StatusFilter>('all')
@@ -111,9 +128,9 @@
 
   async function manualRefresh(): Promise<void> {
     toast.promise(load(), {
-      loading: 'Refreshing…',
-      success: () => `Loaded ${certs.certificates.length} certificates`,
-      error: 'Refresh failed',
+      loading: i18n.t('toastRefreshing', 'Refreshing…'),
+      success: () => i18n.t('loadSuccess', 'Certificates loaded'),
+      error: i18n.t('toastRefreshFailed', 'Refresh failed'),
     })
   }
 
@@ -145,11 +162,11 @@
   }
 
   function pageInfoText(): string {
-    if (sorted.length === 0) return '0 results'
-    if (pageSize === 'all') return `${sorted.length} results`
+    if (sorted.length === 0) return i18n.t('paginationResults', '{count} results', { count: 0 })
+    if (pageSize === 'all') return i18n.t('paginationResults', '{count} results', { count: sorted.length })
     const start = safePage * (pageSize as number) + 1
     const end = Math.min(start + (pageSize as number) - 1, sorted.length)
-    return `${start}–${end} of ${sorted.length}`
+    return i18n.t('paginationRange', '{start}–{end} of {total}', { start, end, total: sorted.length })
   }
 
   function onSearchKeydown(event: KeyboardEvent): void {
@@ -171,7 +188,7 @@
 
 <Toaster richColors position="bottom-right" />
 
-<a href="#vcv-main-content" class="vcv-skip-link">Skip to main content</a>
+<a href="#vcv-main-content" class="vcv-skip-link">{i18n.t('skipToContent', 'Skip to main content')}</a>
 
 <div class="vcv-layout">
   <header class="vcv-header">
@@ -188,7 +205,8 @@
         <button
           class="vcv-button vcv-button-icon"
           type="button"
-          title="Refresh"
+          title={i18n.t('buttonRefresh', 'Refresh')}
+          aria-label={i18n.t('buttonRefresh', 'Refresh')}
           onclick={manualRefresh}
           disabled={certs.loading}
         >
@@ -197,8 +215,8 @@
         <button
           class="vcv-button vcv-button-icon vcv-theme-toggle"
           type="button"
-          title="Toggle dark mode"
-          aria-label="Toggle dark mode"
+          title={i18n.t('buttonToggleTheme', 'Toggle dark mode')}
+          aria-label={i18n.t('buttonToggleTheme', 'Toggle dark mode')}
           onclick={theme.toggle}
         >
           {#if theme.theme === 'dark'}
@@ -207,23 +225,21 @@
             <Moon class="h-4 w-4" />
           {/if}
         </button>
-        <a class="vcv-button vcv-button-icon" href="/admin" title="Admin">
+        <a class="vcv-button vcv-button-icon" href="/admin" title={i18n.t('navAdmin', 'Admin')} aria-label={i18n.t('navAdmin', 'Admin')}>
           <BookOpen class="h-4 w-4" />
         </a>
         <div class="vcv-lang-wrapper">
-          <Globe class="vcv-lang-icon h-4 w-4" />
-          <select
-            class="vcv-select vcv-lang-select"
-            aria-label="Language"
-            value={i18n.lang}
-            onchange={(event) => void i18n.setLang((event.target as HTMLSelectElement).value)}
-          >
-            <option value="de">DE</option>
-            <option value="en">EN</option>
-            <option value="es">ES</option>
-            <option value="fr">FR</option>
-            <option value="it">IT</option>
-          </select>
+          <Globe class="vcv-lang-icon h-4 w-4" aria-hidden="true" />
+          <Select.Root type="single" value={i18n.lang} onValueChange={(value) => value && void i18n.setLang(value)}>
+            <Select.Trigger class="vcv-select vcv-lang-select h-9" aria-label={i18n.t('labelLanguage', 'Language')}>
+              {langName}
+            </Select.Trigger>
+            <Select.Content>
+              {#each LANGUAGES as language (language.code)}
+                <Select.Item value={language.code}>{language.name}</Select.Item>
+              {/each}
+            </Select.Content>
+          </Select.Root>
         </div>
       </div>
     </div>
@@ -235,9 +251,12 @@
             <span class="vcv-palette-label">{i18n.t('filterChipSources', 'Sources')}</span>
             <button type="button" class="vcv-mount-filter" onclick={() => (mountModalOpen = true)}>
               {#if mountFilter === null || mountFilter.length === allMounts.length}
-                All mounts ({allMounts.length})
+                {i18n.t('sourcesButtonAll', 'All mounts ({total})', { total: allMounts.length })}
               {:else}
-                {mountFilter.length} / {allMounts.length} mounts
+                {i18n.t('sourcesButtonPartial', '{selected} / {total} mounts', {
+                  selected: mountFilter.length,
+                  total: allMounts.length,
+                })}
               {/if}
             </button>
           </div>
@@ -257,7 +276,7 @@
             bind:value={search}
             oninput={() => (pageIndex = 0)}
           />
-          <kbd class="vcv-search-shortcut" aria-label="Focus search">/</kbd>
+          <kbd class="vcv-search-shortcut" aria-label={i18n.t('searchShortcutHint', 'Press / to focus search')}>/</kbd>
         </div>
       </div>
     </div>
@@ -282,10 +301,10 @@
 
   {#if certs.vaultErrors.length > 0}
     <div class="vcv-vault-error-banner" role="status" aria-live="polite">
-      <strong>{certs.vaultErrors.length} vault{certs.vaultErrors.length === 1 ? '' : 's'} unreachable.</strong>
-      Showing partial results.
+      <strong>{i18n.t('vaultsUnreachable', '{count} vault(s) unreachable', { count: certs.vaultErrors.length })}</strong>
+      {i18n.t('vaultsUnreachableHint', 'Showing partial results.')}
       <details>
-        <summary>Details</summary>
+        <summary>{i18n.t('buttonDetails', 'Details')}</summary>
         <ul>
           {#each certs.vaultErrors as vaultError (vaultError.vaultId)}
             <li><code>{vaultError.vaultId}</code>: {vaultError.message}</li>
@@ -302,22 +321,18 @@
           <div class="vcv-stat-group vcv-stat-group-attention">
             <span class="vcv-stat-group-label">{i18n.t('dashboardGroupAttention', 'Attention')}</span>
             <div class="vcv-stat-group-cards">
-              {#each [
-                { key: 'expired', label: 'Expired', desc: 'Past expiry' },
-                { key: 'critical', label: 'Critical', desc: `≤ ${DEFAULT_THRESHOLDS.critical} days` },
-                { key: 'revoked', label: 'Revoked', desc: 'Marked revoked' },
-              ] as item (item.key)}
+              {#each ['expired', 'critical', 'revoked'] as const as key (key)}
                 <button
                   type="button"
-                  class="vcv-stat vcv-stat-risk vcv-stat-{item.key} vcv-stat-clickable {statusFilter === item.key ? 'vcv-stat-active' : ''}"
-                  onclick={() => setStatus(item.key as StatusFilter)}
+                  class="vcv-stat vcv-stat-risk vcv-stat-{key} vcv-stat-clickable {statusFilter === key ? 'vcv-stat-active' : ''}"
+                  onclick={() => setStatus(key)}
                 >
                   <div class="vcv-stat-header">
                     <span class="vcv-stat-dot"></span>
-                    <span class="vcv-stat-label">{item.label}</span>
+                    <span class="vcv-stat-label">{statusMeta[key].label}</span>
                   </div>
-                  <span class="vcv-stat-value">{counts[item.key as keyof typeof counts]}</span>
-                  <span class="vcv-stat-desc">{item.desc}</span>
+                  <span class="vcv-stat-value">{counts[key]}</span>
+                  <span class="vcv-stat-desc">{statusMeta[key].desc}</span>
                 </button>
               {/each}
             </div>
@@ -325,21 +340,18 @@
           <div class="vcv-stat-group vcv-stat-group-healthy">
             <span class="vcv-stat-group-label">{i18n.t('dashboardGroupHealthy', 'Healthy')}</span>
             <div class="vcv-stat-group-cards">
-              {#each [
-                { key: 'valid', label: 'Valid', desc: 'All good' },
-                { key: 'warning', label: 'Warning', desc: `≤ ${DEFAULT_THRESHOLDS.warning} days` },
-              ] as item (item.key)}
+              {#each ['valid', 'warning'] as const as key (key)}
                 <button
                   type="button"
-                  class="vcv-stat vcv-stat-quiet vcv-stat-{item.key} vcv-stat-clickable {statusFilter === item.key ? 'vcv-stat-active' : ''}"
-                  onclick={() => setStatus(item.key as StatusFilter)}
+                  class="vcv-stat vcv-stat-quiet vcv-stat-{key} vcv-stat-clickable {statusFilter === key ? 'vcv-stat-active' : ''}"
+                  onclick={() => setStatus(key)}
                 >
                   <div class="vcv-stat-header">
                     <span class="vcv-stat-dot"></span>
-                    <span class="vcv-stat-label">{item.label}</span>
+                    <span class="vcv-stat-label">{statusMeta[key].label}</span>
                   </div>
-                  <span class="vcv-stat-value">{counts[item.key as keyof typeof counts]}</span>
-                  <span class="vcv-stat-desc">{item.desc}</span>
+                  <span class="vcv-stat-value">{counts[key]}</span>
+                  <span class="vcv-stat-desc">{statusMeta[key].desc}</span>
                 </button>
               {/each}
             </div>
@@ -347,29 +359,33 @@
         </div>
         <Donut
           counts={{ valid: counts.valid, warning: counts.warning, critical: counts.critical, expired: counts.expired, revoked: counts.revoked }}
-          label="certs"
+          label={i18n.t('dashboardCertsLabel', 'certs')}
         />
       </div>
     </div>
 
     <div class="vcv-table-footer">
       <div class="vcv-page-size">
-        <label for="vcv-page-size">Results per page</label>
-        <select
-          id="vcv-page-size"
-          class="vcv-select vcv-page-size-select"
+        <span id="vcv-page-size-label">{i18n.t('paginationPageSizeLabel', 'Results per page')}</span>
+        <Select.Root
+          type="single"
           value={String(pageSize)}
-          onchange={(event) => {
-            const value = (event.target as HTMLSelectElement).value
+          onValueChange={(value) => {
+            if (!value) return
             pageSize = value === 'all' ? 'all' : Number(value)
             pageIndex = 0
           }}
         >
-          <option value="25">25</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-          <option value="all">All</option>
-        </select>
+          <Select.Trigger class="vcv-select vcv-page-size-select h-9" aria-labelledby="vcv-page-size-label">
+            {pageSize === 'all' ? i18n.t('paginationPageSizeAll', 'All') : String(pageSize)}
+          </Select.Trigger>
+          <Select.Content>
+            <Select.Item value="25">25</Select.Item>
+            <Select.Item value="50">50</Select.Item>
+            <Select.Item value="100">100</Select.Item>
+            <Select.Item value="all">{i18n.t('paginationPageSizeAll', 'All')}</Select.Item>
+          </Select.Content>
+        </Select.Root>
       </div>
       <div class="vcv-page-buttons">
         <button
@@ -378,17 +394,19 @@
           disabled={safePage === 0}
           onclick={() => (pageIndex = Math.max(0, safePage - 1))}
         >
-          Previous
+          {i18n.t('paginationPrev', 'Previous')}
         </button>
         <span class="vcv-page-info">{pageInfoText()}</span>
-        <span class="vcv-badge vcv-badge-neutral">page {safePage + 1} / {totalPages}</span>
+        <span class="vcv-badge vcv-badge-neutral"
+          >{i18n.t('paginationInfo', 'Page {current} / {total}', { current: safePage + 1, total: totalPages })}</span
+        >
         <button
           type="button"
           class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill"
           disabled={safePage >= totalPages - 1}
           onclick={() => (pageIndex = Math.min(totalPages - 1, safePage + 1))}
         >
-          Next
+          {i18n.t('paginationNext', 'Next')}
         </button>
       </div>
     </div>
@@ -420,7 +438,7 @@
                   data-direction={sortKey === 'commonName' ? sortDir : 'asc'}
                   onclick={() => toggleSort('commonName')}
                 >
-                  <span class="vcv-sort-label">Common Name</span>
+                  <span class="vcv-sort-label">{i18n.t('columnCommonName', 'Common Name')}</span>
                   <span class="vcv-sort-indicator" aria-hidden="true"></span>
                 </button>
                 {#if showVaultMount}
@@ -431,7 +449,7 @@
                       data-direction={sortKey === 'vault' ? sortDir : 'asc'}
                       onclick={() => toggleSort('vault')}
                     >
-                      <span class="vcv-sort-label">Vault</span>
+                      <span class="vcv-sort-label">{i18n.t('labelVault', 'Vault')}</span>
                       <span class="vcv-sort-indicator" aria-hidden="true"></span>
                     </button>
                     <button
@@ -440,7 +458,7 @@
                       data-direction={sortKey === 'pki' ? sortDir : 'asc'}
                       onclick={() => toggleSort('pki')}
                     >
-                      <span class="vcv-sort-label">PKI</span>
+                      <span class="vcv-sort-label">{i18n.t('labelPki', 'PKI')}</span>
                       <span class="vcv-sort-indicator" aria-hidden="true"></span>
                     </button>
                   </div>
@@ -453,18 +471,20 @@
                   data-direction={sortKey === 'expiresAt' ? sortDir : 'asc'}
                   onclick={() => toggleSort('expiresAt')}
                 >
-                  <span class="vcv-sort-label">Expires</span>
+                  <span class="vcv-sort-label">{i18n.t('columnExpiresAt', 'Expires')}</span>
                   <span class="vcv-sort-indicator" aria-hidden="true"></span>
                 </button>
               </th>
-              <th scope="col" class="vcv-col-status">Status</th>
+              <th scope="col" class="vcv-col-status">{i18n.t('columnStatus', 'Status')}</th>
             </tr>
           </thead>
           <tbody>
             {#if paged.length === 0}
               <tr>
                 <td colspan="3" class="vcv-empty-row">
-                  {certs.loading ? 'Loading…' : 'No certificates match the current filters.'}
+                  {certs.loading
+                    ? i18n.t('labelLoading', 'Loading…')
+                    : i18n.t('tableNoMatch', 'No certificates match the current filters.')}
                 </td>
               </tr>
             {:else}
@@ -503,7 +523,7 @@
                   <td class="vcv-col-status">
                     <div class="vcv-status-cell">
                       <div class="vcv-status-badges">
-                        <span class={statusBadgeClass(s)}>{s}</span>
+                        <span class={statusBadgeClass(s)}>{statusMeta[s].label}</span>
                       </div>
                       <ChevronRight class="vcv-row-chevron h-4 w-4" aria-hidden="true" />
                     </div>
@@ -519,11 +539,11 @@
 
   <footer class="vcv-footer" aria-label="Footer">
     <div class="vcv-footer-legend">
-      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-valid">Valid</span><span class="vcv-legend-text">All good</span></div>
-      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-warning">Warning</span><span class="vcv-legend-text">≤ {DEFAULT_THRESHOLDS.warning} days</span></div>
-      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-critical">Critical</span><span class="vcv-legend-text">≤ {DEFAULT_THRESHOLDS.critical} days</span></div>
-      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-expired">Expired</span><span class="vcv-legend-text">Past expiry</span></div>
-      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-revoked">Revoked</span><span class="vcv-legend-text">Revoked by CA</span></div>
+      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-valid">{statusMeta.valid.label}</span><span class="vcv-legend-text">{statusMeta.valid.desc}</span></div>
+      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-warning">{statusMeta.warning.label}</span><span class="vcv-legend-text">{statusMeta.warning.desc}</span></div>
+      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-critical">{statusMeta.critical.label}</span><span class="vcv-legend-text">{statusMeta.critical.desc}</span></div>
+      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-expired">{statusMeta.expired.label}</span><span class="vcv-legend-text">{statusMeta.expired.desc}</span></div>
+      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-revoked">{statusMeta.revoked.label}</span><span class="vcv-legend-text">{statusMeta.revoked.desc}</span></div>
     </div>
     <div class="vcv-footer-bottom">
       <div class="vcv-footer-brand">
@@ -532,7 +552,7 @@
           {#if status.status}<span class="vcv-footer-version">v{status.status.version}</span>{/if}
         </div>
         <div class="vcv-footer-meta">
-          <span>License: <a class="vcv-footer-inline-link" href="https://github.com/julienhmmt/vcv/blob/main/LICENSE" target="_blank" rel="noopener">GNU Affero GPL v3.0</a></span>
+          <span>{i18n.t('footerLicense', 'License')}: <a class="vcv-footer-inline-link" href="https://github.com/julienhmmt/vcv/blob/main/LICENSE" target="_blank" rel="noopener">GNU Affero GPL v3.0</a></span>
           <span class="vcv-footer-divider">•</span>
           <span>Imagined and designed by <a href="https://j.hommet.net" target="_blank" rel="noopener">Julien HOMMET</a>, developed by AI.</span>
         </div>
@@ -544,8 +564,8 @@
         <a class="vcv-footer-link" href="https://github.com/julienhmmt/vcv" target="_blank" rel="noopener">
           <img class="vcv-footer-icon" src="/github.svg" alt="" /> GitHub
         </a>
-        <a class="vcv-footer-link" href="https://j.hommet.net/vcv" target="_blank" rel="noopener">More info</a>
-        <a class="vcv-footer-link" href="https://vcv.hommet.net" target="_blank" rel="noopener">Demo</a>
+        <a class="vcv-footer-link" href="https://j.hommet.net/vcv" target="_blank" rel="noopener">{i18n.t('footerMoreInfo', 'More info')}</a>
+        <a class="vcv-footer-link" href="https://vcv.hommet.net" target="_blank" rel="noopener">{i18n.t('footerDemo', 'Demo')}</a>
       </div>
     </div>
   </footer>

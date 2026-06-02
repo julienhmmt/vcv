@@ -1,7 +1,11 @@
+import { getContext, setContext } from 'svelte'
 import { api, ApiError } from '$lib/api'
 
 const STORAGE_KEY = 'vcv-lang'
 const FALLBACK = 'en'
+const I18N_KEY = Symbol('vcv-i18n')
+
+export type TParams = Record<string, string | number>
 
 export interface I18nStore {
   readonly messages: Record<string, string>
@@ -9,16 +13,38 @@ export interface I18nStore {
   readonly loading: boolean
   readonly error: string | null
   readonly ready: Promise<void>
-  t(key: string, fallback?: string): string
+  t(key: string, fallback?: string, params?: TParams): string
   setLang(lang: string): Promise<void>
 }
+
+/** Supported languages with their native display names, ordered for the picker. */
+export const LANGUAGES: { code: string; name: string }[] = [
+  { code: 'de', name: 'Deutsch' },
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Español' },
+  { code: 'fr', name: 'Français' },
+  { code: 'it', name: 'Italiano' },
+]
+
+const SUPPORTED = new Set(LANGUAGES.map((l) => l.code))
 
 function detectInitial(): string {
   if (typeof window === 'undefined') return FALLBACK
   const stored = window.localStorage.getItem(STORAGE_KEY)
-  if (stored) return stored
+  if (stored && SUPPORTED.has(stored)) return stored
   const browserLang = window.navigator.language.split('-')[0]
-  return browserLang || FALLBACK
+  return browserLang && SUPPORTED.has(browserLang) ? browserLang : FALLBACK
+}
+
+/**
+ * Replace `{{name}}` and `{name}` placeholders with values from `params`.
+ * Unknown placeholders are left intact so missing data is visible.
+ */
+function interpolate(template: string, params?: TParams): string {
+  if (!params) return template
+  return template
+    .replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key) => (key in params ? String(params[key]) : match))
+    .replace(/\{\s*(\w+)\s*\}/g, (match, key) => (key in params ? String(params[key]) : match))
 }
 
 export function createI18nStore(): I18nStore {
@@ -45,6 +71,7 @@ export function createI18nStore(): I18nStore {
   const ready = load(initial)
 
   async function setLang(next: string): Promise<void> {
+    if (!SUPPORTED.has(next)) return
     lang = next
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(STORAGE_KEY, next)
@@ -52,8 +79,8 @@ export function createI18nStore(): I18nStore {
     await load(next)
   }
 
-  function t(key: string, fallback?: string): string {
-    return messages[key] ?? fallback ?? key
+  function t(key: string, fallback?: string, params?: TParams): string {
+    return interpolate(messages[key] ?? fallback ?? key, params)
   }
 
   return {
@@ -73,4 +100,18 @@ export function createI18nStore(): I18nStore {
     t,
     setLang,
   }
+}
+
+/** Provide a single i18n store to the component tree. Call once at the root. */
+export function setI18nContext(store: I18nStore): I18nStore {
+  return setContext(I18N_KEY, store)
+}
+
+/** Read the i18n store provided by an ancestor via {@link setI18nContext}. */
+export function getI18n(): I18nStore {
+  const store = getContext<I18nStore | undefined>(I18N_KEY)
+  if (!store) {
+    throw new Error('getI18n() called without a provider. Wrap the tree with setI18nContext().')
+  }
+  return store
 }

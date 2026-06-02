@@ -4,9 +4,11 @@
   import AdminPanel from '$lib/components/admin/AdminPanel.svelte'
   import { createAdminStore } from '$lib/stores/admin.svelte'
   import { createThemeStore } from '$lib/stores/theme.svelte'
+  import { createI18nStore, setI18nContext } from '$lib/stores/i18n.svelte'
 
   const admin = createAdminStore()
   createThemeStore()
+  const i18n = setI18nContext(createI18nStore())
 
   onMount(async () => {
     await admin.checkSession()
@@ -41,7 +43,7 @@
         onLogout={() => void admin.logout()}
       />
     {:else}
-      <p class="text-sm text-muted-foreground">Loading…</p>
+      <p class="text-sm text-muted-foreground">{i18n.t('labelLoading', 'Loading…')}</p>
     {/if}
   </div>
 </main>

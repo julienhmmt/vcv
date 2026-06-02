@@ -1,5 +1,6 @@
 <script lang="ts">
   import * as Select from '$lib/components/ui/select'
+  import { getI18n } from '$lib/stores/i18n.svelte'
   import type { CertTypeFilter } from '$lib/utils/cert-filter'
 
   interface Props {
@@ -8,16 +9,17 @@
   }
 
   const { value, onChange }: Props = $props()
+  const i18n = getI18n()
 
-  const options: { value: CertTypeFilter; label: string }[] = [
-    { value: 'all', label: 'All types' },
-    { value: 'machine', label: 'Machine' },
-    { value: 'user', label: 'User' },
-    { value: 'both', label: 'Both' },
-    { value: 'unknown', label: 'Unknown' },
-  ]
+  const options = $derived<{ value: CertTypeFilter; label: string }[]>([
+    { value: 'all', label: i18n.t('certTypeFilterAll', 'All types') },
+    { value: 'machine', label: i18n.t('certTypeFilterMachine', 'Machine') },
+    { value: 'user', label: i18n.t('certTypeFilterUser', 'User') },
+    { value: 'both', label: i18n.t('certTypeFilterBoth', 'Both') },
+    { value: 'unknown', label: i18n.t('certTypeFilterUnknown', 'Unknown') },
+  ])
 
-  const currentLabel = $derived(options.find((o) => o.value === value)?.label ?? 'All types')
+  const currentLabel = $derived(options.find((o) => o.value === value)?.label ?? options[0].label)
 </script>
 
 <Select.Root type="single" value={value} onValueChange={(next) => onChange(next as CertTypeFilter)}>

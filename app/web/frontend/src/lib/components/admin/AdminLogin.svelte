@@ -3,6 +3,7 @@
   import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card'
   import { Input } from '$lib/components/ui/input'
   import { Label } from '$lib/components/ui/label'
+  import { getI18n } from '$lib/stores/i18n.svelte'
 
   interface Props {
     loading: boolean
@@ -11,6 +12,7 @@
   }
 
   const { loading, error, onSubmit }: Props = $props()
+  const i18n = getI18n()
 
   let username = $state('admin')
   let password = $state('')
@@ -23,23 +25,23 @@
 
 <Card class="mx-auto max-w-sm">
   <CardHeader>
-    <CardTitle>Admin Sign In</CardTitle>
+    <CardTitle>{i18n.t('adminLogin', 'Admin Sign In')}</CardTitle>
   </CardHeader>
   <CardContent>
     <form class="space-y-4" onsubmit={submit}>
       <div class="space-y-2">
-        <Label for="username">Username</Label>
+        <Label for="username">{i18n.t('adminUsername', 'Username')}</Label>
         <Input id="username" type="text" bind:value={username} required autocomplete="username" />
       </div>
       <div class="space-y-2">
-        <Label for="password">Password</Label>
+        <Label for="password">{i18n.t('adminPassword', 'Password')}</Label>
         <Input id="password" type="password" bind:value={password} required autocomplete="current-password" />
       </div>
       {#if error}
         <p class="text-sm text-destructive">{error}</p>
       {/if}
       <Button type="submit" class="w-full" disabled={loading}>
-        {loading ? 'Signing in…' : 'Sign In'}
+        {loading ? i18n.t('adminSigningIn', 'Signing in…') : i18n.t('adminLogin', 'Sign In')}
       </Button>
     </form>
   </CardContent>

@@ -3,6 +3,7 @@
   import { Button } from '$lib/components/ui/button'
   import { Input } from '$lib/components/ui/input'
   import { Label } from '$lib/components/ui/label'
+  import { getI18n } from '$lib/stores/i18n.svelte'
   import type { AdminVaultStatus, VaultInstance } from '$lib/types'
 
   interface Props {
@@ -13,6 +14,7 @@
   }
 
   const { vault, status, onChange, onRemove }: Props = $props()
+  const i18n = getI18n()
 
   const mountsText = $derived((vault.pki_mounts ?? []).join(', '))
 
@@ -33,11 +35,11 @@
   }
 
   function statusBadge(): { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' } {
-    if (!status) return { label: 'Unknown', variant: 'outline' }
-    if (!status.enabled) return { label: 'Disabled', variant: 'secondary' }
+    if (!status) return { label: i18n.t('adminVaultUnknown', 'Unknown'), variant: 'outline' }
+    if (!status.enabled) return { label: i18n.t('adminVaultDisabled', 'Disabled'), variant: 'secondary' }
     return status.connected
-      ? { label: 'Connected', variant: 'default' }
-      : { label: 'Disconnected', variant: 'destructive' }
+      ? { label: i18n.t('adminVaultConnected', 'Connected'), variant: 'default' }
+      : { label: i18n.t('adminVaultDisconnected', 'Disconnected'), variant: 'destructive' }
   }
 
   const badge = $derived(statusBadge())
@@ -55,26 +57,26 @@
           checked={enabled}
           onchange={(event) => update('enabled', (event.target as HTMLInputElement).checked)}
         />
-        Enabled
+        {i18n.t('adminVaultEnabled', 'Enabled')}
       </label>
-      <Button variant="destructive" size="sm" onclick={onRemove}>Remove</Button>
+      <Button variant="destructive" size="sm" onclick={onRemove}>{i18n.t('adminVaultRemove', 'Remove')}</Button>
     </div>
   </div>
 
   <div class="grid gap-3 md:grid-cols-2">
     <div class="space-y-1">
-      <Label>ID</Label>
+      <Label>{i18n.t('adminVaultID', 'ID')}</Label>
       <Input value={vault.id} oninput={(event) => update('id', (event.target as HTMLInputElement).value)} />
     </div>
     <div class="space-y-1">
-      <Label>Display Name</Label>
+      <Label>{i18n.t('adminVaultDisplayName', 'Display Name')}</Label>
       <Input
         value={vault.display_name ?? ''}
         oninput={(event) => update('display_name', (event.target as HTMLInputElement).value)}
       />
     </div>
     <div class="space-y-1 md:col-span-2">
-      <Label>Address</Label>
+      <Label>{i18n.t('adminVaultAddress', 'Address')}</Label>
       <Input
         value={vault.address}
         placeholder="https://vault.example.com"
@@ -82,7 +84,7 @@
       />
     </div>
     <div class="space-y-1 md:col-span-2">
-      <Label>Token</Label>
+      <Label>{i18n.t('adminVaultToken', 'Token')}</Label>
       <Input
         type="password"
         value={vault.token}
@@ -91,7 +93,7 @@
       />
     </div>
     <div class="space-y-1 md:col-span-2">
-      <Label>PKI Mounts (comma-separated)</Label>
+      <Label>{i18n.t('adminVaultPKIMounts', 'PKI Mounts (comma-separated)')}</Label>
       <Input value={mountsText} oninput={(event) => updateMounts((event.target as HTMLInputElement).value)} />
     </div>
     <label class="flex items-center gap-2 text-sm md:col-span-2">
@@ -100,7 +102,7 @@
         checked={vault.tls_insecure ?? false}
         onchange={(event) => update('tls_insecure', (event.target as HTMLInputElement).checked)}
       />
-      TLS Insecure (skip verification)
+      {i18n.t('adminVaultTLSInsecure', 'TLS Insecure (skip verification)')}
     </label>
   </div>
 </div>

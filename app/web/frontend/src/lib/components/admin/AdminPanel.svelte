@@ -5,6 +5,7 @@
   import { Input } from '$lib/components/ui/input'
   import { Label } from '$lib/components/ui/label'
   import VaultEditor from './VaultEditor.svelte'
+  import { getI18n } from '$lib/stores/i18n.svelte'
   import type { AdminVaultStatus, SettingsFile, VaultInstance } from '$lib/types'
 
   interface Props {
@@ -32,6 +33,8 @@
     onInvalidateCache,
     onLogout,
   }: Props = $props()
+
+  const i18n = getI18n()
 
   let working = $state<SettingsFile>(untrack(() => structuredClone(settings)))
   let lastSyncedRef: SettingsFile | null = null
@@ -90,10 +93,10 @@
 
 <div class="space-y-6">
   <header class="flex items-center justify-between">
-    <h1 class="text-2xl font-semibold tracking-tight">VCV Admin</h1>
+    <h1 class="text-2xl font-semibold tracking-tight">{i18n.t('adminTitle', 'VCV Admin')}</h1>
     <div class="flex gap-2">
-      <Button variant="outline" onclick={onInvalidateCache}>Invalidate cache</Button>
-      <Button variant="ghost" onclick={onLogout}>Sign out</Button>
+      <Button variant="outline" onclick={onInvalidateCache}>{i18n.t('adminInvalidateCache', 'Invalidate cache')}</Button>
+      <Button variant="ghost" onclick={onLogout}>{i18n.t('adminLogout', 'Sign out')}</Button>
     </div>
   </header>
 
@@ -111,11 +114,11 @@
   <form class="space-y-6" onsubmit={submit}>
     <Card>
       <CardHeader>
-        <CardTitle>Expiration thresholds (days)</CardTitle>
+        <CardTitle>{i18n.t('adminThresholdsTitle', 'Expiration thresholds (days)')}</CardTitle>
       </CardHeader>
       <CardContent class="grid gap-3 md:grid-cols-2">
         <div class="space-y-1">
-          <Label>Critical</Label>
+          <Label>{i18n.t('adminCriticalThreshold', 'Critical')}</Label>
           <Input
             type="number"
             min="1"
@@ -135,7 +138,7 @@
           />
         </div>
         <div class="space-y-1">
-          <Label>Warning</Label>
+          <Label>{i18n.t('adminWarningThreshold', 'Warning')}</Label>
           <Input
             type="number"
             min="1"
@@ -159,7 +162,7 @@
 
     <Card>
       <CardHeader>
-        <CardTitle>Metrics</CardTitle>
+        <CardTitle>{i18n.t('adminMetrics', 'Metrics')}</CardTitle>
       </CardHeader>
       <CardContent class="space-y-2 text-sm">
         <label class="flex items-center gap-2">
@@ -172,7 +175,7 @@
                 metrics: { ...working.metrics, per_certificate: (event.target as HTMLInputElement).checked },
               })}
           />
-          Per-certificate metrics (high cardinality)
+          {i18n.t('adminMetricsPerCertificate', 'Per-certificate metrics (high cardinality)')}
         </label>
         <label class="flex items-center gap-2">
           <input
@@ -184,14 +187,14 @@
                 metrics: { ...working.metrics, enhanced_metrics: (event.target as HTMLInputElement).checked },
               })}
           />
-          Enhanced metrics
+          {i18n.t('adminMetricsEnhanced', 'Enhanced metrics')}
         </label>
       </CardContent>
     </Card>
 
     <Card>
       <CardHeader>
-        <CardTitle>CORS allowed origins</CardTitle>
+        <CardTitle>{i18n.t('adminCORSOrigins', 'CORS allowed origins')}</CardTitle>
       </CardHeader>
       <CardContent>
         <Input
@@ -204,8 +207,8 @@
 
     <Card>
       <CardHeader class="flex flex-row items-center justify-between">
-        <CardTitle>Vaults</CardTitle>
-        <Button type="button" variant="outline" size="sm" onclick={onAddVault}>Add vault</Button>
+        <CardTitle>{i18n.t('adminVaults', 'Vaults')}</CardTitle>
+        <Button type="button" variant="outline" size="sm" onclick={onAddVault}>{i18n.t('adminAddVault', 'Add vault')}</Button>
       </CardHeader>
       <CardContent class="space-y-4">
         {#each working.vaults as vault, index (vault.id || index)}
@@ -217,14 +220,14 @@
           />
         {/each}
         {#if working.vaults.length === 0}
-          <p class="text-sm text-muted-foreground">No vaults configured.</p>
+          <p class="text-sm text-muted-foreground">{i18n.t('adminVaultsEmpty', 'No vaults configured.')}</p>
         {/if}
       </CardContent>
     </Card>
 
     <div class="flex justify-end">
       <Button type="submit" disabled={loading}>
-        {loading ? 'Saving…' : 'Save settings'}
+        {loading ? i18n.t('adminSaving', 'Saving…') : i18n.t('adminSaveSettings', 'Save settings')}
       </Button>
     </div>
   </form>
