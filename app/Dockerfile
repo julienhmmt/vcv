@@ -38,7 +38,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath \
     -o /vcv-backend ./cmd/server
 
 FROM gcr.io/distroless/static-debian13:nonroot
-
+RUN mkdir -p /app/config
 WORKDIR /app
 
 COPY --from=builder --chown=nonroot:nonroot /vcv-backend /app/vcv-backend
