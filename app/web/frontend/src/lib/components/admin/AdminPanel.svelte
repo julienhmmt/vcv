@@ -5,6 +5,7 @@
   import { Input } from '$lib/components/ui/input'
   import { Label } from '$lib/components/ui/label'
   import VaultEditor from './VaultEditor.svelte'
+  import AdminDocsModal from './AdminDocsModal.svelte'
   import { getI18n } from '$lib/stores/i18n.svelte'
   import type { AdminVaultStatus, SettingsFile, VaultInstance } from '$lib/types'
 
@@ -89,6 +90,8 @@
     event.preventDefault()
     onSave(working)
   }
+
+  let docsOpen = $state(false)
 </script>
 
 <div class="space-y-6">
@@ -96,7 +99,7 @@
     <h1 class="text-2xl font-semibold tracking-tight">{i18n.t('adminTitle', 'VCV Admin')}</h1>
     <div class="flex flex-wrap items-center gap-2">
       <Button variant="ghost" href="/">{i18n.t('adminBackToVCV', 'Back to VCV')}</Button>
-      <Button variant="ghost" href="https://j.hommet.net/vcv" target="_blank" rel="noopener">
+      <Button variant="ghost" onclick={() => (docsOpen = true)}>
         {i18n.t('adminDocsTitle', 'Documentation')}
       </Button>
       <Button variant="outline" onclick={onInvalidateCache}>{i18n.t('adminInvalidateCache', 'Invalidate cache')}</Button>
@@ -241,3 +244,5 @@
     </div>
   </form>
 </div>
+
+<AdminDocsModal open={docsOpen} onOpenChange={(open) => (docsOpen = open)} />

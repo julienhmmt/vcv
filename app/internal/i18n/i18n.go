@@ -48,6 +48,7 @@ type Messages struct {
 	DeselectAll                 string `json:"deselectAll"`
 	DownloadPEMSuccess          string `json:"downloadPEMSuccess"`
 	AdminDocsTitle              string `json:"adminDocsTitle"`
+	AdminDocsError              string `json:"adminDocsError"`
 	CertTypeFilterAll           string `json:"certTypeFilterAll"`
 	CertTypeFilterBoth          string `json:"certTypeFilterBoth"`
 	CertTypeFilterMachine       string `json:"certTypeFilterMachine"`
@@ -217,6 +218,7 @@ var englishMessages = Messages{
 	DeselectAll:                 "Deselect all",
 	DownloadPEMSuccess:          "Certificate PEM downloaded successfully",
 	AdminDocsTitle:              "Admin documentation",
+	AdminDocsError:              "Failed to load documentation",
 	CertTypeFilterAll:           "All types",
 	CertTypeFilterBoth:          "Machine + user",
 	CertTypeFilterMachine:       "Machine",
@@ -377,6 +379,7 @@ var frenchMessages = Messages{
 	DeselectAll:                 "Tout désélectionner",
 	DownloadPEMSuccess:          "Certificat PEM téléchargé avec succès",
 	AdminDocsTitle:              "Documentation admin",
+	AdminDocsError:              "Échec du chargement de la documentation",
 	CertTypeFilterAll:           "Tous les types",
 	CertTypeFilterBoth:          "Machine + utilisateur",
 	CertTypeFilterMachine:       "Machine",
@@ -537,6 +540,7 @@ var spanishMessages = Messages{
 	DeselectAll:                 "Deseleccionar todo",
 	DownloadPEMSuccess:          "Certificado PEM descargado exitosamente",
 	AdminDocsTitle:              "Documentación admin",
+	AdminDocsError:              "Error al cargar la documentación",
 	CertTypeFilterAll:           "Todos los tipos",
 	CertTypeFilterBoth:          "Máquina + usuario",
 	CertTypeFilterMachine:       "Máquina",
@@ -697,6 +701,7 @@ var germanMessages = Messages{
 	DeselectAll:                 "Alle abwählen",
 	DownloadPEMSuccess:          "Zertifikat-PEM erfolgreich heruntergeladen",
 	AdminDocsTitle:              "Admin-dokumentation",
+	AdminDocsError:              "Dokumentation konnte nicht geladen werden",
 	CertTypeFilterAll:           "Alle Typen",
 	CertTypeFilterBoth:          "Maschine + Benutzer",
 	CertTypeFilterMachine:       "Maschine",
@@ -857,6 +862,7 @@ var italianMessages = Messages{
 	DeselectAll:                 "Deseleziona tutto",
 	DownloadPEMSuccess:          "Certificato PEM scaricato con successo",
 	AdminDocsTitle:              "Documentazione admin",
+	AdminDocsError:              "Impossibile caricare la documentazione",
 	CertTypeFilterAll:           "Tutti i tipi",
 	CertTypeFilterBoth:          "Macchina + utente",
 	CertTypeFilterMachine:       "Macchina",

@@ -12,11 +12,16 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"vcv/internal/config"
+	"vcv/internal/docs"
 	vcverrors "vcv/internal/errors"
 	"vcv/internal/logger"
 	"vcv/internal/middleware"
 	"vcv/internal/vault"
 )
+
+type adminDocsResponse struct {
+	HTML string `json:"html"`
+}
 
 type adminLoginRequest struct {
 	Username string `json:"username"`
@@ -123,6 +128,10 @@ func registerAdminAPIRoutes(
 
 	router.Group(func(r chi.Router) {
 		r.Use(sessions.requireAuth)
+
+		r.Get("/api/admin/docs", func(w http.ResponseWriter, req *http.Request) {
+			writeJSON(w, http.StatusOK, adminDocsResponse{HTML: docs.AdminHTML()})
+		})
 
 		r.Get("/api/admin/settings", func(w http.ResponseWriter, req *http.Request) {
 			settings, err := store.load()

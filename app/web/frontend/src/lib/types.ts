@@ -133,6 +133,10 @@ export interface AdminSessionResponse {
   authenticated: boolean
 }
 
+export interface AdminDocsResponse {
+  html: string
+}
+
 export interface AdminVaultAddedResponse {
   key: string
   vault: VaultInstance

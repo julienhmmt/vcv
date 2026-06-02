@@ -1,4 +1,5 @@
 import type {
+  AdminDocsResponse,
   AdminSessionResponse,
   AdminSettingsResponse,
   AdminVaultAddedResponse,
@@ -69,6 +70,9 @@ export const api = {
   },
   adminSession(): Promise<AdminSessionResponse> {
     return request<AdminSessionResponse>('/api/admin/session')
+  },
+  adminDocs(): Promise<AdminDocsResponse> {
+    return request<AdminDocsResponse>('/api/admin/docs')
   },
   adminLogin(username: string, password: string): Promise<AdminSessionResponse> {
     return request<AdminSessionResponse>('/api/admin/login', {
