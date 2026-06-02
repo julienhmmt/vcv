@@ -36,13 +36,13 @@
 
   const i18n = getI18n()
 
-  let working = $state<SettingsFile>(untrack(() => structuredClone(settings)))
+  let working = $state<SettingsFile>(untrack(() => $state.snapshot(settings)))
   let lastSyncedRef: SettingsFile | null = null
 
   $effect(() => {
     if (settings !== lastSyncedRef) {
       lastSyncedRef = settings
-      working = structuredClone(settings)
+      working = $state.snapshot(settings)
     }
   })
 
