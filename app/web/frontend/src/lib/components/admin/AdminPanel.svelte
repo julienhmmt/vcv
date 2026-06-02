@@ -94,7 +94,11 @@
 <div class="space-y-6">
   <header class="flex items-center justify-between">
     <h1 class="text-2xl font-semibold tracking-tight">{i18n.t('adminTitle', 'VCV Admin')}</h1>
-    <div class="flex gap-2">
+    <div class="flex flex-wrap items-center gap-2">
+      <Button variant="ghost" href="/">{i18n.t('adminBackToVCV', 'Back to VCV')}</Button>
+      <Button variant="ghost" href="https://j.hommet.net/vcv" target="_blank" rel="noopener">
+        {i18n.t('adminDocsTitle', 'Documentation')}
+      </Button>
       <Button variant="outline" onclick={onInvalidateCache}>{i18n.t('adminInvalidateCache', 'Invalidate cache')}</Button>
       <Button variant="ghost" onclick={onLogout}>{i18n.t('adminLogout', 'Sign out')}</Button>
     </div>
@@ -157,6 +161,7 @@
               })}
           />
         </div>
+        <p class="text-xs text-muted-foreground md:col-span-2">{i18n.t('adminThresholdsHint', '')}</p>
       </CardContent>
     </Card>
 
@@ -165,6 +170,7 @@
         <CardTitle>{i18n.t('adminMetrics', 'Metrics')}</CardTitle>
       </CardHeader>
       <CardContent class="space-y-2 text-sm">
+        <p class="text-xs text-muted-foreground">{i18n.t('adminMetricsHint', '')}</p>
         <label class="flex items-center gap-2">
           <input
             type="checkbox"
@@ -202,6 +208,7 @@
           placeholder="https://app.example.com, https://other.example.com"
           oninput={(event) => updateCors((event.target as HTMLInputElement).value)}
         />
+        <p class="mt-2 text-xs text-muted-foreground">{i18n.t('adminCORSOriginsHint', '')}</p>
       </CardContent>
     </Card>
 
@@ -211,6 +218,7 @@
         <Button type="button" variant="outline" size="sm" onclick={onAddVault}>{i18n.t('adminAddVault', 'Add vault')}</Button>
       </CardHeader>
       <CardContent class="space-y-4">
+        <p class="text-xs text-muted-foreground">{i18n.t('adminVaultsHint', '')}</p>
         {#each working.vaults as vault, index (vault.id || index)}
           <VaultEditor
             {vault}
@@ -225,7 +233,8 @@
       </CardContent>
     </Card>
 
-    <div class="flex justify-end">
+    <div class="flex flex-col items-end gap-2">
+      <p class="text-xs text-muted-foreground">{i18n.t('adminRestartNote', '')}</p>
       <Button type="submit" disabled={loading}>
         {loading ? i18n.t('adminSaving', 'Saving…') : i18n.t('adminSaveSettings', 'Save settings')}
       </Button>

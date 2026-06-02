@@ -1,7 +1,9 @@
 <script lang="ts">
   import Check from '@lucide/svelte/icons/check'
   import Copy from '@lucide/svelte/icons/copy'
+  import Download from '@lucide/svelte/icons/download'
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
+  import { toast } from 'svelte-sonner'
   import * as Dialog from '$lib/components/ui/dialog'
   import { ScrollArea } from '$lib/components/ui/scroll-area'
   import { api, ApiError } from '$lib/api'
@@ -75,6 +77,20 @@
     }, 1500)
   }
 
+  function downloadPem(): void {
+    if (!details?.pem) return
+    const blob = new Blob([details.pem], { type: 'application/x-pem-file' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `${cert?.commonName || 'certificate'}.pem`
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+    toast.success(i18n.t('downloadPEMSuccess', 'Certificate PEM downloaded successfully'))
+  }
+
   const status = $derived(cert ? certStatus(cert, DEFAULT_THRESHOLDS) : 'valid')
   const days = $derived(cert ? daysUntilExpiry(cert) : 0)
   const expiryTone = $derived(cert ? tone(status) : 'ok')
@@ -104,13 +120,19 @@
               <div class="vcv-cd-badges">
                 <span class={statusBadgeClass(status)}>{statusLabels[status]}</span>
               </div>
-              {#if days >= 0}
+              {#if days > 0}
                 <strong class="vcv-cd-countdown vcv-cd-expiry-value-{expiryTone}">
-                  {i18n.t('daysRemaining', '{days} days left', { days })}
+                  {i18n.t(days === 1 ? 'daysRemainingSingular' : 'daysRemaining', '{days} days remaining', { days })}
+                </strong>
+              {:else if days === 0}
+                <strong class="vcv-cd-countdown vcv-cd-expiry-value-{expiryTone}">
+                  {i18n.t('expiringToday', 'Expires today')}
                 </strong>
               {:else}
                 <strong class="vcv-cd-countdown vcv-cd-expiry-value-critical">
-                  {i18n.t('expiredDays', 'Expired {days} days ago', { days: Math.abs(days) })}
+                  {i18n.t(Math.abs(days) === 1 ? 'expiredDaysSingular' : 'expiredDays', 'Expired {days} days ago', {
+                    days: Math.abs(days),
+                  })}
                 </strong>
               {/if}
             </div>
@@ -245,6 +267,10 @@
                 </button>
               {/if}
               {#if details.pem}
+                <button type="button" class="vcv-button vcv-button-secondary" onclick={downloadPem}>
+                  <Download class="h-4 w-4" />
+                  {i18n.t('buttonDownloadPEM', 'Download PEM')}
+                </button>
                 <button
                   type="button"
                   class="vcv-button"

@@ -1,5 +1,5 @@
 import type { Certificate, CertStatus, ExpirationThresholds } from '$lib/types'
-import { certStatus, daysUntilExpiry, parseCertID, DEFAULT_THRESHOLDS } from './cert-status'
+import { certStatus, parseCertID, DEFAULT_THRESHOLDS } from './cert-status'
 
 export type SortKey = 'commonName' | 'expiresAt' | 'vault' | 'pki'
 export type SortDirection = 'asc' | 'desc'
@@ -112,11 +112,4 @@ export function formatDate(iso: string): string {
 export function formatTime(iso: string): string {
   const date = new Date(iso)
   return date.toISOString().split('T')[1].slice(0, 5)
-}
-
-export function daysRemainingLabel(cert: Certificate, now: Date = new Date()): string {
-  const days = daysUntilExpiry(cert, now)
-  if (days < 0) return `${Math.abs(days)}d ago`
-  if (days === 0) return 'today'
-  return `${days}d`
 }

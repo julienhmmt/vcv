@@ -25,6 +25,7 @@
   import { createI18nStore, setI18nContext, LANGUAGES } from '$lib/stores/i18n.svelte'
   import {
     certStatus,
+    daysUntilExpiry,
     parseCertID,
     statusBadgeClass,
     rowClassForStatus,
@@ -35,7 +36,6 @@
     sortCerts,
     paginate,
     dashboardCounts,
-    daysRemainingLabel,
     formatDate,
     formatTime,
     type CertTypeFilter,
@@ -65,6 +65,15 @@
     revoked: { label: i18n.t('statusLabelRevoked', 'Revoked'), desc: i18n.t('statusDescRevoked', 'Revoked by CA') },
   })
   const langName = $derived(LANGUAGES.find((l) => l.code === i18n.lang)?.name ?? i18n.lang.toUpperCase())
+
+  /** Localized expiry label for the table: compact "{n}d" ahead, descriptive when due/past. */
+  function expiryLabel(cert: Certificate): string {
+    const days = daysUntilExpiry(cert)
+    if (days > 0) return i18n.t('daysRemainingShort', '{days}d', { days })
+    if (days === 0) return i18n.t('expiringToday', 'Expires today')
+    const ago = Math.abs(days)
+    return i18n.t(ago === 1 ? 'expiredDaysSingular' : 'expiredDays', 'Expired {days} days ago', { days: ago })
+  }
 
   let search = $state('')
   let statusFilter = $state<StatusFilter>('all')
@@ -514,7 +523,7 @@
                     {/if}
                   </td>
                   <td class="vcv-col-expiry">
-                    <div class="vcv-expiry-count vcv-days-{s}">{daysRemainingLabel(cert)}</div>
+                    <div class="vcv-expiry-count vcv-days-{s}">{expiryLabel(cert)}</div>
                     <div class="vcv-expiry-datetime">
                       <span class="vcv-expiry-date">{formatDate(cert.expiresAt)}</span>
                       <span class="vcv-date-secondary">· {formatTime(cert.expiresAt)} UTC</span>

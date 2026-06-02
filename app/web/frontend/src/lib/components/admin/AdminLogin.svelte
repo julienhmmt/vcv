@@ -40,6 +40,7 @@
       {#if error}
         <p class="text-sm text-destructive">{error}</p>
       {/if}
+      <p class="text-xs text-muted-foreground">{i18n.t('adminLoginHint', '')}</p>
       <Button type="submit" class="w-full" disabled={loading}>
         {loading ? i18n.t('adminSigningIn', 'Signing in…') : i18n.t('adminLogin', 'Sign In')}
       </Button>

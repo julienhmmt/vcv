@@ -16,6 +16,8 @@
   const { vault, status, onChange, onRemove }: Props = $props()
   const i18n = getI18n()
 
+  let showToken = $state(false)
+
   const mountsText = $derived((vault.pki_mounts ?? []).join(', '))
 
   function update<K extends keyof VaultInstance>(field: K, value: VaultInstance[K]): void {
@@ -84,18 +86,58 @@
       />
     </div>
     <div class="space-y-1 md:col-span-2">
-      <Label>{i18n.t('adminVaultToken', 'Token')}</Label>
+      <div class="flex items-center justify-between">
+        <Label>{i18n.t('adminVaultToken', 'Token')}</Label>
+        <button
+          type="button"
+          class="text-xs text-muted-foreground hover:text-foreground"
+          onclick={() => (showToken = !showToken)}
+        >
+          {showToken ? i18n.t('adminVaultTokenHide', 'Hide') : i18n.t('adminVaultTokenReveal', 'Reveal')}
+        </button>
+      </div>
       <Input
-        type="password"
+        type={showToken ? 'text' : 'password'}
         value={vault.token}
         placeholder="(unchanged)"
         oninput={(event) => update('token', (event.target as HTMLInputElement).value)}
       />
+      <p class="text-xs text-muted-foreground">{i18n.t('adminVaultTokenHint', '')}</p>
     </div>
     <div class="space-y-1 md:col-span-2">
       <Label>{i18n.t('adminVaultPKIMounts', 'PKI Mounts (comma-separated)')}</Label>
       <Input value={mountsText} oninput={(event) => updateMounts((event.target as HTMLInputElement).value)} />
     </div>
+
+    <div class="space-y-1 md:col-span-2">
+      <Label>{i18n.t('adminVaultTLSCABase64', 'TLS CA certificate (base64)')}</Label>
+      <Input
+        value={vault.tls_ca_cert_base64 ?? ''}
+        oninput={(event) => update('tls_ca_cert_base64', (event.target as HTMLInputElement).value)}
+      />
+    </div>
+    <div class="space-y-1">
+      <Label>{i18n.t('adminVaultTLSCAFile', 'TLS CA certificate (file path)')}</Label>
+      <Input
+        value={vault.tls_ca_cert ?? ''}
+        oninput={(event) => update('tls_ca_cert', (event.target as HTMLInputElement).value)}
+      />
+    </div>
+    <div class="space-y-1">
+      <Label>{i18n.t('adminVaultTLSCAPath', 'TLS CA path (directory)')}</Label>
+      <Input
+        value={vault.tls_ca_path ?? ''}
+        oninput={(event) => update('tls_ca_path', (event.target as HTMLInputElement).value)}
+      />
+    </div>
+    <div class="space-y-1 md:col-span-2">
+      <Label>{i18n.t('adminVaultTLSServerName', 'TLS server name (SNI)')}</Label>
+      <Input
+        value={vault.tls_server_name ?? ''}
+        oninput={(event) => update('tls_server_name', (event.target as HTMLInputElement).value)}
+      />
+    </div>
+
     <label class="flex items-center gap-2 text-sm md:col-span-2">
       <input
         type="checkbox"
@@ -104,5 +146,6 @@
       />
       {i18n.t('adminVaultTLSInsecure', 'TLS Insecure (skip verification)')}
     </label>
+    <p class="text-xs text-muted-foreground md:col-span-2">{i18n.t('adminVaultTLSTip', '')}</p>
   </div>
 </div>
