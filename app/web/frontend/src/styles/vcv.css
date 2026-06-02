@@ -2434,7 +2434,6 @@ col.vcv-col-status {
 .vcv-cd-passport {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
-  margin: -1.25rem;
   min-height: 30rem;
   background: var(--vcv-color-surface);
 }
