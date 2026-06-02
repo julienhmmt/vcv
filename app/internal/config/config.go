@@ -136,7 +136,7 @@ func Load() (Config, error) {
 
 // settingsCandidates returns the ordered list of settings file paths to try.
 func settingsCandidates() []string {
-	return []string{"settings.dev.json", "settings.prod.json", "settings.json", "./settings.json", "/app/settings.json"}
+	return []string{"settings.dev.json", "settings.prod.json", "settings.json", "./settings.json", "/app/config/settings.json"}
 }
 
 // ResolveSettingsPath returns the absolute path of the first settings file found on disk.
