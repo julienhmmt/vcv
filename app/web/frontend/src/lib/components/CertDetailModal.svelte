@@ -3,6 +3,7 @@
   import Copy from '@lucide/svelte/icons/copy'
   import Download from '@lucide/svelte/icons/download'
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
+  import Landmark from '@lucide/svelte/icons/landmark'
   import { toast } from 'svelte-sonner'
   import * as Dialog from '$lib/components/ui/dialog'
   import { ScrollArea } from '$lib/components/ui/scroll-area'
@@ -263,6 +264,7 @@
                     onShowCA(cert.id)
                   }}
                 >
+                  <Landmark class="h-4 w-4" />
                   {i18n.t('buttonViewCA', 'View issuer CA')}
                 </button>
               {/if}
@@ -273,10 +275,17 @@
                 </button>
                 <button
                   type="button"
-                  class="vcv-button"
+                  class="vcv-button vcv-button-primary"
+                  class:vcv-cd-copy-pem-done={copiedField === 'pem'}
                   onclick={() => copy('pem', details!.pem)}
                 >
-                  {copiedField === 'pem' ? i18n.t('labelCopied', 'Copied!') : i18n.t('labelCopyPem', 'Copy PEM')}
+                  {#if copiedField === 'pem'}
+                    <Check class="h-4 w-4" />
+                    {i18n.t('labelCopied', 'Copied!')}
+                  {:else}
+                    <Copy class="h-4 w-4" />
+                    {i18n.t('labelCopyPem', 'Copy PEM')}
+                  {/if}
                 </button>
               {/if}
             </div>
