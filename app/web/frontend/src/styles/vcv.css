@@ -359,12 +359,6 @@ body {
   transform: translateY(-1px);
 }
 
-.vcv-footer-icon {
-  width: 1rem;
-  height: 1rem;
-  display: inline-block;
-}
-
 .vcv-footer-inline-link {
   color: inherit;
   text-decoration: underline;
@@ -1304,8 +1298,10 @@ body {
 }
 
 .vcv-lang-select {
-  width: 4rem;
-  padding: 0 0.5rem;
+  width: auto;
+  min-width: 0;
+  gap: 0.4rem;
+  padding: 0 0.625rem;
 }
 
 .vcv-table-footer {

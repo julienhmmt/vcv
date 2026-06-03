@@ -171,7 +171,6 @@ type Messages struct {
 	VaultsUnreachableHint    string `json:"vaultsUnreachableHint"`
 	TableNoMatch             string `json:"tableNoMatch"`
 	FooterMoreInfo           string `json:"footerMoreInfo"`
-	FooterDemo               string `json:"footerDemo"`
 	FooterLicense            string `json:"footerLicense"`
 	StatusConnecting         string `json:"statusConnecting"`
 	StatusNoVaults           string `json:"statusNoVaults"`
@@ -337,7 +336,6 @@ var englishMessages = Messages{
 	VaultsUnreachableHint:    "Showing partial results.",
 	TableNoMatch:             "No certificates match the current filters.",
 	FooterMoreInfo:           "More info",
-	FooterDemo:               "Demo",
 	FooterLicense:            "License",
 	StatusConnecting:         "connecting…",
 	StatusNoVaults:           "no vaults",
@@ -497,7 +495,6 @@ var frenchMessages = Messages{
 	VaultsUnreachableHint:    "Résultats partiels affichés.",
 	TableNoMatch:             "Aucun certificat ne correspond aux filtres actuels.",
 	FooterMoreInfo:           "En savoir plus",
-	FooterDemo:               "Démo",
 	FooterLicense:            "Licence",
 	StatusConnecting:         "connexion…",
 	StatusNoVaults:           "aucun vault",
@@ -657,7 +654,6 @@ var spanishMessages = Messages{
 	VaultsUnreachableHint:    "Mostrando resultados parciales.",
 	TableNoMatch:             "Ningún certificado coincide con los filtros actuales.",
 	FooterMoreInfo:           "Más información",
-	FooterDemo:               "Demo",
 	FooterLicense:            "Licencia",
 	StatusConnecting:         "conectando…",
 	StatusNoVaults:           "sin vaults",
@@ -817,7 +813,6 @@ var germanMessages = Messages{
 	VaultsUnreachableHint:    "Teilergebnisse werden angezeigt.",
 	TableNoMatch:             "Keine Zertifikate entsprechen den aktuellen Filtern.",
 	FooterMoreInfo:           "Mehr Infos",
-	FooterDemo:               "Demo",
 	FooterLicense:            "Lizenz",
 	StatusConnecting:         "verbinde…",
 	StatusNoVaults:           "keine Vaults",
@@ -977,7 +972,6 @@ var italianMessages = Messages{
 	VaultsUnreachableHint:    "Risultati parziali mostrati.",
 	TableNoMatch:             "Nessun certificato corrisponde ai filtri attuali.",
 	FooterMoreInfo:           "Maggiori informazioni",
-	FooterDemo:               "Demo",
 	FooterLicense:            "Licenza",
 	StatusConnecting:         "connessione…",
 	StatusNoVaults:           "nessun vault",

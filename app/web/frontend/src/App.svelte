@@ -3,7 +3,6 @@
   import { toast } from 'svelte-sonner'
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import ChevronRight from '@lucide/svelte/icons/chevron-right'
-  import Globe from '@lucide/svelte/icons/globe'
   import Moon from '@lucide/svelte/icons/moon'
   import RefreshCw from '@lucide/svelte/icons/refresh-cw'
   import Search from '@lucide/svelte/icons/search'
@@ -288,19 +287,17 @@
             <Moon class="h-4 w-4" />
           {/if}
         </button>
-        <div class="vcv-lang-wrapper">
-          <Globe class="vcv-lang-icon h-4 w-4" aria-hidden="true" />
-          <Select.Root type="single" value={i18n.lang} onValueChange={(value) => value && void i18n.setLang(value)}>
-            <Select.Trigger class="vcv-select vcv-lang-select h-9" aria-label={i18n.t('labelLanguage', 'Language')}>
-              {langName}
-            </Select.Trigger>
-            <Select.Content>
-              {#each LANGUAGES as language (language.code)}
-                <Select.Item value={language.code}>{language.name}</Select.Item>
-              {/each}
-            </Select.Content>
-          </Select.Root>
-        </div>
+        <Select.Root type="single" value={i18n.lang} onValueChange={(value) => value && void i18n.setLang(value)}>
+          <Select.Trigger class="vcv-select vcv-lang-select h-9" aria-label={i18n.t('labelLanguage', 'Language')}>
+            <span class="vcv-lang-icon" aria-hidden="true">🌐</span>
+            <span class="vcv-lang-name">{langName}</span>
+          </Select.Trigger>
+          <Select.Content>
+            {#each LANGUAGES as language (language.code)}
+              <Select.Item value={language.code}>{language.name}</Select.Item>
+            {/each}
+          </Select.Content>
+        </Select.Root>
       </div>
     </div>
 
@@ -579,13 +576,12 @@
       </div>
       <div class="vcv-footer-links" aria-label="External links">
         <a class="vcv-footer-link" href="https://hub.docker.com/r/jhmmt/vcv" target="_blank" rel="noopener">
-          <img class="vcv-footer-icon" src="/docker.svg" alt="" /> Docker Hub
+          Docker Hub
         </a>
         <a class="vcv-footer-link" href="https://github.com/julienhmmt/vcv" target="_blank" rel="noopener">
-          <img class="vcv-footer-icon" src="/github.svg" alt="" /> GitHub
+          GitHub
         </a>
         <a class="vcv-footer-link" href="https://j.hommet.net/vcv" target="_blank" rel="noopener">{i18n.t('footerMoreInfo', 'More info')}</a>
-        <a class="vcv-footer-link" href="https://vcv.hommet.net" target="_blank" rel="noopener">{i18n.t('footerDemo', 'Demo')}</a>
       </div>
     </div>
   </footer>

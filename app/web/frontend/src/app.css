@@ -330,22 +330,10 @@
   color: var(--vcv-text-muted, #6b7280);
 }
 
-/* Header lang wrapper */
-.vcv-lang-wrapper {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-}
-
-.vcv-lang-wrapper .vcv-lang-icon {
-  position: absolute;
-  left: 8px;
-  pointer-events: none;
-  color: var(--vcv-text-muted, #6b7280);
-}
-
-.vcv-lang-wrapper .vcv-lang-select {
-  padding-left: 28px;
+/* Header lang switcher */
+.vcv-lang-icon {
+  font-size: 14px;
+  line-height: 1;
 }
 
 /* Vault status hover card */
