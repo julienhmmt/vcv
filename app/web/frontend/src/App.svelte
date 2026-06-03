@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { toast } from 'svelte-sonner'
-  import BookOpen from '@lucide/svelte/icons/book-open'
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import ChevronRight from '@lucide/svelte/icons/chevron-right'
   import Globe from '@lucide/svelte/icons/globe'
@@ -289,9 +288,6 @@
             <Moon class="h-4 w-4" />
           {/if}
         </button>
-        <a class="vcv-button vcv-button-icon" href="/admin" title={i18n.t('navAdmin', 'Admin')} aria-label={i18n.t('navAdmin', 'Admin')}>
-          <BookOpen class="h-4 w-4" />
-        </a>
         <div class="vcv-lang-wrapper">
           <Globe class="vcv-lang-icon h-4 w-4" aria-hidden="true" />
           <Select.Root type="single" value={i18n.lang} onValueChange={(value) => value && void i18n.setLang(value)}>
