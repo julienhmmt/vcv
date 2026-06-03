@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import { toast } from 'svelte-sonner'
   import BookOpen from '@lucide/svelte/icons/book-open'
+  import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import ChevronRight from '@lucide/svelte/icons/chevron-right'
   import Globe from '@lucide/svelte/icons/globe'
   import Moon from '@lucide/svelte/icons/moon'
@@ -18,7 +19,7 @@
   import ActiveFilters from '$lib/components/ActiveFilters.svelte'
   import ErrorBanner from '$lib/components/ErrorBanner.svelte'
   import MountSelectorDialog from '$lib/components/MountSelectorDialog.svelte'
-  import Donut from '$lib/components/Donut.svelte'
+  import StatusOverview from '$lib/components/StatusOverview.svelte'
   import { createCertsStore } from '$lib/stores/certs.svelte'
   import { createStatusStore } from '$lib/stores/status.svelte'
   import { createThemeStore } from '$lib/stores/theme.svelte'
@@ -41,9 +42,8 @@
     type CertTypeFilter,
     type SortDirection,
     type SortKey,
-    type StatusFilter,
   } from '$lib/utils/cert-filter'
-  import type { Certificate } from '$lib/types'
+  import type { Certificate, CertStatus } from '$lib/types'
 
   const i18n = setI18nContext(createI18nStore())
   const certs = createCertsStore(i18n)
@@ -76,7 +76,7 @@
   }
 
   let search = $state('')
-  let statusFilter = $state<StatusFilter>('all')
+  let statusFilters = $state<CertStatus[]>([])
   let certTypeFilter = $state<CertTypeFilter>('all')
   let mountFilter = $state<string[] | null>(null)
   let sortKey = $state<SortKey>('expiresAt')
@@ -94,7 +94,7 @@
 
   const filtered = $derived(
     certs.certificates.filter((cert) =>
-      matchesFilters(cert, { search, status: statusFilter, certType: certTypeFilter, mounts: mountFilter }),
+      matchesFilters(cert, { search, statuses: statusFilters, certType: certTypeFilter, mounts: mountFilter }),
     ),
   )
   const sorted = $derived(sortCerts(filtered, sortKey, sortDir))
@@ -179,14 +179,21 @@
     certModalOpen = true
   }
 
-  function setStatus(next: StatusFilter): void {
-    statusFilter = statusFilter === next ? 'all' : next
+  function toggleStatus(next: CertStatus): void {
+    statusFilters = statusFilters.includes(next)
+      ? statusFilters.filter((s) => s !== next)
+      : [...statusFilters, next]
+    pageIndex = 0
+  }
+
+  function removeStatus(key: CertStatus): void {
+    statusFilters = statusFilters.filter((s) => s !== key)
     pageIndex = 0
   }
 
   function clearAllFilters(): void {
     search = ''
-    statusFilter = 'all'
+    statusFilters = []
     certTypeFilter = 'all'
     mountFilter = null
     pageIndex = 0
@@ -246,11 +253,16 @@
   <header class="vcv-header">
     <div class="vcv-header-bar">
       <div class="vcv-header-brand">
-        <h1 class="vcv-title">
-          VaultCertsViewer
-          {#if status.status}<span class="vcv-title-version">v{status.status.version}</span>{/if}
-        </h1>
-        <p class="vcv-title-subtitle">{i18n.t('appSubtitle', 'Inspect certificates across Vault / OpenBao PKI mounts')}</p>
+        <span class="vcv-brand-mark" aria-hidden="true">
+          <ShieldCheck class="h-5 w-5" />
+        </span>
+        <div class="vcv-brand-text">
+          <h1 class="vcv-title">
+            VaultCertsViewer
+            {#if status.status}<span class="vcv-title-version">v{status.status.version}</span>{/if}
+          </h1>
+          <p class="vcv-title-subtitle">{i18n.t('appSubtitle', 'Inspect certificates across Vault / OpenBao PKI mounts')}</p>
+        </div>
       </div>
       <div class="vcv-header-actions">
         <VaultStatusPill status={status.status} loading={status.loading} onRefresh={() => void status.refresh()} />
@@ -335,12 +347,12 @@
 
     <ActiveFilters
       {search}
-      {statusFilter}
+      {statusFilters}
       {certTypeFilter}
       {mountFilter}
       allMountsCount={allMounts.length}
       onClearSearch={() => (search = '')}
-      onClearStatus={() => (statusFilter = 'all')}
+      onRemoveStatus={removeStatus}
       onClearCertType={() => (certTypeFilter = 'all')}
       onClearMounts={() => (mountFilter = null)}
       onClearAll={clearAllFilters}
@@ -367,54 +379,14 @@
   {/if}
 
   <main id="vcv-main-content">
-    <div id="vcv-dashboard" class="vcv-dashboard">
-      <div class="vcv-dashboard-row">
-        <div class="vcv-dashboard-stats">
-          <div class="vcv-stat-group vcv-stat-group-attention">
-            <span class="vcv-stat-group-label">{i18n.t('dashboardGroupAttention', 'Attention')}</span>
-            <div class="vcv-stat-group-cards">
-              {#each ['expired', 'critical', 'revoked'] as const as key (key)}
-                <button
-                  type="button"
-                  class="vcv-stat vcv-stat-risk vcv-stat-{key} vcv-stat-clickable {statusFilter === key ? 'vcv-stat-active' : ''}"
-                  onclick={() => setStatus(key)}
-                >
-                  <div class="vcv-stat-header">
-                    <span class="vcv-stat-dot"></span>
-                    <span class="vcv-stat-label">{statusMeta[key].label}</span>
-                  </div>
-                  <span class="vcv-stat-value">{counts[key]}</span>
-                  <span class="vcv-stat-desc">{statusMeta[key].desc}</span>
-                </button>
-              {/each}
-            </div>
-          </div>
-          <div class="vcv-stat-group vcv-stat-group-healthy">
-            <span class="vcv-stat-group-label">{i18n.t('dashboardGroupHealthy', 'Healthy')}</span>
-            <div class="vcv-stat-group-cards">
-              {#each ['valid', 'warning'] as const as key (key)}
-                <button
-                  type="button"
-                  class="vcv-stat vcv-stat-quiet vcv-stat-{key} vcv-stat-clickable {statusFilter === key ? 'vcv-stat-active' : ''}"
-                  onclick={() => setStatus(key)}
-                >
-                  <div class="vcv-stat-header">
-                    <span class="vcv-stat-dot"></span>
-                    <span class="vcv-stat-label">{statusMeta[key].label}</span>
-                  </div>
-                  <span class="vcv-stat-value">{counts[key]}</span>
-                  <span class="vcv-stat-desc">{statusMeta[key].desc}</span>
-                </button>
-              {/each}
-            </div>
-          </div>
-        </div>
-        <Donut
-          counts={{ valid: counts.valid, warning: counts.warning, critical: counts.critical, expired: counts.expired, revoked: counts.revoked }}
-          label={i18n.t('dashboardCertsLabel', 'certs')}
-        />
-      </div>
-    </div>
+    <StatusOverview
+      counts={{ valid: counts.valid, warning: counts.warning, critical: counts.critical, expired: counts.expired, revoked: counts.revoked }}
+      meta={statusMeta}
+      {statusFilters}
+      donutLabel={i18n.t('dashboardCertsLabel', 'certs')}
+      regionLabel={i18n.t('dashboardOverviewLabel', 'Certificate status overview')}
+      onSelect={toggleStatus}
+    />
 
     <div class="vcv-table-footer">
       <div class="vcv-page-size">

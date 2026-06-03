@@ -1,16 +1,17 @@
 <script lang="ts">
   import X from '@lucide/svelte/icons/x'
   import { getI18n } from '$lib/stores/i18n.svelte'
-  import type { CertTypeFilter, StatusFilter } from '$lib/utils/cert-filter'
+  import type { CertTypeFilter } from '$lib/utils/cert-filter'
+  import type { CertStatus } from '$lib/types'
 
   interface Props {
     search: string
-    statusFilter: StatusFilter
+    statusFilters: CertStatus[]
     certTypeFilter: CertTypeFilter
     mountFilter: string[] | null
     allMountsCount: number
     onClearSearch: () => void
-    onClearStatus: () => void
+    onRemoveStatus: (key: CertStatus) => void
     onClearCertType: () => void
     onClearMounts: () => void
     onClearAll: () => void
@@ -18,12 +19,12 @@
 
   const {
     search,
-    statusFilter,
+    statusFilters,
     certTypeFilter,
     mountFilter,
     allMountsCount,
     onClearSearch,
-    onClearStatus,
+    onRemoveStatus,
     onClearCertType,
     onClearMounts,
     onClearAll,
@@ -48,7 +49,7 @@
   const hasMountFilter = $derived(mountFilter !== null && mountFilter.length !== allMountsCount)
   const hasAny = $derived(
     !!search ||
-      statusFilter !== 'all' ||
+      statusFilters.length > 0 ||
       certTypeFilter !== 'all' ||
       hasMountFilter,
   )
@@ -62,12 +63,12 @@
         <X class="h-3 w-3" />
       </button>
     {/if}
-    {#if statusFilter !== 'all'}
-      <button type="button" class="vcv-filter-chip vcv-filter-chip-{statusFilter}" onclick={onClearStatus}>
-        {i18n.t('filterChipStatus', 'Status')}: <strong>{statusLabels[statusFilter] ?? statusFilter}</strong>
+    {#each statusFilters as status (status)}
+      <button type="button" class="vcv-filter-chip vcv-filter-chip-{status}" onclick={() => onRemoveStatus(status)}>
+        {i18n.t('filterChipStatus', 'Status')}: <strong>{statusLabels[status] ?? status}</strong>
         <X class="h-3 w-3" />
       </button>
-    {/if}
+    {/each}
     {#if certTypeFilter !== 'all'}
       <button type="button" class="vcv-filter-chip" onclick={onClearCertType}>
         {i18n.t('filterChipCertType', 'Type')}: <strong>{certTypeLabels[certTypeFilter] ?? certTypeFilter}</strong>

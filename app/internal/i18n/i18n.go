@@ -37,8 +37,7 @@ type Messages struct {
 	ColumnSAN                   string `json:"columnSan"`
 	ColumnStatus                string `json:"columnStatus"`
 	DashboardCertsLabel         string `json:"dashboardCertsLabel"`
-	DashboardGroupAttention     string `json:"dashboardGroupAttention"`
-	DashboardGroupHealthy       string `json:"dashboardGroupHealthy"`
+	DashboardOverviewLabel      string `json:"dashboardOverviewLabel"`
 	DaysRemaining               string `json:"daysRemaining"`
 	DaysRemainingShort          string `json:"daysRemainingShort"`
 	DaysRemainingSingular       string `json:"daysRemainingSingular"`
@@ -207,8 +206,7 @@ var englishMessages = Messages{
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Status",
 	DashboardCertsLabel:         "certs",
-	DashboardGroupAttention:     "Needs attention",
-	DashboardGroupHealthy:       "Healthy",
+	DashboardOverviewLabel:      "Certificate status overview",
 	DaysRemaining:               "{{days}} days remaining",
 	DaysRemainingShort:          "{{days}}d",
 	DaysRemainingSingular:       "{{days}} day remaining",
@@ -368,8 +366,7 @@ var frenchMessages = Messages{
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Statut",
 	DashboardCertsLabel:         "certs",
-	DashboardGroupAttention:     "À traiter",
-	DashboardGroupHealthy:       "Sains",
+	DashboardOverviewLabel:      "Vue d'ensemble du statut des certificats",
 	DaysRemaining:               "{{days}} jours restants",
 	DaysRemainingShort:          "{{days}}j",
 	DaysRemainingSingular:       "{{days}} jour restant",
@@ -529,8 +526,7 @@ var spanishMessages = Messages{
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Estado",
 	DashboardCertsLabel:         "certs",
-	DashboardGroupAttention:     "Requiere atención",
-	DashboardGroupHealthy:       "Sanos",
+	DashboardOverviewLabel:      "Resumen del estado de los certificados",
 	DaysRemaining:               "{{days}} días restantes",
 	DaysRemainingShort:          "{{days}}d",
 	DaysRemainingSingular:       "{{days}} día restante",
@@ -690,8 +686,7 @@ var germanMessages = Messages{
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Status",
 	DashboardCertsLabel:         "Zert.",
-	DashboardGroupAttention:     "Erfordert Aufmerksamkeit",
-	DashboardGroupHealthy:       "Gesund",
+	DashboardOverviewLabel:      "Übersicht über den Zertifikatsstatus",
 	DaysRemaining:               "{{days}} verbleibende Tage",
 	DaysRemainingShort:          "{{days}}T",
 	DaysRemainingSingular:       "{{days}} verbleibender Tag",
@@ -851,8 +846,7 @@ var italianMessages = Messages{
 	ColumnSAN:                   "SAN",
 	ColumnStatus:                "Stato",
 	DashboardCertsLabel:         "cert.",
-	DashboardGroupAttention:     "Da gestire",
-	DashboardGroupHealthy:       "Sani",
+	DashboardOverviewLabel:      "Panoramica dello stato dei certificati",
 	DaysRemaining:               "{{days}} giorni rimanenti",
 	DaysRemainingShort:          "{{days}}g",
 	DaysRemainingSingular:       "{{days}} giorno rimanente",

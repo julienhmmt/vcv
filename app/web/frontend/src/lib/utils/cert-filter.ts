@@ -3,12 +3,11 @@ import { certStatus, parseCertID, DEFAULT_THRESHOLDS } from './cert-status'
 
 export type SortKey = 'commonName' | 'expiresAt' | 'vault' | 'pki'
 export type SortDirection = 'asc' | 'desc'
-export type StatusFilter = 'all' | CertStatus
 export type CertTypeFilter = 'all' | 'machine' | 'user' | 'both' | 'unknown'
 
 export interface FilterState {
   search: string
-  status: StatusFilter
+  statuses: CertStatus[] // empty = all
   certType: CertTypeFilter
   mounts: string[] | null // null = all
 }
@@ -20,7 +19,7 @@ export function matchesFilters(
   now: Date = new Date(),
 ): boolean {
   const status = certStatus(cert, thresholds, now)
-  if (state.status !== 'all' && status !== state.status) return false
+  if (state.statuses.length > 0 && !state.statuses.includes(status)) return false
   if (state.certType !== 'all' && cert.certType !== state.certType) return false
 
   if (state.search.trim()) {

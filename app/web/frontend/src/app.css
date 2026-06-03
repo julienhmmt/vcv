@@ -238,17 +238,20 @@
   outline-offset: 2px;
 }
 
-.vcv-days-expired,
+.vcv-days-expired {
+  color: var(--vcv-color-expired-strong);
+}
+
 .vcv-days-revoked {
-  color: #ef4444;
+  color: var(--vcv-color-revoked-strong);
 }
 
 .vcv-days-critical {
-  color: #f97316;
+  color: var(--vcv-color-danger);
 }
 
 .vcv-days-warning {
-  color: #eab308;
+  color: var(--vcv-color-warning-strong);
 }
 
 .vcv-days-valid {
