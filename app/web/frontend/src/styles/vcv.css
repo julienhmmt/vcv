@@ -128,6 +128,7 @@
   --vcv-radius-lg: 0.5rem;
   --vcv-radius-xl: 0.75rem;
   --vcv-radius-full: 1rem;
+
   /* Status text tokens (badge text + expiry labels) */
   --vcv-status-valid-text: #047857;
   --vcv-status-warning-text: #b45309;
@@ -227,6 +228,7 @@
     0 2px 4px rgb(0 0 0 / 45%), 0 16px 32px -10px rgb(0 0 0 / 65%);
   --vcv-shadow-button: 0 1px 2px rgb(0 0 0 / 40%);
   --vcv-shadow-button-hover: 0 4px 10px -2px rgb(0 0 0 / 55%);
+
   /* Status text tokens (dark) */
   --vcv-status-valid-text: #6ee7b7;
   --vcv-status-warning-text: #fcd34d;
@@ -503,10 +505,9 @@ body {
   margin: 0 auto;
   padding: 0.75rem 1.5rem;
   display: flex;
-  flex-direction: row;
+  flex-flow: row wrap;
   align-items: center;
   gap: 1rem;
-  flex-wrap: wrap;
 }
 
 .vcv-filter-palette {
@@ -1567,7 +1568,11 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--vcv-color-muted);
-  background: color-mix(in srgb, var(--vcv-color-surface-muted) 70%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--vcv-color-surface-muted) 70%,
+    transparent
+  );
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--vcv-color-border);
   position: sticky;
@@ -3001,11 +3006,10 @@ col.vcv-col-status {
   background: var(--vcv-color-surface-muted);
   margin: 0;
   padding: 0.875rem 1rem;
-  overflow-x: auto;
+  overflow: auto;
   white-space: pre;
   word-break: normal;
   max-height: 14rem;
-  overflow-y: auto;
 }
 
 /* Legacy compat */
@@ -3192,6 +3196,7 @@ col.vcv-col-status {
 }
 
 /* Dashboard */
+
 /* Unified status overview: donut + single-line stat row */
 .vcv-overview {
   display: flex;
@@ -3243,14 +3248,30 @@ col.vcv-col-status {
   outline: none;
   cursor: pointer;
   user-select: none;
-  transition: border-color 0.12s ease, color 0.12s ease;
+  transition:
+    border-color 0.12s ease,
+    color 0.12s ease;
 }
 
-.vcv-stat-valid   { --stat-color: var(--vcv-color-primary); }
-.vcv-stat-warning { --stat-color: var(--vcv-color-warning-strong); }
-.vcv-stat-critical { --stat-color: var(--vcv-color-danger); }
-.vcv-stat-expired { --stat-color: var(--vcv-color-expired); }
-.vcv-stat-revoked { --stat-color: var(--vcv-color-revoked-strong); }
+.vcv-stat-valid {
+  --stat-color: var(--vcv-color-primary);
+}
+
+.vcv-stat-warning {
+  --stat-color: var(--vcv-color-warning-strong);
+}
+
+.vcv-stat-critical {
+  --stat-color: var(--vcv-color-danger);
+}
+
+.vcv-stat-expired {
+  --stat-color: var(--vcv-color-expired);
+}
+
+.vcv-stat-revoked {
+  --stat-color: var(--vcv-color-revoked-strong);
+}
 
 .vcv-stat-label {
   display: flex;
@@ -3877,8 +3898,13 @@ col.vcv-col-status {
 }
 
 .vcv-error-banner-warning {
-  border: 1px solid color-mix(in srgb, var(--vcv-color-warning-strong) 40%, transparent);
-  background: color-mix(in srgb, var(--vcv-color-warning-strong) 10%, var(--background));
+  border: 1px solid
+    color-mix(in srgb, var(--vcv-color-warning-strong) 40%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--vcv-color-warning-strong) 10%,
+    var(--background)
+  );
   color: var(--vcv-status-warning-text);
 }
 
@@ -3900,11 +3926,15 @@ col.vcv-col-status {
   opacity: 0.7;
 }
 
-/* MountSelectorDialog styles moved to MountSelectorDialog.svelte <style> block */
+/* MountSelectorDialog styles moved to MountSelectorDialog.svelte \3c style> block */
 
 [data-theme="dark"] .vcv-ca-passport .vcv-cd-passport-sidebar {
   background:
-    radial-gradient(circle at top left, rgb(129 140 248 / 16%), transparent 48%),
+    radial-gradient(
+      circle at top left,
+      rgb(129 140 248 / 16%),
+      transparent 48%
+    ),
     var(--vcv-color-surface-muted);
 }
 

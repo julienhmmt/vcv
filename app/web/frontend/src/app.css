@@ -1,6 +1,6 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
-@import './styles/vcv.css';
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./styles/vcv.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -118,6 +118,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
@@ -151,7 +152,7 @@
 }
 
 .vcv-detail-value {
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .vcv-detail-section {
@@ -218,7 +219,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: currentColor;
+  background: currentcolor;
 }
 
 .vcv-vault-status-pill.vcv-status-state-ok {
@@ -232,7 +233,6 @@
 .vcv-vault-status-pill.vcv-status-state-neutral {
   color: var(--vcv-color-muted);
 }
-
 
 .vcv-days-expired {
   color: var(--vcv-color-expired-strong);
@@ -297,11 +297,25 @@
 }
 
 /* Status-colored tags */
-.vcv-filter-tag-valid   { color: var(--vcv-color-primary); }
-.vcv-filter-tag-warning { color: var(--vcv-color-warning-strong); }
-.vcv-filter-tag-critical { color: var(--vcv-color-danger); }
-.vcv-filter-tag-expired { color: var(--vcv-color-expired); }
-.vcv-filter-tag-revoked { color: var(--vcv-color-revoked-strong); }
+.vcv-filter-tag-valid {
+  color: var(--vcv-color-primary);
+}
+
+.vcv-filter-tag-warning {
+  color: var(--vcv-color-warning-strong);
+}
+
+.vcv-filter-tag-critical {
+  color: var(--vcv-color-danger);
+}
+
+.vcv-filter-tag-expired {
+  color: var(--vcv-color-expired);
+}
+
+.vcv-filter-tag-revoked {
+  color: var(--vcv-color-revoked-strong);
+}
 
 .vcv-filter-tag-valid strong,
 .vcv-filter-tag-warning strong,
@@ -411,7 +425,7 @@
 .vcv-hover-card-error {
   font-size: 11px;
   color: var(--vcv-color-danger);
-  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .vcv-hover-card-empty {
@@ -425,6 +439,12 @@
 }
 
 @keyframes vcv-pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+
+  50% {
+    opacity: 1;
+  }
 }

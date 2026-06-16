@@ -26,7 +26,7 @@ fi
 
 # Run stylelint for CSS
 echo "  [1/2] Stylelint (CSS)..."
-if bunx stylelint "app/web/assets/**/*.css"; then
+if bunx stylelint "app/web/frontend/src/**/*.css" --fix; then
     echo "  ✅ Stylelint: no errors"
 else
     echo "  ❌ Stylelint: errors found"

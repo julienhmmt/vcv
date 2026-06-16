@@ -62,7 +62,7 @@ Each vault row maps to one HashiCorp Vault or OpenBao instance:
 
 **Add vault** appends a new empty row; fill in an ID, address, and token
 before saving. **Remove** deletes the row on save. The first enabled vault is
-treated as the *primary*.
+treated as the _primary_.
 
 Connectivity is checked live: each enabled vault shows whether VCV can reach
 it with the configured token.

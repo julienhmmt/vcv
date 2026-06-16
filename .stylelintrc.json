@@ -1,3 +1,23 @@
 {
-  "extends": ["stylelint-config-standard"]
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "import-notation": null,
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "custom-variant",
+          "theme",
+          "apply",
+          "layer",
+          "config",
+          "plugin"
+        ]
+      }
+    ],
+    "lightness-notation": null,
+    "hue-degree-notation": null,
+    "no-descending-specificity": null,
+    "no-duplicate-selectors": null
+  }
 }

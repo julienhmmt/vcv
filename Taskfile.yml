@@ -35,7 +35,7 @@ tasks:
         sh: 'echo "dev-$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"'
     cmds:
       - task: web-build
-      - "go clean -cache && go build -C app -ldflags=\"-X vcv/internal/version.Version={{.VCV_VERSION}}\" -o ../vcv ./cmd/server"
+      - 'go clean -cache && go build -C app -ldflags="-X vcv/internal/version.Version={{.VCV_VERSION}}" -o ../vcv ./cmd/server'
       - rm -f vcv.log
       - touch vcv.log
       - docker compose -f docker-compose.dev.yml down
