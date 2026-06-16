@@ -16,7 +16,7 @@ COPY web/frontend/ ./
 # Build to /web/dist (vite.config.ts outputs to ../dist)
 RUN pnpm build
 
-FROM golang:1.26.1-alpine AS builder
+FROM golang:1.26.4-alpine AS builder
 
 ARG VERSION=${VERSION}
 
