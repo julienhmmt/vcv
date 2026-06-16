@@ -753,3 +753,69 @@ func TestGetUsage(t *testing.T) {
 		})
 	}
 }
+
+func TestNormalizeSerialNumber(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{
+			name:     "colon separated",
+			input:    "12:34:56:78:9A:BC:DE:F0",
+			expected: "123456789abcdef0",
+		},
+		{
+			name:     "hyphen separated",
+			input:    "12-34-56-78-9A-BC-DE-F0",
+			expected: "123456789abcdef0",
+		},
+		{
+			name:     "space separated",
+			input:    "12 34 56 78 9A BC DE F0",
+			expected: "123456789abcdef0",
+		},
+		{
+			name:     "mixed separators",
+			input:    "12:34-56 78:9A-BC DE:F0",
+			expected: "123456789abcdef0",
+		},
+		{
+			name:     "uppercase letters",
+			input:    "ABCDEF1234567890",
+			expected: "abcdef1234567890",
+		},
+		{
+			name:     "mixed case",
+			input:    "AbCdEf1234567890",
+			expected: "abcdef1234567890",
+		},
+		{
+			name:     "already normalized",
+			input:    "abcdef1234567890",
+			expected: "abcdef1234567890",
+		},
+		{
+			name:     "empty string",
+			input:    "",
+			expected: "",
+		},
+		{
+			name:     "only separators",
+			input:    ":-:- ",
+			expected: "",
+		},
+		{
+			name:     "with numbers and letters",
+			input:    "1A:2B-3C 4D:5E-6F 7G:8H-9I 0J",
+			expected: "1a2b3c4d5e6f7g8h9i0j",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := NormalizeSerialNumber(tt.input)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
