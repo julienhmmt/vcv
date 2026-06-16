@@ -283,3 +283,67 @@ func TestDownloadCertificatePEM_Success(t *testing.T) {
 func TestDownloadCertificatePEM_WriteError_DoesNotPanic(t *testing.T) {
 	t.Skip("Download endpoint removed - operators only need to view certificates")
 }
+
+func TestGetIntermediateCA_Success(t *testing.T) {
+	mockVault := new(vault.MockClient)
+	expected := certs.DetailedCertificate{
+		Certificate: certs.Certificate{
+			ID:           "pki:ca-id",
+			SerialNumber: "ca-serial",
+			CommonName:   "ca-cn",
+			ExpiresAt:    time.Now(),
+		},
+	}
+	mockVault.On("GetIntermediateCA", mock.Anything, "vault1|pki").Return(expected, nil)
+	router := setupRouter(mockVault)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/certs/vault1%7Cpki%3Aserial/ca", nil)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	var got certs.DetailedCertificate
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &got))
+	mockVault.AssertExpectations(t)
+}
+
+func TestGetIntermediateCA_BadRequest(t *testing.T) {
+	mockVault := new(vault.MockClient)
+	router := setupRouter(mockVault)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/certs//ca", nil)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	mockVault.AssertExpectations(t)
+}
+
+func TestGetIntermediateCA_Error(t *testing.T) {
+	mockVault := new(vault.MockClient)
+	mockVault.On("GetIntermediateCA", mock.Anything, "vault1|pki").Return(certs.DetailedCertificate{}, errors.New("fail"))
+	router := setupRouter(mockVault)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/certs/vault1%7Cpki%3Aserial/ca", nil)
+	rec := httptest.NewRecorder()
+
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusInternalServerError, rec.Code)
+	mockVault.AssertExpectations(t)
+}
+
+func TestGetCertificateCA_EncodingError_DoesNotPanic(t *testing.T) {
+	mockVault := new(vault.MockClient)
+	expected := certs.DetailedCertificate{Certificate: certs.Certificate{ID: "ca-id", SerialNumber: "ca-serial", CommonName: "ca-cn"}}
+	mockVault.On("GetIntermediateCA", mock.Anything, "vault1|pki").Return(expected, nil)
+	router := setupRouter(mockVault)
+	req := httptest.NewRequest(http.MethodGet, "/api/certs/vault1%7Cpki%3Aserial/ca", nil)
+	w := &failingResponseWriter{}
+	router.ServeHTTP(w, req)
+	mockVault.AssertExpectations(t)
+}
+
+// Unexported function tests are in certs_unexported_test.go

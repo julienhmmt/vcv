@@ -505,3 +505,109 @@ func TestMultiClient_Shutdown_ErrorCases(t *testing.T) {
 		client.Shutdown()
 	})
 }
+
+func TestMultiClient_activeVaultIDs(t *testing.T) {
+	t.Run("nil registry returns all", func(t *testing.T) {
+		m := NewMultiClient(
+			[]config.VaultInstance{{ID: "v1"}, {ID: "v2"}},
+			map[string]Client{"v1": &MockClient{}, "v2": &MockClient{}},
+			nil,
+		)
+		ids := m.(*multiClient).activeVaultIDs()
+		assert.ElementsMatch(t, []string{"v1", "v2"}, ids)
+	})
+
+	t.Run("registry filters disabled", func(t *testing.T) {
+		registry := NewRegistry([]config.VaultInstance{
+			{ID: "v1", Enabled: boolPtr(true)},
+			{ID: "v2", Enabled: boolPtr(false)},
+			{ID: "v3", Enabled: boolPtr(true)},
+		})
+		m := NewMultiClient(
+			[]config.VaultInstance{{ID: "v1"}, {ID: "v2"}, {ID: "v3"}},
+			map[string]Client{"v1": &MockClient{}, "v2": &MockClient{}, "v3": &MockClient{}},
+			registry,
+		)
+		ids := m.(*multiClient).activeVaultIDs()
+		assert.ElementsMatch(t, []string{"v1", "v3"}, ids)
+	})
+
+	t.Run("registry with all disabled returns empty", func(t *testing.T) {
+		registry := NewRegistry([]config.VaultInstance{
+			{ID: "v1", Enabled: boolPtr(false)},
+		})
+		m := NewMultiClient(
+			[]config.VaultInstance{{ID: "v1"}},
+			map[string]Client{"v1": &MockClient{}},
+			registry,
+		)
+		ids := m.(*multiClient).activeVaultIDs()
+		assert.Empty(t, ids)
+	})
+}
+
+func TestMultiClient_ListCertificatesEnvelope(t *testing.T) {
+	t.Run("no active vaults", func(t *testing.T) {
+		registry := NewRegistry([]config.VaultInstance{})
+		m := NewMultiClient(
+			[]config.VaultInstance{},
+			map[string]Client{},
+			registry,
+		)
+		certs, errs := m.(CertificatesEnvelopeLister).ListCertificatesEnvelope(context.Background())
+		assert.Empty(t, certs)
+		assert.Empty(t, errs)
+	})
+
+	t.Run("success with multiple vaults", func(t *testing.T) {
+		c1 := &MockClient{}
+		c2 := &MockClient{}
+		c1.On("ListCertificates", mock.Anything).Return([]certs.Certificate{{ID: "pki:a", CommonName: "alpha"}}, nil)
+		c2.On("ListCertificates", mock.Anything).Return([]certs.Certificate{{ID: "pki:b", CommonName: "beta"}}, nil)
+
+		m := NewMultiClient(
+			[]config.VaultInstance{{ID: "v1"}, {ID: "v2"}},
+			map[string]Client{"v1": c1, "v2": c2},
+			nil,
+		)
+		resultCerts, resultErrs := m.(CertificatesEnvelopeLister).ListCertificatesEnvelope(context.Background())
+		assert.Len(t, resultCerts, 2)
+		assert.Empty(t, resultErrs)
+		assert.Equal(t, "v1|pki:a", resultCerts[0].ID)
+		assert.Equal(t, "v2|pki:b", resultCerts[1].ID)
+		c1.AssertExpectations(t)
+		c2.AssertExpectations(t)
+	})
+
+	t.Run("partial failure", func(t *testing.T) {
+		c1 := &MockClient{}
+		c2 := &MockClient{}
+		errBoom := errors.New("boom")
+		c1.On("ListCertificates", mock.Anything).Return([]certs.Certificate{{ID: "pki:a", CommonName: "alpha"}}, nil)
+		c2.On("ListCertificates", mock.Anything).Return([]certs.Certificate{}, errBoom)
+
+		m := NewMultiClient(
+			[]config.VaultInstance{{ID: "v1"}, {ID: "v2"}},
+			map[string]Client{"v1": c1, "v2": c2},
+			nil,
+		)
+		resultCerts, resultErrs := m.(CertificatesEnvelopeLister).ListCertificatesEnvelope(context.Background())
+		assert.Len(t, resultCerts, 1)
+		assert.Len(t, resultErrs, 1)
+		assert.Equal(t, "v2", resultErrs[0].VaultID)
+		c1.AssertExpectations(t)
+		c2.AssertExpectations(t)
+	})
+
+	t.Run("missing client", func(t *testing.T) {
+		m := NewMultiClient(
+			[]config.VaultInstance{{ID: "v1"}},
+			map[string]Client{"v1": nil},
+			nil,
+		)
+		resultCerts, resultErrs := m.(CertificatesEnvelopeLister).ListCertificatesEnvelope(context.Background())
+		assert.Empty(t, resultCerts)
+		assert.Len(t, resultErrs, 1)
+		assert.Equal(t, "v1", resultErrs[0].VaultID)
+	})
+}

@@ -2,6 +2,7 @@ package handlers_test
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -10,6 +11,7 @@ import (
 	"vcv/internal/i18n"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRegisterI18nRoutes_Success(t *testing.T) {
@@ -226,4 +228,36 @@ func TestResolveLanguage_ParsedURLWithInvalidLang(t *testing.T) {
 	if response.Language != i18n.LanguageGerman {
 		t.Errorf("expected language %s from Accept-Language, got %s", i18n.LanguageGerman, response.Language)
 	}
+}
+
+func TestRegisterI18nRoutes_EncodingError(t *testing.T) {
+	router := chi.NewRouter()
+	handlers.RegisterI18nRoutes(router)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/i18n", nil)
+	w := &statusFailingResponseWriter{}
+
+	router.ServeHTTP(w, req)
+	// Should not panic and should set 500 status via WriteHeader call
+	assert.Equal(t, http.StatusInternalServerError, w.status)
+}
+
+type statusFailingResponseWriter struct {
+	header http.Header
+	status int
+}
+
+func (w *statusFailingResponseWriter) Header() http.Header {
+	if w.header == nil {
+		w.header = make(http.Header)
+	}
+	return w.header
+}
+
+func (w *statusFailingResponseWriter) Write([]byte) (int, error) {
+	return 0, errors.New("write failed")
+}
+
+func (w *statusFailingResponseWriter) WriteHeader(statusCode int) {
+	w.status = statusCode
 }

@@ -71,6 +71,35 @@ func TestDisabledClient_ErrorConsistency(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestNewDisabledClient(t *testing.T) {
+	client := NewDisabledClient()
+	assert.NotNil(t, client)
+
+	// All methods should behave the same as direct struct instantiation
+	assert.ErrorIs(t, client.CheckConnection(context.Background()), ErrVaultNotConfigured)
+
+	_, err := client.GetCertificateDetails(context.Background(), "test")
+	assert.ErrorIs(t, err, ErrVaultNotConfigured)
+
+	_, err = client.GetCertificatePEM(context.Background(), "test")
+	assert.ErrorIs(t, err, ErrVaultNotConfigured)
+
+	_, err = client.GetIntermediateCA(context.Background(), "test")
+	assert.ErrorIs(t, err, ErrVaultNotConfigured)
+
+	assert.NotPanics(t, func() {
+		client.InvalidateCache()
+	})
+
+	certs, err := client.ListCertificates(context.Background())
+	assert.NoError(t, err)
+	assert.Empty(t, certs)
+
+	assert.NotPanics(t, func() {
+		client.Shutdown()
+	})
+}
+
 func TestErrVaultNotConfigured(t *testing.T) {
 	// Test the error variable
 	assert.NotNil(t, ErrVaultNotConfigured)

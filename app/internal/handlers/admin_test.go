@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -435,6 +437,125 @@ func TestShouldFallbackToDirectWrite(t *testing.T) {
 	}
 }
 
+func TestAdminSessionStore_PruneSessions(t *testing.T) {
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+
+	now := time.Now()
+	// Add expired sessions
+	store.sessions["expired1"] = now.Add(-1 * time.Hour)
+	store.sessions["expired2"] = now.Add(-2 * time.Hour)
+	store.sessions["valid"] = now.Add(1 * time.Hour)
+
+	store.pruneSessions(now)
+
+	assert.Len(t, store.sessions, 1)
+	assert.Contains(t, store.sessions, "valid")
+}
+
+func TestAdminSessionStore_PruneSessions_MaxSessions(t *testing.T) {
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+
+	now := time.Now()
+	// Add more sessions than max
+	for i := 0; i < adminMaxSessions+5; i++ {
+		store.sessions[fmt.Sprintf("token%d", i)] = now.Add(time.Duration(i+1) * time.Hour)
+	}
+
+	store.pruneSessions(now)
+
+	assert.Len(t, store.sessions, adminMaxSessions)
+}
+
+func TestAdminSessionStore_AllowLoginAttempt(t *testing.T) {
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+
+	// Should allow initially
+	req := httptest.NewRequest(http.MethodPost, "/login", nil)
+	req.RemoteAddr = "192.168.1.1:12345"
+	assert.True(t, store.allowLoginAttempt(req))
+
+	// Exhaust the limit
+	for i := 0; i < 5; i++ {
+		store.allowLoginAttempt(req)
+	}
+
+	// Should deny after max attempts
+	assert.False(t, store.allowLoginAttempt(req))
+}
+
+func TestAdminSessionStore_AllowLoginAttempt_NilLimiter(t *testing.T) {
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+	store.limiter = nil
+
+	req := httptest.NewRequest(http.MethodPost, "/login", nil)
+	assert.True(t, store.allowLoginAttempt(req))
+}
+
+func TestAdminSessionStore_RequireAuth_ExpiredSession(t *testing.T) {
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+
+	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	authHandler := store.requireAuth(testHandler)
+
+	// Add expired session
+	token, err := store.createToken()
+	require.NoError(t, err)
+	store.sessions[token] = time.Now().Add(-1 * time.Hour)
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.AddCookie(&http.Cookie{Name: "vcv_admin_session", Value: token})
+	w := httptest.NewRecorder()
+
+	authHandler.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+}
+
+func TestAdminSettingsStore_Load_ReadError(t *testing.T) {
+	// Create a directory where a file is expected - this causes read error
+	store := newAdminSettingsStore(t.TempDir(), config.EnvDev)
+
+	_, err := store.load()
+	assert.Error(t, err)
+}
+
+func TestAdminSettingsStore_Save_ValidationError(t *testing.T) {
+	store := newAdminSettingsStore(t.TempDir()+"/settings.json", config.EnvDev)
+
+	settings := config.SettingsFile{
+		Vaults: []config.VaultInstance{
+			{ID: ""},
+		},
+	}
+
+	err := store.save(settings)
+	assert.Error(t, err)
+}
+
+func TestFallbackWriteSettings(t *testing.T) {
+	t.Run("permission error triggers fallback", func(t *testing.T) {
+		tmpFile := t.TempDir() + "/settings.json"
+		payload := []byte(`{"test": true}`)
+		err := fallbackWriteSettings(tmpFile, payload, os.ErrPermission)
+		assert.NoError(t, err)
+		data, _ := os.ReadFile(tmpFile)
+		assert.Equal(t, payload, data)
+	})
+
+	t.Run("non-permission error returns original", func(t *testing.T) {
+		originalErr := errors.New("some error")
+		err := fallbackWriteSettings(t.TempDir()+"/settings.json", []byte(`{}`), originalErr)
+		assert.ErrorIs(t, err, originalErr)
+	})
+
+	t.Run("nil error returns false from shouldFallback", func(t *testing.T) {
+		assert.False(t, shouldFallbackToDirectWrite(nil))
+	})
+}
+
 func TestRegisterAdminRoutes(t *testing.T) {
 	r := chi.NewRouter()
 
@@ -446,6 +567,95 @@ func TestRegisterAdminRoutes(t *testing.T) {
 	RegisterAdminRoutes(r, tmpFile, config.EnvDev, vaultRegistry, vaultStatusClients, cacheClient)
 
 	// Verify routes are registered
-	// This is a basic test - in a real scenario you might want to test specific routes
 	assert.NotNil(t, r)
+}
+
+func TestRegisterAdminRoutes_CacheInvalidate(t *testing.T) {
+	// Create settings with valid bcrypt password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("testpassword"), bcrypt.DefaultCost)
+	require.NoError(t, err)
+
+	tmpDir := t.TempDir()
+	settingsPath := tmpDir + "/settings.json"
+	settings := config.SettingsFile{
+		App:   config.AppSettings{Env: "dev", Port: 52000},
+		Admin: config.AdminSettings{Password: string(hashedPassword)},
+	}
+	data, _ := json.Marshal(settings)
+	require.NoError(t, os.WriteFile(settingsPath, data, 0644))
+
+	r := chi.NewRouter()
+	cacheClient := &vault.MockClient{}
+	cacheClient.On("InvalidateCache").Return()
+
+	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, cacheClient)
+
+	// Login to get session
+	loginBody, _ := json.Marshal(map[string]string{"username": "admin", "password": "testpassword"})
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", bytes.NewReader(loginBody))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Extract cookie
+	cookies := w.Result().Cookies()
+	var sessionCookie *http.Cookie
+	for _, c := range cookies {
+		if c.Name == adminCookieName {
+			sessionCookie = c
+			break
+		}
+	}
+	require.NotNil(t, sessionCookie)
+
+	// Hit cache invalidate
+	req = httptest.NewRequest(http.MethodPost, "/api/cache/invalidate", nil)
+	req.AddCookie(sessionCookie)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusNoContent, w.Code)
+	cacheClient.AssertExpectations(t)
+}
+
+func TestRegisterAdminRoutes_NoCacheClient(t *testing.T) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("testpassword"), bcrypt.DefaultCost)
+	require.NoError(t, err)
+
+	tmpDir := t.TempDir()
+	settingsPath := tmpDir + "/settings.json"
+	settings := config.SettingsFile{
+		App:   config.AppSettings{Env: "dev", Port: 52000},
+		Admin: config.AdminSettings{Password: string(hashedPassword)},
+	}
+	data, _ := json.Marshal(settings)
+	require.NoError(t, os.WriteFile(settingsPath, data, 0644))
+
+	r := chi.NewRouter()
+	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil)
+
+	// Login to get session
+	loginBody, _ := json.Marshal(map[string]string{"username": "admin", "password": "testpassword"})
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", bytes.NewReader(loginBody))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	cookies := w.Result().Cookies()
+	var sessionCookie *http.Cookie
+	for _, c := range cookies {
+		if c.Name == adminCookieName {
+			sessionCookie = c
+			break
+		}
+	}
+	require.NotNil(t, sessionCookie)
+
+	// Hit cache invalidate without cache client
+	req = httptest.NewRequest(http.MethodPost, "/api/cache/invalidate", nil)
+	req.AddCookie(sessionCookie)
+	w = httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 }
