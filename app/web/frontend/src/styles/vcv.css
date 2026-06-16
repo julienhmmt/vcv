@@ -26,7 +26,7 @@
   padding: 0.5rem 1rem;
   background: var(--vcv-color-primary);
   color: var(--vcv-color-on-accent);
-  border-radius: 0.375rem;
+  border-radius: 0.25rem;
   font-weight: 600;
   text-decoration: none;
   z-index: 9999;
@@ -123,11 +123,11 @@
     0 2px 4px rgb(16 24 40 / 5%), 0 16px 32px -10px rgb(16 24 40 / 12%);
   --vcv-shadow-button: 0 1px 2px rgb(16 24 40 / 5%);
   --vcv-shadow-button-hover: 0 4px 10px -2px rgb(16 24 40 / 12%);
-  --vcv-radius-sm: 0.5rem;
-  --vcv-radius-md: 0.625rem;
-  --vcv-radius-lg: 0.875rem;
-  --vcv-radius-xl: 1.25rem;
-  --vcv-radius-full: 9999px;
+  --vcv-radius-sm: 0.25rem;
+  --vcv-radius-md: 0.375rem;
+  --vcv-radius-lg: 0.5rem;
+  --vcv-radius-xl: 0.75rem;
+  --vcv-radius-full: 1rem;
   /* Status text tokens (badge text + expiry labels) */
   --vcv-status-valid-text: #047857;
   --vcv-status-warning-text: #b45309;
@@ -352,7 +352,7 @@ body {
   align-items: center;
   gap: 0.5rem;
   padding: 0.35rem 0.75rem;
-  border-radius: 999px;
+  border-radius: 0.375rem;
   border: 1px solid var(--vcv-color-footer-pill-more-border);
   background: var(--vcv-color-footer-pill-more-bg);
   color: inherit;
@@ -771,7 +771,7 @@ body {
   gap: 0.375rem;
   padding: 0.375rem 0.75rem;
   cursor: pointer;
-  border-radius: 0.375rem;
+  border-radius: 0.25rem;
   transition: all 0.15s ease;
   border: 1px solid transparent;
   font-size: 0.875rem;
@@ -817,7 +817,7 @@ body {
   min-height: 2.75rem;
   font-size: 0.75rem;
   font-weight: 500;
-  border-radius: 0.375rem;
+  border-radius: 0.25rem;
   border: 1px solid var(--vcv-color-border);
   background: transparent;
   color: var(--vcv-color-text-subtle);
@@ -898,7 +898,7 @@ body {
   padding: 0 0.375rem;
   min-width: 1.25rem;
   height: 1.125rem;
-  border-radius: 999px;
+  border-radius: 0.75rem;
   background: var(--vcv-color-surface-muted);
   border: 1px solid var(--vcv-color-border);
   font-size: 0.6875rem;
@@ -908,7 +908,7 @@ body {
 }
 
 .vcv-mount-modal {
-  border-radius: 1.25rem;
+  border-radius: 0.5rem;
 }
 
 .vcv-mount-modal-header {
@@ -929,7 +929,7 @@ body {
   align-items: center;
   gap: 0.25rem;
   padding: 0.1875rem 0.625rem;
-  border-radius: 999px;
+  border-radius: 0.75rem;
   background: var(--vcv-color-surface-muted);
   border: 1px solid var(--vcv-color-border);
   font-size: 0.75rem;
@@ -1128,7 +1128,7 @@ body {
   align-items: center;
   gap: 0.375rem;
   padding: 0.375rem 0.75rem;
-  border-radius: 999px;
+  border-radius: 0.75rem;
   border: 1px solid var(--vcv-color-border);
   background: var(--vcv-color-surface);
   cursor: pointer;
@@ -1250,7 +1250,7 @@ body {
   font-size: 0.6875rem;
   font-weight: 600;
   padding: 0.0625rem 0.4375rem;
-  border-radius: 999px;
+  border-radius: 0.75rem;
   background: var(--vcv-color-surface-muted);
   color: var(--vcv-color-muted);
   border: 1px solid var(--vcv-color-border);
@@ -1350,7 +1350,7 @@ body {
 }
 
 .vcv-button-pill {
-  border-radius: 999px;
+  border-radius: 0.75rem;
   padding: 0 1rem;
 }
 
@@ -1535,7 +1535,7 @@ body {
 
 /* Status & Summary */
 .vcv-status {
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   box-shadow: var(--vcv-shadow-card);
   overflow: hidden;
   border: 1px solid var(--vcv-color-border);
@@ -1648,7 +1648,7 @@ col.vcv-col-status {
   white-space: nowrap;
   padding: 0.25rem 0.5rem;
   background: var(--vcv-color-surface-muted);
-  border-radius: 0.375rem;
+  border-radius: 0.25rem;
   border: 1px solid var(--vcv-color-border);
   box-shadow: var(--vcv-shadow-button);
 }
@@ -1672,7 +1672,7 @@ col.vcv-col-status {
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
   background: var(--vcv-color-surface-muted);
-  border-radius: 0.375rem;
+  border-radius: 0.25rem;
   border: 1px solid var(--vcv-color-border);
   font-family:
     "SF Mono", Monaco, Inconsolata, "Fira Code", "Droid Sans Mono", monospace;
@@ -1886,7 +1886,7 @@ col.vcv-col-status {
   align-items: center;
   background: var(--vcv-color-surface, #fff);
   border: 1px solid var(--vcv-color-border, rgb(15 23 42 / 12%));
-  border-radius: 9999px;
+  border-radius: 0.75rem;
   box-shadow: 0 1px 0 rgb(15 23 42 / 2%);
   color: var(--vcv-color-text, #0f172a);
   display: inline-flex;
@@ -1907,7 +1907,7 @@ col.vcv-col-status {
 
 .vcv-active-chip-dot {
   background: currentcolor;
-  border-radius: 9999px;
+  border-radius: 0.75rem;
   flex-shrink: 0;
   height: 0.5rem;
   width: 0.5rem;
@@ -1956,7 +1956,7 @@ col.vcv-col-status {
   align-items: center;
   background: transparent;
   border: 0;
-  border-radius: 9999px;
+  border-radius: 0.75rem;
   color: var(--vcv-color-muted, #64748b);
   cursor: pointer;
   display: inline-flex;
@@ -1989,7 +1989,7 @@ col.vcv-col-status {
 .vcv-active-reset {
   background: transparent;
   border: 0;
-  border-radius: 6px;
+  border-radius: 4px;
   color: var(--vcv-color-primary, #10b981);
   cursor: pointer;
   font-size: 0.75rem;
@@ -2139,7 +2139,7 @@ col.vcv-col-status {
   gap: 0.25rem;
   height: 1.5rem;
   padding: 0 0.625rem;
-  border-radius: 9999px;
+  border-radius: 0.375rem;
   font-size: 0.6875rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -2439,7 +2439,7 @@ col.vcv-col-status {
 
 .vcv-modal {
   background: var(--vcv-color-modal-surface);
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   box-shadow: 0 25px 50px -12px rgb(0 0 0 / 25%);
   max-width: 960px;
   width: 100%;
@@ -2472,7 +2472,7 @@ col.vcv-col-status {
   justify-content: center;
   background: none;
   border: none;
-  border-radius: 0.375rem;
+  border-radius: 0.25rem;
   color: var(--vcv-color-muted);
   font-size: 1.25rem;
   cursor: pointer;
@@ -2865,7 +2865,7 @@ col.vcv-col-status {
   overflow-wrap: anywhere;
   background: var(--vcv-color-surface-muted);
   padding: 0.4375rem 0.75rem;
-  border-radius: 0.375rem;
+  border-radius: 0.25rem;
   border: 1px solid var(--vcv-color-border);
   color: var(--vcv-color-text-subtle);
   display: inline-block;
@@ -2913,7 +2913,7 @@ col.vcv-col-status {
   background: var(--vcv-color-surface-muted);
   border: 1px solid var(--vcv-color-border);
   padding: 0.25rem 0.625rem;
-  border-radius: 0.375rem;
+  border-radius: 0.25rem;
   color: var(--vcv-color-text);
 }
 
@@ -2934,7 +2934,7 @@ col.vcv-col-status {
   padding: 0.3rem 0.875rem;
   background: rgb(99 102 241 / 12%);
   border: 1px solid rgb(99 102 241 / 25%);
-  border-radius: var(--vcv-radius-full);
+  border-radius: 0.375rem;
   width: fit-content;
 }
 
@@ -3239,7 +3239,7 @@ col.vcv-col-status {
   min-width: 0;
   background: none;
   border: 2px solid transparent;
-  border-radius: 6px;
+  border-radius: 4px;
   outline: none;
   cursor: pointer;
   user-select: none;
@@ -3343,7 +3343,7 @@ col.vcv-col-status {
   border-color: var(--vcv-color-danger-border);
   background: var(--vcv-color-danger-surface);
   padding: 0.25rem 0.75rem;
-  border-radius: 9999px;
+  border-radius: 0.75rem;
   transition: all 0.15s ease;
 }
 
@@ -3362,7 +3362,7 @@ col.vcv-col-status {
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.375rem 0.625rem;
-  border-radius: 0.375rem;
+  border-radius: 0.25rem;
   white-space: nowrap;
   box-shadow: 0 4px 12px rgb(0 0 0 / 15%);
   transition: opacity 0.1s ease;
@@ -3383,7 +3383,7 @@ col.vcv-col-status {
   height: 2.25rem;
   padding: 0 0.75rem;
   border: 1px solid var(--vcv-color-border);
-  border-radius: 9999px;
+  border-radius: 0.75rem;
   background: var(--vcv-color-surface);
   color: var(--vcv-color-text-strong);
   box-shadow: 0 1px 2px rgb(0 0 0 / 6%);
@@ -3666,7 +3666,7 @@ col.vcv-col-status {
   min-height: 0;
   padding: 0;
   border: 0;
-  border-radius: 1rem;
+  border-radius: 0.5rem;
   background: transparent;
   box-shadow: none;
 }
@@ -3824,7 +3824,7 @@ col.vcv-col-status {
 .vcv-vault-error-banner {
   margin: 12px 24px 0;
   padding: 12px 16px;
-  border-radius: 8px;
+  border-radius: 4px;
   border: 1px solid color-mix(in srgb, var(--destructive) 35%, transparent);
   background: color-mix(in srgb, var(--destructive) 8%, var(--background));
   color: var(--foreground);
@@ -3863,7 +3863,7 @@ col.vcv-col-status {
 .vcv-error-banner {
   margin: 12px 24px 0;
   padding: 10px 14px;
-  border-radius: 8px;
+  border-radius: 4px;
   font-size: 14px;
   display: flex;
   align-items: center;
