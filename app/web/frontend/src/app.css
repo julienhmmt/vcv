@@ -233,10 +233,6 @@
   color: var(--vcv-color-muted);
 }
 
-.vcv-stat.vcv-stat-active {
-  outline: 2px solid currentColor;
-  outline-offset: 2px;
-}
 
 .vcv-days-expired {
   color: var(--vcv-color-expired-strong);
