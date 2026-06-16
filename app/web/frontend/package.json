@@ -22,7 +22,7 @@
     "svelte-sonner": "^1.1.1",
     "tailwindcss": "^4.3.0",
     "typescript": "~6.0.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.16"
   },
   "dependencies": {
     "bits-ui": "^2.18.1",
