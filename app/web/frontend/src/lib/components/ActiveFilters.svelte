@@ -59,32 +59,30 @@
 {#if hasAny}
   <div class="vcv-active-filters" aria-live="polite">
     {#if search}
-      <button type="button" class="vcv-filter-chip" onclick={onClearSearch}>
+      <button type="button" class="vcv-filter-tag" onclick={onClearSearch}>
         {i18n.t('filterChipSearch', 'Search')}: <strong>{search}</strong>
-        <X class="h-3 w-3" />
+        <X class="h-2.5 w-2.5" />
       </button>
     {/if}
     {#each statusFilters as status (status)}
-      {@const StatusIcon = statusIcon(status)}
-      <button type="button" class="vcv-filter-chip vcv-filter-chip-{status}" onclick={() => onRemoveStatus(status)}>
-        <StatusIcon class="h-3 w-3" aria-hidden="true" />
-        {i18n.t('filterChipStatus', 'Status')}: <strong>{statusLabels[status] ?? status}</strong>
-        <X class="h-3 w-3" />
+      <button type="button" class="vcv-filter-tag vcv-filter-tag-{status}" onclick={() => onRemoveStatus(status)}>
+        {statusLabels[status] ?? status}
+        <X class="h-2.5 w-2.5" />
       </button>
     {/each}
     {#if certTypeFilter !== 'all'}
-      <button type="button" class="vcv-filter-chip" onclick={onClearCertType}>
+      <button type="button" class="vcv-filter-tag" onclick={onClearCertType}>
         {i18n.t('filterChipCertType', 'Type')}: <strong>{certTypeLabels[certTypeFilter] ?? certTypeFilter}</strong>
-        <X class="h-3 w-3" />
+        <X class="h-2.5 w-2.5" />
       </button>
     {/if}
     {#if hasMountFilter}
-      <button type="button" class="vcv-filter-chip" onclick={onClearMounts}>
+      <button type="button" class="vcv-filter-tag" onclick={onClearMounts}>
         {i18n.t('filterChipSources', 'Sources')}: <strong>{mountFilter?.length ?? 0} / {allMountsCount}</strong>
-        <X class="h-3 w-3" />
+        <X class="h-2.5 w-2.5" />
       </button>
     {/if}
-    <button type="button" class="vcv-button vcv-button-small vcv-button-ghost" onclick={onClearAll}>
+    <button type="button" class="vcv-filter-tag-clear" onclick={onClearAll}>
       {i18n.t('filterChipReset', 'Clear all')}
     </button>
   </div>

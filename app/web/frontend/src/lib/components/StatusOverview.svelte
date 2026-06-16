@@ -33,22 +33,24 @@
   <div class="vcv-overview-chart">
     <Donut {counts} label={donutLabel} />
   </div>
-  <div class="vcv-overview-segments" role="group" aria-label={regionLabel}>
-    {#each ORDER as key (key)}
+  <div class="vcv-overview-stats" role="group" aria-label={regionLabel}>
+    {#each ORDER as key, i (key)}
       {@const Icon = statusIcon(key as CertStatus)}
+      {#if i > 0}
+        <span class="vcv-stat-divider" aria-hidden="true"></span>
+      {/if}
       <button
         type="button"
-        class="vcv-seg vcv-seg-{key}"
-        class:vcv-seg-active={statusFilters.includes(key)}
+        class="vcv-stat vcv-stat-{key}"
+        class:vcv-stat-active={statusFilters.includes(key)}
         aria-pressed={statusFilters.includes(key)}
         onclick={() => onSelect(key)}
       >
-        <span class="vcv-seg-top">
-          <Icon class="vcv-seg-icon h-3.5 w-3.5" aria-hidden="true" />
-          <span class="vcv-seg-label">{meta[key].label}</span>
+        <span class="vcv-stat-label">
+          <Icon class="vcv-stat-icon h-3 w-3" aria-hidden="true" />
+          {meta[key].label}
         </span>
-        <span class="vcv-seg-value">{counts[key]}</span>
-        <span class="vcv-seg-desc">{meta[key].desc}</span>
+        <span class="vcv-stat-count">{counts[key]}</span>
       </button>
     {/each}
   </div>
