@@ -25,25 +25,39 @@
   }
 </script>
 
-<main class="min-h-svh bg-background text-foreground">
-  <div class="mx-auto max-w-4xl p-6">
-    {#if !admin.authenticated}
-      <AdminLogin loading={admin.loading} error={admin.error} onSubmit={handleLogin} />
-    {:else if admin.settings}
-      <AdminPanel
-        settings={admin.settings}
-        statuses={admin.vaultStatuses}
-        loading={admin.loading}
-        error={admin.error}
-        successMessage={admin.successMessage}
-        onSave={(next) => void admin.saveSettings(next)}
-        onAddVault={() => void admin.addVault()}
-        onRemoveVault={(id) => void admin.removeVault(id)}
-        onInvalidateCache={() => void admin.invalidateCache()}
-        onLogout={() => void admin.logout()}
-      />
-    {:else}
-      <p class="text-sm text-muted-foreground">{i18n.t('labelLoading', 'Loading…')}</p>
-    {/if}
+{#if !admin.authenticated}
+  <AdminLogin loading={admin.loading} error={admin.error} onSubmit={handleLogin} />
+{:else if admin.settings}
+  <AdminPanel
+    settings={admin.settings}
+    statuses={admin.vaultStatuses}
+    loading={admin.loading}
+    error={admin.error}
+    successMessage={admin.successMessage}
+    onSave={(next) => void admin.saveSettings(next)}
+    onAddVault={() => void admin.addVault()}
+    onRemoveVault={(id) => void admin.removeVault(id)}
+    onInvalidateCache={() => void admin.invalidateCache()}
+    onLogout={() => void admin.logout()}
+  />
+{:else}
+  <div class="adm-boot-loading">
+    <span>{i18n.t('labelLoading', 'Loading…')}</span>
   </div>
-</main>
+{/if}
+
+<style>
+  :global(html) {
+    scroll-behavior: smooth;
+  }
+
+  .adm-boot-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100svh;
+    font-size: 0.875rem;
+    color: var(--vcv-color-muted);
+    background: var(--vcv-color-bg);
+  }
+</style>

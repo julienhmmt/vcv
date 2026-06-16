@@ -1,7 +1,6 @@
 <script lang="ts">
   import { untrack } from 'svelte'
   import { Button } from '$lib/components/ui/button'
-  import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card'
   import { Input } from '$lib/components/ui/input'
   import { Label } from '$lib/components/ui/label'
   import VaultEditor from './VaultEditor.svelte'
@@ -61,17 +60,14 @@
 
   function removeVault(index: number): void {
     const target = working.vaults[index]
-    if (target.id && statusById.has(target.id)) {
-      onRemoveVault(target.id)
-      return
-    }
     const vaults = working.vaults.filter((_, i) => i !== index)
     working = { ...working, vaults }
+    if (target.id && statusById.has(target.id)) {
+      onRemoveVault(target.id)
+    }
   }
 
-  function corsText(): string {
-    return (working.cors.allowed_origins ?? []).join(', ')
-  }
+  const corsText = $derived((working.cors.allowed_origins ?? []).join(', '))
 
   function updateCors(value: string): void {
     working = {
@@ -86,163 +82,558 @@
     }
   }
 
+  function updateThreshold(field: 'critical' | 'warning', value: number): void {
+    if (Number.isNaN(value)) return
+    working = {
+      ...working,
+      certificates: {
+        ...working.certificates,
+        expiration_thresholds: { ...working.certificates.expiration_thresholds, [field]: value },
+      },
+    }
+  }
+
+  function updateMetric(field: 'per_certificate' | 'enhanced_metrics', value: boolean): void {
+    working = { ...working, metrics: { ...working.metrics, [field]: value } }
+  }
+
   function submit(event: SubmitEvent): void {
     event.preventDefault()
     onSave(working)
   }
 
   let docsOpen = $state(false)
+
+  function openDocs(): void {
+    docsOpen = true
+  }
+
+  const navItems = [
+    { id: 'thresholds', label: 'Thresholds' },
+    { id: 'metrics', label: 'Metrics' },
+    { id: 'cors', label: 'CORS' },
+    { id: 'vaults', label: 'Vaults' },
+  ]
 </script>
 
-<div class="space-y-6">
-  <header class="flex items-center justify-between">
-    <h1 class="text-2xl font-semibold tracking-tight">{i18n.t('adminTitle', 'VCV Admin')}</h1>
-    <div class="flex flex-wrap items-center gap-2">
-      <Button variant="ghost" href="/">{i18n.t('adminBackToVCV', 'Back to VCV')}</Button>
-      <Button variant="ghost" onclick={() => (docsOpen = true)}>
-        {i18n.t('adminDocsTitle', 'Documentation')}
-      </Button>
-      <Button variant="outline" onclick={onInvalidateCache}>{i18n.t('adminInvalidateCache', 'Invalidate cache')}</Button>
-      <Button variant="ghost" onclick={onLogout}>{i18n.t('adminLogout', 'Sign out')}</Button>
+<div class="adm-layout">
+  <!-- Top bar -->
+  <header class="adm-topbar">
+    <div class="adm-topbar-left">
+      <span class="adm-topbar-title">VCV Admin</span>
+      <span class="adm-topbar-sep">/</span>
+      <span class="adm-topbar-sub">{i18n.t('adminTitle', 'Settings')}</span>
     </div>
+    <nav class="adm-topbar-actions">
+      <a href="/" class="adm-action-link">{i18n.t('adminBackToVCV', 'Back to VCV')}</a>
+      <button type="button" class="adm-action-link" aria-label={i18n.t('adminDocsTitle', 'Documentation')} onclick={openDocs}>
+        {i18n.t('adminDocsTitle', 'Docs')}
+      </button>
+      <button type="button" class="adm-action-btn adm-action-btn--secondary" aria-label={i18n.t('adminInvalidateCache', 'Flush cache')} onclick={onInvalidateCache}>
+        {i18n.t('adminInvalidateCache', 'Flush cache')}
+      </button>
+      <button type="button" class="adm-action-btn adm-action-btn--ghost" aria-label={i18n.t('adminLogout', 'Sign out')} onclick={onLogout}>
+        {i18n.t('adminLogout', 'Sign out')}
+      </button>
+    </nav>
   </header>
 
+  <!-- Feedback bar -->
   {#if error}
-    <p class="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-      {error}
-    </p>
+    <div class="adm-feedback adm-feedback--error" role="alert">{error}</div>
   {/if}
   {#if successMessage}
-    <p class="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-600 dark:text-emerald-400">
-      {successMessage}
-    </p>
+    <div class="adm-feedback adm-feedback--success" role="status">{successMessage}</div>
   {/if}
 
-  <form class="space-y-6" onsubmit={submit}>
-    <Card>
-      <CardHeader>
-        <CardTitle>{i18n.t('adminThresholdsTitle', 'Expiration thresholds (days)')}</CardTitle>
-      </CardHeader>
-      <CardContent class="grid gap-3 md:grid-cols-2">
-        <div class="space-y-1">
-          <Label>{i18n.t('adminCriticalThreshold', 'Critical')}</Label>
+  <!-- Body: nav + content -->
+  <div class="adm-body">
+    <!-- Sticky left nav -->
+    <aside class="adm-sidenav">
+      {#each navItems as item}
+        <a href="#{item.id}" class="adm-sidenav-item">{item.label}</a>
+      {/each}
+    </aside>
+
+    <!-- Scrollable settings form -->
+    <form class="adm-content" onsubmit={submit}>
+
+      <!-- Section: Thresholds -->
+      <section class="adm-section" id="thresholds">
+        <div class="adm-section-head">
+          <h2 class="adm-section-title">{i18n.t('adminThresholdsTitle', 'Expiration thresholds')}</h2>
+          <p class="adm-section-hint">{i18n.t('adminThresholdsHint', 'Days before a certificate is flagged.')}</p>
+        </div>
+        <div class="adm-grid adm-grid--2">
+          <div class="adm-field">
+            <Label class="adm-label">{i18n.t('adminCriticalThreshold', 'Critical (days)')}</Label>
+            <Input
+              type="number"
+              min="1"
+              max="3650"
+              value={working.certificates.expiration_thresholds.critical}
+              oninput={(event) => updateThreshold('critical', Number((event.target as HTMLInputElement).value))}
+            />
+          </div>
+          <div class="adm-field">
+            <Label class="adm-label">{i18n.t('adminWarningThreshold', 'Warning (days)')}</Label>
+            <Input
+              type="number"
+              min="1"
+              max="3650"
+              value={working.certificates.expiration_thresholds.warning}
+              oninput={(event) => updateThreshold('warning', Number((event.target as HTMLInputElement).value))}
+            />
+          </div>
+        </div>
+      </section>
+
+      <hr class="adm-divider" />
+
+      <!-- Section: Metrics -->
+      <section class="adm-section" id="metrics">
+        <div class="adm-section-head">
+          <h2 class="adm-section-title">{i18n.t('adminMetrics', 'Metrics')}</h2>
+          <p class="adm-section-hint">{i18n.t('adminMetricsHint', 'Prometheus scrape configuration.')}</p>
+        </div>
+        <div class="adm-toggles">
+          <label class="adm-toggle">
+            <input
+              type="checkbox"
+              name="metrics_per_certificate"
+              class="adm-toggle-input"
+              checked={working.metrics.per_certificate ?? false}
+              onchange={(event) => updateMetric('per_certificate', (event.target as HTMLInputElement).checked)}
+            />
+            <div class="adm-toggle-body">
+              <span class="adm-toggle-label">{i18n.t('adminMetricsPerCertificate', 'Per-certificate metrics')}</span>
+              <span class="adm-toggle-desc">High cardinality. Enable only if Prometheus is configured for it.</span>
+            </div>
+          </label>
+          <label class="adm-toggle">
+            <input
+              type="checkbox"
+              name="metrics_enhanced"
+              class="adm-toggle-input"
+              checked={working.metrics.enhanced_metrics ?? true}
+              onchange={(event) => updateMetric('enhanced_metrics', (event.target as HTMLInputElement).checked)}
+            />
+            <div class="adm-toggle-body">
+              <span class="adm-toggle-label">{i18n.t('adminMetricsEnhanced', 'Enhanced metrics')}</span>
+              <span class="adm-toggle-desc">Additional gauges and histograms beyond the base set.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <hr class="adm-divider" />
+
+      <!-- Section: CORS -->
+      <section class="adm-section" id="cors">
+        <div class="adm-section-head">
+          <h2 class="adm-section-title">{i18n.t('adminCORSOrigins', 'CORS origins')}</h2>
+          <p class="adm-section-hint">{i18n.t('adminCORSOriginsHint', 'Comma-separated list of allowed origins.')}</p>
+        </div>
+        <div class="adm-field">
           <Input
-            type="number"
-            min="1"
-            max="3650"
-            value={working.certificates.expiration_thresholds.critical}
-            oninput={(event) =>
-              (working = {
-                ...working,
-                certificates: {
-                  ...working.certificates,
-                  expiration_thresholds: {
-                    ...working.certificates.expiration_thresholds,
-                    critical: Number((event.target as HTMLInputElement).value),
-                  },
-                },
-              })}
+            value={corsText}
+            placeholder="https://app.example.com, https://other.example.com"
+            oninput={(event) => updateCors((event.target as HTMLInputElement).value)}
           />
         </div>
-        <div class="space-y-1">
-          <Label>{i18n.t('adminWarningThreshold', 'Warning')}</Label>
-          <Input
-            type="number"
-            min="1"
-            max="3650"
-            value={working.certificates.expiration_thresholds.warning}
-            oninput={(event) =>
-              (working = {
-                ...working,
-                certificates: {
-                  ...working.certificates,
-                  expiration_thresholds: {
-                    ...working.certificates.expiration_thresholds,
-                    warning: Number((event.target as HTMLInputElement).value),
-                  },
-                },
-              })}
-          />
+      </section>
+
+      <hr class="adm-divider" />
+
+      <!-- Section: Vaults -->
+      <section class="adm-section" id="vaults">
+        <div class="adm-section-head">
+          <div class="adm-section-head-row">
+            <div>
+              <h2 class="adm-section-title">{i18n.t('adminVaults', 'Vaults')}</h2>
+              <p class="adm-section-hint">{i18n.t('adminVaultsHint', 'Vault and OpenBao instances to read from.')}</p>
+            </div>
+            <Button type="button" variant="outline" size="sm" onclick={onAddVault}>
+              {i18n.t('adminAddVault', '+ Add vault')}
+            </Button>
+          </div>
         </div>
-        <p class="text-xs text-muted-foreground md:col-span-2">{i18n.t('adminThresholdsHint', '')}</p>
-      </CardContent>
-    </Card>
+        <div class="adm-vault-list">
+          {#each working.vaults as vault, index (vault.id || index)}
+            <VaultEditor
+              {vault}
+              status={statusById.get(vault.id)}
+              onChange={(next) => updateVault(index, next)}
+              onRemove={() => removeVault(index)}
+            />
+          {/each}
+          {#if working.vaults.length === 0}
+            <p class="adm-empty">{i18n.t('adminVaultsEmpty', 'No vaults configured.')}</p>
+          {/if}
+        </div>
+      </section>
 
-    <Card>
-      <CardHeader>
-        <CardTitle>{i18n.t('adminMetrics', 'Metrics')}</CardTitle>
-      </CardHeader>
-      <CardContent class="space-y-2 text-sm">
-        <p class="text-xs text-muted-foreground">{i18n.t('adminMetricsHint', '')}</p>
-        <label class="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={working.metrics.per_certificate ?? false}
-            onchange={(event) =>
-              (working = {
-                ...working,
-                metrics: { ...working.metrics, per_certificate: (event.target as HTMLInputElement).checked },
-              })}
-          />
-          {i18n.t('adminMetricsPerCertificate', 'Per-certificate metrics (high cardinality)')}
-        </label>
-        <label class="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={working.metrics.enhanced_metrics ?? true}
-            onchange={(event) =>
-              (working = {
-                ...working,
-                metrics: { ...working.metrics, enhanced_metrics: (event.target as HTMLInputElement).checked },
-              })}
-          />
-          {i18n.t('adminMetricsEnhanced', 'Enhanced metrics')}
-        </label>
-      </CardContent>
-    </Card>
+      <!-- Footer actions -->
+      <div class="adm-form-footer">
+        <p class="adm-footer-note">{i18n.t('adminRestartNote', '')}</p>
+        <Button type="submit" disabled={loading}>
+          {loading ? i18n.t('adminSaving', 'Saving…') : i18n.t('adminSaveSettings', 'Save settings')}
+        </Button>
+      </div>
 
-    <Card>
-      <CardHeader>
-        <CardTitle>{i18n.t('adminCORSOrigins', 'CORS allowed origins')}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Input
-          value={corsText()}
-          placeholder="https://app.example.com, https://other.example.com"
-          oninput={(event) => updateCors((event.target as HTMLInputElement).value)}
-        />
-        <p class="mt-2 text-xs text-muted-foreground">{i18n.t('adminCORSOriginsHint', '')}</p>
-      </CardContent>
-    </Card>
-
-    <Card>
-      <CardHeader class="flex flex-row items-center justify-between">
-        <CardTitle>{i18n.t('adminVaults', 'Vaults')}</CardTitle>
-        <Button type="button" variant="outline" size="sm" onclick={onAddVault}>{i18n.t('adminAddVault', 'Add vault')}</Button>
-      </CardHeader>
-      <CardContent class="space-y-4">
-        <p class="text-xs text-muted-foreground">{i18n.t('adminVaultsHint', '')}</p>
-        {#each working.vaults as vault, index (vault.id || index)}
-          <VaultEditor
-            {vault}
-            status={statusById.get(vault.id)}
-            onChange={(next) => updateVault(index, next)}
-            onRemove={() => removeVault(index)}
-          />
-        {/each}
-        {#if working.vaults.length === 0}
-          <p class="text-sm text-muted-foreground">{i18n.t('adminVaultsEmpty', 'No vaults configured.')}</p>
-        {/if}
-      </CardContent>
-    </Card>
-
-    <div class="flex flex-col items-end gap-2">
-      <p class="text-xs text-muted-foreground">{i18n.t('adminRestartNote', '')}</p>
-      <Button type="submit" disabled={loading}>
-        {loading ? i18n.t('adminSaving', 'Saving…') : i18n.t('adminSaveSettings', 'Save settings')}
-      </Button>
-    </div>
-  </form>
+    </form>
+  </div>
 </div>
 
 <AdminDocsModal open={docsOpen} onOpenChange={(open) => (docsOpen = open)} />
+
+<style>
+  /* Layout */
+  .adm-layout {
+    display: flex;
+    flex-direction: column;
+    min-height: 100svh;
+    background: var(--vcv-color-bg);
+    color: var(--vcv-color-text);
+  }
+
+  /* Top bar */
+  .adm-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    height: 3rem;
+    border-bottom: 1px solid var(--vcv-color-border);
+    background: var(--vcv-color-surface);
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+
+  .adm-topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .adm-topbar-title {
+    font-weight: 600;
+    color: var(--vcv-color-text-strong);
+    letter-spacing: 0.01em;
+  }
+
+  .adm-topbar-sep {
+    color: var(--vcv-color-border-strong);
+  }
+
+  .adm-topbar-sub {
+    color: var(--vcv-color-muted);
+  }
+
+  .adm-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .adm-action-link {
+    padding: 0.25rem 0.6rem;
+    font-size: 0.75rem;
+    color: var(--vcv-color-muted);
+    text-decoration: none;
+    border-radius: var(--vcv-radius-sm);
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.12s, background 0.12s;
+  }
+
+  .adm-action-link:hover {
+    color: var(--vcv-color-text);
+    background: var(--vcv-color-bg-hover);
+  }
+
+  .adm-action-btn {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: var(--vcv-radius-sm);
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+  }
+
+  .adm-action-btn--secondary {
+    background: var(--vcv-color-surface);
+    border: 1px solid var(--vcv-color-border-strong);
+    color: var(--vcv-color-text);
+  }
+
+  .adm-action-btn--secondary:hover {
+    background: var(--vcv-color-bg-hover);
+  }
+
+  .adm-action-btn--ghost {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--vcv-color-muted);
+  }
+
+  .adm-action-btn--ghost:hover {
+    color: var(--vcv-color-text);
+    background: var(--vcv-color-bg-hover);
+  }
+
+  /* Feedback */
+  .adm-feedback {
+    padding: 0.6rem 1.5rem;
+    font-size: 0.8125rem;
+    border-bottom: 1px solid;
+  }
+
+  .adm-feedback--error {
+    background: var(--vcv-color-danger-surface);
+    border-color: var(--vcv-color-danger-border);
+    color: var(--vcv-color-danger-text);
+  }
+
+  .adm-feedback--success {
+    background: var(--vcv-color-success-surface);
+    border-color: var(--vcv-color-success-border);
+    color: var(--vcv-color-success-text);
+  }
+
+  /* Body */
+  .adm-body {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+
+  /* Sidenav */
+  .adm-sidenav {
+    width: 11rem;
+    flex-shrink: 0;
+    padding: 2rem 1rem 2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+    position: sticky;
+    top: 3rem;
+    height: calc(100svh - 3rem);
+    overflow-y: auto;
+    border-right: 1px solid var(--vcv-color-border);
+    background: var(--vcv-color-surface);
+  }
+
+  .adm-sidenav-item {
+    display: block;
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8125rem;
+    color: var(--vcv-color-muted);
+    text-decoration: none;
+    border-radius: var(--vcv-radius-sm);
+    transition: color 0.12s, background 0.12s;
+  }
+
+  .adm-sidenav-item:hover {
+    color: var(--vcv-color-text);
+    background: var(--vcv-color-bg-hover);
+  }
+
+  /* Content */
+  .adm-content {
+    flex: 1;
+    padding: 2.5rem 2.5rem 4rem;
+    max-width: 48rem;
+    overflow-y: auto;
+  }
+
+  /* Section */
+  .adm-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    scroll-margin-top: 4rem;
+  }
+
+  .adm-section-head {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .adm-section-head-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .adm-section-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--vcv-color-text-strong);
+    margin: 0;
+  }
+
+  .adm-section-hint {
+    font-size: 0.75rem;
+    color: var(--vcv-color-muted);
+    margin: 0;
+  }
+
+  .adm-divider {
+    border: none;
+    border-top: 1px solid var(--vcv-color-border);
+    margin: 2rem 0;
+  }
+
+  /* Grid */
+  .adm-grid {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .adm-grid--2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 640px) {
+    .adm-grid--2 {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* Field */
+  .adm-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  :global(.adm-label) {
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--vcv-color-muted);
+  }
+
+  /* Toggles */
+  .adm-toggles {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--vcv-color-border);
+    border-radius: var(--vcv-radius-md);
+    overflow: hidden;
+  }
+
+  .adm-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    cursor: pointer;
+    transition: background 0.1s;
+    border-bottom: 1px solid var(--vcv-color-border);
+  }
+
+  .adm-toggle:last-child {
+    border-bottom: none;
+  }
+
+  .adm-toggle:hover {
+    background: var(--vcv-color-bg-hover);
+  }
+
+  .adm-toggle-input {
+    margin-top: 0.1rem;
+    accent-color: var(--vcv-color-primary);
+    flex-shrink: 0;
+  }
+
+  .adm-toggle-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .adm-toggle-label {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--vcv-color-text);
+  }
+
+  .adm-toggle-desc {
+    font-size: 0.72rem;
+    color: var(--vcv-color-muted);
+  }
+
+  /* Vault list */
+  .adm-vault-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .adm-empty {
+    font-size: 0.8125rem;
+    color: var(--vcv-color-muted);
+    padding: 1.5rem;
+    text-align: center;
+    border: 1px dashed var(--vcv-color-border);
+    border-radius: var(--vcv-radius-md);
+    margin: 0;
+  }
+
+  /* Footer */
+  .adm-form-footer {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--vcv-color-border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .adm-footer-note {
+    font-size: 0.72rem;
+    color: var(--vcv-color-muted);
+    margin: 0;
+  }
+
+  /* Responsive: turn the sidenav into a horizontal scroll bar below md */
+  @media (max-width: 768px) {
+    .adm-body {
+      flex-direction: column;
+    }
+
+    .adm-sidenav {
+      position: static;
+      top: auto;
+      width: auto;
+      height: auto;
+      flex-direction: row;
+      gap: 0.25rem;
+      padding: 0.5rem 1rem;
+      overflow-x: auto;
+      overflow-y: hidden;
+      border-right: none;
+      border-bottom: 1px solid var(--vcv-color-border);
+    }
+
+    .adm-sidenav-item {
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .adm-content {
+      padding: 1.5rem 1rem 3rem;
+      max-width: none;
+    }
+  }
+</style>

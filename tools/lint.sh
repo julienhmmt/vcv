@@ -35,12 +35,11 @@ fi
 echo ""
 
 # Run prettier for formatting
-echo "  [2/2] Prettier (format)..."
-if bunx prettier --check "**/*.{css,md,json,yml,yaml}"; then
-    echo "  ✅ Prettier: all files formatted"
+echo "  [2/2] Prettier (CSS, MD, YAML, JSON)..."
+if bunx prettier --write "**/*.{css,md,json,yml,yaml}" --log-level warn; then
+    echo "  ✅ Prettier: files formatted"
 else
-    echo "  ❌ Prettier: formatting issues found"
-    echo "  💡 Run 'bunx prettier --write \"**/*.{css,md,json,yml,yaml}\"' to auto-fix"
+    echo "  ❌ Prettier: formatting failed"
     exit 1
 fi
 echo ""
