@@ -1,7 +1,9 @@
 <script lang="ts">
   import Check from '@lucide/svelte/icons/check'
   import Copy from '@lucide/svelte/icons/copy'
+  import Download from '@lucide/svelte/icons/download'
   import Landmark from '@lucide/svelte/icons/landmark'
+  import { toast } from 'svelte-sonner'
   import * as Dialog from '$lib/components/ui/dialog'
   import { ScrollArea } from '$lib/components/ui/scroll-area'
   import { api, ApiError } from '$lib/api'
@@ -51,86 +53,197 @@
       if (copied === field) copied = null
     }, 1500)
   }
+
+  function downloadPem(): void {
+    if (!ca?.pem) return
+    const blob = new Blob([ca.pem], { type: 'application/x-pem-file' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `${ca.commonName || 'ca'}.pem`
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
+    URL.revokeObjectURL(url)
+    toast.success(i18n.t('downloadPEMSuccess', 'Certificate PEM downloaded successfully'))
+  }
+
+  const caLabel = $derived(
+    ca?.caType === 'root'
+      ? i18n.t('labelRootCA', 'Root CA')
+      : i18n.t('labelIntermediateCA', 'Intermediate CA'),
+  )
 </script>
 
 <Dialog.Root {open} {onOpenChange}>
-  <Dialog.Content class="max-w-2xl p-0 overflow-hidden">
-    <Dialog.Header class="px-6 pt-6">
-      <Dialog.Title class="flex items-center gap-2">
-        <Landmark class="h-5 w-5 text-primary" />
-        {ca?.caType === 'root' ? i18n.t('labelRootCA', 'Root CA') : i18n.t('labelIntermediateCA', 'Intermediate CA')}
-      </Dialog.Title>
-      <Dialog.Description>{ca?.commonName ?? i18n.t('caIssuerCertificate', 'Issuer certificate')}</Dialog.Description>
-    </Dialog.Header>
-
+  <Dialog.Content class="max-w-4xl p-0 overflow-hidden">
     {#if loading && !ca}
-      <div class="px-6 py-8 text-sm text-muted-foreground">{i18n.t('labelLoading', 'Loading…')}</div>
+      <div class="px-8 py-12 text-sm text-muted-foreground">{i18n.t('labelLoading', 'Loading…')}</div>
     {:else if error}
-      <div class="px-6 py-8 text-sm text-destructive">{error}</div>
+      <div class="px-8 py-12 text-sm text-destructive">{error}</div>
     {:else if ca}
-      <ScrollArea class="max-h-[70vh]">
-        <div class="px-6 pb-6 space-y-4">
-          <div class="grid gap-2 text-sm">
-            <div class="grid grid-cols-[100px_1fr] gap-3">
-              <span class="text-xs uppercase tracking-wide text-muted-foreground">{i18n.t('labelSubject', 'Subject')}</span>
-              <span>{ca.subject}</span>
+      <ScrollArea class="max-h-[85vh]">
+        <div class="vcv-cd-passport vcv-ca-passport">
+          <aside class="vcv-cd-passport-sidebar vcv-ca-sidebar">
+            <div class="vcv-cd-emblem vcv-ca-emblem">
+              <Landmark class="h-8 w-8" />
             </div>
-            <div class="grid grid-cols-[100px_1fr] gap-3">
-              <span class="text-xs uppercase tracking-wide text-muted-foreground">{i18n.t('labelIssuer', 'Issuer')}</span>
-              <span>{ca.issuer}</span>
-            </div>
-            <div class="grid grid-cols-[100px_1fr] gap-3">
-              <span class="text-xs uppercase tracking-wide text-muted-foreground">{i18n.t('labelSerialNumber', 'Serial')}</span>
-              <span class="font-mono text-xs break-all">{ca.serialNumber}</span>
-            </div>
-            <div class="grid grid-cols-[100px_1fr] gap-3">
-              <span class="text-xs uppercase tracking-wide text-muted-foreground">{i18n.t('labelValidity', 'Validity')}</span>
-              <span>{formatDate(ca.createdAt)} — {formatDate(ca.expiresAt)} ({formatTime(ca.expiresAt)} UTC)</span>
-            </div>
-          </div>
 
-          <div>
-            <div class="text-xs uppercase tracking-wide text-muted-foreground mb-1">{i18n.t('labelFingerprintSHA256', 'SHA-256')}</div>
-            <div class="flex items-center gap-2">
-              <code class="font-mono text-xs break-all flex-1">{ca.fingerprintSHA256}</code>
-              <button
-                type="button"
-                class="vcv-cd-copy-btn"
-                class:vcv-cd-copy-done={copied === 'sha256'}
-                onclick={() => copy('sha256', ca!.fingerprintSHA256)}
-                aria-label={i18n.t('labelCopy', 'Copy')}
-              >
-                {#if copied === 'sha256'}<Check class="h-3.5 w-3.5" />{:else}<Copy class="h-3.5 w-3.5" />{/if}
-              </button>
+            <div class="vcv-cd-sidebar-status">
+              <div class="vcv-ca-type-badge">
+                <span class="vcv-ca-type-label">{caLabel}</span>
+              </div>
+              <strong class="vcv-cd-countdown vcv-ca-cn">{ca.commonName || '—'}</strong>
             </div>
-          </div>
 
-          {#if ca.usage?.length}
-            <div>
-              <div class="text-xs uppercase tracking-wide text-muted-foreground mb-1">{i18n.t('labelUsage', 'Usage')}</div>
-              <div class="flex flex-wrap gap-1">
-                {#each ca.usage as use}
-                  <span class="vcv-cd-san-chip"><code>{use}</code></span>
-                {/each}
+            <div class="vcv-cd-date-stack">
+              <div>
+                <span>{i18n.t('columnExpiresAt', 'Expires')}</span>
+                <strong>{formatDate(ca.expiresAt)}</strong>
+                <small>{formatTime(ca.expiresAt)} UTC</small>
+              </div>
+              <div>
+                <span>{i18n.t('columnCreatedAt', 'Created')}</span>
+                <strong>{formatDate(ca.createdAt)}</strong>
+                <small>{formatTime(ca.createdAt)} UTC</small>
               </div>
             </div>
-          {/if}
+          </aside>
 
-          {#if ca.pem}
-            <div>
-              <div class="flex items-center justify-between mb-1">
-                <span class="text-xs uppercase tracking-wide text-muted-foreground">{i18n.t('labelPem', 'PEM')}</span>
+          <main class="vcv-cd-passport-main">
+            <header class="vcv-cd-passport-header">
+              <div>
+                <h3 class="vcv-cd-cn">{ca.subject || ca.commonName || '—'}</h3>
+                {#if ca.issuer && ca.issuer !== ca.subject}
+                  <p class="vcv-cd-hero-subject">{ca.issuer}</p>
+                {/if}
+              </div>
+              {#if ca.keyAlgorithm}
+                <div class="vcv-cd-hero-meta">
+                  <span class="vcv-cd-hero-meta-label">{i18n.t('labelKeyAlgorithm', 'Key')}</span>
+                  <span class="vcv-cd-hero-meta-value">
+                    {ca.keyAlgorithm}{ca.keySize ? ` (${ca.keySize})` : ''}
+                  </span>
+                </div>
+              {/if}
+            </header>
+
+            <section class="vcv-cd-detail-list">
+              <div class="vcv-cd-detail-row">
+                <span>{i18n.t('labelIssuer', 'Issuer')}</span>
+                <strong title={ca.issuer}>{ca.issuer || '—'}</strong>
+              </div>
+
+              <div class="vcv-cd-detail-row">
+                <span>{i18n.t('labelSerialNumber', 'Serial')}</span>
+                <div class="vcv-cd-copy-row">
+                  <code class="vcv-cd-serial">{ca.serialNumber}</code>
+                  <button
+                    type="button"
+                    class="vcv-cd-copy-btn"
+                    class:vcv-cd-copy-done={copied === 'serial'}
+                    onclick={() => copy('serial', ca!.serialNumber)}
+                    aria-label={i18n.t('labelCopy', 'Copy')}
+                  >
+                    {#if copied === 'serial'}<Check class="h-3.5 w-3.5" />{:else}<Copy class="h-3.5 w-3.5" />{/if}
+                  </button>
+                </div>
+              </div>
+
+              {#if ca.usage?.length}
+                <div class="vcv-cd-detail-row vcv-cd-detail-row-stack">
+                  <span>{i18n.t('labelUsage', 'Usage')}</span>
+                  <div class="vcv-cd-san-list">
+                    {#each ca.usage as use}
+                      <span class="vcv-cd-san-chip"><code>{use}</code></span>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+
+              <div class="vcv-cd-detail-row vcv-cd-detail-row-stack">
+                <span>{i18n.t('labelFingerprintSHA256', 'SHA-256')}</span>
+                <div class="vcv-cd-copy-row">
+                  <code class="vcv-cd-fingerprint">{ca.fingerprintSHA256}</code>
+                  <button
+                    type="button"
+                    class="vcv-cd-copy-btn"
+                    class:vcv-cd-copy-done={copied === 'sha256'}
+                    onclick={() => copy('sha256', ca!.fingerprintSHA256)}
+                    aria-label={i18n.t('labelCopy', 'Copy')}
+                  >
+                    {#if copied === 'sha256'}<Check class="h-3.5 w-3.5" />{:else}<Copy class="h-3.5 w-3.5" />{/if}
+                  </button>
+                </div>
+              </div>
+
+              {#if ca.fingerprintSHA1}
+                <div class="vcv-cd-detail-row vcv-cd-detail-row-stack">
+                  <span>{i18n.t('labelFingerprintSHA1', 'SHA-1')}</span>
+                  <div class="vcv-cd-copy-row">
+                    <code class="vcv-cd-fingerprint">{ca.fingerprintSHA1}</code>
+                    <button
+                      type="button"
+                      class="vcv-cd-copy-btn"
+                      class:vcv-cd-copy-done={copied === 'sha1'}
+                      onclick={() => copy('sha1', ca!.fingerprintSHA1)}
+                      aria-label={i18n.t('labelCopy', 'Copy')}
+                    >
+                      {#if copied === 'sha1'}<Check class="h-3.5 w-3.5" />{:else}<Copy class="h-3.5 w-3.5" />{/if}
+                    </button>
+                  </div>
+                </div>
+              {/if}
+            </section>
+
+            {#if ca.pem}
+              <div class="vcv-ca-pem-section">
+                <div class="vcv-ca-pem-header">
+                  <span class="vcv-ca-pem-label">{i18n.t('labelPem', 'PEM')}</span>
+                  <div class="vcv-ca-pem-actions">
+                    <button type="button" class="vcv-button vcv-button-secondary vcv-ca-pem-btn" onclick={downloadPem}>
+                      <Download class="h-3.5 w-3.5" />
+                      {i18n.t('buttonDownloadPEM', 'Download PEM')}
+                    </button>
+                    <button
+                      type="button"
+                      class="vcv-button vcv-button-secondary vcv-ca-pem-btn"
+                      class:vcv-cd-copy-pem-done={copied === 'pem'}
+                      onclick={() => copy('pem', ca!.pem)}
+                    >
+                      {#if copied === 'pem'}
+                        <Check class="h-3.5 w-3.5" />
+                        {i18n.t('labelCopied', 'Copied!')}
+                      {:else}
+                        <Copy class="h-3.5 w-3.5" />
+                        {i18n.t('labelCopy', 'Copy')}
+                      {/if}
+                    </button>
+                  </div>
+                </div>
+                <pre class="vcv-pem">{ca.pem}</pre>
+              </div>
+            {/if}
+
+            <div class="vcv-cd-actions">
+              {#if ca.pem}
                 <button
                   type="button"
-                  class="vcv-button vcv-button-small"
+                  class="vcv-button vcv-button-primary"
+                  class:vcv-cd-copy-pem-done={copied === 'pem'}
                   onclick={() => copy('pem', ca!.pem)}
                 >
-                  {copied === 'pem' ? i18n.t('labelCopied', 'Copied!') : i18n.t('labelCopy', 'Copy')}
+                  {#if copied === 'pem'}
+                    <Check class="h-4 w-4" />
+                    {i18n.t('labelCopied', 'Copied!')}
+                  {:else}
+                    <Copy class="h-4 w-4" />
+                    {i18n.t('labelCopyPem', 'Copy PEM')}
+                  {/if}
                 </button>
-              </div>
-              <pre class="vcv-pem">{ca.pem}</pre>
+              {/if}
             </div>
-          {/if}
+          </main>
         </div>
       </ScrollArea>
     {/if}

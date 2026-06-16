@@ -98,24 +98,17 @@
 </script>
 
 <Dialog.Root {open} {onOpenChange}>
-  <Dialog.Content class="max-w-3xl p-0 overflow-hidden">
-    <Dialog.Header class="px-6 pt-6">
-      <Dialog.Title class="flex items-center gap-2">
-        <ShieldCheck class="h-5 w-5 text-primary" />
-        {i18n.t('certificateInformationTitle', 'Certificate')}
-      </Dialog.Title>
-    </Dialog.Header>
-
+  <Dialog.Content class="max-w-4xl p-0 overflow-hidden">
     {#if loading && !details}
-      <div class="px-6 py-8 text-sm text-muted-foreground">{i18n.t('labelLoading', 'Loading…')}</div>
+      <div class="px-8 py-12 text-sm text-muted-foreground">{i18n.t('labelLoading', 'Loading…')}</div>
     {:else if error}
-      <div class="px-6 py-8 text-sm text-destructive">{error}</div>
+      <div class="px-8 py-12 text-sm text-destructive">{error}</div>
     {:else if cert && details}
-      <ScrollArea class="max-h-[70vh]">
+      <ScrollArea class="max-h-[85vh]">
         <div class="vcv-cd-passport vcv-cd-passport-{expiryTone}">
           <aside class="vcv-cd-passport-sidebar">
             <div class="vcv-cd-emblem">
-              <ShieldCheck class="h-7 w-7" />
+              <ShieldCheck class="h-8 w-8" />
             </div>
             <div class="vcv-cd-sidebar-status">
               <div class="vcv-cd-badges">
