@@ -448,7 +448,10 @@
           </colgroup>
           <thead>
             <tr>
-              <th scope="col">
+              <th
+                scope="col"
+                aria-sort={sortKey === 'commonName' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+              >
                 <button
                   type="button"
                   class="vcv-sort"
@@ -481,7 +484,10 @@
                   </div>
                 {/if}
               </th>
-              <th scope="col">
+              <th
+                scope="col"
+                aria-sort={sortKey === 'expiresAt' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+              >
                 <button
                   type="button"
                   class="vcv-sort"

@@ -1,5 +1,7 @@
 <script lang="ts">
   import Donut from '$lib/components/Donut.svelte'
+  import { statusIcon } from '$lib/utils/cert-status'
+  import type { CertStatus } from '$lib/types'
 
   type StatusKey = 'valid' | 'warning' | 'critical' | 'expired' | 'revoked'
 
@@ -33,6 +35,7 @@
   </div>
   <div class="vcv-overview-segments" role="group" aria-label={regionLabel}>
     {#each ORDER as key (key)}
+      {@const Icon = statusIcon(key as CertStatus)}
       <button
         type="button"
         class="vcv-seg vcv-seg-{key}"
@@ -41,7 +44,7 @@
         onclick={() => onSelect(key)}
       >
         <span class="vcv-seg-top">
-          <span class="vcv-seg-dot" aria-hidden="true"></span>
+          <Icon class="vcv-seg-icon h-3.5 w-3.5" aria-hidden="true" />
           <span class="vcv-seg-label">{meta[key].label}</span>
         </span>
         <span class="vcv-seg-value">{counts[key]}</span>

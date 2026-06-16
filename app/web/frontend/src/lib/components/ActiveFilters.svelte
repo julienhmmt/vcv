@@ -1,6 +1,7 @@
 <script lang="ts">
   import X from '@lucide/svelte/icons/x'
   import { getI18n } from '$lib/stores/i18n.svelte'
+  import { statusIcon } from '$lib/utils/cert-status'
   import type { CertTypeFilter } from '$lib/utils/cert-filter'
   import type { CertStatus } from '$lib/types'
 
@@ -64,7 +65,9 @@
       </button>
     {/if}
     {#each statusFilters as status (status)}
+      {@const StatusIcon = statusIcon(status)}
       <button type="button" class="vcv-filter-chip vcv-filter-chip-{status}" onclick={() => onRemoveStatus(status)}>
+        <StatusIcon class="h-3 w-3" aria-hidden="true" />
         {i18n.t('filterChipStatus', 'Status')}: <strong>{statusLabels[status] ?? status}</strong>
         <X class="h-3 w-3" />
       </button>
