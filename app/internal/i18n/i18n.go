@@ -170,6 +170,8 @@ type Messages struct {
 	VaultsUnreachable        string `json:"vaultsUnreachable"`
 	VaultsUnreachableHint    string `json:"vaultsUnreachableHint"`
 	TableNoMatch             string `json:"tableNoMatch"`
+	TableEmpty               string `json:"tableEmpty"`
+	TableEmptyHint           string `json:"tableEmptyHint"`
 	FooterMoreInfo           string `json:"footerMoreInfo"`
 	FooterLicense            string `json:"footerLicense"`
 	StatusConnecting         string `json:"statusConnecting"`
@@ -335,6 +337,8 @@ var englishMessages = Messages{
 	VaultsUnreachable:        "{count} vault(s) unreachable",
 	VaultsUnreachableHint:    "Showing partial results.",
 	TableNoMatch:             "No certificates match the current filters.",
+	TableEmpty:               "No certificates found.",
+	TableEmptyHint:           "No PKI mount returned any certificates yet.",
 	FooterMoreInfo:           "More info",
 	FooterLicense:            "License",
 	StatusConnecting:         "connecting…",
@@ -494,6 +498,8 @@ var frenchMessages = Messages{
 	VaultsUnreachable:        "{count} vault(s) injoignable(s)",
 	VaultsUnreachableHint:    "Résultats partiels affichés.",
 	TableNoMatch:             "Aucun certificat ne correspond aux filtres actuels.",
+	TableEmpty:               "Aucun certificat trouvé.",
+	TableEmptyHint:           "Aucun montage PKI n'a encore renvoyé de certificat.",
 	FooterMoreInfo:           "En savoir plus",
 	FooterLicense:            "Licence",
 	StatusConnecting:         "connexion…",
@@ -653,6 +659,8 @@ var spanishMessages = Messages{
 	VaultsUnreachable:        "{count} vault(s) inaccesible(s)",
 	VaultsUnreachableHint:    "Mostrando resultados parciales.",
 	TableNoMatch:             "Ningún certificado coincide con los filtros actuales.",
+	TableEmpty:               "No se encontraron certificados.",
+	TableEmptyHint:           "Ningún montaje PKI ha devuelto certificados todavía.",
 	FooterMoreInfo:           "Más información",
 	FooterLicense:            "Licencia",
 	StatusConnecting:         "conectando…",
@@ -811,6 +819,8 @@ var germanMessages = Messages{
 	SkipToContent:            "Zum Hauptinhalt springen",
 	VaultsUnreachable:        "{count} Vault(s) nicht erreichbar",
 	VaultsUnreachableHint:    "Teilergebnisse werden angezeigt.",
+	TableEmpty:               "Keine Zertifikate gefunden.",
+	TableEmptyHint:           "Noch hat kein PKI-Mount Zertifikate zurückgegeben.",
 	TableNoMatch:             "Keine Zertifikate entsprechen den aktuellen Filtern.",
 	FooterMoreInfo:           "Mehr Infos",
 	FooterLicense:            "Lizenz",
@@ -971,6 +981,8 @@ var italianMessages = Messages{
 	VaultsUnreachable:        "{count} vault non raggiungibile/i",
 	VaultsUnreachableHint:    "Risultati parziali mostrati.",
 	TableNoMatch:             "Nessun certificato corrisponde ai filtri attuali.",
+	TableEmpty:               "Nessun certificato trovato.",
+	TableEmptyHint:           "Nessun mount PKI ha ancora restituito certificati.",
 	FooterMoreInfo:           "Maggiori informazioni",
 	FooterLicense:            "Licenza",
 	StatusConnecting:         "connessione…",

@@ -1913,6 +1913,32 @@ col.vcv-col-status {
   text-align: center;
 }
 
+.vcv-empty-state,
+.vcv-certs-mobile-empty {
+  align-items: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.vcv-empty-row {
+  padding: 2.5rem 1rem;
+  text-align: center;
+}
+
+.vcv-empty-title {
+  color: var(--vcv-color-text);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.vcv-empty-hint {
+  color: var(--vcv-color-muted);
+  font-size: 0.8125rem;
+  margin: 0;
+}
+
 /* Active filter chips bar */
 .vcv-active-filters {
   margin-top: 0.625rem;
@@ -3941,4 +3967,17 @@ col.vcv-col-status {
 [data-theme="dark"] .vcv-ca-type-badge {
   background: rgb(129 140 248 / 12%);
   border-color: rgb(129 140 248 / 22%);
+}
+
+/* Respect users who prefer reduced motion: neutralize non-essential
+   animation/transition while keeping layout and visibility intact. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

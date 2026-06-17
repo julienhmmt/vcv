@@ -102,6 +102,9 @@
   const safePage = $derived(Math.min(pageIndex, totalPages - 1))
   const paged = $derived(paginate(sorted, safePage, pageSize))
   const counts = $derived(dashboardCounts(certs.certificates, DEFAULT_THRESHOLDS))
+  const hasActiveFilters = $derived(
+    !!search || statusFilters.length > 0 || certTypeFilter !== 'all' || mountFilter !== null,
+  )
 
   const allMounts = $derived.by(() => {
     const set = new Set<string>()
@@ -506,9 +509,21 @@
             {#if paged.length === 0}
               <tr>
                 <td colspan="3" class="vcv-empty-row">
-                  {certs.loading
-                    ? i18n.t('labelLoading', 'Loading…')
-                    : i18n.t('tableNoMatch', 'No certificates match the current filters.')}
+                  {#if certs.loading}
+                    {i18n.t('labelLoading', 'Loading…')}
+                  {:else if hasActiveFilters}
+                    <div class="vcv-empty-state">
+                      <p class="vcv-empty-title">{i18n.t('tableNoMatch', 'No certificates match the current filters.')}</p>
+                      <button type="button" class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill" onclick={clearAllFilters}>
+                        {i18n.t('filterChipReset', 'Clear all')}
+                      </button>
+                    </div>
+                  {:else}
+                    <div class="vcv-empty-state">
+                      <p class="vcv-empty-title">{i18n.t('tableEmpty', 'No certificates found.')}</p>
+                      <p class="vcv-empty-hint">{i18n.t('tableEmptyHint', 'No PKI mount returned any certificates yet.')}</p>
+                    </div>
+                  {/if}
                 </td>
               </tr>
             {:else}
@@ -569,11 +584,19 @@
           </div>
         {/each}
       {:else if paged.length === 0}
-        <p class="vcv-certs-mobile-empty">
-          {certs.loading
-            ? i18n.t('labelLoading', 'Loading…')
-            : i18n.t('tableNoMatch', 'No certificates match the current filters.')}
-        </p>
+        <div class="vcv-certs-mobile-empty">
+          {#if certs.loading}
+            {i18n.t('labelLoading', 'Loading…')}
+          {:else if hasActiveFilters}
+            <p class="vcv-empty-title">{i18n.t('tableNoMatch', 'No certificates match the current filters.')}</p>
+            <button type="button" class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill" onclick={clearAllFilters}>
+              {i18n.t('filterChipReset', 'Clear all')}
+            </button>
+          {:else}
+            <p class="vcv-empty-title">{i18n.t('tableEmpty', 'No certificates found.')}</p>
+            <p class="vcv-empty-hint">{i18n.t('tableEmptyHint', 'No PKI mount returned any certificates yet.')}</p>
+          {/if}
+        </div>
       {:else}
         {#each paged as cert (cert.id)}
           {@const s = certStatus(cert, DEFAULT_THRESHOLDS)}
