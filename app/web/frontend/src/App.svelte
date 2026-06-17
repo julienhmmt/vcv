@@ -18,6 +18,7 @@
   import ErrorBanner from '$lib/components/ErrorBanner.svelte'
   import MountSelectorDialog from '$lib/components/MountSelectorDialog.svelte'
   import StatusOverview from '$lib/components/StatusOverview.svelte'
+  import CertCard from '$lib/components/CertCard.svelte'
   import { createCertsStore } from '$lib/stores/certs.svelte'
   import { createStatusStore } from '$lib/stores/status.svelte'
   import { createThemeStore } from '$lib/stores/theme.svelte'
@@ -556,6 +557,28 @@
             {/if}
           </tbody>
         </table>
+      {/if}
+    </div>
+
+    <div class="vcv-certs-mobile-cards">
+      {#if initialLoad && certs.certificates.length === 0}
+        {#each Array(6) as _, i (i)}
+          <div class="vcv-cert-card">
+            <Skeleton class="h-5 w-3/4" />
+            <Skeleton class="h-4 w-1/2" />
+          </div>
+        {/each}
+      {:else if paged.length === 0}
+        <p class="vcv-certs-mobile-empty">
+          {certs.loading
+            ? i18n.t('labelLoading', 'Loading…')
+            : i18n.t('tableNoMatch', 'No certificates match the current filters.')}
+        </p>
+      {:else}
+        {#each paged as cert (cert.id)}
+          {@const s = certStatus(cert, DEFAULT_THRESHOLDS)}
+          <CertCard {cert} {showVaultMount} statusLabel={statusMeta[s].label} onSelect={selectCert} />
+        {/each}
       {/if}
     </div>
   </main>
