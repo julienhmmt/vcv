@@ -15,6 +15,9 @@ node_modules
 vendor
 build
 
+# vitest coverage output
+app/web/frontend/coverage/
+
 # Vite output (kept directory + .gitkeep for go:embed)
 app/web/dist/*
 !app/web/dist/.gitkeep

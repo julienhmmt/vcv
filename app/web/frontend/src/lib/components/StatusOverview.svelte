@@ -1,6 +1,6 @@
 <script lang="ts">
   import Donut from '$lib/components/Donut.svelte'
-  import { statusIcon } from '$lib/utils/cert-status'
+  import { statusIcon } from '$lib/utils/cert-icons'
   import type { CertStatus } from '$lib/types'
 
   type StatusKey = 'valid' | 'warning' | 'critical' | 'expired' | 'revoked'

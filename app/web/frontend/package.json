@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "vite build && node -e \"require('fs').writeFileSync('../dist/.gitkeep','')\"",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json"
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
     "@internationalized/date": "^3.12.2",
@@ -16,13 +19,15 @@
     "@tailwindcss/vite": "^4.3.1",
     "@tsconfig/svelte": "^5.0.8",
     "@types/node": "^25.9.3",
+    "@vitest/coverage-v8": "^4.1.9",
     "mode-watcher": "^1.1.0",
     "svelte": "5.56.3",
     "svelte-check": "^4.6.0",
     "svelte-sonner": "^1.1.1",
     "tailwindcss": "^4.3.1",
     "typescript": "~6.0.3",
-    "vite": "^8.0.16"
+    "vite": "^8.0.16",
+    "vitest": "^4.1.9"
   },
   "dependencies": {
     "bits-ui": "^2.18.1",

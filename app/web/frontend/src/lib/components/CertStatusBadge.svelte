@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { statusBadgeClass, statusIcon } from '$lib/utils/cert-status'
+  import { statusBadgeClass } from '$lib/utils/cert-status'
+  import { statusIcon } from '$lib/utils/cert-icons'
   import type { CertStatus } from '$lib/types'
 
   interface Props {

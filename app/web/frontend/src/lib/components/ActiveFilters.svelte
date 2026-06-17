@@ -1,7 +1,6 @@
 <script lang="ts">
   import X from '@lucide/svelte/icons/x'
   import { getI18n } from '$lib/stores/i18n.svelte'
-  import { statusIcon } from '$lib/utils/cert-status'
   import type { CertTypeFilter } from '$lib/utils/cert-filter'
   import type { CertStatus } from '$lib/types'
 

@@ -28,6 +28,18 @@ tasks:
     cmds:
       - pnpm check
 
+  web-test:
+    desc: Run frontend unit tests (vitest)
+    dir: app/web/frontend
+    cmds:
+      - pnpm test
+
+  web-test-coverage:
+    desc: Run frontend unit tests with coverage
+    dir: app/web/frontend
+    cmds:
+      - pnpm test:coverage
+
   dev:
     desc: Construit le binaire Go et le container docker
     vars:
