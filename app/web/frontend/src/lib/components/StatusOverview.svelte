@@ -27,11 +27,19 @@
   // Ascending severity, matching the donut gradient order. Revoked is an
   // orthogonal state and sits last.
   const ORDER: StatusKey[] = ['valid', 'warning', 'critical', 'expired', 'revoked']
+
+  const segmentLabels = $derived<Record<StatusKey, string>>({
+    valid: meta.valid.label,
+    warning: meta.warning.label,
+    critical: meta.critical.label,
+    expired: meta.expired.label,
+    revoked: meta.revoked.label,
+  })
 </script>
 
 <section class="vcv-overview" aria-label={regionLabel}>
   <div class="vcv-overview-chart">
-    <Donut {counts} label={donutLabel} />
+    <Donut {counts} label={donutLabel} {segmentLabels} {onSelect} />
   </div>
   <div class="vcv-overview-stats" role="group" aria-label={regionLabel}>
     {#each ORDER as key, i (key)}

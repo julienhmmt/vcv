@@ -96,6 +96,9 @@ type Messages struct {
 	PaginationInfo              string `json:"paginationInfo"`
 	PaginationNext              string `json:"paginationNext"`
 	PaginationPageSizeLabel     string `json:"paginationPageSizeLabel"`
+	AutoRefreshLabel            string `json:"autoRefreshLabel"`
+	AutoRefreshOff              string `json:"autoRefreshOff"`
+	LastUpdatedLabel            string `json:"lastUpdatedLabel"`
 	PaginationPrev              string `json:"paginationPrev"`
 	SearchPlaceholder           string `json:"searchPlaceholder"`
 	SearchShortcutHint          string `json:"searchShortcutHint"`
@@ -279,6 +282,9 @@ var englishMessages = Messages{
 	PaginationInfo:              "Page {{current}} of {{total}}",
 	PaginationNext:              "Next",
 	PaginationPageSizeLabel:     "Results per page",
+	AutoRefreshLabel:            "Auto-refresh",
+	AutoRefreshOff:              "Off",
+	LastUpdatedLabel:            "Updated {time}",
 	PaginationPrev:              "Previous",
 	SearchPlaceholder:           "Search by Serial Number, Common Name (CN) or SAN",
 	SelectAll:                   "Select all",
@@ -453,6 +459,9 @@ var frenchMessages = Messages{
 	PaginationInfo:              "Page {{current}} sur {{total}}",
 	PaginationNext:              "Suivant",
 	PaginationPageSizeLabel:     "Résultats par page",
+	AutoRefreshLabel:            "Actualisation auto",
+	AutoRefreshOff:              "Désactivé",
+	LastUpdatedLabel:            "Mis à jour {time}",
 	PaginationPrev:              "Précédent",
 	SearchPlaceholder:           "Rechercher par numéro de série, nom commun (CN) ou SAN",
 	SelectAll:                   "Tout sélectionner",
@@ -627,6 +636,9 @@ var spanishMessages = Messages{
 	PaginationInfo:              "Página {{current}} de {{total}}",
 	PaginationNext:              "Siguiente",
 	PaginationPageSizeLabel:     "Resultados por página",
+	AutoRefreshLabel:            "Actualización automática",
+	AutoRefreshOff:              "Desactivado",
+	LastUpdatedLabel:            "Actualizado {time}",
 	PaginationPrev:              "Anterior",
 	SearchPlaceholder:           "Buscar por Número de Serie, Nombre Común (CN) o SAN",
 	SelectAll:                   "Seleccionar todo",
@@ -801,6 +813,9 @@ var germanMessages = Messages{
 	PaginationInfo:              "Seite {{current}} von {{total}}",
 	PaginationNext:              "Weiter",
 	PaginationPageSizeLabel:     "Ergebnisse pro Seite",
+	AutoRefreshLabel:            "Auto-Aktualisierung",
+	AutoRefreshOff:              "Aus",
+	LastUpdatedLabel:            "Aktualisiert {time}",
 	PaginationPrev:              "Zurück",
 	SearchPlaceholder:           "Suche nach Seriennummer, Common Name (CN) oder SAN",
 	SelectAll:                   "Alle auswählen",
@@ -975,6 +990,9 @@ var italianMessages = Messages{
 	PaginationInfo:              "Pagina {{current}} di {{total}}",
 	PaginationNext:              "Successivo",
 	PaginationPageSizeLabel:     "Risultati per pagina",
+	AutoRefreshLabel:            "Aggiornamento automatico",
+	AutoRefreshOff:              "Disattivato",
+	LastUpdatedLabel:            "Aggiornato {time}",
 	PaginationPrev:              "Precedente",
 	SearchPlaceholder:           "Cerca per Numero di Serie, Nome Comune (CN) o SAN",
 	SelectAll:                   "Seleziona tutto",

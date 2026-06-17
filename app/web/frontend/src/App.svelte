@@ -105,6 +105,10 @@
   let commandOpen = $state(false)
   let initialLoad = $state(true)
   let dismissedFetchError = $state<string | null>(null)
+  let lastUpdated = $state<Date | null>(null)
+  // Opt-in certificate auto-refresh interval in seconds; 0 = off (default).
+  let autoRefreshSec = $state(0)
+  const AUTO_REFRESH_OPTIONS = [0, 30, 60, 300]
 
   const filtered = $derived(
     certs.certificates.filter((cert) =>
@@ -152,6 +156,15 @@
     return () => clearInterval(id)
   })
 
+  // Opt-in certificate auto-refresh: re-poll on the chosen interval while not already loading.
+  $effect(() => {
+    if (autoRefreshSec <= 0) return
+    const id = setInterval(() => {
+      if (!certs.loading) void load()
+    }, autoRefreshSec * 1000)
+    return () => clearInterval(id)
+  })
+
   // Sync view state to the URL once initial state is restored, so links are shareable.
   $effect(() => {
     const snapshot: UrlState = {
@@ -176,11 +189,17 @@
       } finally {
         initialLoad = false
       }
-      if (!certs.error) notifyExpiry()
+      if (!certs.error) {
+        lastUpdated = new Date()
+        notifyExpiry()
+      }
       return
     }
     await Promise.all(promises)
-    if (!certs.error) notifyExpiry()
+    if (!certs.error) {
+      lastUpdated = new Date()
+      notifyExpiry()
+    }
   }
 
   /** Toast a single expiry summary after a load (critical takes precedence over warning). */
@@ -261,6 +280,18 @@
     const end = Math.min(start + (pageSize as number) - 1, sorted.length)
     return i18n.t('paginationRange', '{start}–{end} of {total}', { start, end, total: sorted.length })
   }
+
+  function autoRefreshOptionLabel(seconds: number): string {
+    if (seconds === 0) return i18n.t('autoRefreshOff', 'Off')
+    if (seconds < 60) return `${seconds}s`
+    return `${seconds / 60}m`
+  }
+
+  const lastUpdatedText = $derived(
+    lastUpdated
+      ? i18n.t('lastUpdatedLabel', 'Updated {time}', { time: lastUpdated.toLocaleTimeString() })
+      : '',
+  )
 
   function onSearchKeydown(event: KeyboardEvent): void {
     if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
@@ -466,6 +497,28 @@
           </Select.Content>
         </Select.Root>
       </div>
+      <div class="vcv-refresh-controls">
+        <div class="vcv-auto-refresh">
+          <span id="vcv-auto-refresh-label">{i18n.t('autoRefreshLabel', 'Auto-refresh')}</span>
+          <Select.Root
+            type="single"
+            value={String(autoRefreshSec)}
+            onValueChange={(value) => value && (autoRefreshSec = Number(value))}
+          >
+            <Select.Trigger class="vcv-select vcv-page-size-select h-9" aria-labelledby="vcv-auto-refresh-label">
+              {autoRefreshOptionLabel(autoRefreshSec)}
+            </Select.Trigger>
+            <Select.Content>
+              {#each AUTO_REFRESH_OPTIONS as seconds (seconds)}
+                <Select.Item value={String(seconds)}>{autoRefreshOptionLabel(seconds)}</Select.Item>
+              {/each}
+            </Select.Content>
+          </Select.Root>
+        </div>
+        {#if lastUpdatedText}
+          <span class="vcv-last-updated" aria-live="polite">{lastUpdatedText}</span>
+        {/if}
+      </div>
       <div class="vcv-export-group" role="group" aria-label={i18n.t('buttonExport', 'Export')}>
         <span class="vcv-export-label">{i18n.t('buttonExport', 'Export')}</span>
         <button
@@ -607,6 +660,9 @@
               {#each paged as cert (cert.id)}
                 {@const s = certStatus(cert, DEFAULT_THRESHOLDS)}
                 {@const parts = parseCertID(cert.id)}
+                <!-- Whole-row button: role="button" + aria-label gives SR users a single
+                     focusable target named by the common name; Enter activates the detail
+                     modal. Kept over a nested cell button to preserve one tab stop per row. -->
                 <tr
                   class="{rowClassForStatus(s)} vcv-row-clickable"
                   onclick={() => selectCert(cert)}

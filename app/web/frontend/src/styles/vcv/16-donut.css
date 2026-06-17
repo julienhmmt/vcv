@@ -86,11 +86,38 @@
 .vcv-donut-segment {
   transition: opacity 0.15s ease;
   cursor: pointer;
+  outline: none;
 }
 
-.vcv-donut-segment:hover {
+.vcv-donut-segment:hover,
+.vcv-donut-segment:focus-visible {
   opacity: 0.8;
   filter: brightness(1.1);
+}
+
+.vcv-donut-segment:focus-visible {
+  stroke-width: 5;
+}
+
+/* Per-status stroke colors, shared by interactive and static segments. */
+.vcv-donut-segment-valid {
+  stroke: var(--vcv-color-primary);
+}
+
+.vcv-donut-segment-warning {
+  stroke: var(--vcv-color-warning);
+}
+
+.vcv-donut-segment-critical {
+  stroke: var(--vcv-color-danger);
+}
+
+.vcv-donut-segment-expired {
+  stroke: var(--vcv-color-expired);
+}
+
+.vcv-donut-segment-revoked {
+  stroke: var(--vcv-color-revoked);
 }
 
 .vcv-donut-empty {

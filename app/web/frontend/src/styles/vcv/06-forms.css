@@ -63,6 +63,28 @@
   color: var(--vcv-color-muted);
 }
 
+.vcv-refresh-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.vcv-auto-refresh {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--vcv-color-muted);
+  white-space: nowrap;
+}
+
+.vcv-last-updated {
+  font-size: 0.75rem;
+  color: var(--vcv-color-muted);
+  white-space: nowrap;
+}
+
 .vcv-page-info {
   font-size: 0.875rem;
   color: var(--vcv-color-muted);
