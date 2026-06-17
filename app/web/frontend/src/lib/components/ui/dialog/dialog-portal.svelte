@@ -4,4 +4,4 @@
 	let { ...restProps }: DialogPrimitive.PortalProps = $props();
 </script>
 
-<DialogPrimitive.Portal {...restProps} />
+<DialogPrimitive.Portal to="body" {...restProps} />

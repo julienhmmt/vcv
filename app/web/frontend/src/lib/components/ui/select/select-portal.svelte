@@ -4,4 +4,4 @@
 	let { ...restProps }: SelectPrimitive.PortalProps = $props();
 </script>
 
-<SelectPrimitive.Portal {...restProps} />
+<SelectPrimitive.Portal to="body" {...restProps} />

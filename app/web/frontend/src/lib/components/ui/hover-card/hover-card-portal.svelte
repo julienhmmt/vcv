@@ -4,4 +4,4 @@
 	let { ...restProps }: HoverCardPrimitive.PortalProps = $props();
 </script>
 
-<HoverCardPrimitive.Portal {...restProps} />
+<HoverCardPrimitive.Portal to="body" {...restProps} />
