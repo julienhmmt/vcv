@@ -143,7 +143,7 @@ func (s *adminSessionStore) clearCookie(w http.ResponseWriter) {
 		Value:    "",
 		Path:     "/",
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		Secure:   s.secureCookies,
 		Expires:  time.Unix(0, 0),
 		MaxAge:   -1,

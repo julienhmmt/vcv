@@ -170,7 +170,7 @@ func TestAdminSessionStore_LoginFromJSON(t *testing.T) {
 				assert.NotEmpty(t, sessionCookie.Value)
 				assert.True(t, sessionCookie.HttpOnly)
 				assert.Equal(t, "/", sessionCookie.Path)
-				assert.Equal(t, http.SameSiteStrictMode, sessionCookie.SameSite)
+				assert.Equal(t, http.SameSiteLaxMode, sessionCookie.SameSite)
 				assert.False(t, sessionCookie.Secure) // false for non-secure cookies
 			}
 		})

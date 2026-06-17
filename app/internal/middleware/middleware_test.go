@@ -124,6 +124,19 @@ func TestCSRFProtection_BlocksCrossSiteFetchMetadata(t *testing.T) {
 	}
 }
 
+func TestCSRFProtection_AllowsSameSiteFetchMetadata(t *testing.T) {
+	h := middleware.CSRFProtection(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	req := httptest.NewRequest(http.MethodPost, "http://example.com/api/cache/invalidate", strings.NewReader(""))
+	req.Header.Set("Sec-Fetch-Site", "same-site")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Errorf("same-site requests should be allowed, expected status %d, got %d", http.StatusNoContent, rec.Code)
+	}
+}
+
 func TestCSRFProtection_AllowsNonBrowserRequest(t *testing.T) {
 	h := middleware.CSRFProtection(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)

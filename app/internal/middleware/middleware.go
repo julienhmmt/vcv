@@ -202,7 +202,10 @@ func CSRFProtection(next http.Handler) http.Handler {
 			return
 		}
 		fetchSite := strings.ToLower(strings.TrimSpace(r.Header.Get("Sec-Fetch-Site")))
-		if fetchSite == "cross-site" || fetchSite == "same-site" {
+		// Only block cross-site requests; allow same-site and same-origin.
+		// This is necessary for reverse proxy deployments where the browser
+		// may categorize requests as same-site rather than same-origin.
+		if fetchSite == "cross-site" {
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}

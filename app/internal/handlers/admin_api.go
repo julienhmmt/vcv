@@ -86,7 +86,7 @@ func (s *adminSessionStore) loginFromJSON(w http.ResponseWriter, r *http.Request
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		SameSite: http.SameSiteStrictMode,
+		SameSite: http.SameSiteLaxMode,
 		Secure:   s.secureCookies,
 		Expires:  expiresAt,
 	})
