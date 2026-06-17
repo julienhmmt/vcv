@@ -19,6 +19,7 @@
   import MountSelectorDialog from '$lib/components/MountSelectorDialog.svelte'
   import StatusOverview from '$lib/components/StatusOverview.svelte'
   import CertCard from '$lib/components/CertCard.svelte'
+  import CommandPalette from '$lib/components/CommandPalette.svelte'
   import { createCertsStore } from '$lib/stores/certs.svelte'
   import { createStatusStore } from '$lib/stores/status.svelte'
   import { createThemeStore } from '$lib/stores/theme.svelte'
@@ -101,6 +102,7 @@
   let caCertId = $state<string | null>(null)
   let caModalOpen = $state(false)
   let mountModalOpen = $state(false)
+  let commandOpen = $state(false)
   let initialLoad = $state(true)
   let dismissedFetchError = $state<string | null>(null)
 
@@ -261,6 +263,11 @@
   }
 
   function onSearchKeydown(event: KeyboardEvent): void {
+    if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      event.preventDefault()
+      commandOpen = !commandOpen
+      return
+    }
     if (event.key === '/' && document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
       event.preventDefault()
       const el = document.getElementById('vcv-search') as HTMLInputElement | null
@@ -723,6 +730,17 @@
   certId={caCertId}
   open={caModalOpen}
   onOpenChange={(value) => (caModalOpen = value)}
+/>
+
+<CommandPalette
+  open={commandOpen}
+  onOpenChange={(value) => (commandOpen = value)}
+  certs={certs.certificates}
+  theme={theme.theme}
+  onSelectCert={selectCert}
+  onToggleStatus={toggleStatus}
+  onToggleTheme={theme.toggle}
+  onSetLang={(code) => void i18n.setLang(code)}
 />
 
 <MountSelectorDialog

@@ -31,6 +31,14 @@ type Messages struct {
 	ExportJSON                  string `json:"exportJSON"`
 	ExportEmpty                 string `json:"exportEmpty"`
 	ExportSuccess               string `json:"exportSuccess"`
+	CommandPaletteTitle         string `json:"commandPaletteTitle"`
+	CommandPaletteHint          string `json:"commandPaletteHint"`
+	CommandPalettePlaceholder   string `json:"commandPalettePlaceholder"`
+	CommandPaletteEmpty         string `json:"commandPaletteEmpty"`
+	CommandPaletteCertsGroup    string `json:"commandPaletteCertsGroup"`
+	CommandPaletteFiltersGroup  string `json:"commandPaletteFiltersGroup"`
+	CommandPaletteActionsGroup  string `json:"commandPaletteActionsGroup"`
+	CommandPaletteOpenAdmin     string `json:"commandPaletteOpenAdmin"`
 	ButtonRefresh               string `json:"buttonRefresh"`
 	ButtonViewCA                string `json:"buttonViewCA"`
 	CacheInvalidateFailed       string `json:"cacheInvalidateFailed"`
@@ -206,6 +214,14 @@ var englishMessages = Messages{
 	ExportJSON:                  "Export JSON",
 	ExportEmpty:                 "Nothing to export",
 	ExportSuccess:               "Exported {count} certificate(s)",
+	CommandPaletteTitle:         "Command palette",
+	CommandPaletteHint:          "Jump to a certificate or run a command",
+	CommandPalettePlaceholder:   "Search certificates or commands…",
+	CommandPaletteEmpty:         "No results found.",
+	CommandPaletteCertsGroup:    "Certificates",
+	CommandPaletteFiltersGroup:  "Filter by status",
+	CommandPaletteActionsGroup:  "Actions",
+	CommandPaletteOpenAdmin:     "Open admin panel",
 	ButtonRefresh:               "Refresh",
 	ButtonViewCA:                "View intermediate CA",
 	CacheInvalidateFailed:       "Failed to clear cache",
@@ -372,6 +388,14 @@ var frenchMessages = Messages{
 	ExportJSON:                  "Exporter JSON",
 	ExportEmpty:                 "Rien à exporter",
 	ExportSuccess:               "{count} certificat(s) exporté(s)",
+	CommandPaletteTitle:         "Palette de commandes",
+	CommandPaletteHint:          "Accéder à un certificat ou lancer une commande",
+	CommandPalettePlaceholder:   "Rechercher des certificats ou des commandes…",
+	CommandPaletteEmpty:         "Aucun résultat.",
+	CommandPaletteCertsGroup:    "Certificats",
+	CommandPaletteFiltersGroup:  "Filtrer par statut",
+	CommandPaletteActionsGroup:  "Actions",
+	CommandPaletteOpenAdmin:     "Ouvrir le panneau d'administration",
 	ButtonRefresh:               "Rafraîchir",
 	ButtonViewCA:                "Voir l'autorité intermédiaire",
 	CacheInvalidateFailed:       "Échec du vidage du cache",
@@ -538,6 +562,14 @@ var spanishMessages = Messages{
 	ExportJSON:                  "Exportar JSON",
 	ExportEmpty:                 "Nada que exportar",
 	ExportSuccess:               "{count} certificado(s) exportado(s)",
+	CommandPaletteTitle:         "Paleta de comandos",
+	CommandPaletteHint:          "Ir a un certificado o ejecutar un comando",
+	CommandPalettePlaceholder:   "Buscar certificados o comandos…",
+	CommandPaletteEmpty:         "No se encontraron resultados.",
+	CommandPaletteCertsGroup:    "Certificados",
+	CommandPaletteFiltersGroup:  "Filtrar por estado",
+	CommandPaletteActionsGroup:  "Acciones",
+	CommandPaletteOpenAdmin:     "Abrir el panel de administración",
 	ButtonRefresh:               "Actualizar",
 	ButtonViewCA:                "Ver CA intermedia",
 	CacheInvalidateFailed:       "Error al borrar el caché",
@@ -704,6 +736,14 @@ var germanMessages = Messages{
 	ExportJSON:                  "JSON exportieren",
 	ExportEmpty:                 "Nichts zu exportieren",
 	ExportSuccess:               "{count} Zertifikat(e) exportiert",
+	CommandPaletteTitle:         "Befehlspalette",
+	CommandPaletteHint:          "Zu einem Zertifikat springen oder einen Befehl ausführen",
+	CommandPalettePlaceholder:   "Zertifikate oder Befehle suchen…",
+	CommandPaletteEmpty:         "Keine Ergebnisse gefunden.",
+	CommandPaletteCertsGroup:    "Zertifikate",
+	CommandPaletteFiltersGroup:  "Nach Status filtern",
+	CommandPaletteActionsGroup:  "Aktionen",
+	CommandPaletteOpenAdmin:     "Admin-Bereich öffnen",
 	ButtonRefresh:               "Aktualisieren",
 	ButtonViewCA:                "Zwischen-CA anzeigen",
 	CacheInvalidateFailed:       "Cache konnte nicht geleert werden",
@@ -870,6 +910,14 @@ var italianMessages = Messages{
 	ExportJSON:                  "Esporta JSON",
 	ExportEmpty:                 "Niente da esportare",
 	ExportSuccess:               "{count} certificato/i esportato/i",
+	CommandPaletteTitle:         "Palette comandi",
+	CommandPaletteHint:          "Vai a un certificato o esegui un comando",
+	CommandPalettePlaceholder:   "Cerca certificati o comandi…",
+	CommandPaletteEmpty:         "Nessun risultato.",
+	CommandPaletteCertsGroup:    "Certificati",
+	CommandPaletteFiltersGroup:  "Filtra per stato",
+	CommandPaletteActionsGroup:  "Azioni",
+	CommandPaletteOpenAdmin:     "Apri il pannello di amministrazione",
 	ButtonRefresh:               "Aggiorna",
 	ButtonViewCA:                "Visualizza CA intermedia",
 	CacheInvalidateFailed:       "Impossibile cancellare la cache",
