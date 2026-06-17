@@ -42,6 +42,8 @@
     type SortDirection,
     type SortKey,
   } from '$lib/utils/cert-filter'
+  import { parseUrlState, writeUrlState, type UrlState } from '$lib/utils/url-state'
+  import { downloadExport, type ExportFormat } from '$lib/utils/export'
   import type { Certificate, CertStatus } from '$lib/types'
 
   const i18n = setI18nContext(createI18nStore())
@@ -83,6 +85,17 @@
   let pageIndex = $state(0)
   let pageSize = $state<number | 'all'>(25)
 
+  const urlDefaults: UrlState = {
+    search: '',
+    statusFilters: [],
+    certTypeFilter: 'all',
+    mountFilter: null,
+    sortKey: 'expiresAt',
+    sortDir: 'asc',
+    pageSize: 25,
+    pageIndex: 0,
+  }
+
   let selected = $state<Certificate | null>(null)
   let certModalOpen = $state(false)
   let caCertId = $state<string | null>(null)
@@ -115,13 +128,42 @@
   })
   const showVaultMount = $derived(allMounts.length > 1)
 
+  let urlHydrated = $state(false)
+
   onMount(() => {
+    const restored = parseUrlState(urlDefaults)
+    search = restored.search
+    statusFilters = restored.statusFilters
+    certTypeFilter = restored.certTypeFilter
+    mountFilter = restored.mountFilter
+    sortKey = restored.sortKey
+    sortDir = restored.sortDir
+    pageSize = restored.pageSize
+    pageIndex = restored.pageIndex
+    urlHydrated = true
+
     void (async () => {
       await i18n.ready
       await load(true)
     })()
     const id = setInterval(() => void status.refresh(), 10_000)
     return () => clearInterval(id)
+  })
+
+  // Sync view state to the URL once initial state is restored, so links are shareable.
+  $effect(() => {
+    const snapshot: UrlState = {
+      search,
+      statusFilters,
+      certTypeFilter,
+      mountFilter,
+      sortKey,
+      sortDir,
+      pageSize,
+      pageIndex: safePage,
+    }
+    if (!urlHydrated) return
+    writeUrlState(snapshot, urlDefaults)
   })
 
   async function load(initial = false): Promise<void> {
@@ -165,6 +207,15 @@
       success: () => i18n.t('loadSuccess', 'Certificates loaded'),
       error: i18n.t('toastRefreshFailed', 'Refresh failed'),
     })
+  }
+
+  function exportCerts(format: ExportFormat): void {
+    if (sorted.length === 0) {
+      toast.error(i18n.t('exportEmpty', 'Nothing to export'))
+      return
+    }
+    downloadExport(sorted, format)
+    toast.success(i18n.t('exportSuccess', 'Exported {count} certificate(s)', { count: sorted.length }))
   }
 
   function toggleSort(key: SortKey): void {
@@ -407,6 +458,25 @@
             <Select.Item value="all">{i18n.t('paginationPageSizeAll', 'All')}</Select.Item>
           </Select.Content>
         </Select.Root>
+      </div>
+      <div class="vcv-export-group" role="group" aria-label={i18n.t('buttonExport', 'Export')}>
+        <span class="vcv-export-label">{i18n.t('buttonExport', 'Export')}</span>
+        <button
+          type="button"
+          class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill"
+          disabled={sorted.length === 0}
+          onclick={() => exportCerts('csv')}
+        >
+          {i18n.t('exportCSV', 'Export CSV')}
+        </button>
+        <button
+          type="button"
+          class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill"
+          disabled={sorted.length === 0}
+          onclick={() => exportCerts('json')}
+        >
+          {i18n.t('exportJSON', 'Export JSON')}
+        </button>
       </div>
       <div class="vcv-page-buttons">
         <button

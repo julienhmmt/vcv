@@ -1338,6 +1338,18 @@ body {
   margin-left: auto;
 }
 
+.vcv-export-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vcv-export-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--vcv-color-muted);
+}
+
 .vcv-page-info {
   font-size: 0.875rem;
   color: var(--vcv-color-muted);
@@ -1376,6 +1388,13 @@ body {
 
   .vcv-page-size-select {
     width: 100%;
+  }
+
+  .vcv-export-group {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: auto 1fr 1fr;
+    align-items: center;
   }
 
   .vcv-page-buttons {

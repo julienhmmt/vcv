@@ -26,6 +26,11 @@ type Messages struct {
 	ButtonClose                 string `json:"buttonClose"`
 	ButtonDetails               string `json:"buttonDetails"`
 	ButtonDownloadPEM           string `json:"buttonDownloadPEM"`
+	ButtonExport                string `json:"buttonExport"`
+	ExportCSV                   string `json:"exportCSV"`
+	ExportJSON                  string `json:"exportJSON"`
+	ExportEmpty                 string `json:"exportEmpty"`
+	ExportSuccess               string `json:"exportSuccess"`
 	ButtonRefresh               string `json:"buttonRefresh"`
 	ButtonViewCA                string `json:"buttonViewCA"`
 	CacheInvalidateFailed       string `json:"cacheInvalidateFailed"`
@@ -196,6 +201,11 @@ var englishMessages = Messages{
 	ButtonClose:                 "Close",
 	ButtonDetails:               "Details",
 	ButtonDownloadPEM:           "Download PEM",
+	ButtonExport:                "Export",
+	ExportCSV:                   "Export CSV",
+	ExportJSON:                  "Export JSON",
+	ExportEmpty:                 "Nothing to export",
+	ExportSuccess:               "Exported {count} certificate(s)",
 	ButtonRefresh:               "Refresh",
 	ButtonViewCA:                "View intermediate CA",
 	CacheInvalidateFailed:       "Failed to clear cache",
@@ -357,6 +367,11 @@ var frenchMessages = Messages{
 	ButtonClose:                 "Fermer",
 	ButtonDetails:               "Détails",
 	ButtonDownloadPEM:           "Télécharger PEM",
+	ButtonExport:                "Exporter",
+	ExportCSV:                   "Exporter CSV",
+	ExportJSON:                  "Exporter JSON",
+	ExportEmpty:                 "Rien à exporter",
+	ExportSuccess:               "{count} certificat(s) exporté(s)",
 	ButtonRefresh:               "Rafraîchir",
 	ButtonViewCA:                "Voir l'autorité intermédiaire",
 	CacheInvalidateFailed:       "Échec du vidage du cache",
@@ -518,6 +533,11 @@ var spanishMessages = Messages{
 	ButtonClose:                 "Cerrar",
 	ButtonDetails:               "Detalles",
 	ButtonDownloadPEM:           "Descargar PEM",
+	ButtonExport:                "Exportar",
+	ExportCSV:                   "Exportar CSV",
+	ExportJSON:                  "Exportar JSON",
+	ExportEmpty:                 "Nada que exportar",
+	ExportSuccess:               "{count} certificado(s) exportado(s)",
 	ButtonRefresh:               "Actualizar",
 	ButtonViewCA:                "Ver CA intermedia",
 	CacheInvalidateFailed:       "Error al borrar el caché",
@@ -679,6 +699,11 @@ var germanMessages = Messages{
 	ButtonClose:                 "Schließen",
 	ButtonDetails:               "Details",
 	ButtonDownloadPEM:           "PEM herunterladen",
+	ButtonExport:                "Exportieren",
+	ExportCSV:                   "CSV exportieren",
+	ExportJSON:                  "JSON exportieren",
+	ExportEmpty:                 "Nichts zu exportieren",
+	ExportSuccess:               "{count} Zertifikat(e) exportiert",
 	ButtonRefresh:               "Aktualisieren",
 	ButtonViewCA:                "Zwischen-CA anzeigen",
 	CacheInvalidateFailed:       "Cache konnte nicht geleert werden",
@@ -840,6 +865,11 @@ var italianMessages = Messages{
 	ButtonClose:                 "Chiudi",
 	ButtonDetails:               "Dettagli",
 	ButtonDownloadPEM:           "Scarica PEM",
+	ButtonExport:                "Esporta",
+	ExportCSV:                   "Esporta CSV",
+	ExportJSON:                  "Esporta JSON",
+	ExportEmpty:                 "Niente da esportare",
+	ExportSuccess:               "{count} certificato/i esportato/i",
 	ButtonRefresh:               "Aggiorna",
 	ButtonViewCA:                "Visualizza CA intermedia",
 	CacheInvalidateFailed:       "Impossibile cancellare la cache",
