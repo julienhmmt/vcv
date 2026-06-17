@@ -1,6 +1,7 @@
-@import url("tailwindcss");
-@import url("tw-animate-css");
-@import url("./styles/vcv.css");
+/* stylelint-disable-next-line at-rule-no-unknown -- Tailwind v4 requires the bare-string import; url() prevents utility generation */
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./styles/vcv.css";
 
 /* stylelint-disable-next-line at-rule-no-unknown */
 @custom-variant dark (&:is(.dark *));
