@@ -1,0 +1,159 @@
+/* Buttons */
+.vcv-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  min-height: 2.75rem;
+  border-radius: var(--vcv-radius-md);
+  border: 1px solid var(--vcv-color-button-border);
+  background: var(--vcv-color-button-surface);
+  color: var(--vcv-color-button-text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    transform 0.15s;
+}
+
+.vcv-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.vcv-cd-actions .vcv-button {
+  height: 2.625rem;
+  padding: 0 1.125rem;
+  border-radius: var(--vcv-radius-md);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: var(--vcv-shadow-button);
+  transition:
+    background-color 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s,
+    transform 0.15s;
+}
+
+.vcv-button:hover:not(:disabled) {
+  background: var(--vcv-color-bg);
+  border-color: var(--vcv-color-border-strong);
+  color: var(--vcv-color-text-strong);
+}
+
+.vcv-cd-actions .vcv-button:hover:not(:disabled) {
+  box-shadow: var(--vcv-shadow-button-hover);
+  transform: translateY(-1px);
+}
+
+.vcv-cd-actions .vcv-button-primary.vcv-cd-copy-pem-done {
+  background: var(--vcv-color-primary-strong);
+  border-color: var(--vcv-color-primary-strong);
+}
+
+.vcv-button.vcv-button-loading {
+  opacity: 0.85;
+}
+
+.vcv-button.vcv-button-loading .vcv-refresh-icon {
+  animation: spin 0.8s linear infinite;
+}
+
+.vcv-button-icon {
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: var(--vcv-radius-md);
+  background: var(--vcv-color-button-surface);
+  border: 1px solid var(--vcv-color-button-border);
+  box-shadow: var(--vcv-shadow-button);
+  transition:
+    all 0.2s ease,
+    transform 0.15s ease;
+}
+
+.vcv-button-icon:focus-visible {
+  outline: none;
+  border-color: var(--vcv-color-primary);
+  box-shadow: 0 0 0 3px var(--vcv-color-focus-ring);
+}
+
+.vcv-button-icon span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.125rem;
+  transition: transform 0.2s ease;
+}
+
+.vcv-theme-toggle span {
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.vcv-documentation-btn span {
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
+}
+
+.vcv-button-icon:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--vcv-shadow-button);
+}
+
+.vcv-button-icon:hover:not(:disabled) {
+  background: var(--vcv-color-bg);
+  border-color: var(--vcv-color-border-strong);
+  box-shadow: var(--vcv-shadow-button-hover);
+  transform: translateY(-1px);
+}
+
+.vcv-button-primary {
+  background: var(--vcv-color-primary);
+  border: 1px solid var(--vcv-color-primary-strong);
+  color: var(--vcv-color-on-accent);
+  box-shadow: var(--vcv-shadow-button);
+}
+
+.vcv-button-primary:hover:not(:disabled) {
+  background: var(--vcv-color-primary-strong);
+  box-shadow: var(--vcv-shadow-button-hover);
+}
+
+.vcv-button-full {
+  width: 100%;
+}
+
+.vcv-button-secondary {
+  background: var(--vcv-color-button-surface);
+  border: 1px solid var(--vcv-color-button-border);
+  color: var(--vcv-color-muted);
+  box-shadow: var(--vcv-shadow-button);
+}
+
+.vcv-button-secondary:hover:not(:disabled) {
+  background: var(--vcv-color-bg);
+  border-color: var(--vcv-color-border-strong);
+  color: var(--vcv-color-text);
+}
+
+.vcv-button-danger {
+  background: var(--vcv-color-danger);
+  border: 1px solid var(--vcv-color-danger-strong);
+  color: var(--vcv-color-on-accent);
+  box-shadow: var(--vcv-shadow-button);
+}
+
+.vcv-button-danger:hover:not(:disabled) {
+  background: var(--vcv-color-danger-hover);
+  box-shadow: var(--vcv-shadow-button-hover);
+}
+

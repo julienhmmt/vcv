@@ -1,0 +1,135 @@
+/* Form elements */
+.vcv-input,
+.vcv-select {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border-radius: var(--vcv-radius-md);
+  border: 1px solid var(--vcv-color-border);
+  background: var(--vcv-color-surface);
+  font-size: 0.875rem;
+  color: var(--vcv-color-text);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+
+.vcv-input:focus,
+.vcv-select:focus {
+  outline: none;
+  border-color: var(--vcv-color-primary);
+  box-shadow: 0 0 0 3px var(--vcv-color-primary-soft);
+}
+
+.vcv-input::placeholder {
+  color: var(--vcv-color-muted);
+}
+
+.vcv-lang-select {
+  width: auto;
+  min-width: 0;
+  gap: 0.4rem;
+  padding: 0 0.625rem;
+}
+
+.vcv-table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  margin: 1rem 0;
+  background: var(--vcv-color-surface);
+  border: 1px solid var(--vcv-color-border);
+  border-radius: var(--vcv-radius-lg);
+  box-shadow: var(--vcv-shadow-card);
+}
+
+.vcv-page-buttons {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.vcv-export-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vcv-export-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--vcv-color-muted);
+}
+
+.vcv-page-info {
+  font-size: 0.875rem;
+  color: var(--vcv-color-muted);
+  min-width: 8rem;
+  text-align: center;
+}
+
+.vcv-page-count {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.vcv-button-pill {
+  border-radius: 0.75rem;
+  padding: 0 1rem;
+}
+
+.vcv-button-ghost {
+  background: var(--vcv-color-bg);
+  border-color: var(--vcv-color-border);
+  color: var(--vcv-color-text-strong);
+}
+
+@media (480px >= width) {
+  .vcv-table-footer {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .vcv-page-size {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .vcv-page-size-select {
+    width: 100%;
+  }
+
+  .vcv-export-group {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: auto 1fr 1fr;
+    align-items: center;
+  }
+
+  .vcv-page-buttons {
+    display: grid;
+    gap: 0.5rem;
+    grid-template-columns: 1fr 1fr;
+    margin-left: 0;
+  }
+
+  .vcv-page-info,
+  .vcv-page-count {
+    grid-column: 1 / -1;
+    justify-self: center;
+  }
+
+  .vcv-page-info {
+    min-width: 0;
+    order: -2;
+  }
+
+  .vcv-page-count {
+    order: -1;
+  }
+}
+

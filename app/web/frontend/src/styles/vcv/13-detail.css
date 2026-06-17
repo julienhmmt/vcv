@@ -1,0 +1,157 @@
+/* Shared detail card (vault status) */
+.vcv-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.vcv-detail-card {
+  border: 1px solid var(--vcv-color-border);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  background: var(--vcv-color-surface);
+}
+
+.vcv-detail-section-content {
+  padding: 0.75rem 1rem;
+}
+
+/* Loading */
+.vcv-spinner {
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid var(--vcv-color-border);
+  border-top-color: var(--vcv-color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.vcv-modal-lg {
+  max-width: 1024px;
+}
+
+.vcv-loading-spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 3rem;
+}
+
+.markdown-body {
+  line-height: 1.6;
+  color: var(--vcv-color-text);
+}
+
+.markdown-body h1 {
+  font-size: 1.75rem;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--vcv-color-border);
+}
+
+.markdown-body h2 {
+  font-size: 1.25rem;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.markdown-body h3 {
+  font-size: 1.1rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.markdown-body p {
+  margin-bottom: 1rem;
+}
+
+.markdown-body ul {
+  margin-bottom: 1rem;
+  padding-left: 1.5rem;
+}
+
+.markdown-body li {
+  margin-bottom: 0.5rem;
+}
+
+/* Utilities */
+.vcv-hidden {
+  display: none !important;
+}
+
+.vcv-error {
+  color: var(--vcv-color-danger);
+}
+
+/* Search highlight */
+.vcv-highlight {
+  background: var(--vcv-color-warning-surface);
+  padding: 0.0625rem 0.125rem;
+  border-radius: 0.125rem;
+  color: var(--vcv-color-text);
+}
+
+/* Notifications banner */
+.vcv-notifications {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--vcv-color-toast-info-bg);
+  border-bottom: 1px solid var(--vcv-color-border-strong);
+  box-shadow: 0 4px 6px rgb(0 0 0 / 10%);
+  color: var(--vcv-color-text);
+  animation: slide-down 0.3s ease-out;
+}
+
+.vcv-notifications-critical {
+  background: var(--vcv-color-danger);
+  border-bottom-color: var(--vcv-color-danger-strong);
+  color: white;
+}
+
+.vcv-notifications-content {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.vcv-notifications-icon {
+  font-size: 1.25rem;
+}
+
+.vcv-notifications-close {
+  margin-left: auto;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.vcv-notifications-close:hover {
+  opacity: 1;
+}
+
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+

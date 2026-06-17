@@ -1,0 +1,141 @@
+/* Responsive table */
+@media (1024px >= width) {
+  .vcv-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .vcv-table {
+    min-width: 720px;
+  }
+}
+
+@media (768px >= width) {
+  .vcv-table {
+    min-width: 0;
+  }
+}
+
+[data-theme="dark"] .vcv-cd-date-stack div {
+  background: rgb(255 255 255 / 5%);
+}
+
+[data-theme="dark"] .vcv-cd-passport-expired .vcv-cd-passport-sidebar {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgb(251 113 133 / 20%),
+      transparent 48%
+    ),
+    var(--vcv-color-surface-muted);
+}
+
+.vcv-vault-error-banner {
+  margin: 12px 24px 0;
+  padding: 12px 16px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--destructive) 35%, transparent);
+  background: color-mix(in srgb, var(--destructive) 8%, var(--background));
+  color: var(--foreground);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.vcv-vault-error-banner strong {
+  margin-right: 6px;
+  color: var(--destructive);
+}
+
+.vcv-vault-error-banner details {
+  margin-top: 6px;
+}
+
+.vcv-vault-error-banner summary {
+  cursor: pointer;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.vcv-vault-error-banner ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.vcv-error-banner {
+  margin: 12px 24px 0;
+  padding: 10px 14px;
+  border-radius: 4px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vcv-error-banner-error {
+  border: 1px solid color-mix(in srgb, var(--destructive) 40%, transparent);
+  background: color-mix(in srgb, var(--destructive) 10%, var(--background));
+  color: var(--destructive);
+}
+
+.vcv-error-banner-warning {
+  border: 1px solid
+    color-mix(in srgb, var(--vcv-color-warning-strong) 40%, transparent);
+  background: color-mix(
+    in srgb,
+    var(--vcv-color-warning-strong) 10%,
+    var(--background)
+  );
+  color: var(--vcv-status-warning-text);
+}
+
+.vcv-error-banner-text {
+  flex: 1;
+}
+
+.vcv-error-banner-close {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.vcv-error-banner-close:hover {
+  opacity: 0.7;
+}
+
+/* MountSelectorDialog styles moved to MountSelectorDialog.svelte \3c style> block */
+
+[data-theme="dark"] .vcv-ca-passport .vcv-cd-passport-sidebar {
+  background:
+    radial-gradient(
+      circle at top left,
+      rgb(129 140 248 / 16%),
+      transparent 48%
+    ),
+    var(--vcv-color-surface-muted);
+}
+
+[data-theme="dark"] .vcv-ca-type-label {
+  color: #818cf8;
+}
+
+[data-theme="dark"] .vcv-ca-type-badge {
+  background: rgb(129 140 248 / 12%);
+  border-color: rgb(129 140 248 / 22%);
+}
+
+/* Respect users who prefer reduced motion: neutralize non-essential
+   animation/transition while keeping layout and visibility intact. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

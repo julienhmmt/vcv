@@ -1,7 +1,8 @@
 .devin/
 .DS_Store
-# Golang binary
-vcv
+# Golang binary (root-level output of `task build` -o ../vcv; anchored so it
+# does not also ignore source dirs named vcv, e.g. styles/vcv/)
+/vcv
 # App logs
 vcv.log
 # test coverage
