@@ -41,12 +41,33 @@ checksum:
   name_template: "checksums.txt"
 
 changelog:
+  use: git
   sort: asc
+  abbrev: -1
+  groups:
+    - title: "Features"
+      regexp: '^.*?feat(\(.+\))??!?:.+$'
+      order: 0
+    - title: "Bug fixes"
+      regexp: '^.*?fix(\(.+\))??!?:.+$'
+      order: 1
+    - title: "Performance"
+      regexp: '^.*?perf(\(.+\))??!?:.+$'
+      order: 2
+    - title: "Refactoring"
+      regexp: '^.*?refactor(\(.+\))??!?:.+$'
+      order: 3
+    - title: "Other"
+      order: 999
   filters:
     exclude:
-      - "^docs:"
-      - "^test:"
-      - "^chore:"
+      - '^docs(\(.+\))?!?:'
+      - '^test(\(.+\))?!?:'
+      - '^chore(\(.+\))?!?:'
+      - '^style(\(.+\))?!?:'
+      - '^ci(\(.+\))?!?:'
+      - '^build(\(.+\))?!?:'
+      - '^Merge '
 
 release:
   github:
