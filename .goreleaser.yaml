@@ -1,0 +1,56 @@
+version: 2
+
+project_name: vcv
+
+# Build the embedded Svelte bundle into app/web/dist before any go build,
+# otherwise the binary serves an empty/stale UI (go:embed app/web/dist).
+before:
+  hooks:
+    - cmd: pnpm install --frozen-lockfile
+      dir: app/web/frontend
+    - cmd: pnpm build
+      dir: app/web/frontend
+
+builds:
+  - id: vcv
+    dir: app
+    main: ./cmd/server
+    binary: vcv
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X vcv/internal/version.Version={{ .Version }}
+
+archives:
+  - id: vcv
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: "checksums.txt"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+
+release:
+  github:
+    owner: julienhmmt
+    name: vcv
