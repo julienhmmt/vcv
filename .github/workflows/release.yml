@@ -23,9 +23,12 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: "app/go.mod"
+          cache-dependency-path: "app/go.sum"
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Set up Node
         uses: actions/setup-node@v4
