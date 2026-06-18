@@ -7,6 +7,14 @@ on:
   pull_request:
     branches: ["*"]
 
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: go-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   golangci-lint:
     name: Go lint
@@ -15,7 +23,6 @@ jobs:
 
     permissions:
       contents: read
-      packages: read
       statuses: write
 
     steps:
@@ -32,15 +39,17 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: latest
+          # Pin for reproducible CI; bump deliberately.
+          version: v2.12.2
           working-directory: app
-          args: -v --timeout=3m
+          args: --timeout=3m
 
   build:
-    name: Go build
+    name: Go build & test
     permissions:
       contents: read
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v6
 
@@ -58,8 +67,8 @@ jobs:
         run: go build -v ./...
         working-directory: app
 
-      - name: Test with coverage
-        run: go test -v -coverprofile=coverage.out -covermode=atomic ./...
+      - name: Test with race detector and coverage
+        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
         working-directory: app
         env:
           GO_TEST_ENVIRONMENT: 1

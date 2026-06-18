@@ -254,7 +254,7 @@ func TestMultiClient_InvalidateCache_And_Shutdown_Unique(t *testing.T) {
 func TestMultiClient_Logging(t *testing.T) {
 	// Setup logger to capture output
 	logger.Init("debug")
-	var buf bytes.Buffer
+	var buf syncBuffer
 	logger.SetOutput(&buf)
 
 	instances := []config.VaultInstance{{ID: "v1"}, {ID: "v2"}}
@@ -314,7 +314,7 @@ func TestMultiClient_Logging(t *testing.T) {
 func TestMultiClient_LoggingErrors(t *testing.T) {
 	// Setup logger to capture output
 	logger.Init("debug")
-	var buf bytes.Buffer
+	var buf syncBuffer
 	logger.SetOutput(&buf)
 
 	instances := []config.VaultInstance{{ID: "v1"}, {ID: "v2"}}

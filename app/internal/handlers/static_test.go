@@ -116,7 +116,7 @@ func TestImmutableCache(t *testing.T) {
 	// Test the immutable cache middleware function
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("test"))
+		_, _ = w.Write([]byte("test"))
 	})
 
 	middleware := immutableCache(testHandler)

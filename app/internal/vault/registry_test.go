@@ -122,6 +122,7 @@ func TestRegistry_EnabledIDs(t *testing.T) {
 
 	// Should return a copy, not the internal slice
 	ids = append(ids, "tampered")
+	assert.Len(t, ids, 3)
 	assert.Len(t, r.EnabledIDs(), 2)
 }
 

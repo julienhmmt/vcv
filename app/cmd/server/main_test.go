@@ -18,10 +18,6 @@ import (
 	"vcv/internal/vault"
 )
 
-type mockVaultClient struct {
-	*vault.MockClient
-}
-
 func TestNewStatusHandler_PrimaryConnected(t *testing.T) {
 	primary := &vault.MockClient{}
 	primary.On("CheckConnection", mock.Anything).Return(nil)
