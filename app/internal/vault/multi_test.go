@@ -56,7 +56,6 @@ func TestParseCompositeCertificateID(t *testing.T) {
 		{name: "empty value", orderedVault: []string{"v1"}, value: " ", expectErr: true},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			vaultID, mountSerial, err := parseCompositeCertificateID(tt.orderedVault, tt.value)
 			if tt.expectErr {
@@ -87,7 +86,6 @@ func TestParseCompositeCAID(t *testing.T) {
 		{name: "empty value", orderedVault: []string{"v1"}, value: " ", expectErr: true},
 	}
 	for _, tt := range tests {
-		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			vaultID, pureMount, err := parseCompositeCAID(tt.orderedVault, tt.value)
 			if tt.expectErr {

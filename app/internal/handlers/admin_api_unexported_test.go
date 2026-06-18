@@ -29,7 +29,7 @@ func TestWriteJSON(t *testing.T) {
 	tests := []struct {
 		name     string
 		status   int
-		body     interface{}
+		body     any
 		expected string
 	}{
 		{
@@ -189,7 +189,7 @@ func TestAdminSessionStore_LoginFromJSON_RateLimited(t *testing.T) {
 		Password: "wrongpassword",
 	}
 
-	for i := 0; i < 6; i++ {
+	for i := range 6 {
 		w := httptest.NewRecorder()
 		bodyBytes, _ := json.Marshal(body)
 		req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(bodyBytes))

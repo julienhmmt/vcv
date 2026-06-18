@@ -30,7 +30,7 @@ func TestNewStatusHandler_PrimaryConnected(t *testing.T) {
 	handler(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	var resp map[string]interface{}
+	var resp map[string]any
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 	assert.True(t, resp["vault_connected"].(bool))
 	assert.Nil(t, resp["vault_error"])
@@ -49,7 +49,7 @@ func TestNewStatusHandler_PrimaryDisconnected(t *testing.T) {
 	handler(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	var resp map[string]interface{}
+	var resp map[string]any
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 	assert.False(t, resp["vault_connected"].(bool))
 	assert.Equal(t, "connection refused", resp["vault_error"])
@@ -84,21 +84,21 @@ func TestNewStatusHandler_StatusClients(t *testing.T) {
 	handler(w, req)
 
 	assert.Equal(t, http.StatusOK, w.Code)
-	var resp map[string]interface{}
+	var resp map[string]any
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
-	vaults := resp["vaults"].([]interface{})
+	vaults := resp["vaults"].([]any)
 	assert.Len(t, vaults, 3)
 
-	v1Status := vaults[0].(map[string]interface{})
+	v1Status := vaults[0].(map[string]any)
 	assert.Equal(t, "v1", v1Status["id"])
 	assert.True(t, v1Status["connected"].(bool))
 
-	v2Status := vaults[1].(map[string]interface{})
+	v2Status := vaults[1].(map[string]any)
 	assert.Equal(t, "v2", v2Status["id"])
 	assert.False(t, v2Status["connected"].(bool))
 	assert.Equal(t, "down", v2Status["error"])
 
-	v3Status := vaults[2].(map[string]interface{})
+	v3Status := vaults[2].(map[string]any)
 	assert.Equal(t, "v3", v3Status["id"])
 	assert.False(t, v3Status["connected"].(bool))
 	assert.Equal(t, "missing vault status client", v3Status["error"])

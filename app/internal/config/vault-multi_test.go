@@ -56,29 +56,6 @@ func TestLoad_NoSettingsFile(t *testing.T) {
 	}
 }
 
-func TestResolveSettingsPath_FindsExistingFile(t *testing.T) {
-	tempDir := t.TempDir()
-	changeWorkingDirectory(t, tempDir)
-	writeSettingsFile(t, tempDir, `{"app":{"env":"dev"}}`)
-	resolved := ResolveSettingsPath()
-	realDir, _ := filepath.EvalSymlinks(tempDir)
-	expected := filepath.Join(realDir, "settings.json")
-	if resolved != expected {
-		t.Fatalf("expected %s, got %s", expected, resolved)
-	}
-}
-
-func TestResolveSettingsPath_ReturnsDefaultWhenMissing(t *testing.T) {
-	tempDir := t.TempDir()
-	changeWorkingDirectory(t, tempDir)
-	resolved := ResolveSettingsPath()
-	realDir, _ := filepath.EvalSymlinks(tempDir)
-	expected := filepath.Join(realDir, "settings.json")
-	if resolved != expected {
-		t.Fatalf("expected default %s, got %s", expected, resolved)
-	}
-}
-
 func TestSettingsCandidates(t *testing.T) {
 	candidates := settingsCandidates()
 	if len(candidates) < 4 {

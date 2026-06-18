@@ -233,7 +233,7 @@ func TestAdminLoginLimiter_Allow(t *testing.T) {
 	key := "192.168.1.1"
 
 	// First 3 attempts should allow
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		result := limiter.allow(now, key)
 		assert.True(t, result)
 	}
@@ -458,7 +458,7 @@ func TestAdminSessionStore_PruneSessions_MaxSessions(t *testing.T) {
 
 	now := time.Now()
 	// Add more sessions than max
-	for i := 0; i < adminMaxSessions+5; i++ {
+	for i := range adminMaxSessions + 5 {
 		store.sessions[fmt.Sprintf("token%d", i)] = now.Add(time.Duration(i+1) * time.Hour)
 	}
 
@@ -476,7 +476,7 @@ func TestAdminSessionStore_AllowLoginAttempt(t *testing.T) {
 	assert.True(t, store.allowLoginAttempt(req))
 
 	// Exhaust the limit
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		store.allowLoginAttempt(req)
 	}
 

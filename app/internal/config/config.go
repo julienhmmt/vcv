@@ -66,7 +66,7 @@ type MetricsConfig struct {
 
 type SettingsFile struct {
 	App          AppSettings         `json:"app"`
-	Admin        AdminSettings       `json:"admin,omitempty"`
+	Admin        AdminSettings       `json:"admin"`
 	Certificates CertificateSettings `json:"certificates"`
 	Metrics      MetricsSettings     `json:"metrics"`
 	CORS         CORSSettings        `json:"cors"`
@@ -137,23 +137,6 @@ func Load() (Config, error) {
 // settingsCandidates returns the ordered list of settings file paths to try.
 func settingsCandidates() []string {
 	return []string{"settings.dev.json", "settings.prod.json", "settings.json", "./settings.json", "/app/config/settings.json"}
-}
-
-// ResolveSettingsPath returns the absolute path of the first settings file found on disk.
-// If no file is found it returns a default path.
-func ResolveSettingsPath() string {
-	for _, candidate := range settingsCandidates() {
-		absPath, absErr := filepath.Abs(candidate)
-		if absErr != nil {
-			continue
-		}
-		if _, statErr := os.Stat(absPath); statErr != nil {
-			continue
-		}
-		return absPath
-	}
-	absDefault, _ := filepath.Abs("settings.json")
-	return absDefault
 }
 
 func loadSettingsFile() (*SettingsFile, string, error) {
@@ -238,16 +221,6 @@ func buildConfigFromSettings(settings SettingsFile) Config {
 		ExpirationThresholds: expirations,
 		Metrics:              metrics,
 	}
-}
-
-// IsDev returns true if the environment is development.
-func (c Config) IsDev() bool {
-	return c.Env == EnvDev
-}
-
-// IsProd returns true if the environment is production.
-func (c Config) IsProd() bool {
-	return c.Env == EnvProd
 }
 
 func parseEnv(s string) Environment {

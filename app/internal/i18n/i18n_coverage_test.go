@@ -153,14 +153,3 @@ func TestMessagesForLanguage_AllLanguages(t *testing.T) {
 		})
 	}
 }
-
-func TestTranslations_MapExists(t *testing.T) {
-	if len(Translations) != 5 {
-		t.Errorf("Translations map has %d entries, want 5", len(Translations))
-	}
-	for lang := range Translations {
-		if _, ok := GetLanguage(lang); !ok {
-			t.Errorf("Translations contains invalid language code: %s", lang)
-		}
-	}
-}

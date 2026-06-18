@@ -123,7 +123,7 @@ func TestJSONFormat(t *testing.T) {
 
 	// Parse the JSON output
 	output := strings.TrimSpace(buf.String())
-	var result map[string]interface{}
+	var result map[string]any
 	if err := json.Unmarshal([]byte(output), &result); err != nil {
 		t.Errorf("Expected valid JSON output, got error: %v, output: %s", err, output)
 	}

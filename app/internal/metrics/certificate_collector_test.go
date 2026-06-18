@@ -270,8 +270,8 @@ func gatherGauge(registry *prometheus.Registry, name string, labels map[string]s
 // parseGaugeValue extracts gauge value from exposition format text for matching labels.
 // Example format: vcv_certificates_total{vault_id="__all__",pki="__all__",status="valid"} 2
 func parseGaugeValue(output string, labels map[string]string) (float64, error) {
-	lines := strings.Split(output, "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(output, "\n")
+	for line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
@@ -308,8 +308,8 @@ func matchLabelsInLine(line string, labels map[string]string) bool {
 
 	// Parse each label=value pair
 	found := make(map[string]string)
-	pairs := strings.Split(labelSection, ",")
-	for _, pair := range pairs {
+	pairs := strings.SplitSeq(labelSection, ",")
+	for pair := range pairs {
 		pair = strings.TrimSpace(pair)
 		kv := strings.SplitN(pair, "=", 2)
 		if len(kv) != 2 {

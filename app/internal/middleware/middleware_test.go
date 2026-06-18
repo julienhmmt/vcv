@@ -240,7 +240,7 @@ func TestRateLimit_BlocksAfterThreshold_PerIP(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	}))
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
 		req.RemoteAddr = "1.2.3.4:1234"
 		rec := httptest.NewRecorder()
