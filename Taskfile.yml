@@ -55,13 +55,21 @@ tasks:
       - VCV_VERSION={{.VCV_VERSION}} docker compose -f docker-compose.dev.yml up -d
 
   docker-build:
-    desc: Construit les images docker (arm64 et amd64) et push sur Docker Hub
+    desc: Construit les images docker (arm64 et amd64) et push sur Docker Hub + GHCR
     vars:
       VCV_TAG:
         sh: "echo ${VCV_TAG:-latest}"
     cmds:
+      # Requiert d'être connecté aux deux registres au préalable :
+      #   docker login            (Docker Hub)
+      #   docker login ghcr.io    (GitHub Container Registry, PAT write:packages)
       - docker buildx use vcv-builder
-      - docker buildx build --platform linux/amd64,linux/arm64 --build-arg VERSION={{.VCV_TAG}} -t jhmmt/vcv:{{.VCV_TAG}} --push ./app
+      - >-
+        docker buildx build --platform linux/amd64,linux/arm64
+        --build-arg VERSION={{.VCV_TAG}}
+        -t jhmmt/vcv:{{.VCV_TAG}} -t jhmmt/vcv:latest
+        -t ghcr.io/julienhmmt/vcv:{{.VCV_TAG}} -t ghcr.io/julienhmmt/vcv:latest
+        --push ./app
 
   test-offline:
     desc: Run unit tests offline (no Vault) with coverage
