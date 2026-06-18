@@ -6,10 +6,8 @@ project_name: vcv
 # otherwise the binary serves an empty/stale UI (go:embed app/web/dist).
 before:
   hooks:
-    - cmd: pnpm install --frozen-lockfile
-      dir: app/web/frontend
-    - cmd: pnpm build
-      dir: app/web/frontend
+    - sh -c "cd app/web/frontend && pnpm install --frozen-lockfile"
+    - sh -c "cd app/web/frontend && pnpm build"
 
 builds:
   - id: vcv
