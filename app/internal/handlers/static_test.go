@@ -164,9 +164,9 @@ func TestStaticRoutes_ConcurrentAccess(t *testing.T) {
 
 	done := make(chan bool, numGoroutines)
 
-	for i := 0; i < numGoroutines; i++ {
+	for i := range numGoroutines {
 		go func(id int) {
-			for j := 0; j < numRequests; j++ {
+			for range numRequests {
 				req := httptest.NewRequest(http.MethodGet, "/", nil)
 				w := httptest.NewRecorder()
 
@@ -178,7 +178,7 @@ func TestStaticRoutes_ConcurrentAccess(t *testing.T) {
 	}
 
 	// Wait for all goroutines to complete
-	for i := 0; i < numGoroutines; i++ {
+	for range numGoroutines {
 		select {
 		case <-done:
 		case <-time.After(5 * time.Second):

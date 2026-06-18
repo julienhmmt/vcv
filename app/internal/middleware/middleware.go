@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"runtime/debug"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -322,10 +323,8 @@ func RateLimit(config RateLimitConfig) func(http.Handler) http.Handler {
 
 func shouldSkipRateLimit(r *http.Request, config RateLimitConfig) bool {
 	path := r.URL.Path
-	for _, exempt := range config.ExemptPaths {
-		if path == exempt {
-			return true
-		}
+	if slices.Contains(config.ExemptPaths, path) {
+		return true
 	}
 	for _, prefix := range config.ExemptPathPrefixes {
 		if strings.HasPrefix(path, prefix) {
@@ -351,10 +350,7 @@ func (l *rateLimiter) allow(now time.Time, key string) (bool, int) {
 	if entry.count <= l.config.MaxRequests {
 		return true, 0
 	}
-	retryAfterSeconds := int(time.Until(entry.resetAt).Seconds())
-	if retryAfterSeconds < 0 {
-		retryAfterSeconds = 0
-	}
+	retryAfterSeconds := max(int(time.Until(entry.resetAt).Seconds()), 0)
 	return false, retryAfterSeconds
 }
 

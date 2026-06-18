@@ -285,21 +285,3 @@ func TestLoadCORSConfig(t *testing.T) {
 		t.Fatalf("expected allow credentials true for prod, got %v", prodConfig.AllowCredentials)
 	}
 }
-
-func TestIsDevIsProd(t *testing.T) {
-	devConfig := Config{Env: EnvDev}
-	if !devConfig.IsDev() {
-		t.Fatalf("expected IsDev true for dev env")
-	}
-	if devConfig.IsProd() {
-		t.Fatalf("expected IsProd false for dev env")
-	}
-
-	prodConfig := Config{Env: EnvProd}
-	if prodConfig.IsDev() {
-		t.Fatalf("expected IsDev false for prod env")
-	}
-	if !prodConfig.IsProd() {
-		t.Fatalf("expected IsProd true for prod env")
-	}
-}

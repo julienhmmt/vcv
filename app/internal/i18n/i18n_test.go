@@ -15,29 +15,6 @@ func TestMessagesForLanguage(t *testing.T) {
 	}
 }
 
-func TestFromQueryLanguage(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected Language
-		ok       bool
-	}{
-		{"en", LanguageEnglish, true},
-		{"fr", LanguageFrench, true},
-		{"es", LanguageSpanish, true},
-		{"de", LanguageGerman, true},
-		{"it", LanguageItalian, true},
-		{"unknown", "", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			got, ok := FromQueryLanguage(tt.input)
-			if ok != tt.ok || got != tt.expected {
-				t.Fatalf("expected (%v,%v), got (%v,%v)", tt.expected, tt.ok, got, ok)
-			}
-		})
-	}
-}
-
 func TestFromAcceptLanguage(t *testing.T) {
 	tests := []struct {
 		header   string

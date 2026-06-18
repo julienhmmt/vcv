@@ -90,7 +90,7 @@ func TestRateLimit_MaxEntries(t *testing.T) {
 	}))
 
 	// Create requests from different IPs to trigger pruning
-	for i := 0; i < 10; i++ {
+	for i := range 10 {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.RemoteAddr = "192.0.2." + strconv.Itoa(i+1) + ":1234"
 		rec := httptest.NewRecorder()
@@ -165,7 +165,7 @@ func TestRateLimit_ExceedsLimit(t *testing.T) {
 	}))
 
 	// First two requests should succeed
-	for i := 0; i < 2; i++ {
+	for i := range 2 {
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req.RemoteAddr = "192.0.2.1:1234"
 		rec := httptest.NewRecorder()

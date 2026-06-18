@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"encoding/pem"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -271,7 +272,7 @@ func (c *realClient) listCertificatesFromMount(ctx context.Context, mount string
 		return []certs.Certificate{}, make(map[string]bool), nil
 	}
 
-	rawKeys, ok := secret.Data["keys"].([]interface{})
+	rawKeys, ok := secret.Data["keys"].([]any)
 	if !ok {
 		return nil, nil, fmt.Errorf("unexpected list response from Vault for mount %s: missing keys array", mount)
 	}
@@ -312,7 +313,7 @@ func (c *realClient) fetchRevokedSerialsFromMount(ctx context.Context, mount str
 		return serials, nil
 	}
 
-	rawKeys, ok := secret.Data["keys"].([]interface{})
+	rawKeys, ok := secret.Data["keys"].([]any)
 	if !ok {
 		return serials, nil
 	}
@@ -356,12 +357,7 @@ func (c *realClient) readCertificateFromMount(ctx context.Context, mount, serial
 		return certs.Certificate{}, fmt.Errorf("failed to parse certificate %s in mount %s: %w", serial, mount, parseError)
 	}
 
-	subjectAlternativeNames := make([]string, 0, len(x509Certificate.DNSNames)+len(x509Certificate.IPAddresses)+len(x509Certificate.EmailAddresses))
-	subjectAlternativeNames = append(subjectAlternativeNames, x509Certificate.DNSNames...)
-	for _, address := range x509Certificate.IPAddresses {
-		subjectAlternativeNames = append(subjectAlternativeNames, address.String())
-	}
-	subjectAlternativeNames = append(subjectAlternativeNames, x509Certificate.EmailAddresses...)
+	subjectAlternativeNames := buildSANs(x509Certificate)
 
 	// Prefix ID with mount to avoid collisions across mounts
 	return certs.Certificate{
@@ -438,12 +434,7 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 	sha1Fingerprint := sha1.Sum(x509Certificate.Raw)
 	sha256Fingerprint := sha256.Sum256(x509Certificate.Raw)
 
-	subjectAlternativeNames := make([]string, 0, len(x509Certificate.DNSNames)+len(x509Certificate.IPAddresses)+len(x509Certificate.EmailAddresses))
-	subjectAlternativeNames = append(subjectAlternativeNames, x509Certificate.DNSNames...)
-	for _, address := range x509Certificate.IPAddresses {
-		subjectAlternativeNames = append(subjectAlternativeNames, address.String())
-	}
-	subjectAlternativeNames = append(subjectAlternativeNames, x509Certificate.EmailAddresses...)
+	subjectAlternativeNames := buildSANs(x509Certificate)
 
 	// Extract key usage
 	var usage []string
@@ -511,10 +502,8 @@ func (c *realClient) parseMountAndSerial(serialNumber string) (string, string, e
 		serial := parts[1]
 
 		// Validate that the mount is configured
-		for _, configuredMount := range c.mounts {
-			if configuredMount == mount {
-				return mount, serial, nil
-			}
+		if slices.Contains(c.mounts, mount) {
+			return mount, serial, nil
 		}
 		return "", "", fmt.Errorf("mount %s is not configured", mount)
 	}
@@ -671,10 +660,21 @@ func (c *realClient) CacheSize() int {
 	return c.cache.Size()
 }
 
-func getMapKeys(m map[string]interface{}) []string {
+func getMapKeys(m map[string]any) []string {
 	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
 	return keys
+}
+
+// buildSANs collects the subject alternative names (DNS, IP, email) from a certificate.
+func buildSANs(cert *x509.Certificate) []string {
+	sans := make([]string, 0, len(cert.DNSNames)+len(cert.IPAddresses)+len(cert.EmailAddresses))
+	sans = append(sans, cert.DNSNames...)
+	for _, address := range cert.IPAddresses {
+		sans = append(sans, address.String())
+	}
+	sans = append(sans, cert.EmailAddresses...)
+	return sans
 }

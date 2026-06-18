@@ -1,13 +1,7 @@
 package certs
 
 import (
-	"crypto/rsa"
-	"crypto/sha1"
-	"crypto/sha256"
 	"crypto/x509"
-	"encoding/hex"
-	"encoding/pem"
-	"fmt"
 	"strings"
 	"time"
 )
@@ -39,14 +33,6 @@ type DetailedCertificate struct {
 type PEMResponse struct {
 	SerialNumber string `json:"serialNumber"`
 	PEM          string `json:"pem"`
-}
-
-// NormalizeSerialNumber removes colons, hyphens, spaces and converts to lowercase for consistent comparison
-func NormalizeSerialNumber(serial string) string {
-	normalized := strings.ReplaceAll(serial, ":", "")
-	normalized = strings.ReplaceAll(normalized, "-", "")
-	normalized = strings.ReplaceAll(normalized, " ", "")
-	return strings.ToLower(normalized)
 }
 
 // IsExpired returns true if the certificate has expired
@@ -88,54 +74,6 @@ func (c *Certificate) GetStatus() string {
 	return "valid"
 }
 
-// ParsePEM parses a PEM-encoded certificate and returns a DetailedCertificate
-func ParsePEM(pemData string) (*DetailedCertificate, error) {
-	block, _ := pem.Decode([]byte(pemData))
-	if block == nil {
-		return nil, fmt.Errorf("failed to decode PEM block")
-	}
-
-	cert, err := x509.ParseCertificate(block.Bytes)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse certificate: %w", err)
-	}
-
-	serialNumber := cert.SerialNumber.String()
-
-	// Calculate fingerprints
-	sha1Fingerprint := sha1.Sum(cert.Raw)
-	sha256Fingerprint := sha256.Sum256(cert.Raw)
-
-	detailed := &DetailedCertificate{
-		Certificate: Certificate{
-			ID:           serialNumber, // Use serial as ID when parsing standalone PEM
-			SerialNumber: serialNumber,
-			CommonName:   cert.Subject.CommonName,
-			CreatedAt:    cert.NotBefore,
-			ExpiresAt:    cert.NotAfter,
-			CertType:     InferCertType(cert),
-			Revoked:      false, // This would need to be determined from external source
-		},
-		Issuer:            cert.Issuer.String(),
-		Subject:           cert.Subject.String(),
-		FingerprintSHA1:   hex.EncodeToString(sha1Fingerprint[:]),
-		FingerprintSHA256: hex.EncodeToString(sha256Fingerprint[:]),
-	}
-
-	detailed.Usage = getUsage(cert)
-	detailed.KeyAlgorithm = cert.PublicKeyAlgorithm.String()
-	detailed.KeySize = getKeySize(cert)
-	detailed.Sans = append(detailed.Sans, cert.DNSNames...)
-	detailed.Sans = append(detailed.Sans, cert.EmailAddresses...)
-	for _, ip := range cert.IPAddresses {
-		detailed.Sans = append(detailed.Sans, ip.String())
-	}
-
-	detailed.PEM = pemData
-
-	return detailed, nil
-}
-
 func InferCertType(cert *x509.Certificate) string {
 	if cert == nil {
 		return "unknown"
@@ -160,62 +98,4 @@ func InferCertType(cert *x509.Certificate) string {
 	default:
 		return "unknown"
 	}
-}
-
-// getKeySize extracts the key size from the certificate
-func getKeySize(cert *x509.Certificate) int {
-	switch pub := cert.PublicKey.(type) {
-	case *rsa.PublicKey:
-		return pub.Size() * 8 // Size() returns bytes, convert to bits
-	case interface{ Bits() int }:
-		return pub.Bits()
-	default:
-		return 0
-	}
-}
-
-// getUsage extracts key usage from the certificate
-func getUsage(cert *x509.Certificate) []string {
-	var usage []string
-
-	if cert.KeyUsage&x509.KeyUsageDigitalSignature != 0 {
-		usage = append(usage, "Digital Signature")
-	}
-	if cert.KeyUsage&x509.KeyUsageKeyEncipherment != 0 {
-		usage = append(usage, "Key Encipherment")
-	}
-	if cert.KeyUsage&x509.KeyUsageKeyAgreement != 0 {
-		usage = append(usage, "Key Agreement")
-	}
-	if cert.KeyUsage&x509.KeyUsageCertSign != 0 {
-		usage = append(usage, "Certificate Sign")
-	}
-	if cert.KeyUsage&x509.KeyUsageCRLSign != 0 {
-		usage = append(usage, "CRL Sign")
-	}
-	if cert.KeyUsage&x509.KeyUsageEncipherOnly != 0 {
-		usage = append(usage, "Encipher Only")
-	}
-	if cert.KeyUsage&x509.KeyUsageDecipherOnly != 0 {
-		usage = append(usage, "Decipher Only")
-	}
-
-	for _, ext := range cert.ExtKeyUsage {
-		switch ext {
-		case x509.ExtKeyUsageServerAuth:
-			usage = append(usage, "Server Auth")
-		case x509.ExtKeyUsageClientAuth:
-			usage = append(usage, "Client Auth")
-		case x509.ExtKeyUsageCodeSigning:
-			usage = append(usage, "Code Signing")
-		case x509.ExtKeyUsageEmailProtection:
-			usage = append(usage, "Email Protection")
-		case x509.ExtKeyUsageTimeStamping:
-			usage = append(usage, "Time Stamping")
-		case x509.ExtKeyUsageOCSPSigning:
-			usage = append(usage, "OCSP Signing")
-		}
-	}
-
-	return usage
 }

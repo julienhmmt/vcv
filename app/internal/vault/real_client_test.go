@@ -67,27 +67,27 @@ func newVaultTestServer(state vaultTestServerState) *httptest.Server {
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/v1/sys/health" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
+			_ = json.NewEncoder(w).Encode(map[string]any{"initialized": true, "sealed": false})
 			return
 		}
 		if r.URL.Path == "/v1/auth/token/lookup-self" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"id": "token"}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"id": "token"}})
 			return
 		}
 		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"keys": []string{"aa", "bb"}}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"aa", "bb"}}})
 			return
 		}
 		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs/revoked" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"keys": []string{"bb"}}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"bb"}}})
 			return
 		}
 		if r.Method == http.MethodGet && (r.URL.Path == "/v1/pki/cert/aa" || r.URL.Path == "/v1/pki/cert/bb" || r.URL.Path == "/v1/pki/cert/ca") {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"certificate": state.certificatePEM}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"certificate": state.certificatePEM}})
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -144,22 +144,22 @@ func TestNewClientFromConfig_TLSInsecure_AllowsTLSWithoutCA(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/v1/sys/health" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
+			_ = json.NewEncoder(w).Encode(map[string]any{"initialized": true, "sealed": false})
 			return
 		}
 		if r.URL.Path == "/v1/auth/token/lookup-self" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"id": "token"}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"id": "token"}})
 			return
 		}
 		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"keys": []string{"aa", "bb"}}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"aa", "bb"}}})
 			return
 		}
 		if r.Method == http.MethodGet && (r.URL.Path == "/v1/pki/cert/aa" || r.URL.Path == "/v1/pki/cert/bb") {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"certificate": certificatePEM}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"certificate": certificatePEM}})
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -180,22 +180,22 @@ func TestNewClientFromConfig_TLSCACert_AllowsTLSWithCA(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/v1/sys/health" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
+			_ = json.NewEncoder(w).Encode(map[string]any{"initialized": true, "sealed": false})
 			return
 		}
 		if r.URL.Path == "/v1/auth/token/lookup-self" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"id": "token"}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"id": "token"}})
 			return
 		}
 		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"keys": []string{"aa"}}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"aa"}}})
 			return
 		}
 		if r.Method == http.MethodGet && r.URL.Path == "/v1/pki/cert/aa" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"certificate": certificatePEM}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"certificate": certificatePEM}})
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -233,22 +233,22 @@ func TestNewClientFromConfig_TLSCACertBase64_AllowsTLSWithCA(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/v1/sys/health" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
+			_ = json.NewEncoder(w).Encode(map[string]any{"initialized": true, "sealed": false})
 			return
 		}
 		if r.URL.Path == "/v1/auth/token/lookup-self" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"id": "token"}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"id": "token"}})
 			return
 		}
 		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"keys": []string{"aa"}}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"aa"}}})
 			return
 		}
 		if r.Method == http.MethodGet && r.URL.Path == "/v1/pki/cert/aa" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"certificate": certificatePEM}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"certificate": certificatePEM}})
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -402,7 +402,7 @@ func TestRealClient_GetIntermediateCA_BadResponse(t *testing.T) {
 		if r.Method == http.MethodGet && r.URL.Path == "/v1/pki/ca/pem" {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"ca_chain": []string{"not a pem"}}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"ca_chain": []string{"not a pem"}}})
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -420,7 +420,7 @@ func TestCheckConnection_NotInitialized(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/v1/sys/health" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": false, "sealed": false})
+			_ = json.NewEncoder(w).Encode(map[string]any{"initialized": false, "sealed": false})
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -438,7 +438,7 @@ func TestCheckConnection_Sealed(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.URL.Path == "/v1/sys/health" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": true})
+			_ = json.NewEncoder(w).Encode(map[string]any{"initialized": true, "sealed": true})
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -456,17 +456,17 @@ func TestListCertificatesFromMount_KeysWrongType(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"keys": "nope"}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": "nope"}})
 			return
 		}
 		if r.URL.Path == "/v1/sys/health" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"initialized": true, "sealed": false})
+			_ = json.NewEncoder(w).Encode(map[string]any{"initialized": true, "sealed": false})
 			return
 		}
 		if r.URL.Path == "/v1/auth/token/lookup-self" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"id": "token"}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"id": "token"}})
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -484,7 +484,7 @@ func TestReadCertificateFromMount_MissingCertificateField(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == http.MethodGet && r.URL.Path == "/v1/pki/cert/aa" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{}})
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -502,7 +502,7 @@ func TestReadCertificateFromMount_InvalidPEM(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == http.MethodGet && r.URL.Path == "/v1/pki/cert/aa" {
 			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]interface{}{"data": map[string]interface{}{"certificate": "not a pem"}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"certificate": "not a pem"}})
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -559,7 +559,7 @@ func TestRealClient_Logging(t *testing.T) {
 		switch r.URL.Path {
 		case "/v1/sys/health":
 			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(map[string]interface{}{
+			if err := json.NewEncoder(w).Encode(map[string]any{
 				"initialized": true,
 				"sealed":      false,
 				"version":     "1.12.0",
@@ -568,21 +568,21 @@ func TestRealClient_Logging(t *testing.T) {
 			}
 		case "/v1/auth/token/lookup-self":
 			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(map[string]interface{}{
-				"data": map[string]interface{}{"id": "token"},
+			if err := json.NewEncoder(w).Encode(map[string]any{
+				"data": map[string]any{"id": "token"},
 			}); err != nil {
 				t.Fatalf("failed to encode token response: %v", err)
 			}
 		case "/v1/pki/certs":
 			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(map[string]interface{}{
+			if err := json.NewEncoder(w).Encode(map[string]any{
 				"data": map[string][]string{"keys": {"01"}},
 			}); err != nil {
 				t.Fatalf("failed to encode certs response: %v", err)
 			}
 		case "/v1/pki/cert/01":
 			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(map[string]interface{}{
+			if err := json.NewEncoder(w).Encode(map[string]any{
 				"data": map[string]string{
 					"certificate": newVaultTestCertificatePEM(t),
 				},

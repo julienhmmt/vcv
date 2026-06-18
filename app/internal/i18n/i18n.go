@@ -1106,20 +1106,6 @@ func MessagesForLanguage(language Language) Messages {
 	return englishMessages
 }
 
-// FromQueryLanguage parses a short language code coming from a query parameter.
-func FromQueryLanguage(value string) (Language, bool) {
-	return GetLanguage(value)
-}
-
-// Translations maps language codes to their message sets.
-var Translations = map[string]Messages{
-	string(LanguageEnglish): englishMessages,
-	string(LanguageFrench):  frenchMessages,
-	string(LanguageSpanish): spanishMessages,
-	string(LanguageGerman):  germanMessages,
-	string(LanguageItalian): italianMessages,
-}
-
 // GetLanguage returns the Language constant for a given code.
 func GetLanguage(code string) (Language, bool) {
 	code = strings.ToLower(strings.TrimSpace(code))
@@ -1145,10 +1131,10 @@ func FromAcceptLanguage(headerValue string) Language {
 	}
 
 	// Split by comma: fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7
-	parts := strings.Split(headerValue, ",")
-	for _, part := range parts {
+	parts := strings.SplitSeq(headerValue, ",")
+	for part := range parts {
 		// Extract the language code before any semicolon
-		langCode := strings.Split(strings.TrimSpace(part), ";")[0]
+		langCode, _, _ := strings.Cut(strings.TrimSpace(part), ";")
 		langCode = strings.ToLower(langCode)
 
 		// Try exact match first

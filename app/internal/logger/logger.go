@@ -155,7 +155,7 @@ func HTTPError(method, path string, status int, err error) *zerolog.Event {
 }
 
 // PanicEvent logs panic recovery events.
-func PanicEvent(err interface{}, stack string) *zerolog.Event {
+func PanicEvent(err any, stack string) *zerolog.Event {
 	return log.Error().
 		Str("event_category", "panic").
 		Interface("error", err).

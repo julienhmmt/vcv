@@ -132,7 +132,7 @@ func TestRegistry_ConcurrentAccess(t *testing.T) {
 	})
 
 	// This should not panic due to race conditions
-	for i := 0; i < 100; i++ {
+	for range 100 {
 		go r.IsEnabled("v1")
 		go r.EnabledIDs()
 		go r.Update([]config.VaultInstance{{ID: "v1", Enabled: boolPtr(true)}})
