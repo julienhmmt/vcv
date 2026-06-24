@@ -67,8 +67,9 @@ export interface ExpirationThresholds {
 
 export interface VaultInstance {
   id: string
+  original_id?: string
   address: string
-  token: string
+  token?: string
   pki_mount?: string
   pki_mounts?: string[]
   display_name?: string

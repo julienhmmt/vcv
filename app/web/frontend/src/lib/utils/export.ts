@@ -40,6 +40,24 @@ function toRow(cert: Certificate, thresholds: ExpirationThresholds): ExportRow {
   }
 }
 
+/**
+ * Prefix a single quote when a cell could be interpreted as a spreadsheet
+ * formula. Covers the characters Excel/Sheets/LibreOffice treat as formula
+ * starters: = + - @ tab (0x09) carriage return (0x0d). Leading whitespace is
+ * trimmed for the trigger check so a value like " =cmd" is still neutralized.
+ * The leading quote is stripped by spreadsheet apps on display but prevents
+ * formula evaluation.
+ */
+function sanitizeCsvCell(value: string): string {
+  const trimmed = value.replace(/^ +/, '')
+  if (trimmed.length === 0) return value
+  const first = trimmed[0]
+  if (first === '=' || first === '+' || first === '-' || first === '@' || first === '\t' || first === '\r') {
+    return `'${value}`
+  }
+  return value
+}
+
 /** Escape a value for RFC 4180 CSV: wrap in quotes when it contains a comma, quote, or newline. */
 function escapeCsv(value: string): string {
   if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`
@@ -48,7 +66,7 @@ function escapeCsv(value: string): string {
 
 function toCsv(rows: ExportRow[]): string {
   const header = COLUMNS.join(',')
-  const lines = rows.map((row) => COLUMNS.map((col) => escapeCsv(row[col])).join(','))
+  const lines = rows.map((row) => COLUMNS.map((col) => escapeCsv(sanitizeCsvCell(row[col]))).join(','))
   return [header, ...lines].join('\r\n')
 }
 

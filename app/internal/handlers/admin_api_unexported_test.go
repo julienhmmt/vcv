@@ -671,6 +671,72 @@ func TestRegisterAdminAPIRoutes_Settings(t *testing.T) {
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 	assert.Equal(t, "dev", resp.Settings.App.Env)
 	assert.Len(t, resp.VaultStatuses, 1)
+	// Cleartext vault tokens must never reach the browser.
+	require.Len(t, resp.Settings.Vaults, 1)
+	assert.Empty(t, resp.Settings.Vaults[0].Token, "GET /api/admin/settings must mask vault tokens")
+}
+
+func TestRegisterAdminAPIRoutes_Settings_MaskedPutPreservesToken(t *testing.T) {
+	r, _, store, _ := setupAdminAPIRouter(t)
+	cookie := loginAdmin(t, r)
+
+	// Simulate the masked frontend: PUT the same vault back with an empty token.
+	updated := config.SettingsFile{
+		Certificates: config.CertificateSettings{
+			ExpirationThresholds: config.ExpirationThresholds{Critical: 7, Warning: 30},
+		},
+		Vaults: []config.VaultInstance{
+			{ID: "v1", Address: "http://localhost:8200", Token: "", PKIMounts: []string{"pki"}},
+		},
+	}
+	body, _ := json.Marshal(updated)
+	req := httptest.NewRequest(http.MethodPut, "/api/admin/settings", bytes.NewReader(body))
+	req.AddCookie(cookie)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// Response is masked...
+	var resp adminSettingsResponse
+	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
+	require.Len(t, resp.Settings.Vaults, 1)
+	assert.Empty(t, resp.Settings.Vaults[0].Token, "PUT response must mask vault tokens")
+
+	// ...but the stored token is preserved on disk (mergeVaultTokens kept it).
+	stored, err := store.load()
+	require.NoError(t, err)
+	require.Len(t, stored.Vaults, 1)
+	assert.Equal(t, "token1", stored.Vaults[0].Token, "empty incoming token must preserve the stored token")
+}
+
+func TestRegisterAdminAPIRoutes_Settings_MaskedRenamePreservesToken(t *testing.T) {
+	r, _, store, _ := setupAdminAPIRouter(t)
+	cookie := loginAdmin(t, r)
+
+	// Simulate the frontend renaming vault "v1" to "v2" with original_id set
+	// and an empty (masked) token.
+	updated := config.SettingsFile{
+		Certificates: config.CertificateSettings{
+			ExpirationThresholds: config.ExpirationThresholds{Critical: 7, Warning: 30},
+		},
+		Vaults: []config.VaultInstance{
+			{ID: "v2", OriginalID: "v1", Address: "http://localhost:8200", Token: "", PKIMounts: []string{"pki"}},
+		},
+	}
+	body, _ := json.Marshal(updated)
+	req := httptest.NewRequest(http.MethodPut, "/api/admin/settings", bytes.NewReader(body))
+	req.AddCookie(cookie)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
+
+	// The stored token must be preserved despite the ID rename.
+	stored, err := store.load()
+	require.NoError(t, err)
+	require.Len(t, stored.Vaults, 1)
+	assert.Equal(t, "v2", stored.Vaults[0].ID, "vault ID must be updated to the new name")
+	assert.Equal(t, "token1", stored.Vaults[0].Token, "token must be preserved across ID rename via original_id")
+	assert.Empty(t, stored.Vaults[0].OriginalID, "original_id must not be persisted")
 }
 
 func TestRegisterAdminAPIRoutes_SettingsPut(t *testing.T) {

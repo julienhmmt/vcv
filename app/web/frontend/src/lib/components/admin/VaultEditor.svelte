@@ -14,7 +14,15 @@
   const uid = $props.id()
 
   let expanded = $state(true)
-  let showToken = $state(false)
+  // The real token is never sent to the browser (the backend masks it), so the
+  // field starts empty and only forwards a value the admin actually types.
+  let tokenInput = $state('')
+
+  // After a save the server returns a masked (empty) token; reset the input
+  // so the password field doesn't show stale typed text.
+  $effect(() => {
+    if (!vault.token) tokenInput = ''
+  })
 
   function toggleExpanded(): void {
     expanded = !expanded
@@ -23,10 +31,6 @@
   function onToggleClick(event: MouseEvent): void {
     event.stopPropagation()
     toggleExpanded()
-  }
-
-  function toggleToken(): void {
-    showToken = !showToken
   }
 
   function onSummaryKeydown(event: KeyboardEvent): void {
@@ -157,21 +161,18 @@
       <div class="ve-field">
         <div class="ve-label-row">
           <label class="ve-label" for="ve-token-{uid}">{i18n.t('adminVaultToken', 'Token')}</label>
-          <button
-            type="button"
-            class="ve-reveal-btn"
-            onclick={toggleToken}
-          >
-            {showToken ? i18n.t('adminVaultTokenHide', 'Hide') : i18n.t('adminVaultTokenReveal', 'Reveal')}
-          </button>
         </div>
         <input
           id="ve-token-{uid}"
           class="ve-input ve-input--mono"
-          type={showToken ? 'text' : 'password'}
-          value={vault.token}
-          placeholder="(unchanged)"
-          oninput={(event) => update('token', (event.target as HTMLInputElement).value)}
+          type="password"
+          autocomplete="new-password"
+          value={tokenInput}
+          placeholder={i18n.t('adminVaultTokenPlaceholder', 'Enter new token to replace; leave blank to keep current')}
+          oninput={(event) => {
+            tokenInput = (event.target as HTMLInputElement).value
+            update('token', tokenInput)
+          }}
         />
         <p class="ve-hint">{i18n.t('adminVaultTokenHint', 'Leave blank to keep the existing token.')}</p>
       </div>
@@ -479,20 +480,6 @@
   .ve-input--mono {
     font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.75rem;
-  }
-
-  .ve-reveal-btn {
-    font-size: 0.7rem;
-    color: var(--vcv-color-muted);
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 0;
-    transition: color 0.1s;
-  }
-
-  .ve-reveal-btn:hover {
-    color: var(--vcv-color-text);
   }
 
   .ve-hint {

@@ -140,7 +140,7 @@ func registerAdminAPIRoutes(
 				return
 			}
 			statuses := computeVaultStatuses(req.Context(), settings.Vaults, vaultStatusClients)
-			writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: settings, VaultStatuses: statuses})
+			writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskVaultTokens(settings), VaultStatuses: statuses})
 		})
 
 		r.Put("/api/admin/settings", func(w http.ResponseWriter, req *http.Request) {
@@ -174,7 +174,7 @@ func registerAdminAPIRoutes(
 				return
 			}
 			statuses := computeVaultStatuses(req.Context(), updated.Vaults, vaultStatusClients)
-			writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: updated, VaultStatuses: statuses})
+			writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskVaultTokens(updated), VaultStatuses: statuses})
 		})
 
 		r.Post("/api/admin/vault", func(w http.ResponseWriter, req *http.Request) {
@@ -246,6 +246,20 @@ func mergeAdminSettings(current, incoming config.SettingsFile) config.SettingsFi
 	return merged
 }
 
+// maskVaultTokens returns a copy of settings with every vault's Token blanked
+// so cleartext tokens never reach the browser. Stored tokens are preserved on
+// save by mergeVaultTokens when the incoming Token is empty, so the round-trip
+// still works with masked responses.
+func maskVaultTokens(s config.SettingsFile) config.SettingsFile {
+	out := s
+	out.Vaults = make([]config.VaultInstance, len(s.Vaults))
+	for i, v := range s.Vaults {
+		v.Token = ""
+		out.Vaults[i] = v
+	}
+	return out
+}
+
 func mergeVaultTokens(incoming, existing []config.VaultInstance) []config.VaultInstance {
 	tokens := make(map[string]string, len(existing))
 	for _, v := range existing {
@@ -254,10 +268,15 @@ func mergeVaultTokens(incoming, existing []config.VaultInstance) []config.VaultI
 	merged := make([]config.VaultInstance, 0, len(incoming))
 	for _, v := range incoming {
 		if strings.TrimSpace(v.Token) == "" {
-			if prior, ok := tokens[v.ID]; ok {
+			lookupKey := v.OriginalID
+			if lookupKey == "" {
+				lookupKey = v.ID
+			}
+			if prior, ok := tokens[lookupKey]; ok {
 				v.Token = prior
 			}
 		}
+		v.OriginalID = ""
 		if len(v.PKIMounts) == 0 && strings.TrimSpace(v.PKIMount) != "" {
 			v.PKIMounts = []string{strings.TrimSpace(v.PKIMount)}
 		}

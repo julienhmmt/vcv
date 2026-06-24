@@ -10,6 +10,7 @@ const defaultPKIMount = "pki"
 
 type VaultInstance struct {
 	ID              string   `json:"id"`
+	OriginalID      string   `json:"original_id,omitempty"`
 	Address         string   `json:"address"`
 	Token           string   `json:"token"`
 	PKIMount        string   `json:"pki_mount"`

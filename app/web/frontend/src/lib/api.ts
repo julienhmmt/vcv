@@ -23,13 +23,14 @@ export class ApiError extends Error {
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const { headers: initHeaders, ...restInit } = init ?? {}
   const response = await fetch(path, {
     credentials: 'same-origin',
+    ...restInit,
     headers: {
       Accept: 'application/json',
-      ...(init?.headers ?? {}),
+      ...(initHeaders ?? {}),
     },
-    ...init,
   })
   if (!response.ok) {
     let message = `${init?.method ?? 'GET'} ${path} failed: ${response.status}`

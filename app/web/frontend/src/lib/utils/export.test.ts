@@ -43,6 +43,32 @@ describe('buildExport CSV', () => {
     const row = content.split('\r\n')[1]
     expect(row.startsWith('"a,b ""c"""')).toBe(true)
   })
+
+  it('neutralizes cells that start with a formula trigger character', () => {
+    const dangerous = ['=HYPERLINK("http://evil","x")', '+1+2', '-2+3|cmd', '@SUM(A1:A2)']
+    for (const cn of dangerous) {
+      const row = buildExport([cert({ commonName: cn })], 'csv').content.split('\r\n')[1]
+      expect(row.startsWith("'")).toBe(true)
+    }
+  })
+
+  it('neutralizes a formula hidden behind leading whitespace', () => {
+    const row = buildExport([cert({ commonName: ' =cmd' })], 'csv').content.split('\r\n')[1]
+    expect(row.startsWith("' =cmd") || row.startsWith('"\' =cmd')).toBe(true)
+  })
+
+  it('does not alter safe values', () => {
+    const row = buildExport([cert({ commonName: 'example.com' })], 'csv').content.split('\r\n')[1]
+    expect(row.startsWith("'")).toBe(false)
+    expect(row).toBe('example.com,example.com www.example.com,vault1,pki-int,machine,valid,2999-01-01T00:00:00Z,0a:1b')
+  })
+
+  it('sanitizes SAN values too, not just commonName', () => {
+    const row = buildExport([cert({ sans: ['=cmd|"/c calc"!A1', 'safe.com'] })], 'csv').content.split('\r\n')[1]
+    // SANs join with a space into the second cell; the leading = triggers the guard,
+    // then RFC 4180 quoting wraps the cell because it contains a comma/quote.
+    expect(row.split(',')[1].startsWith('"\'=') || row.split(',')[1].startsWith("'=")).toBe(true)
+  })
 })
 
 describe('buildExport JSON', () => {

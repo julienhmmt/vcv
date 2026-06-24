@@ -69,7 +69,10 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
     error = null
     try {
       const response = await api.adminGetSettings()
-      settings = response.settings
+      settings = {
+        ...response.settings,
+        vaults: response.settings.vaults.map((v) => ({ ...v, original_id: v.id })),
+      }
       vaultStatuses = response.vault_statuses
     } catch (err: unknown) {
       applyError(err, 'Failed to load settings')
@@ -83,8 +86,21 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
     error = null
     successMessage = null
     try {
-      const response = await api.adminPutSettings(next)
-      settings = response.settings
+      // Never re-send stored tokens. The backend preserves the existing token
+      // when the incoming token is empty (mergeVaultTokens), so only forward a
+      // token the admin actually typed into the field.
+      const toSend: SettingsFile = {
+        ...next,
+        vaults: next.vaults.map((v) => ({
+          ...v,
+          token: v.token && v.token.trim() !== '' ? v.token : '',
+        })),
+      }
+      const response = await api.adminPutSettings(toSend)
+      settings = {
+        ...response.settings,
+        vaults: response.settings.vaults.map((v) => ({ ...v, original_id: v.id })),
+      }
       vaultStatuses = response.vault_statuses
       successMessage = i18n.t('adminSettingsSaved', 'Settings saved')
       return true
