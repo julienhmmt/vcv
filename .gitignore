@@ -5,6 +5,9 @@
 /vcv
 # App logs
 vcv.log
+
+plans/
+
 # test coverage
 *.out
 # test logs
