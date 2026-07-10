@@ -2,7 +2,6 @@
   import { onMount } from 'svelte'
   import { toast } from 'svelte-sonner'
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
-  import ChevronRight from '@lucide/svelte/icons/chevron-right'
   import Moon from '@lucide/svelte/icons/moon'
   import RefreshCw from '@lucide/svelte/icons/refresh-cw'
   import Search from '@lucide/svelte/icons/search'
@@ -632,7 +631,7 @@
                   }}
                   tabindex="0"
                   role="button"
-                  aria-label={certDisplayName(cert, i18n.t('certUnnamed', 'Unnamed certificate'))}
+                  aria-label={`${certDisplayName(cert, i18n.t('certUnnamed', 'Unnamed certificate'))}: ${i18n.t('buttonDetails', 'Details')}`}
                 >
                   <td class="vcv-col-cert">
                     <div class="vcv-cert-header">
@@ -651,14 +650,16 @@
                   <td class="vcv-col-expiry">
                     <div class="vcv-expiry-cell">
                       <div class="vcv-expiry-main">
-                        <div class="vcv-expiry-count vcv-days-{s}">{expiryLabel(cert)}</div>
+                        <div class="vcv-expiry-summary">
+                          <div class="vcv-expiry-count vcv-days-{s}">{expiryLabel(cert)}</div>
+                          <span class={statusBadgeClass(s)}>{statusMeta[s].label}</span>
+                        </div>
                         <div class="vcv-expiry-datetime">
                           <span class="vcv-expiry-date">{formatDate(cert.expiresAt)}</span>
                           <span class="vcv-date-secondary">· {formatTime(cert.expiresAt)} UTC</span>
                         </div>
-                        <span class={statusBadgeClass(s)}>{statusMeta[s].label}</span>
                       </div>
-                      <ChevronRight class="vcv-row-chevron h-4 w-4" aria-hidden="true" />
+                      <span class="vcv-row-action" aria-hidden="true">{i18n.t('buttonDetails', 'Details')}</span>
                     </div>
                   </td>
                 </tr>

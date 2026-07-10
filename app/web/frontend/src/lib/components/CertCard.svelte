@@ -1,5 +1,4 @@
 <script lang="ts">
-  import ChevronRight from '@lucide/svelte/icons/chevron-right'
   import { getI18n } from '$lib/stores/i18n.svelte'
   import {
     certStatus,
@@ -48,7 +47,7 @@
   }}
   tabindex="0"
   role="button"
-  aria-label={certDisplayName(cert, i18n.t('certUnnamed', 'Unnamed certificate'))}
+  aria-label={`${certDisplayName(cert, i18n.t('certUnnamed', 'Unnamed certificate'))}: ${i18n.t('buttonDetails', 'Details')}`}
 >
   <div class="vcv-cert-card-header">
     <div class="vcv-cert-card-title">
@@ -84,6 +83,5 @@
 
   <div class="vcv-cert-card-action">
     {i18n.t('buttonDetails', 'Details')}
-    <ChevronRight class="h-4 w-4" aria-hidden="true" />
   </div>
 </div>
