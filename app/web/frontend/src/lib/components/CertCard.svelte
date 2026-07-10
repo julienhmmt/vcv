@@ -52,14 +52,12 @@
   <div class="vcv-cert-card-header">
     <div class="vcv-cert-card-title">
       <span class="vcv-cn-name">{cert.commonName || '—'}</span>
+      <span class="vcv-cert-status-inline {statusBadgeClass(s)}">{statusLabel}</span>
       {#if cert.sans.length > 0}
         <div class="vcv-san-row">
           <span class="vcv-san-tag" title={cert.sans.join(', ')}>{cert.sans.join(', ')}</span>
         </div>
       {/if}
-    </div>
-    <div class="vcv-status-badges">
-      <span class={statusBadgeClass(s)}>{statusLabel}</span>
     </div>
   </div>
 

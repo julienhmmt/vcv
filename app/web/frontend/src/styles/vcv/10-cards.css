@@ -152,6 +152,15 @@
   border-color: rgb(220 38 38 / 25%);
 }
 
+.vcv-cert-status-inline.vcv-badge {
+  background: transparent;
+  border-color: currentcolor;
+  height: 1.25rem;
+  opacity: 0.72;
+  padding: 0 0.45rem;
+  font-size: 0.625rem;
+}
+
 /* Expiration cell - Clean and fluid */
 .vcv-expires-cell {
   display: flex;

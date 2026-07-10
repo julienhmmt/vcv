@@ -136,6 +136,11 @@
   border-color: rgb(220 38 38 / 30%);
 }
 
+[data-theme="dark"] .vcv-cert-status-inline.vcv-badge {
+  background: transparent;
+  border-color: currentcolor;
+}
+
 /* vcv-cd-expiry-value-* now use --vcv-status-*-text tokens which are theme-aware */
 
 [data-theme="dark"] .vcv-expires-date {
@@ -150,43 +155,7 @@
   color: var(--vcv-color-expired-strong);
 }
 
-.vcv-cert-meta {
-  margin-top: 0.3rem;
-  font-size: 0.75rem;
-  line-height: 1.2;
-  color: var(--vcv-color-muted);
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: transparent;
-  padding: 0;
-  border-radius: 0;
-  width: fit-content;
-}
-
-.vcv-cert-meta-item {
-  font-weight: 500;
-  color: var(--vcv-color-muted);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.25rem;
-  background: var(--vcv-color-surface-muted);
-  border: 1px solid var(--vcv-color-border);
-  border-radius: 0.25rem;
-  padding: 0.0625rem 0.375rem;
-  font-size: 0.6875rem;
-}
-
 [data-theme="dark"] .vcv-cert-meta-item {
   background: rgb(255 255 255 / 5%);
   border-color: var(--vcv-color-border);
-}
-
-.vcv-cert-meta-item::before {
-  content: "";
-  display: none;
-}
-
-.vcv-cert-meta-sep {
-  display: none;
 }

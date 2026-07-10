@@ -636,10 +636,13 @@
                   <td class="vcv-col-cert">
                     <div class="vcv-cert-header">
                       <span class="vcv-cn-name">{cert.commonName || '—'}</span>
-                      {#if showVaultMount}
-                        <span class="vcv-cert-meta-item">{parts.vault || '—'}</span>
-                        <span class="vcv-cert-meta-item">{parts.mount || '—'}</span>
-                      {/if}
+                      <div class="vcv-cert-meta-row">
+                        {#if showVaultMount}
+                          <span class="vcv-cert-meta-item">{parts.vault || '—'}</span>
+                          <span class="vcv-cert-meta-item">{parts.mount || '—'}</span>
+                        {/if}
+                        <span class="vcv-cert-status-inline {statusBadgeClass(s)}">{statusMeta[s].label}</span>
+                      </div>
                     </div>
                     {#if cert.sans.length > 0}
                       <div class="vcv-san-row">
@@ -650,10 +653,7 @@
                   <td class="vcv-col-expiry">
                     <div class="vcv-expiry-cell">
                       <div class="vcv-expiry-main">
-                        <div class="vcv-expiry-summary">
-                          <div class="vcv-expiry-count vcv-days-{s}">{expiryLabel(cert)}</div>
-                          <span class={statusBadgeClass(s)}>{statusMeta[s].label}</span>
-                        </div>
+                        <div class="vcv-expiry-count vcv-days-{s}">{expiryLabel(cert)}</div>
                         <div class="vcv-expiry-datetime">
                           <span class="vcv-expiry-date">{formatDate(cert.expiresAt)}</span>
                           <span class="vcv-date-secondary">· {formatTime(cert.expiresAt)} UTC</span>

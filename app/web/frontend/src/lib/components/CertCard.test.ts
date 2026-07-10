@@ -30,4 +30,14 @@ describe('CertCard', () => {
     expect(screen.getByText('Details')).toBeInTheDocument()
     expect(container.querySelector('.vcv-cert-card-action svg')).toBeNull()
   })
+
+  it('places the status below the certificate name as a quiet inline badge', () => {
+    const { container } = render(CertCard, {
+      props: { cert, showVaultMount: false, statusLabel: 'Critical', onSelect: vi.fn() },
+    })
+    const title = container.querySelector('.vcv-cert-card-title')
+
+    expect(title?.querySelector('.vcv-cert-status-inline')).toHaveTextContent('Critical')
+    expect(container.querySelector('.vcv-cert-card-header > .vcv-status-badges')).toBeNull()
+  })
 })

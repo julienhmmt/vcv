@@ -128,7 +128,6 @@
     white-space: normal;
   }
 
-  .vcv-cert-card .vcv-status-badges,
   .vcv-cert-card .vcv-san-row {
     display: flex;
   }
