@@ -28,7 +28,7 @@
 
 .vcv-overview-stats {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   flex: 1;
   min-width: 0;
   gap: 0;

@@ -465,6 +465,11 @@
   color: var(--vcv-color-text);
 }
 
+/* CA passport — single column: no sidebar, so drop the 280px track */
+.vcv-ca-passport {
+  grid-template-columns: 1fr;
+}
+
 /* CA passport — sidebar accent (slate/indigo tone for authority) */
 .vcv-ca-passport .vcv-cd-passport-sidebar {
   background:
