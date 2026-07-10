@@ -136,6 +136,11 @@
 
   let urlHydrated = $state(false)
 
+  /** True only when the tab is visible; used to skip background polls. */
+  function tabVisible(): boolean {
+    return typeof document === 'undefined' || document.visibilityState === 'visible'
+  }
+
   onMount(() => {
     const restored = parseUrlState(urlDefaults)
     search = restored.search
@@ -152,7 +157,9 @@
       await i18n.ready
       await load(true)
     })()
-    const id = setInterval(() => void status.refresh(), 10_000)
+    const id = setInterval(() => {
+      if (tabVisible()) void status.refresh()
+    }, 10_000)
     return () => clearInterval(id)
   })
 
@@ -160,7 +167,7 @@
   $effect(() => {
     if (autoRefreshSec <= 0) return
     const id = setInterval(() => {
-      if (!certs.loading) void load()
+      if (tabVisible() && !certs.loading) void load()
     }, autoRefreshSec * 1000)
     return () => clearInterval(id)
   })
