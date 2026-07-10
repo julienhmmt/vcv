@@ -28,6 +28,12 @@ export const LANGUAGES: { code: string; name: string }[] = [
 
 const SUPPORTED = new Set(LANGUAGES.map((l) => l.code))
 
+/** Set <html lang> so screen readers and translation engines use the active language. */
+function applyLangToDocument(lang: string): void {
+  if (typeof document === 'undefined') return
+  document.documentElement.setAttribute('lang', lang)
+}
+
 function detectInitial(): string {
   if (typeof window === 'undefined') return FALLBACK
   const stored = window.localStorage.getItem(STORAGE_KEY)
@@ -49,6 +55,7 @@ function interpolate(template: string, params?: TParams): string {
 
 export function createI18nStore(): I18nStore {
   const initial = detectInitial()
+  applyLangToDocument(initial)
   let lang = $state(initial)
   let messages = $state<Record<string, string>>({})
   let loading = $state(false)
@@ -73,6 +80,7 @@ export function createI18nStore(): I18nStore {
   async function setLang(next: string): Promise<void> {
     if (!SUPPORTED.has(next)) return
     lang = next
+    applyLangToDocument(next)
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(STORAGE_KEY, next)
     }
