@@ -100,6 +100,7 @@ type Messages struct {
 	AutoRefreshOff              string `json:"autoRefreshOff"`
 	LastUpdatedLabel            string `json:"lastUpdatedLabel"`
 	PaginationPrev              string `json:"paginationPrev"`
+	SearchLabel                 string `json:"searchLabel"`
 	SearchPlaceholder           string `json:"searchPlaceholder"`
 	SearchShortcutHint          string `json:"searchShortcutHint"`
 	SelectAll                   string `json:"selectAll"`
@@ -299,6 +300,7 @@ var englishMessages = Messages{
 	AutoRefreshOff:                 "Off",
 	LastUpdatedLabel:               "Updated {time}",
 	PaginationPrev:                 "Previous",
+	SearchLabel:                    "Search certificates",
 	SearchPlaceholder:              "Search by Serial Number, Common Name (CN) or SAN",
 	SelectAll:                      "Select all",
 	FilterChipSearch:               "Search",
@@ -487,6 +489,7 @@ var frenchMessages = Messages{
 	AutoRefreshOff:                 "Désactivé",
 	LastUpdatedLabel:               "Mis à jour {time}",
 	PaginationPrev:                 "Précédent",
+	SearchLabel:                    "Rechercher des certificats",
 	SearchPlaceholder:              "Rechercher par numéro de série, nom commun (CN) ou SAN",
 	SelectAll:                      "Tout sélectionner",
 	FilterChipSearch:               "Recherche",
@@ -675,6 +678,7 @@ var spanishMessages = Messages{
 	AutoRefreshOff:                 "Desactivado",
 	LastUpdatedLabel:               "Actualizado {time}",
 	PaginationPrev:                 "Anterior",
+	SearchLabel:                    "Buscar certificados",
 	SearchPlaceholder:              "Buscar por Número de Serie, Nombre Común (CN) o SAN",
 	SelectAll:                      "Seleccionar todo",
 	FilterChipSearch:               "Search",
@@ -863,6 +867,7 @@ var germanMessages = Messages{
 	AutoRefreshOff:                 "Aus",
 	LastUpdatedLabel:               "Aktualisiert {time}",
 	PaginationPrev:                 "Zurück",
+	SearchLabel:                    "Zertifikate suchen",
 	SearchPlaceholder:              "Suche nach Seriennummer, Common Name (CN) oder SAN",
 	SelectAll:                      "Alle auswählen",
 	FilterChipSearch:               "Search",
@@ -1051,6 +1056,7 @@ var italianMessages = Messages{
 	AutoRefreshOff:                 "Disattivato",
 	LastUpdatedLabel:               "Aggiornato {time}",
 	PaginationPrev:                 "Precedente",
+	SearchLabel:                    "Cerca certificati",
 	SearchPlaceholder:              "Cerca per Numero di Serie, Nome Comune (CN) o SAN",
 	SelectAll:                      "Seleziona tutto",
 	FilterChipSearch:               "Search",

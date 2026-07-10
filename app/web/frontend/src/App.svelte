@@ -429,6 +429,7 @@
             id="vcv-search"
             class="vcv-input vcv-input-search"
             type="search"
+            aria-label={i18n.t('searchLabel', 'Search certificates')}
             placeholder={i18n.t('searchPlaceholder', 'Search certificates, serials, SANs…')}
             bind:value={search}
             oninput={() => (pageIndex = 0)}
