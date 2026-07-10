@@ -168,6 +168,8 @@ type Messages struct {
 	AdminVaultPKIMountsHint        string `json:"adminVaultPKIMountsHint"`
 	AdminVaultTLSOptions           string `json:"adminVaultTLSOptions"`
 
+	CopyFailed string `json:"copyFailed"`
+
 	// Added for the Svelte UI: status labels/descriptions, pagination,
 	// banners, copy actions and admin strings the rewrite previously hardcoded.
 	StatusLabelCritical      string `json:"statusLabelCritical"`
@@ -362,6 +364,7 @@ var englishMessages = Messages{
 	AdminVaultExpand:               "Expand",
 	AdminVaultPKIMountsHint:        "Comma-separated. First mount is the default.",
 	AdminVaultTLSOptions:           "TLS options",
+	CopyFailed:                     "Copy failed — clipboard unavailable",
 
 	StatusLabelCritical:      "Critical",
 	StatusLabelWarning:       "Warning",
@@ -549,6 +552,7 @@ var frenchMessages = Messages{
 	AdminVaultExpand:               "Développer",
 	AdminVaultPKIMountsHint:        "Séparés par des virgules. Le premier mount est la valeur par défaut.",
 	AdminVaultTLSOptions:           "Options TLS",
+	CopyFailed:                     "Échec de la copie — presse-papiers indisponible",
 
 	StatusLabelCritical:      "Critique",
 	StatusLabelWarning:       "Avertissement",
@@ -736,6 +740,7 @@ var spanishMessages = Messages{
 	AdminVaultExpand:               "Expandir",
 	AdminVaultPKIMountsHint:        "Separados por comas. El primer mount es el predeterminado.",
 	AdminVaultTLSOptions:           "Opciones TLS",
+	CopyFailed:                     "Error al copiar — portapapeles no disponible",
 
 	StatusLabelCritical:      "Crítico",
 	StatusLabelWarning:       "Advertencia",
@@ -923,6 +928,7 @@ var germanMessages = Messages{
 	AdminVaultExpand:               "Ausklappen",
 	AdminVaultPKIMountsHint:        "Durch Kommas getrennt. Der erste Mount ist der Standard.",
 	AdminVaultTLSOptions:           "TLS-Optionen",
+	CopyFailed:                     "Kopieren fehlgeschlagen — Zwischenablage nicht verfügbar",
 
 	StatusLabelCritical:      "Kritisch",
 	StatusLabelWarning:       "Warnung",
@@ -1110,6 +1116,7 @@ var italianMessages = Messages{
 	AdminVaultExpand:               "Espandi",
 	AdminVaultPKIMountsHint:        "Separati da virgole. Il primo mount è il predefinito.",
 	AdminVaultTLSOptions:           "Opzioni TLS",
+	CopyFailed:                     "Copia non riuscita — appunti non disponibili",
 
 	StatusLabelCritical:      "Critico",
 	StatusLabelWarning:       "Avviso",

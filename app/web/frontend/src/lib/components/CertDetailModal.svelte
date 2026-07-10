@@ -10,6 +10,7 @@
   import { api, ApiError } from '$lib/api'
   import { certStatus, daysUntilExpiry, statusBadgeClass, DEFAULT_THRESHOLDS } from '$lib/utils/cert-status'
   import { formatDate, formatTime } from '$lib/utils/cert-filter'
+  import { copyToClipboard } from '$lib/utils/clipboard'
   import { getI18n } from '$lib/stores/i18n.svelte'
   import type { Certificate, CertStatus, DetailedCertificate } from '$lib/types'
 
@@ -71,7 +72,11 @@
   }
 
   async function copy(field: string, value: string): Promise<void> {
-    await navigator.clipboard.writeText(value)
+    const ok = await copyToClipboard(value)
+    if (!ok) {
+      toast.error(i18n.t('copyFailed', 'Copy failed — clipboard unavailable'))
+      return
+    }
     copiedField = field
     setTimeout(() => {
       if (copiedField === field) copiedField = null

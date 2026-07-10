@@ -8,6 +8,7 @@
   import { ScrollArea } from '$lib/components/ui/scroll-area'
   import { api, ApiError } from '$lib/api'
   import { formatDate, formatTime } from '$lib/utils/cert-filter'
+  import { copyToClipboard } from '$lib/utils/clipboard'
   import { getI18n } from '$lib/stores/i18n.svelte'
   import type { DetailedCertificate } from '$lib/types'
 
@@ -47,7 +48,11 @@
   })
 
   async function copy(field: string, value: string): Promise<void> {
-    await navigator.clipboard.writeText(value)
+    const ok = await copyToClipboard(value)
+    if (!ok) {
+      toast.error(i18n.t('copyFailed', 'Copy failed — clipboard unavailable'))
+      return
+    }
     copied = field
     setTimeout(() => {
       if (copied === field) copied = null
