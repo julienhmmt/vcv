@@ -102,6 +102,9 @@ type Messages struct {
 	LastUpdatedLabel            string `json:"lastUpdatedLabel"`
 	PaginationPrev              string `json:"paginationPrev"`
 	SearchLabel                 string `json:"searchLabel"`
+	SortLabel                   string `json:"sortLabel"`
+	SortDirectionToggle         string `json:"sortDirectionToggle"`
+	DashboardResultCount        string `json:"dashboardResultCount"`
 	SearchPlaceholder           string `json:"searchPlaceholder"`
 	SearchShortcutHint          string `json:"searchShortcutHint"`
 	SelectAll                   string `json:"selectAll"`
@@ -205,6 +208,7 @@ type Messages struct {
 	TableEmptyHint           string `json:"tableEmptyHint"`
 	FooterMoreInfo           string `json:"footerMoreInfo"`
 	FooterLicense            string `json:"footerLicense"`
+	FooterLabel              string `json:"footerLabel"`
 	StatusConnecting         string `json:"statusConnecting"`
 	StatusNoVaults           string `json:"statusNoVaults"`
 	StatusNoVaultsConfigured string `json:"statusNoVaultsConfigured"`
@@ -303,6 +307,9 @@ var englishMessages = Messages{
 	LastUpdatedLabel:               "Updated {time}",
 	PaginationPrev:                 "Previous",
 	SearchLabel:                    "Search certificates",
+	SortLabel:                      "Sort",
+	SortDirectionToggle:            "Toggle sort direction",
+	DashboardResultCount:           "{count} certificates",
 	SearchPlaceholder:              "Search by Serial Number, Common Name (CN) or SAN",
 	SelectAll:                      "Select all",
 	FilterChipSearch:               "Search",
@@ -401,6 +408,7 @@ var englishMessages = Messages{
 	TableEmptyHint:           "No PKI mount returned any certificates yet.",
 	FooterMoreInfo:           "More info",
 	FooterLicense:            "License",
+	FooterLabel:              "Site information",
 	StatusConnecting:         "connecting…",
 	StatusNoVaults:           "no vaults",
 	StatusNoVaultsConfigured: "No vaults configured.",
@@ -493,6 +501,9 @@ var frenchMessages = Messages{
 	LastUpdatedLabel:               "Mis à jour {time}",
 	PaginationPrev:                 "Précédent",
 	SearchLabel:                    "Rechercher des certificats",
+	SortLabel:                      "Trier",
+	SortDirectionToggle:            "Inverser le sens du tri",
+	DashboardResultCount:           "{count} certificats",
 	SearchPlaceholder:              "Rechercher par numéro de série, nom commun (CN) ou SAN",
 	SelectAll:                      "Tout sélectionner",
 	FilterChipSearch:               "Recherche",
@@ -591,6 +602,7 @@ var frenchMessages = Messages{
 	TableEmptyHint:           "Aucun montage PKI n'a encore renvoyé de certificat.",
 	FooterMoreInfo:           "En savoir plus",
 	FooterLicense:            "Licence",
+	FooterLabel:              "Informations sur le site",
 	StatusConnecting:         "connexion…",
 	StatusNoVaults:           "aucun vault",
 	StatusNoVaultsConfigured: "Aucun vault configuré.",
@@ -683,6 +695,9 @@ var spanishMessages = Messages{
 	LastUpdatedLabel:               "Actualizado {time}",
 	PaginationPrev:                 "Anterior",
 	SearchLabel:                    "Buscar certificados",
+	SortLabel:                      "Ordenar",
+	SortDirectionToggle:            "Invertir el sentido de orden",
+	DashboardResultCount:           "{count} certificados",
 	SearchPlaceholder:              "Buscar por Número de Serie, Nombre Común (CN) o SAN",
 	SelectAll:                      "Seleccionar todo",
 	FilterChipSearch:               "Search",
@@ -781,6 +796,7 @@ var spanishMessages = Messages{
 	TableEmptyHint:           "Ningún montaje PKI ha devuelto certificados todavía.",
 	FooterMoreInfo:           "Más información",
 	FooterLicense:            "Licencia",
+	FooterLabel:              "Información del sitio",
 	StatusConnecting:         "conectando…",
 	StatusNoVaults:           "sin vaults",
 	StatusNoVaultsConfigured: "Ningún vault configurado.",
@@ -873,6 +889,9 @@ var germanMessages = Messages{
 	LastUpdatedLabel:               "Aktualisiert {time}",
 	PaginationPrev:                 "Zurück",
 	SearchLabel:                    "Zertifikate suchen",
+	SortLabel:                      "Sortieren",
+	SortDirectionToggle:            "Sortierrichtung umschalten",
+	DashboardResultCount:           "{count} Zertifikate",
 	SearchPlaceholder:              "Suche nach Seriennummer, Common Name (CN) oder SAN",
 	SelectAll:                      "Alle auswählen",
 	FilterChipSearch:               "Search",
@@ -971,6 +990,7 @@ var germanMessages = Messages{
 	TableNoMatch:             "Keine Zertifikate entsprechen den aktuellen Filtern.",
 	FooterMoreInfo:           "Mehr Infos",
 	FooterLicense:            "Lizenz",
+	FooterLabel:              "Seiteninformationen",
 	StatusConnecting:         "verbinde…",
 	StatusNoVaults:           "keine Vaults",
 	StatusNoVaultsConfigured: "Keine Vaults konfiguriert.",
@@ -1063,6 +1083,9 @@ var italianMessages = Messages{
 	LastUpdatedLabel:               "Aggiornato {time}",
 	PaginationPrev:                 "Precedente",
 	SearchLabel:                    "Cerca certificati",
+	SortLabel:                      "Ordina",
+	SortDirectionToggle:            "Inverti la direzione di ordinamento",
+	DashboardResultCount:           "{count} certificati",
 	SearchPlaceholder:              "Cerca per Numero di Serie, Nome Comune (CN) o SAN",
 	SelectAll:                      "Seleziona tutto",
 	FilterChipSearch:               "Search",
@@ -1161,6 +1184,7 @@ var italianMessages = Messages{
 	TableEmptyHint:           "Nessun mount PKI ha ancora restituito certificati.",
 	FooterMoreInfo:           "Maggiori informazioni",
 	FooterLicense:            "Licenza",
+	FooterLabel:              "Informazioni sul sito",
 	StatusConnecting:         "connessione…",
 	StatusNoVaults:           "nessun vault",
 	StatusNoVaultsConfigured: "Nessun vault configurato.",

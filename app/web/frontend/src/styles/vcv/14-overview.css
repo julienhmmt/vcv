@@ -104,6 +104,14 @@
   transition: color 0.12s ease;
 }
 
+/* Threshold hint under Warning/Critical so the footer legend is no longer needed */
+.vcv-stat-desc {
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: var(--vcv-color-muted);
+  line-height: 1.1;
+}
+
 /* Active (filter selected): colored border + status-colored text */
 .vcv-stat-active {
   border-color: var(--stat-color);
@@ -277,4 +285,120 @@
 .vcv-status-state-error .vcv-status-dot {
   background-color: var(--vcv-color-danger);
   box-shadow: 0 0 0 1px var(--vcv-color-danger-surface);
+}
+
+/* Results bar: filtered count on the left, sort + export on the right */
+.vcv-results-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.vcv-results-count {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--vcv-color-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.vcv-results-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.vcv-sort-control {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.vcv-sort-control-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--vcv-color-muted);
+}
+
+.vcv-sort-dir {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+/* Pagination row below the table */
+.vcv-pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.vcv-pagination-bar .vcv-page-size {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--vcv-color-muted);
+}
+
+.vcv-pagination-bar .vcv-page-info {
+  font-size: 0.8125rem;
+  color: var(--vcv-color-text-strong);
+  font-variant-numeric: tabular-nums;
+}
+
+.vcv-pagination-bar .vcv-page-buttons {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Header auto-refresh cluster */
+.vcv-auto-refresh {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.vcv-auto-refresh-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--vcv-color-muted);
+}
+
+.vcv-last-updated {
+  font-size: 0.6875rem;
+  color: var(--vcv-color-muted);
+  white-space: nowrap;
+}
+
+/* Compact single-row footer */
+.vcv-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.75rem 0;
+}
+
+.vcv-footer-row .vcv-footer-title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--vcv-color-text-strong);
+}
+
+@media (720px >= width) {
+  .vcv-auto-refresh-label {
+    display: none;
+  }
+
+  .vcv-last-updated {
+    display: none;
+  }
 }

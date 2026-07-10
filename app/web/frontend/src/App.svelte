@@ -251,13 +251,32 @@
     toast.success(i18n.t('exportSuccess', 'Exported {count} certificate(s)', { count: sorted.length }))
   }
 
-  function toggleSort(key: SortKey): void {
-    if (sortKey === key) {
-      sortDir = sortDir === 'asc' ? 'desc' : 'asc'
-    } else {
-      sortKey = key
-      sortDir = 'asc'
-    }
+  // Bumped after each export so the Select remounts and the same format can be picked again.
+  let exportNonce = $state(0)
+  function onExportSelect(value: string | undefined): void {
+    if (!value) return
+    exportCerts(value as ExportFormat)
+    exportNonce++
+  }
+
+  const SORT_OPTIONS = $derived<{ key: SortKey; label: string }[]>([
+    { key: 'expiresAt', label: i18n.t('columnExpiresAt', 'Expires') },
+    { key: 'commonName', label: i18n.t('columnCommonName', 'Common Name') },
+    { key: 'vault', label: i18n.t('labelVault', 'Vault') },
+    { key: 'pki', label: i18n.t('labelPki', 'PKI') },
+  ])
+  const sortKeyLabel = $derived(SORT_OPTIONS.find((o) => o.key === sortKey)?.label ?? sortKey)
+  const resultCountText = $derived(
+    i18n.t('dashboardResultCount', '{count} certificates', { count: sorted.length }),
+  )
+
+  function setSortKey(key: SortKey): void {
+    sortKey = key
+    sortDir = 'asc'
+  }
+
+  function toggleSortDir(): void {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc'
   }
 
   function selectCert(cert: Certificate): void {
@@ -379,6 +398,26 @@
         >
           <RefreshCw class="h-4 w-4 {certs.loading ? 'animate-spin' : ''}" />
         </button>
+        <div class="vcv-auto-refresh">
+          <span id="vcv-auto-refresh-label" class="vcv-auto-refresh-label">{i18n.t('autoRefreshLabel', 'Auto-refresh')}</span>
+          <Select.Root
+            type="single"
+            value={String(autoRefreshSec)}
+            onValueChange={(value) => value && (autoRefreshSec = Number(value))}
+          >
+            <Select.Trigger class="vcv-select vcv-auto-refresh-select h-9" aria-labelledby="vcv-auto-refresh-label">
+              {autoRefreshOptionLabel(autoRefreshSec)}
+            </Select.Trigger>
+            <Select.Content>
+              {#each AUTO_REFRESH_OPTIONS as seconds (seconds)}
+                <Select.Item value={String(seconds)}>{autoRefreshOptionLabel(seconds)}</Select.Item>
+              {/each}
+            </Select.Content>
+          </Select.Root>
+          {#if lastUpdatedText}
+            <span class="vcv-last-updated" aria-live="polite">{lastUpdatedText}</span>
+          {/if}
+        </div>
         <button
           class="vcv-button vcv-button-icon vcv-theme-toggle"
           type="button"
@@ -482,96 +521,55 @@
       counts={{ valid: counts.valid, warning: counts.warning, critical: counts.critical, expired: counts.expired, revoked: counts.revoked }}
       meta={statusMeta}
       {statusFilters}
-      donutLabel={i18n.t('dashboardCertsLabel', 'certs')}
       regionLabel={i18n.t('dashboardOverviewLabel', 'Certificate status overview')}
       onSelect={toggleStatus}
     />
 
-    <div class="vcv-table-footer">
-      <div class="vcv-page-size">
-        <span id="vcv-page-size-label">{i18n.t('paginationPageSizeLabel', 'Results per page')}</span>
-        <Select.Root
-          type="single"
-          value={String(pageSize)}
-          onValueChange={(value) => {
-            if (!value) return
-            pageSize = value === 'all' ? 'all' : Number(value)
-            pageIndex = 0
-          }}
-        >
-          <Select.Trigger class="vcv-select vcv-page-size-select h-9" aria-labelledby="vcv-page-size-label">
-            {pageSize === 'all' ? i18n.t('paginationPageSizeAll', 'All') : String(pageSize)}
-          </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="25">25</Select.Item>
-            <Select.Item value="50">50</Select.Item>
-            <Select.Item value="100">100</Select.Item>
-            <Select.Item value="all">{i18n.t('paginationPageSizeAll', 'All')}</Select.Item>
-          </Select.Content>
-        </Select.Root>
-      </div>
-      <div class="vcv-refresh-controls">
-        <div class="vcv-auto-refresh">
-          <span id="vcv-auto-refresh-label">{i18n.t('autoRefreshLabel', 'Auto-refresh')}</span>
+    <div class="vcv-results-bar">
+      <span class="vcv-results-count" aria-live="polite">{resultCountText}</span>
+      <div class="vcv-results-actions">
+        <div class="vcv-sort-control">
+          <span id="vcv-sort-label" class="vcv-sort-control-label">{i18n.t('sortLabel', 'Sort')}</span>
           <Select.Root
             type="single"
-            value={String(autoRefreshSec)}
-            onValueChange={(value) => value && (autoRefreshSec = Number(value))}
+            value={sortKey}
+            onValueChange={(value) => value && setSortKey(value as SortKey)}
           >
-            <Select.Trigger class="vcv-select vcv-page-size-select h-9" aria-labelledby="vcv-auto-refresh-label">
-              {autoRefreshOptionLabel(autoRefreshSec)}
+            <Select.Trigger class="vcv-select vcv-sort-select h-9" aria-labelledby="vcv-sort-label">
+              {sortKeyLabel}
             </Select.Trigger>
             <Select.Content>
-              {#each AUTO_REFRESH_OPTIONS as seconds (seconds)}
-                <Select.Item value={String(seconds)}>{autoRefreshOptionLabel(seconds)}</Select.Item>
+              {#each SORT_OPTIONS as option (option.key)}
+                <Select.Item value={option.key}>{option.label}</Select.Item>
               {/each}
             </Select.Content>
           </Select.Root>
+          <button
+            type="button"
+            class="vcv-button vcv-button-icon vcv-sort-dir"
+            data-direction={sortDir}
+            aria-label={i18n.t('sortDirectionToggle', 'Toggle sort direction')}
+            title={i18n.t('sortDirectionToggle', 'Toggle sort direction')}
+            onclick={toggleSortDir}
+          >
+            {sortDir === 'asc' ? '↑' : '↓'}
+          </button>
         </div>
-        {#if lastUpdatedText}
-          <span class="vcv-last-updated" aria-live="polite">{lastUpdatedText}</span>
-        {/if}
-      </div>
-      <div class="vcv-export-group" role="group" aria-label={i18n.t('buttonExport', 'Export')}>
-        <span class="vcv-export-label">{i18n.t('buttonExport', 'Export')}</span>
-        <button
-          type="button"
-          class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill"
-          disabled={sorted.length === 0}
-          onclick={() => exportCerts('csv')}
-        >
-          {i18n.t('exportCSV', 'Export CSV')}
-        </button>
-        <button
-          type="button"
-          class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill"
-          disabled={sorted.length === 0}
-          onclick={() => exportCerts('json')}
-        >
-          {i18n.t('exportJSON', 'Export JSON')}
-        </button>
-      </div>
-      <div class="vcv-page-buttons">
-        <button
-          type="button"
-          class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill"
-          disabled={safePage === 0}
-          onclick={() => (pageIndex = Math.max(0, safePage - 1))}
-        >
-          {i18n.t('paginationPrev', 'Previous')}
-        </button>
-        <span class="vcv-page-info">{pageInfoText()}</span>
-        <span class="vcv-badge vcv-badge-neutral"
-          >{i18n.t('paginationInfo', 'Page {current} / {total}', { current: safePage + 1, total: totalPages })}</span
-        >
-        <button
-          type="button"
-          class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill"
-          disabled={safePage >= totalPages - 1}
-          onclick={() => (pageIndex = Math.min(totalPages - 1, safePage + 1))}
-        >
-          {i18n.t('paginationNext', 'Next')}
-        </button>
+        {#key exportNonce}
+          <Select.Root type="single" onValueChange={onExportSelect}>
+            <Select.Trigger
+              class="vcv-select vcv-export-select h-9"
+              aria-label={i18n.t('buttonExport', 'Export')}
+              disabled={sorted.length === 0}
+            >
+              {i18n.t('buttonExport', 'Export')}
+            </Select.Trigger>
+            <Select.Content>
+              <Select.Item value="csv">{i18n.t('exportCSV', 'Export CSV')}</Select.Item>
+              <Select.Item value="json">{i18n.t('exportJSON', 'Export JSON')}</Select.Item>
+            </Select.Content>
+          </Select.Root>
+        {/key}
       </div>
     </div>
 
@@ -591,67 +589,17 @@
           <colgroup>
             <col class="vcv-col-cert" />
             <col class="vcv-col-expiry" />
-            <col class="vcv-col-status" />
           </colgroup>
           <thead>
             <tr>
-              <th
-                scope="col"
-                aria-sort={sortKey === 'commonName' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
-              >
-                <button
-                  type="button"
-                  class="vcv-sort"
-                  data-direction={sortKey === 'commonName' ? sortDir : 'asc'}
-                  onclick={() => toggleSort('commonName')}
-                >
-                  <span class="vcv-sort-label">{i18n.t('columnCommonName', 'Common Name')}</span>
-                  <span class="vcv-sort-indicator" aria-hidden="true"></span>
-                </button>
-                {#if showVaultMount}
-                  <div class="vcv-sort-meta">
-                    <button
-                      type="button"
-                      class="vcv-sort"
-                      data-direction={sortKey === 'vault' ? sortDir : 'asc'}
-                      onclick={() => toggleSort('vault')}
-                    >
-                      <span class="vcv-sort-label">{i18n.t('labelVault', 'Vault')}</span>
-                      <span class="vcv-sort-indicator" aria-hidden="true"></span>
-                    </button>
-                    <button
-                      type="button"
-                      class="vcv-sort"
-                      data-direction={sortKey === 'pki' ? sortDir : 'asc'}
-                      onclick={() => toggleSort('pki')}
-                    >
-                      <span class="vcv-sort-label">{i18n.t('labelPki', 'PKI')}</span>
-                      <span class="vcv-sort-indicator" aria-hidden="true"></span>
-                    </button>
-                  </div>
-                {/if}
-              </th>
-              <th
-                scope="col"
-                aria-sort={sortKey === 'expiresAt' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
-              >
-                <button
-                  type="button"
-                  class="vcv-sort"
-                  data-direction={sortKey === 'expiresAt' ? sortDir : 'asc'}
-                  onclick={() => toggleSort('expiresAt')}
-                >
-                  <span class="vcv-sort-label">{i18n.t('columnExpiresAt', 'Expires')}</span>
-                  <span class="vcv-sort-indicator" aria-hidden="true"></span>
-                </button>
-              </th>
-              <th scope="col" class="vcv-col-status">{i18n.t('columnStatus', 'Status')}</th>
+              <th scope="col">{i18n.t('columnCommonName', 'Common Name')}</th>
+              <th scope="col" class="vcv-col-expiry-head">{i18n.t('columnExpiresAt', 'Expires')}</th>
             </tr>
           </thead>
           <tbody>
             {#if paged.length === 0}
               <tr>
-                <td colspan="3" class="vcv-empty-row">
+                <td colspan="2" class="vcv-empty-row">
                   {#if certs.loading}
                     {i18n.t('labelLoading', 'Loading…')}
                   {:else if hasActiveFilters}
@@ -704,15 +652,13 @@
                     {/if}
                   </td>
                   <td class="vcv-col-expiry">
-                    <div class="vcv-expiry-count vcv-days-{s}">{expiryLabel(cert)}</div>
-                    <div class="vcv-expiry-datetime">
-                      <span class="vcv-expiry-date">{formatDate(cert.expiresAt)}</span>
-                      <span class="vcv-date-secondary">· {formatTime(cert.expiresAt)} UTC</span>
-                    </div>
-                  </td>
-                  <td class="vcv-col-status">
-                    <div class="vcv-status-cell">
-                      <div class="vcv-status-badges">
+                    <div class="vcv-expiry-cell">
+                      <div class="vcv-expiry-main">
+                        <div class="vcv-expiry-count vcv-days-{s}">{expiryLabel(cert)}</div>
+                        <div class="vcv-expiry-datetime">
+                          <span class="vcv-expiry-date">{formatDate(cert.expiresAt)}</span>
+                          <span class="vcv-date-secondary">· {formatTime(cert.expiresAt)} UTC</span>
+                        </div>
                         <span class={statusBadgeClass(s)}>{statusMeta[s].label}</span>
                       </div>
                       <ChevronRight class="vcv-row-chevron h-4 w-4" aria-hidden="true" />
@@ -755,35 +701,61 @@
         {/each}
       {/if}
     </div>
+
+    <div class="vcv-pagination-bar">
+      <div class="vcv-page-size">
+        <span id="vcv-page-size-label">{i18n.t('paginationPageSizeLabel', 'Results per page')}</span>
+        <Select.Root
+          type="single"
+          value={String(pageSize)}
+          onValueChange={(value) => {
+            if (!value) return
+            pageSize = value === 'all' ? 'all' : Number(value)
+            pageIndex = 0
+          }}
+        >
+          <Select.Trigger class="vcv-select vcv-page-size-select h-9" aria-labelledby="vcv-page-size-label">
+            {pageSize === 'all' ? i18n.t('paginationPageSizeAll', 'All') : String(pageSize)}
+          </Select.Trigger>
+          <Select.Content>
+            <Select.Item value="25">25</Select.Item>
+            <Select.Item value="50">50</Select.Item>
+            <Select.Item value="100">100</Select.Item>
+            <Select.Item value="all">{i18n.t('paginationPageSizeAll', 'All')}</Select.Item>
+          </Select.Content>
+        </Select.Root>
+      </div>
+      <span class="vcv-page-info">{pageInfoText()}</span>
+      <div class="vcv-page-buttons">
+        <button
+          type="button"
+          class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill"
+          disabled={safePage === 0}
+          onclick={() => (pageIndex = Math.max(0, safePage - 1))}
+        >
+          {i18n.t('paginationPrev', 'Previous')}
+        </button>
+        <button
+          type="button"
+          class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill"
+          disabled={safePage >= totalPages - 1}
+          onclick={() => (pageIndex = Math.min(totalPages - 1, safePage + 1))}
+        >
+          {i18n.t('paginationNext', 'Next')}
+        </button>
+      </div>
+    </div>
   </main>
 
-  <footer class="vcv-footer" aria-label="Footer">
-    <div class="vcv-footer-legend">
-      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-valid">{statusMeta.valid.label}</span><span class="vcv-legend-text">{statusMeta.valid.desc}</span></div>
-      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-warning">{statusMeta.warning.label}</span><span class="vcv-legend-text">{statusMeta.warning.desc}</span></div>
-      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-critical">{statusMeta.critical.label}</span><span class="vcv-legend-text">{statusMeta.critical.desc}</span></div>
-      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-expired">{statusMeta.expired.label}</span><span class="vcv-legend-text">{statusMeta.expired.desc}</span></div>
-      <div class="vcv-legend-item"><span class="vcv-badge vcv-badge-revoked">{statusMeta.revoked.label}</span><span class="vcv-legend-text">{statusMeta.revoked.desc}</span></div>
-    </div>
-    <div class="vcv-footer-bottom">
-      <div class="vcv-footer-brand">
-        <div class="vcv-footer-title">
-          VaultCertsViewer
-          {#if status.status}<span class="vcv-footer-version">v{status.status.version}</span>{/if}
-        </div>
-        <div class="vcv-footer-meta">
-          <span>{i18n.t('footerLicense', 'License')}: <a class="vcv-footer-inline-link" href="https://github.com/julienhmmt/vcv/blob/main/LICENSE" target="_blank" rel="noopener">GNU Affero GPL v3.0</a></span>
-          <span class="vcv-footer-divider">•</span>
-          <span>Imagined and designed by <a href="https://j.hommet.net" target="_blank" rel="noopener">Julien HOMMET</a>, developed by AI.</span>
-        </div>
-      </div>
-      <div class="vcv-footer-links" aria-label="External links">
-        <a class="vcv-footer-link" href="https://hub.docker.com/r/jhmmt/vcv" target="_blank" rel="noopener">
-          Docker Hub
-        </a>
-        <a class="vcv-footer-link" href="https://github.com/julienhmmt/vcv" target="_blank" rel="noopener">
-          GitHub
-        </a>
+  <footer class="vcv-footer" aria-label={i18n.t('footerLabel', 'Site information')}>
+    <div class="vcv-footer-row">
+      <span class="vcv-footer-title">
+        VaultCertsViewer
+        {#if status.status}<span class="vcv-footer-version">v{status.status.version}</span>{/if}
+      </span>
+      <div class="vcv-footer-links">
+        <a class="vcv-footer-link" href="https://github.com/julienhmmt/vcv" target="_blank" rel="noopener">GitHub</a>
+        <a class="vcv-footer-link" href="https://github.com/julienhmmt/vcv/blob/main/LICENSE" target="_blank" rel="noopener">{i18n.t('footerLicense', 'License')}</a>
         <a class="vcv-footer-link" href="https://j.hommet.net/vcv" target="_blank" rel="noopener">{i18n.t('footerMoreInfo', 'More info')}</a>
       </div>
     </div>

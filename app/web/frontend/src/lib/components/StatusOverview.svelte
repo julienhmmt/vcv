@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Donut from '$lib/components/Donut.svelte'
   import { statusIcon } from '$lib/utils/cert-icons'
   import type { CertStatus } from '$lib/types'
 
@@ -17,36 +16,22 @@
     counts: Counts
     meta: Record<StatusKey, { label: string; desc: string }>
     statusFilters: StatusKey[]
-    donutLabel: string
     regionLabel: string
     onSelect: (key: StatusKey) => void
   }
 
-  const { counts, meta, statusFilters, donutLabel, regionLabel, onSelect }: Props = $props()
+  const { counts, meta, statusFilters, regionLabel, onSelect }: Props = $props()
 
-  // Ascending severity, matching the donut gradient order. Revoked is an
-  // orthogonal state and sits last.
+  // Ascending severity. Revoked is an orthogonal state and sits last.
   const ORDER: StatusKey[] = ['valid', 'warning', 'critical', 'expired', 'revoked']
-
-  const segmentLabels = $derived<Record<StatusKey, string>>({
-    valid: meta.valid.label,
-    warning: meta.warning.label,
-    critical: meta.critical.label,
-    expired: meta.expired.label,
-    revoked: meta.revoked.label,
-  })
+  // Only the time-bounded statuses carry a threshold worth surfacing inline.
+  const WITH_DESC: StatusKey[] = ['warning', 'critical']
 </script>
 
 <section class="vcv-overview" aria-label={regionLabel}>
-  <div class="vcv-overview-chart">
-    <Donut {counts} label={donutLabel} {segmentLabels} {onSelect} />
-  </div>
   <div class="vcv-overview-stats" role="group" aria-label={regionLabel}>
-    {#each ORDER as key, i (key)}
+    {#each ORDER as key (key)}
       {@const Icon = statusIcon(key as CertStatus)}
-      {#if i > 0}
-        <span class="vcv-stat-divider" aria-hidden="true"></span>
-      {/if}
       <button
         type="button"
         class="vcv-stat vcv-stat-{key}"
@@ -59,6 +44,9 @@
           {meta[key].label}
         </span>
         <span class="vcv-stat-count">{counts[key]}</span>
+        {#if WITH_DESC.includes(key)}
+          <span class="vcv-stat-desc">{meta[key].desc}</span>
+        {/if}
       </button>
     {/each}
   </div>
