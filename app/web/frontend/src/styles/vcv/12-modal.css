@@ -580,3 +580,63 @@
     margin-top: 0;
   }
 }
+
+/* Progressive-disclosure additions (plan 016) */
+.vcv-cd-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 2rem;
+}
+
+.vcv-cd-error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 2.5rem 2rem;
+}
+
+.vcv-cd-error-text {
+  font-size: 0.875rem;
+  color: var(--vcv-color-danger);
+}
+
+.vcv-cd-technical {
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--vcv-color-border);
+  padding-top: 0.5rem;
+}
+
+.vcv-cd-technical-summary {
+  cursor: pointer;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--vcv-color-muted);
+  padding: 0.375rem 0;
+  user-select: none;
+  list-style: revert;
+}
+
+.vcv-cd-technical-summary:hover {
+  color: var(--vcv-color-text-strong);
+}
+
+.vcv-cd-technical-summary:focus-visible {
+  outline: 2px solid var(--vcv-color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.vcv-cd-technical-list {
+  margin-top: 0.5rem;
+}
+
+.vcv-cd-back {
+  align-self: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.vcv-ca-single {
+  width: 100%;
+}

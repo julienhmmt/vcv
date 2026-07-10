@@ -11,7 +11,6 @@
   import { Skeleton } from '$lib/components/ui/skeleton'
   import * as Select from '$lib/components/ui/select'
   import CertDetailModal from '$lib/components/CertDetailModal.svelte'
-  import CAModal from '$lib/components/CAModal.svelte'
   import CertTypeSelect from '$lib/components/CertTypeSelect.svelte'
   import VaultStatusPill from '$lib/components/VaultStatusPill.svelte'
   import ActiveFilters from '$lib/components/ActiveFilters.svelte'
@@ -100,8 +99,6 @@
 
   let selected = $state<Certificate | null>(null)
   let certModalOpen = $state(false)
-  let caCertId = $state<string | null>(null)
-  let caModalOpen = $state(false)
   let mountModalOpen = $state(false)
   let commandOpen = $state(false)
   let initialLoad = $state(true)
@@ -766,16 +763,6 @@
   cert={selected}
   open={certModalOpen}
   onOpenChange={(value) => (certModalOpen = value)}
-  onShowCA={(id) => {
-    caCertId = id
-    caModalOpen = true
-  }}
-/>
-
-<CAModal
-  certId={caCertId}
-  open={caModalOpen}
-  onOpenChange={(value) => (caModalOpen = value)}
 />
 
 <CommandPalette

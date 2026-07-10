@@ -102,6 +102,10 @@ type Messages struct {
 	LastUpdatedLabel            string `json:"lastUpdatedLabel"`
 	PaginationPrev              string `json:"paginationPrev"`
 	SearchLabel                 string `json:"searchLabel"`
+	TechnicalDetails            string `json:"technicalDetails"`
+	ButtonBackToCertificate     string `json:"buttonBackToCertificate"`
+	ButtonRetry                 string `json:"buttonRetry"`
+	LabelSource                 string `json:"labelSource"`
 	SortLabel                   string `json:"sortLabel"`
 	SortDirectionToggle         string `json:"sortDirectionToggle"`
 	DashboardResultCount        string `json:"dashboardResultCount"`
@@ -307,6 +311,10 @@ var englishMessages = Messages{
 	LastUpdatedLabel:               "Updated {time}",
 	PaginationPrev:                 "Previous",
 	SearchLabel:                    "Search certificates",
+	TechnicalDetails:               "Technical details",
+	ButtonBackToCertificate:        "Back to certificate",
+	ButtonRetry:                    "Retry",
+	LabelSource:                    "Source",
 	SortLabel:                      "Sort",
 	SortDirectionToggle:            "Toggle sort direction",
 	DashboardResultCount:           "{count} certificates",
@@ -501,6 +509,10 @@ var frenchMessages = Messages{
 	LastUpdatedLabel:               "Mis à jour {time}",
 	PaginationPrev:                 "Précédent",
 	SearchLabel:                    "Rechercher des certificats",
+	TechnicalDetails:               "Détails techniques",
+	ButtonBackToCertificate:        "Retour au certificat",
+	ButtonRetry:                    "Réessayer",
+	LabelSource:                    "Source",
 	SortLabel:                      "Trier",
 	SortDirectionToggle:            "Inverser le sens du tri",
 	DashboardResultCount:           "{count} certificats",
@@ -695,6 +707,10 @@ var spanishMessages = Messages{
 	LastUpdatedLabel:               "Actualizado {time}",
 	PaginationPrev:                 "Anterior",
 	SearchLabel:                    "Buscar certificados",
+	TechnicalDetails:               "Detalles técnicos",
+	ButtonBackToCertificate:        "Volver al certificado",
+	ButtonRetry:                    "Reintentar",
+	LabelSource:                    "Origen",
 	SortLabel:                      "Ordenar",
 	SortDirectionToggle:            "Invertir el sentido de orden",
 	DashboardResultCount:           "{count} certificados",
@@ -889,6 +905,10 @@ var germanMessages = Messages{
 	LastUpdatedLabel:               "Aktualisiert {time}",
 	PaginationPrev:                 "Zurück",
 	SearchLabel:                    "Zertifikate suchen",
+	TechnicalDetails:               "Technische Details",
+	ButtonBackToCertificate:        "Zurück zum Zertifikat",
+	ButtonRetry:                    "Erneut versuchen",
+	LabelSource:                    "Quelle",
 	SortLabel:                      "Sortieren",
 	SortDirectionToggle:            "Sortierrichtung umschalten",
 	DashboardResultCount:           "{count} Zertifikate",
@@ -1083,6 +1103,10 @@ var italianMessages = Messages{
 	LastUpdatedLabel:               "Aggiornato {time}",
 	PaginationPrev:                 "Precedente",
 	SearchLabel:                    "Cerca certificati",
+	TechnicalDetails:               "Dettagli tecnici",
+	ButtonBackToCertificate:        "Torna al certificato",
+	ButtonRetry:                    "Riprova",
+	LabelSource:                    "Origine",
 	SortLabel:                      "Ordina",
 	SortDirectionToggle:            "Inverti la direzione di ordinamento",
 	DashboardResultCount:           "{count} certificati",
