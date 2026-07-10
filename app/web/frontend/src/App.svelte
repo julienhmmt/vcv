@@ -173,6 +173,7 @@
   })
 
   // Sync view state to the URL once initial state is restored, so links are shareable.
+  // Debounced so rapid typing collapses into one replaceState call.
   $effect(() => {
     const snapshot: UrlState = {
       search,
@@ -185,7 +186,10 @@
       pageIndex: safePage,
     }
     if (!urlHydrated) return
-    writeUrlState(snapshot, urlDefaults)
+    // Read the reactive deps above; defer the history write so a burst of
+    // keystrokes produces one replaceState instead of one per character.
+    const id = setTimeout(() => writeUrlState(snapshot, urlDefaults), 150)
+    return () => clearTimeout(id)
   })
 
   async function load(initial = false): Promise<void> {
