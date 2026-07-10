@@ -330,7 +330,7 @@ Add to your `settings.json`:
 ### Step 2: Deploy New Version
 
 ```bash
-task docker-build VCV_TAG=enhanced-metrics
+VCV_TAG=enhanced-metrics make docker-build
 ```
 
 ### Step 3: Update Prometheus Scrape Config

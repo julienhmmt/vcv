@@ -219,7 +219,7 @@ See README.md on the root path for production deployment instructions.
 A Hashicorp Vault or OpenBao server is required to run the application in development mode. Thus, a container with an init script is provided in `docker-compose.dev.yml`. It will initialize a Vault server with a PKI mount and some certs.
 
 ```bash
-task dev
+make dev
 ```
 
 Binary serves UI and API at `http://localhost:52000`.
@@ -240,5 +240,5 @@ cd app && go test ./...
 
 Test targets:
 
-- `task test-offline`: Run tests without Vault dependency
-- `task test-dev`: Run tests against dev Vault instance
+- `make test-offline`: Run tests without Vault dependency
+- `make test-dev`: Run tests against the development Vault instance

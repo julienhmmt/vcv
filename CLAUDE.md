@@ -10,20 +10,20 @@ Beyond listing, it classifies each certificate by inferred type (machine / user 
 
 ## Commands
 
-All tasks are run via [Task](https://taskfile.dev). Run `task --list` to see all available tasks.
+All project commands are run via Make. Run `make help` to see all available targets.
 
 ```bash
 # Development: build binary + docker image and start dev stack
-task dev
+make dev
 
 # Lint (go fmt + go vet)
-task lint
+make go-lint
 
 # Run unit tests offline (no Vault required), with coverage
-task test-offline
+make test-offline
 
 # Run tests against the dev docker-compose stack
-task test-dev
+make test-dev
 
 # Run tests directly
 cd app && go test ./...
@@ -32,16 +32,16 @@ cd app && go test ./...
 cd app && go test ./internal/handlers/... -run TestFunctionName
 
 # Frontend (Svelte): install deps, dev server, build to app/web/dist, type-check
-task web-install   # pnpm install
-task web-dev       # pnpm dev (Vite)
-task web-build     # pnpm build → app/web/dist (required before go build / docker)
-task web-check     # svelte-check + tsc
+make web-install   # pnpm install
+make web-dev       # pnpm dev (Vite)
+make web-build     # pnpm build → app/web/dist (required before go build / docker)
+make web-check     # svelte-check + tsc
 
 # Build multi-arch docker images and push to Docker Hub
-VCV_TAG=1.8 task docker-build
+VCV_TAG=1.8 make docker-build
 ```
 
-The frontend lives in `app/web/frontend/` (Vite + pnpm). `task web-build` compiles it into `app/web/dist`, which is embedded via `go:embed` — run it before `go build` or the binary serves a stale/empty UI.
+The frontend lives in `app/web/frontend/` (Vite + pnpm). `make web-build` compiles it into `app/web/dist`, which is embedded via `go:embed` — run it before `go build` or the binary serves a stale/empty UI.
 
 The dev stack starts 5 Vault instances (ports 8200–8204) and 1 OpenBao instance (port 1337), plus the app at `http://localhost:52000`.
 
@@ -69,9 +69,9 @@ The dev stack starts 5 Vault instances (ports 8200–8204) and 1 OpenBao instanc
 - **Entry points**: two mount targets — `src/main.ts` → `App.svelte` (`/`) and `src/admin.ts` → `Admin.svelte` (`/admin`); HTML shells in `src/index.html` / `src/admin.html`.
 - **State**: rune-based stores in `src/lib/stores/*.svelte.ts` (`certs`, `status`, `theme`, `i18n`, `admin`). `lib/api.ts` wraps the JSON API.
 - **Components**: domain components in `src/lib/components/` — `CertDetailModal` / `CAModal` (detail + signing-authority viewer), `CertCard` (mobile ≤768px), `CertTypeSelect`, `CommandPalette` (Cmd/Ctrl-K), `Donut`, `ActiveFilters`, `StatusOverview`, `MountSelectorDialog`, `VaultStatusPill`, `ErrorBanner`, `TableSkeleton`. shadcn-svelte primitives under `ui/`, admin-only under `admin/`.
-- **Tests**: Vitest unit tests + jsdom component-render layer colocated as `*.test.ts` (e.g. `Donut.test.ts`). Run via `pnpm test` / `task web-check`.
+- **Tests**: Vitest unit tests + jsdom component-render layer colocated as `*.test.ts` (e.g. `Donut.test.ts`). Run via `pnpm test` / `make web-check`.
 - **i18n**: `lib/stores/i18n.svelte.ts` exposes `t(key, fallback?, params?)` with `{{x}}`/`{x}` interpolation, shared down the tree via `setI18nContext` (root) / `getI18n` (children). Every component pulls strings from the Go-served message bundle — do not hardcode UI text.
-- **Build output**: `task web-build` emits to `app/web/dist`, embedded by `app/web/web.go`.
+- **Build output**: `make web-build` emits to `app/web/dist`, embedded by `app/web/web.go`.
 
 ### Key architectural patterns
 
