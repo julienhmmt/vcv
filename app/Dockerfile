@@ -7,7 +7,7 @@ ENV CI=true
 RUN corepack enable
 
 # Cache pnpm install
-COPY web/frontend/package.json web/frontend/pnpm-lock.yaml web/frontend/.npmrc ./
+COPY web/frontend/package.json web/frontend/pnpm-lock.yaml web/frontend/.npmrc web/frontend/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # Copy the rest of the frontend sources
