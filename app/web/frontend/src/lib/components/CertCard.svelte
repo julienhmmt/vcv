@@ -39,7 +39,12 @@
 <div
   class="vcv-cert-card {rowClassForStatus(s)} vcv-row-clickable"
   onclick={() => onSelect(cert)}
-  onkeydown={(event) => event.key === 'Enter' && onSelect(cert)}
+  onkeydown={(event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault()
+      onSelect(cert)
+    }
+  }}
   tabindex="0"
   role="button"
   aria-label={cert.commonName}
