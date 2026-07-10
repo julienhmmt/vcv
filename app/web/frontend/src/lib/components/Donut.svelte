@@ -51,7 +51,14 @@
     {#if total === 0}
       <div class="vcv-donut vcv-donut-empty"></div>
     {:else}
-      <svg class="vcv-donut-svg" viewBox="0 0 36 36" role="img" aria-label={label}>
+      <!-- Interactive donut: no role="img" so the per-segment buttons stay exposed to AT.
+           Static donut: role="img" + label names the whole decorative graphic. -->
+      <svg
+        class="vcv-donut-svg"
+        viewBox="0 0 36 36"
+        role={interactive ? undefined : 'img'}
+        aria-label={interactive ? undefined : label}
+      >
         {#each segments as seg (seg.key)}
           {#if interactive}
             <circle
