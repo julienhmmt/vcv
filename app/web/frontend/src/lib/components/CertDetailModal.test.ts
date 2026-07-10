@@ -89,6 +89,21 @@ describe('CertDetailModal', () => {
     expect(getCertificateDetails).toHaveBeenCalledTimes(1)
   })
 
+  it('presents the issuer in a passport layout with technical identifiers collapsed', async () => {
+    getCertificateDetails.mockResolvedValue(detailed())
+    getCertificateCA.mockResolvedValue(detailed({ caType: 'root', subject: 'CN=Example Root CA' }))
+    render(CertDetailModal, { props: { cert, open: true, onOpenChange: vi.fn() } })
+
+    await screen.findByText('Example Intermediate CA')
+    await fireEvent.click(screen.getByText('View issuer CA'))
+    await screen.findByText('Root CA')
+
+    expect(document.querySelector('.vcv-ca-passport .vcv-cd-passport-sidebar')).not.toBeNull()
+    const disclosure = document.querySelector('.vcv-ca-passport .vcv-cd-technical') as HTMLDetailsElement
+    expect(disclosure).not.toBeNull()
+    expect(disclosure.hasAttribute('open')).toBe(false)
+  })
+
   it('shows a Retry action when the detail request fails', async () => {
     getCertificateDetails.mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce(detailed())
     render(CertDetailModal, { props: { cert, open: true, onOpenChange: vi.fn() } })

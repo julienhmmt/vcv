@@ -157,6 +157,11 @@
 
 <Dialog.Root {open} {onOpenChange}>
   <Dialog.Content class="max-w-4xl p-0 overflow-hidden">
+    <Dialog.Title class="sr-only">
+      {view === 'issuer'
+        ? i18n.t('caIssuerCertificate', 'Issuer certificate')
+        : i18n.t('certificateInformationTitle', 'Certificate information')}
+    </Dialog.Title>
     {#if loading && !details}
       <div class="vcv-cd-skeleton">
         <Skeleton class="h-8 w-2/3" />
@@ -351,7 +356,28 @@
     {:else if cert && view === 'issuer'}
       <ScrollArea class="max-h-[85vh]">
         <div class="vcv-cd-passport vcv-ca-passport">
-          <main class="vcv-cd-passport-main vcv-ca-single">
+          <aside class="vcv-cd-passport-sidebar">
+            <div class="vcv-cd-emblem vcv-ca-emblem">
+              <Landmark class="h-8 w-8" />
+            </div>
+            {#if issuer}
+              <div class="vcv-ca-type-badge"><span class="vcv-ca-type-label">{issuerLabel}</span></div>
+              <div class="vcv-cd-date-stack">
+                <div>
+                  <span>{i18n.t('columnExpiresAt', 'Expires')}</span>
+                  <strong>{formatDate(issuer.expiresAt)}</strong>
+                  <small>{formatTime(issuer.expiresAt)} UTC</small>
+                </div>
+                <div>
+                  <span>{i18n.t('columnCreatedAt', 'Created')}</span>
+                  <strong>{formatDate(issuer.createdAt)}</strong>
+                  <small>{formatTime(issuer.createdAt)} UTC</small>
+                </div>
+              </div>
+            {/if}
+          </aside>
+
+          <main class="vcv-cd-passport-main">
             <button type="button" class="vcv-button vcv-button-secondary vcv-cd-back" onclick={backToCertificate}>
               <ArrowLeft class="h-4 w-4" />
               {i18n.t('buttonBackToCertificate', 'Back to certificate')}
@@ -372,17 +398,7 @@
               </div>
             {:else if issuer}
               <header class="vcv-cd-passport-header">
-                <div>
-                  <div class="vcv-ca-type-badge"><span class="vcv-ca-type-label">{issuerLabel}</span></div>
-                  <h3 class="vcv-cd-cn">{issuer.subject || issuer.commonName || '—'}</h3>
-                </div>
-                <div class="vcv-cd-date-stack vcv-ca-dates">
-                  <div>
-                    <span>{i18n.t('columnExpiresAt', 'Expires')}</span>
-                    <strong>{formatDate(issuer.expiresAt)}</strong>
-                    <small>{formatTime(issuer.expiresAt)} UTC</small>
-                  </div>
-                </div>
+                <h3 class="vcv-cd-cn">{issuer.subject || issuer.commonName || '—'}</h3>
               </header>
 
               <section class="vcv-cd-detail-list">
@@ -402,37 +418,43 @@
                     <strong>{issuer.usage.join(', ')}</strong>
                   </div>
                 {/if}
-                <div class="vcv-cd-detail-row">
-                  <span>{i18n.t('labelSerialNumber', 'Serial')}</span>
-                  <div class="vcv-cd-copy-row">
-                    <code class="vcv-cd-serial">{issuer.serialNumber}</code>
-                    <button
-                      type="button"
-                      class="vcv-cd-copy-btn"
-                      class:vcv-cd-copy-done={copiedField === 'ca-serial'}
-                      onclick={() => copy('ca-serial', issuer!.serialNumber)}
-                      aria-label={i18n.t('labelCopy', 'Copy')}
-                    >
-                      {#if copiedField === 'ca-serial'}<Check class="h-3.5 w-3.5" />{:else}<Copy class="h-3.5 w-3.5" />{/if}
-                    </button>
-                  </div>
-                </div>
-                <div class="vcv-cd-detail-row vcv-cd-detail-row-stack">
-                  <span>{i18n.t('labelFingerprintSHA256', 'SHA-256')}</span>
-                  <div class="vcv-cd-copy-row">
-                    <code class="vcv-cd-fingerprint">{issuer.fingerprintSHA256}</code>
-                    <button
-                      type="button"
-                      class="vcv-cd-copy-btn"
-                      class:vcv-cd-copy-done={copiedField === 'ca-sha256'}
-                      onclick={() => copy('ca-sha256', issuer!.fingerprintSHA256)}
-                      aria-label={i18n.t('labelCopy', 'Copy')}
-                    >
-                      {#if copiedField === 'ca-sha256'}<Check class="h-3.5 w-3.5" />{:else}<Copy class="h-3.5 w-3.5" />{/if}
-                    </button>
-                  </div>
-                </div>
               </section>
+
+              <details class="vcv-cd-technical">
+                <summary class="vcv-cd-technical-summary">{i18n.t('technicalDetails', 'Technical details')}</summary>
+                <section class="vcv-cd-detail-list vcv-cd-technical-list">
+                  <div class="vcv-cd-detail-row">
+                    <span>{i18n.t('labelSerialNumber', 'Serial')}</span>
+                    <div class="vcv-cd-copy-row">
+                      <code class="vcv-cd-serial">{issuer.serialNumber}</code>
+                      <button
+                        type="button"
+                        class="vcv-cd-copy-btn"
+                        class:vcv-cd-copy-done={copiedField === 'ca-serial'}
+                        onclick={() => copy('ca-serial', issuer!.serialNumber)}
+                        aria-label={i18n.t('labelCopy', 'Copy')}
+                      >
+                        {#if copiedField === 'ca-serial'}<Check class="h-3.5 w-3.5" />{:else}<Copy class="h-3.5 w-3.5" />{/if}
+                      </button>
+                    </div>
+                  </div>
+                  <div class="vcv-cd-detail-row vcv-cd-detail-row-stack">
+                    <span>{i18n.t('labelFingerprintSHA256', 'SHA-256')}</span>
+                    <div class="vcv-cd-copy-row">
+                      <code class="vcv-cd-fingerprint">{issuer.fingerprintSHA256}</code>
+                      <button
+                        type="button"
+                        class="vcv-cd-copy-btn"
+                        class:vcv-cd-copy-done={copiedField === 'ca-sha256'}
+                        onclick={() => copy('ca-sha256', issuer!.fingerprintSHA256)}
+                        aria-label={i18n.t('labelCopy', 'Copy')}
+                      >
+                        {#if copiedField === 'ca-sha256'}<Check class="h-3.5 w-3.5" />{:else}<Copy class="h-3.5 w-3.5" />{/if}
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              </details>
 
               {#if issuer.pem}
                 <div class="vcv-cd-actions">
