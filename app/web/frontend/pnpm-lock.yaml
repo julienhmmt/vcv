@@ -8,12 +8,21 @@ importers:
 
   .:
     dependencies:
+      '@lucide/svelte':
+        specifier: 1.24.0
+        version: 1.24.0(svelte@5.56.4)
       bits-ui:
         specifier: ^2.18.1
         version: 2.18.1(@internationalized/date@3.12.2)(svelte@5.56.4)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
+      mode-watcher:
+        specifier: ^1.1.0
+        version: 1.1.0(svelte@5.56.4)
+      svelte-sonner:
+        specifier: ^1.1.1
+        version: 1.1.1(svelte@5.56.4)
       tailwind-merge:
         specifier: ^3.6.0
         version: 3.6.0
@@ -24,12 +33,6 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0
     devDependencies:
-      '@internationalized/date':
-        specifier: ^3.12.2
-        version: 3.12.2
-      '@lucide/svelte':
-        specifier: 1.24.0
-        version: 1.24.0(svelte@5.56.4)
       '@sveltejs/vite-plugin-svelte':
         specifier: ^7.2.0
         version: 7.2.0(svelte@5.56.4)(vite@8.1.4(@types/node@25.9.3)(jiti@2.7.0))
@@ -54,18 +57,12 @@ importers:
       jsdom:
         specifier: ^29.1.1
         version: 29.1.1
-      mode-watcher:
-        specifier: ^1.1.0
-        version: 1.1.0(svelte@5.56.4)
       svelte:
         specifier: 5.56.4
         version: 5.56.4
       svelte-check:
         specifier: ^4.7.2
         version: 4.7.2(picomatch@4.0.5)(svelte@5.56.4)(typescript@6.0.3)
-      svelte-sonner:
-        specifier: ^1.1.1
-        version: 1.1.1(svelte@5.56.4)
       tailwindcss:
         specifier: ^4.3.2
         version: 4.3.2
