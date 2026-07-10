@@ -95,7 +95,7 @@
       class="ve-toggle-btn"
       tabindex="-1"
       onclick={onToggleClick}
-      aria-label={expanded ? 'Collapse' : 'Expand'}
+      aria-label={expanded ? i18n.t('adminVaultCollapse', 'Collapse') : i18n.t('adminVaultExpand', 'Expand')}
     >
       <svg class="ve-toggle-icon" class:ve-toggle-icon--open={expanded} viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M4 6l4 4 4-4"/>
@@ -188,12 +188,12 @@
           placeholder="pki, pki_int"
           oninput={(event) => updateMounts((event.target as HTMLInputElement).value)}
         />
-        <p class="ve-hint">Comma-separated. First mount is the default.</p>
+        <p class="ve-hint">{i18n.t('adminVaultPKIMountsHint', 'Comma-separated. First mount is the default.')}</p>
       </div>
 
       <!-- TLS section -->
       <details class="ve-tls-details">
-        <summary class="ve-tls-summary">TLS options</summary>
+        <summary class="ve-tls-summary">{i18n.t('adminVaultTLSOptions', 'TLS options')}</summary>
         <div class="ve-tls-body">
           <div class="ve-field">
             <label class="ve-label" for="ve-tls-ca-b64-{uid}">{i18n.t('adminVaultTLSCABase64', 'CA cert (base64)')}</label>

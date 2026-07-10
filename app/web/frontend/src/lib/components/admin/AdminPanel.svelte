@@ -108,12 +108,12 @@
     docsOpen = true
   }
 
-  const navItems = [
-    { id: 'thresholds', label: 'Thresholds' },
-    { id: 'metrics', label: 'Metrics' },
-    { id: 'cors', label: 'CORS' },
-    { id: 'vaults', label: 'Vaults' },
-  ]
+  const navItems = $derived([
+    { id: 'thresholds', label: i18n.t('adminNavThresholds', 'Thresholds') },
+    { id: 'metrics', label: i18n.t('adminNavMetrics', 'Metrics') },
+    { id: 'cors', label: i18n.t('adminNavCors', 'CORS') },
+    { id: 'vaults', label: i18n.t('adminNavVaults', 'Vaults') },
+  ])
 </script>
 
 <div class="adm-layout">
@@ -207,7 +207,7 @@
             />
             <div class="adm-toggle-body">
               <span class="adm-toggle-label">{i18n.t('adminMetricsPerCertificate', 'Per-certificate metrics')}</span>
-              <span class="adm-toggle-desc">High cardinality. Enable only if Prometheus is configured for it.</span>
+              <span class="adm-toggle-desc">{i18n.t('adminMetricsPerCertificateDesc', 'High cardinality. Enable only if Prometheus is configured for it.')}</span>
             </div>
           </label>
           <label class="adm-toggle">
