@@ -10,6 +10,7 @@
     DEFAULT_THRESHOLDS,
   } from '$lib/utils/cert-status'
   import { formatDate, formatTime } from '$lib/utils/cert-filter'
+  import { certDisplayName } from '$lib/utils/cert-label'
   import type { Certificate } from '$lib/types'
 
   interface Props {
@@ -47,7 +48,7 @@
   }}
   tabindex="0"
   role="button"
-  aria-label={cert.commonName}
+  aria-label={certDisplayName(cert, i18n.t('certUnnamed', 'Unnamed certificate'))}
 >
   <div class="vcv-cert-card-header">
     <div class="vcv-cert-card-title">

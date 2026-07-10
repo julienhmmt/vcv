@@ -43,6 +43,7 @@
     type SortDirection,
     type SortKey,
   } from '$lib/utils/cert-filter'
+  import { certDisplayName } from '$lib/utils/cert-label'
   import { parseUrlState, writeUrlState, type UrlState } from '$lib/utils/url-state'
   import { downloadExport, type ExportFormat } from '$lib/utils/export'
   import type { Certificate, CertStatus } from '$lib/types'
@@ -686,7 +687,7 @@
                   }}
                   tabindex="0"
                   role="button"
-                  aria-label={cert.commonName}
+                  aria-label={certDisplayName(cert, i18n.t('certUnnamed', 'Unnamed certificate'))}
                 >
                   <td class="vcv-col-cert">
                     <div class="vcv-cert-header">
