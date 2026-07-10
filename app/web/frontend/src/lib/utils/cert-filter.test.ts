@@ -100,3 +100,26 @@ describe('formatDate / formatTime', () => {
     expect(formatTime('2026-06-17T08:30:45Z')).toBe('08:30')
   })
 })
+
+describe('formatDate / formatTime invalid input', () => {
+  it('formatDate returns "—" for an empty string', () => {
+    expect(formatDate('')).toBe('—')
+  })
+
+  it('formatDate returns "—" for a non-ISO string', () => {
+    expect(formatDate('not-a-date')).toBe('—')
+  })
+
+  it('formatTime returns "—" for an empty string', () => {
+    expect(formatTime('')).toBe('—')
+  })
+
+  it('formatTime returns "—" for a non-ISO string', () => {
+    expect(formatTime('not-a-date')).toBe('—')
+  })
+
+  it('valid dates still format correctly', () => {
+    expect(formatDate('2026-06-24T13:45:00Z')).toBe('2026-06-24')
+    expect(formatTime('2026-06-24T13:45:00Z')).toBe('13:45')
+  })
+})

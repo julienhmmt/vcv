@@ -103,12 +103,20 @@ export function dashboardCounts(
   return counts
 }
 
+function isValidDate(date: Date): boolean {
+  return !Number.isNaN(date.getTime())
+}
+
+/** Format an ISO date string as YYYY-MM-DD; returns '—' for invalid input. */
 export function formatDate(iso: string): string {
   const date = new Date(iso)
+  if (!isValidDate(date)) return '—'
   return date.toISOString().split('T')[0]
 }
 
+/** Format an ISO date string as HH:MM (UTC); returns '—' for invalid input. */
 export function formatTime(iso: string): string {
   const date = new Date(iso)
+  if (!isValidDate(date)) return '—'
   return date.toISOString().split('T')[1].slice(0, 5)
 }
