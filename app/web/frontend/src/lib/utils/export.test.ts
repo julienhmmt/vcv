@@ -48,7 +48,9 @@ describe('buildExport CSV', () => {
     const dangerous = ['=HYPERLINK("http://evil","x")', '+1+2', '-2+3|cmd', '@SUM(A1:A2)']
     for (const cn of dangerous) {
       const row = buildExport([cert({ commonName: cn })], 'csv').content.split('\r\n')[1]
-      expect(row.startsWith("'")).toBe(true)
+      // Neutralizing quote sits at cell start, or just inside the RFC 4180
+      // wrapping quote when the value also contains a comma/quote.
+      expect(row.startsWith("'") || row.startsWith('"\'')).toBe(true)
     }
   })
 
