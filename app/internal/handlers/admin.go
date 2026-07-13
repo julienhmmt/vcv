@@ -342,20 +342,29 @@ func newVaultKey() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(buf), nil
 }
 
+// isBcryptHash reports whether s looks like a bcrypt hash ($2a$/$2b$/$2y$).
+func isBcryptHash(s string) bool {
+	return strings.HasPrefix(s, "$2a$") || strings.HasPrefix(s, "$2b$") || strings.HasPrefix(s, "$2y$")
+}
+
 // RegisterAdminRoutes wires the JSON admin API. HTMX routes have been removed
 // in favor of the Svelte admin panel that talks to /api/admin/*.
+// Admin remains optional: missing/invalid password skips registration with a clear log.
 func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Environment, vaultRegistry *vault.Registry, vaultStatusClients map[string]vault.Client, cacheClient vault.Client) {
 	settingsStore := newAdminSettingsStore(settingsPath, env)
 	settings, err := settingsStore.load()
 	if err != nil {
+		logger.Get().Warn().Err(err).Msg("admin API disabled: settings load failed")
 		return
 	}
 
 	password := strings.TrimSpace(settings.Admin.Password)
 	if password == "" {
+		logger.Get().Info().Msg("admin API disabled: admin.password empty")
 		return
 	}
-	if !strings.HasPrefix(password, "$2a$") && !strings.HasPrefix(password, "$2b$") && !strings.HasPrefix(password, "$2y$") {
+	if !isBcryptHash(password) {
+		logger.Get().Warn().Msg("admin API disabled: admin.password is not a bcrypt hash")
 		return
 	}
 
@@ -388,4 +397,5 @@ func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Envi
 				Msg("invalidated cache")
 		})
 	})
+	logger.Get().Info().Msg("admin API enabled")
 }
