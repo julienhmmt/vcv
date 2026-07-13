@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -569,6 +570,55 @@ func TestRegisterAdminRoutes(t *testing.T) {
 
 	// Verify routes are registered
 	assert.NotNil(t, r)
+}
+
+func TestIsBcryptHash(t *testing.T) {
+	assert.True(t, isBcryptHash("$2a$10$abcdefghijklmnopqrstuu"))
+	assert.True(t, isBcryptHash("$2b$10$abcdefghijklmnopqrstuu"))
+	assert.True(t, isBcryptHash("$2y$10$abcdefghijklmnopqrstuu"))
+	assert.False(t, isBcryptHash(""))
+	assert.False(t, isBcryptHash("plaintext"))
+	assert.False(t, isBcryptHash("$1$notbcrypt"))
+}
+
+func TestRegisterAdminRoutes_EmptyPassword_LoginNotFound(t *testing.T) {
+	tmpDir := t.TempDir()
+	settingsPath := tmpDir + "/settings.json"
+	settings := config.SettingsFile{
+		App:   config.AppSettings{Env: "dev", Port: 52000},
+		Admin: config.AdminSettings{Password: ""},
+	}
+	data, err := json.Marshal(settings)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(settingsPath, data, 0644))
+
+	r := chi.NewRouter()
+	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", strings.NewReader(`{}`))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
+}
+
+func TestRegisterAdminRoutes_InvalidHash_LoginNotFound(t *testing.T) {
+	tmpDir := t.TempDir()
+	settingsPath := tmpDir + "/settings.json"
+	settings := config.SettingsFile{
+		App:   config.AppSettings{Env: "dev", Port: 52000},
+		Admin: config.AdminSettings{Password: "not-a-bcrypt-hash"},
+	}
+	data, err := json.Marshal(settings)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(settingsPath, data, 0644))
+
+	r := chi.NewRouter()
+	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil)
+
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", strings.NewReader(`{}`))
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusNotFound, w.Code)
 }
 
 func TestRegisterAdminRoutes_CacheInvalidate(t *testing.T) {
