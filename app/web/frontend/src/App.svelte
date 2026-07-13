@@ -7,7 +7,6 @@
   import Search from '@lucide/svelte/icons/search'
   import Sun from '@lucide/svelte/icons/sun'
   import { Toaster } from '$lib/components/ui/sonner'
-  import { Skeleton } from '$lib/components/ui/skeleton'
   import * as Select from '$lib/components/ui/select'
   import CertDetailModal from '$lib/components/CertDetailModal.svelte'
   import CertTypeSelect from '$lib/components/CertTypeSelect.svelte'
@@ -16,32 +15,25 @@
   import ErrorBanner from '$lib/components/ErrorBanner.svelte'
   import MountSelectorDialog from '$lib/components/MountSelectorDialog.svelte'
   import StatusOverview from '$lib/components/StatusOverview.svelte'
-  import CertCard from '$lib/components/CertCard.svelte'
+  import CertTable from '$lib/components/CertTable.svelte'
+  import CertMobileList from '$lib/components/CertMobileList.svelte'
+  import PaginationBar from '$lib/components/PaginationBar.svelte'
   import CommandPalette from '$lib/components/CommandPalette.svelte'
   import { createCertsStore } from '$lib/stores/certs.svelte'
   import { createConfigStore } from '$lib/stores/config.svelte'
   import { createStatusStore } from '$lib/stores/status.svelte'
   import { createThemeStore } from '$lib/stores/theme.svelte'
   import { createI18nStore, setI18nContext, LANGUAGES } from '$lib/stores/i18n.svelte'
-  import {
-    certStatus,
-    daysUntilExpiry,
-    parseCertID,
-    statusBadgeClass,
-    rowClassForStatus,
-  } from '$lib/utils/cert-status'
+  import { parseCertID } from '$lib/utils/cert-status'
   import {
     matchesFilters,
     sortCerts,
     paginate,
     dashboardCounts,
-    formatDate,
-    formatTime,
     type CertTypeFilter,
     type SortDirection,
     type SortKey,
   } from '$lib/utils/cert-filter'
-  import { certDisplayName } from '$lib/utils/cert-label'
   import { parseUrlState, writeUrlState, type UrlState } from '$lib/utils/url-state'
   import { downloadExport, type ExportFormat } from '$lib/utils/export'
   import { expiryTier, shouldNotifyExpiry, type ExpiryTier } from '$lib/utils/expiry-notify'
@@ -69,15 +61,6 @@
     revoked: { label: i18n.t('statusLabelRevoked', 'Revoked'), desc: i18n.t('statusDescRevoked', 'Revoked by CA') },
   })
   const langName = $derived(LANGUAGES.find((l) => l.code === i18n.lang)?.name ?? i18n.lang.toUpperCase())
-
-  /** Localized expiry label for the table: compact "{n}d" ahead, descriptive when due/past. */
-  function expiryLabel(cert: Certificate): string {
-    const days = daysUntilExpiry(cert)
-    if (days > 0) return i18n.t('daysRemainingShort', '{days}d', { days })
-    if (days === 0) return i18n.t('expiringToday', 'Expires today')
-    const ago = Math.abs(days)
-    return i18n.t(ago === 1 ? 'expiredDaysSingular' : 'expiredDays', 'Expired {days} days ago', { days: ago })
-  }
 
   let search = $state('')
   let statusFilters = $state<CertStatus[]>([])
@@ -589,180 +572,44 @@
       </div>
     </div>
 
-    <div class="vcv-table-wrapper">
-      {#if initialLoad && certs.certificates.length === 0}
-        <div class="vcv-table-skeleton">
-          {#each Array(8) as _, i (i)}
-            <div class="vcv-skeleton-row">
-              <Skeleton class="h-5 flex-1" />
-              <Skeleton class="h-5 w-24" />
-              <Skeleton class="h-5 w-20" />
-            </div>
-          {/each}
-        </div>
-      {:else}
-        <table class="vcv-table">
-          <colgroup>
-            <col class="vcv-col-cert" />
-            <col class="vcv-col-expiry" />
-          </colgroup>
-          <thead>
-            <tr>
-              <th scope="col">{i18n.t('columnCommonName', 'Common Name')}</th>
-              <th scope="col" class="vcv-col-expiry-head">{i18n.t('columnExpiresAt', 'Expires')}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {#if paged.length === 0}
-              <tr>
-                <td colspan="2" class="vcv-empty-row">
-                  {#if certs.loading}
-                    {i18n.t('labelLoading', 'Loading…')}
-                  {:else if hasActiveFilters}
-                    <div class="vcv-empty-state">
-                      <p class="vcv-empty-title">{i18n.t('tableNoMatch', 'No certificates match the current filters.')}</p>
-                      <button type="button" class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill" onclick={clearAllFilters}>
-                        {i18n.t('filterChipReset', 'Clear all')}
-                      </button>
-                    </div>
-                  {:else}
-                    <div class="vcv-empty-state">
-                      <p class="vcv-empty-title">{i18n.t('tableEmpty', 'No certificates found.')}</p>
-                      <p class="vcv-empty-hint">{i18n.t('tableEmptyHint', 'No PKI mount returned any certificates yet.')}</p>
-                    </div>
-                  {/if}
-                </td>
-              </tr>
-            {:else}
-              {#each paged as cert (cert.id)}
-                {@const s = certStatus(cert, thresholds)}
-                {@const parts = parseCertID(cert.id)}
-                <!-- Whole-row button: role="button" + aria-label gives SR users a single
-                     focusable target named by the common name; Enter activates the detail
-                     modal. Kept over a nested cell button to preserve one tab stop per row. -->
-                <tr
-                  class="{rowClassForStatus(s)} vcv-row-clickable"
-                  onclick={() => selectCert(cert)}
-                  onkeydown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault()
-                      selectCert(cert)
-                    }
-                  }}
-                  tabindex="0"
-                  role="button"
-                  aria-label={`${certDisplayName(cert, i18n.t('certUnnamed', 'Unnamed certificate'))}: ${i18n.t('buttonDetails', 'Details')}`}
-                >
-                  <td class="vcv-col-cert">
-                    <div class="vcv-cert-header">
-                      <span class="vcv-cn-name">{cert.commonName || '—'}</span>
-                      <div class="vcv-cert-meta-row">
-                        {#if showVaultMount}
-                          <span class="vcv-cert-meta-item">{parts.vault || '—'}</span>
-                          <span class="vcv-cert-meta-item">{parts.mount || '—'}</span>
-                        {/if}
-                        <span class="vcv-cert-status-inline {statusBadgeClass(s)}">{statusMeta[s].label}</span>
-                      </div>
-                    </div>
-                    {#if cert.sans.length > 0}
-                      <div class="vcv-san-row">
-                        <span class="vcv-san-tag" title={cert.sans.join(', ')}>{cert.sans.join(', ')}</span>
-                      </div>
-                    {/if}
-                  </td>
-                  <td class="vcv-col-expiry">
-                    <div class="vcv-expiry-cell">
-                      <div class="vcv-expiry-main">
-                        <div class="vcv-expiry-count vcv-days-{s}">{expiryLabel(cert)}</div>
-                        <div class="vcv-expiry-datetime">
-                          <span class="vcv-expiry-date">{formatDate(cert.expiresAt)}</span>
-                          <span class="vcv-date-secondary">· {formatTime(cert.expiresAt)} UTC</span>
-                        </div>
-                      </div>
-                      <span class="vcv-row-action" aria-hidden="true">{i18n.t('buttonDetails', 'Details')}</span>
-                    </div>
-                  </td>
-                </tr>
-              {/each}
-            {/if}
-          </tbody>
-        </table>
-      {/if}
-    </div>
+    <CertTable
+      certs={paged}
+      loading={certs.loading}
+      {initialLoad}
+      hasInventory={certs.certificates.length > 0}
+      {hasActiveFilters}
+      {showVaultMount}
+      {statusMeta}
+      {thresholds}
+      onSelect={selectCert}
+      onClearFilters={clearAllFilters}
+    />
 
-    <div class="vcv-certs-mobile-cards">
-      {#if initialLoad && certs.certificates.length === 0}
-        {#each Array(6) as _, i (i)}
-          <div class="vcv-cert-card">
-            <Skeleton class="h-5 w-3/4" />
-            <Skeleton class="h-4 w-1/2" />
-          </div>
-        {/each}
-      {:else if paged.length === 0}
-        <div class="vcv-certs-mobile-empty">
-          {#if certs.loading}
-            {i18n.t('labelLoading', 'Loading…')}
-          {:else if hasActiveFilters}
-            <p class="vcv-empty-title">{i18n.t('tableNoMatch', 'No certificates match the current filters.')}</p>
-            <button type="button" class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill" onclick={clearAllFilters}>
-              {i18n.t('filterChipReset', 'Clear all')}
-            </button>
-          {:else}
-            <p class="vcv-empty-title">{i18n.t('tableEmpty', 'No certificates found.')}</p>
-            <p class="vcv-empty-hint">{i18n.t('tableEmptyHint', 'No PKI mount returned any certificates yet.')}</p>
-          {/if}
-        </div>
-      {:else}
-        {#each paged as cert (cert.id)}
-          {@const s = certStatus(cert, thresholds)}
-          <CertCard {cert} {showVaultMount} statusLabel={statusMeta[s].label} {thresholds} onSelect={selectCert} />
-        {/each}
-      {/if}
-    </div>
+    <CertMobileList
+      certs={paged}
+      loading={certs.loading}
+      {initialLoad}
+      hasInventory={certs.certificates.length > 0}
+      {hasActiveFilters}
+      {showVaultMount}
+      {statusMeta}
+      {thresholds}
+      onSelect={selectCert}
+      onClearFilters={clearAllFilters}
+    />
 
-    <div class="vcv-pagination-bar">
-      <div class="vcv-page-size">
-        <span id="vcv-page-size-label">{i18n.t('paginationPageSizeLabel', 'Results per page')}</span>
-        <Select.Root
-          type="single"
-          value={String(pageSize)}
-          onValueChange={(value) => {
-            if (!value) return
-            pageSize = value === 'all' ? 'all' : Number(value)
-            pageIndex = 0
-          }}
-        >
-          <Select.Trigger class="vcv-select vcv-page-size-select h-9" aria-labelledby="vcv-page-size-label">
-            {pageSize === 'all' ? i18n.t('paginationPageSizeAll', 'All') : String(pageSize)}
-          </Select.Trigger>
-          <Select.Content>
-            <Select.Item value="25">25</Select.Item>
-            <Select.Item value="50">50</Select.Item>
-            <Select.Item value="100">100</Select.Item>
-            <Select.Item value="all">{i18n.t('paginationPageSizeAll', 'All')}</Select.Item>
-          </Select.Content>
-        </Select.Root>
-      </div>
-      <span class="vcv-page-info">{pageInfoText()}</span>
-      <div class="vcv-page-buttons">
-        <button
-          type="button"
-          class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill"
-          disabled={safePage === 0}
-          onclick={() => (pageIndex = Math.max(0, safePage - 1))}
-        >
-          {i18n.t('paginationPrev', 'Previous')}
-        </button>
-        <button
-          type="button"
-          class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill"
-          disabled={safePage >= totalPages - 1}
-          onclick={() => (pageIndex = Math.min(totalPages - 1, safePage + 1))}
-        >
-          {i18n.t('paginationNext', 'Next')}
-        </button>
-      </div>
-    </div>
+    <PaginationBar
+      {pageSize}
+      {safePage}
+      {totalPages}
+      pageInfoText={pageInfoText()}
+      onPageSizeChange={(size) => {
+        pageSize = size
+        pageIndex = 0
+      }}
+      onPrev={() => (pageIndex = Math.max(0, safePage - 1))}
+      onNext={() => (pageIndex = Math.min(totalPages - 1, safePage + 1))}
+    />
   </main>
 
   <footer class="vcv-footer" aria-label={i18n.t('footerLabel', 'Site information')}>
