@@ -190,23 +190,21 @@
   })
 
   async function load(initial = false): Promise<void> {
-    const promises: Promise<void>[] = [certs.refresh(), status.refresh()]
+    // Always reload public config so admin threshold edits land without a full page reload.
+    const promises: Promise<void>[] = [certs.refresh(), status.refresh(), config.refresh()]
     if (initial) {
-      promises.push(config.refresh())
       try {
         await Promise.all(promises)
       } finally {
         initialLoad = false
       }
-      if (certs.error) throw new Error(certs.error)
-      lastUpdated = new Date()
-      notifyExpiry(true)
-      return
+    } else {
+      await Promise.all(promises)
     }
-    await Promise.all(promises)
+    // Config failure keeps last-good thresholds (config store). Cert hard-fail rejects for toast.
     if (certs.error) throw new Error(certs.error)
     lastUpdated = new Date()
-    notifyExpiry(false)
+    notifyExpiry(initial)
   }
 
   /**
