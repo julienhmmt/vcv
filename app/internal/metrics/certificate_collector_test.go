@@ -120,7 +120,28 @@ func TestCollector_SuccessMetrics(t *testing.T) {
 	mockVault.AssertExpectations(t)
 }
 
+func TestCollector_PerCertificateEnabled_NoPanic(t *testing.T) {
+	now := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
+	certsList := []certs.Certificate{
+		{ID: "pki:c1", CommonName: "one", ExpiresAt: now.Add(48 * time.Hour), CreatedAt: now.Add(-24 * time.Hour)},
+	}
+	mockVault := new(vault.MockClient)
+	mockVault.On("ListCertificates", mock.Anything).Return(certsList, nil)
+	mockVault.On("CheckConnection", mock.Anything).Return(nil)
+	vaultInstances := []config.VaultInstance{{ID: "v1", PKIMounts: []string{"pki"}}}
+	multiClient := vault.NewMultiClient(vaultInstances, map[string]vault.Client{"v1": mockVault}, nil)
+	metricsConfig := config.MetricsConfig{PerCertificate: true, EnhancedMetrics: false}
+	raw := NewCertificateCollectorWithVaults(multiClient, map[string]vault.Client{"v1": mockVault}, config.ExpirationThresholds{Critical: 7, Warning: 30}, metricsConfig, vaultInstances)
+	collector, ok := raw.(*certificateCollector)
+	require.True(t, ok)
+	collector.now = func() time.Time { return now }
+	// Collect twice: sync.Once warn path must not panic on second scrape.
+	assert.Greater(t, testutil.CollectAndCount(collector), 0)
+	assert.Greater(t, testutil.CollectAndCount(collector), 0)
+}
+
 func TestCollector_EnhancedMetrics(t *testing.T) {
+
 	t.Setenv("VCV_METRICS_PER_CERTIFICATE", "false")
 	t.Setenv("VCV_METRICS_ENHANCED", "true")
 	now := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)

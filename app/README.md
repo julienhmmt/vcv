@@ -75,7 +75,7 @@ Configuration is loaded from the first file found in this order (see `settingsCa
 - `app.logging.level`, `app.logging.format`, `app.logging.output`, `app.logging.file_path`
 - `cors.allowed_origins`, `cors.allow_credentials`
 - `certificates.expiration_thresholds.critical`, `certificates.expiration_thresholds.warning`
-- `metrics.per_certificate` (default false; high cardinality when true), `metrics.enhanced_metrics`
+- `metrics.per_certificate` (default **false**; prefer aggregate vault|pki|status metrics. When true, emits per-series labels for `certificate_id` and `common_name` — lab only; startup scrape logs a Warn. Per-cert `status` is only valid|revoked|expired, not warning/critical tiers), `metrics.enhanced_metrics`
 - `vaults[]`: list of Vault instances
   - `address`, `token`
   - `pki_mounts` (source of truth; recommended)
