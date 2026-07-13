@@ -649,15 +649,16 @@
 
   <footer class="vcv-footer" aria-label={i18n.t('footerLabel', 'Site information')}>
     <div class="vcv-footer-row">
-      <span class="vcv-footer-title">
-        VaultCertsViewer
-        {#if status.status}<span class="vcv-footer-version">v{status.status.version}</span>{/if}
-      </span>
-      <div class="vcv-footer-links">
-        <a class="vcv-footer-link" href="https://github.com/julienhmmt/vcv" target="_blank" rel="noopener">GitHub</a>
-        <a class="vcv-footer-link" href="https://github.com/julienhmmt/vcv/blob/main/LICENSE" target="_blank" rel="noopener">{i18n.t('footerLicense', 'License')}</a>
-        <a class="vcv-footer-link" href="https://j.hommet.net/vcv" target="_blank" rel="noopener">{i18n.t('footerMoreInfo', 'More info')}</a>
-      </div>
+      {#if status.status}
+        <span class="vcv-footer-version">v{status.status.version}</span>
+      {/if}
+      <nav class="vcv-footer-links">
+        <a class="vcv-footer-link" href="https://github.com/julienhmmt/vcv" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <span class="vcv-footer-sep" aria-hidden="true"></span>
+        <a class="vcv-footer-link" href="https://github.com/julienhmmt/vcv/blob/main/LICENSE" target="_blank" rel="noopener noreferrer">{i18n.t('footerLicense', 'License')}</a>
+        <span class="vcv-footer-sep" aria-hidden="true"></span>
+        <a class="vcv-footer-link" href="https://j.hommet.net/vcv" target="_blank" rel="noopener noreferrer">{i18n.t('footerMoreInfo', 'More info')}</a>
+      </nav>
     </div>
   </footer>
 </div>
