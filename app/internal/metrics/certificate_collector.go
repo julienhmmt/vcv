@@ -6,25 +6,32 @@ import (
 	"math"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 
 	"vcv/internal/certs"
 	"vcv/internal/config"
+	"vcv/internal/logger"
 	"vcv/internal/vault"
 )
 
 const allLabelValue string = "__all__"
 
+// perCertificateCardinalityWarnThreshold logs an extra warn when inventory size exceeds this while per_certificate is on.
+const perCertificateCardinalityWarnThreshold = 500
+
 var (
+	perCertWarnOnce            sync.Once
+	perCertCountWarnOnce       sync.Once
 	cacheSizeDesc              = prometheus.NewDesc("vcv_cache_size", "Number of items currently cached", nil, nil)
 	certificatesLastFetchDesc  = prometheus.NewDesc("vcv_certificates_last_fetch_timestamp_seconds", "Timestamp of last successful certificates fetch", nil, nil)
 	certificatesTotalDesc      = prometheus.NewDesc("vcv_certificates_total", "Total certificates grouped by status", []string{"vault_id", "pki", "status"}, nil)
 	expiredCountDesc           = prometheus.NewDesc("vcv_certificates_expired_count", "Number of expired certificates", nil, nil)
 	expiringSoonCountDesc      = prometheus.NewDesc("vcv_certificates_expiring_soon_count", "Number of certificates expiring soon within threshold window", []string{"vault_id", "pki", "level"}, nil)
-	expiryTimestampDesc        = prometheus.NewDesc("vcv_certificate_expiry_timestamp_seconds", "Certificate expiration timestamp in seconds since epoch", []string{"certificate_id", "common_name", "status", "vault_id", "pki"}, nil)
-	daysUntilExpiryDesc        = prometheus.NewDesc("vcv_certificate_days_until_expiry", "Days remaining until certificate expiration (negative if expired)", []string{"certificate_id", "common_name", "status", "vault_id", "pki"}, nil)
+	expiryTimestampDesc        = prometheus.NewDesc("vcv_certificate_expiry_timestamp_seconds", "Per-certificate expiration timestamp (high cardinality: certificate_id + common_name labels); status is valid|revoked|expired only", []string{"certificate_id", "common_name", "status", "vault_id", "pki"}, nil)
+	daysUntilExpiryDesc        = prometheus.NewDesc("vcv_certificate_days_until_expiry", "Per-certificate days until expiry (high cardinality: certificate_id + common_name labels); status is valid|revoked|expired only", []string{"certificate_id", "common_name", "status", "vault_id", "pki"}, nil)
 	expiryBucketDesc           = prometheus.NewDesc("vcv_certificates_expiry_bucket", "Number of certificates expiring in time bucket", []string{"vault_id", "pki", "bucket"}, nil)
 	thresholdCriticalDesc      = prometheus.NewDesc("vcv_expiration_threshold_critical_days", "Configured critical expiration threshold in days", nil, nil)
 	thresholdWarningDesc       = prometheus.NewDesc("vcv_expiration_threshold_warning_days", "Configured warning expiration threshold in days", nil, nil)
@@ -416,6 +423,17 @@ func (collector *certificateCollector) emitCertificateAggregationMetrics(ch chan
 func (collector *certificateCollector) emitPerCertificateMetrics(ch chan<- prometheus.Metric, certificates []certs.Certificate, now time.Time) {
 	if !collector.perCertificate {
 		return
+	}
+	perCertWarnOnce.Do(func() {
+		logger.Get().Warn().Msg("metrics.per_certificate is enabled: high Prometheus cardinality (certificate_id, common_name labels)")
+	})
+	if len(certificates) > perCertificateCardinalityWarnThreshold {
+		perCertCountWarnOnce.Do(func() {
+			logger.Get().Warn().
+				Int("certificate_count", len(certificates)).
+				Int("threshold", perCertificateCardinalityWarnThreshold).
+				Msg("metrics.per_certificate inventory exceeds recommended size for per-series labels")
+		})
 	}
 	emitEnhanced := collector.enhancedMetrics
 	for _, certificate := range certificates {
