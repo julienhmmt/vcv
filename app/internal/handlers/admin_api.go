@@ -258,6 +258,23 @@ func maskVaultTokens(s config.SettingsFile) config.SettingsFile {
 	return out
 }
 
+// isBlankOrMaskedToken reports whether token is empty or a common UI mask
+// sentinel that must not overwrite a stored Vault token on admin PUT.
+func isBlankOrMaskedToken(token string) bool {
+	t := strings.TrimSpace(token)
+	if t == "" {
+		return true
+	}
+	switch t {
+	case "***", "********", "••••••••", "__MASKED__", "[masked]":
+		return true
+	}
+	if strings.Trim(t, "*") == "" && len(t) >= 3 {
+		return true
+	}
+	return false
+}
+
 func mergeVaultTokens(incoming, existing []config.VaultInstance) []config.VaultInstance {
 	tokens := make(map[string]string, len(existing))
 	for _, v := range existing {
@@ -265,7 +282,7 @@ func mergeVaultTokens(incoming, existing []config.VaultInstance) []config.VaultI
 	}
 	merged := make([]config.VaultInstance, 0, len(incoming))
 	for _, v := range incoming {
-		if strings.TrimSpace(v.Token) == "" {
+		if isBlankOrMaskedToken(v.Token) {
 			lookupKey := v.OriginalID
 			if lookupKey == "" {
 				lookupKey = v.ID

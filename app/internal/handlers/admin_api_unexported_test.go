@@ -433,6 +433,40 @@ func TestMergeVaultTokens_PreservesEmptyTokens(t *testing.T) {
 	assert.Equal(t, "existing-token", result[0].Token) // Should preserve existing token
 }
 
+func TestIsBlankOrMaskedToken(t *testing.T) {
+	assert.True(t, isBlankOrMaskedToken(""))
+	assert.True(t, isBlankOrMaskedToken("   "))
+	assert.True(t, isBlankOrMaskedToken("***"))
+	assert.True(t, isBlankOrMaskedToken("********"))
+	assert.True(t, isBlankOrMaskedToken("••••••••"))
+	assert.True(t, isBlankOrMaskedToken("__MASKED__"))
+	assert.True(t, isBlankOrMaskedToken("[masked]"))
+	assert.True(t, isBlankOrMaskedToken("*****"))
+	assert.False(t, isBlankOrMaskedToken("s.real-vault-token"))
+	assert.False(t, isBlankOrMaskedToken("hvs.real"))
+	assert.False(t, isBlankOrMaskedToken("*"))  // too short to treat as mask
+	assert.False(t, isBlankOrMaskedToken("**")) // too short
+}
+
+func TestMergeVaultTokens_PreservesMaskedPlaceholders(t *testing.T) {
+	existing := []config.VaultInstance{
+		{ID: "vault1", Address: "http://localhost:8200", Token: "existing-token"},
+	}
+	for _, masked := range []string{"***", "********", "__MASKED__", "[masked]", "••••••••"} {
+		result := mergeVaultTokens([]config.VaultInstance{
+			{ID: "vault1", Address: "http://localhost:8200", Token: masked},
+		}, existing)
+		require.Len(t, result, 1)
+		assert.Equal(t, "existing-token", result[0].Token, "mask %q must preserve stored token", masked)
+	}
+	// Real replacement still applies.
+	result := mergeVaultTokens([]config.VaultInstance{
+		{ID: "vault1", Address: "http://localhost:8200", Token: "brand-new-token"},
+	}, existing)
+	require.Len(t, result, 1)
+	assert.Equal(t, "brand-new-token", result[0].Token)
+}
+
 func TestComputeVaultStatuses(t *testing.T) {
 	settings := config.SettingsFile{
 		Vaults: []config.VaultInstance{
