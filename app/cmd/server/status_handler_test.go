@@ -15,10 +15,11 @@ import (
 )
 
 type statusResponse struct {
-	Version        string `json:"version"`
-	VaultConnected bool   `json:"vault_connected"`
-	VaultError     string `json:"vault_error,omitempty"`
-	Vaults         []struct {
+	Version         string `json:"version"`
+	VaultConnected  bool   `json:"vault_connected"`
+	VaultError      string `json:"vault_error,omitempty"`
+	AdminAPIEnabled bool   `json:"admin_api_enabled"`
+	Vaults          []struct {
 		ID          string `json:"id"`
 		DisplayName string `json:"display_name"`
 		Connected   bool   `json:"connected"`
@@ -31,7 +32,7 @@ func TestNewStatusHandler_PrimaryDisconnectedAndMissingClient(t *testing.T) {
 	primary := &vault.MockClient{}
 	primary.On("CheckConnection", mock.Anything).Return(errors.New("primary down"))
 	statusClients := map[string]vault.Client{}
-	h := newStatusHandler(cfg, primary, statusClients)
+	h := newStatusHandler(cfg, primary, statusClients, false)
 	req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -40,6 +41,7 @@ func TestNewStatusHandler_PrimaryDisconnectedAndMissingClient(t *testing.T) {
 	assert.NoError(t, json.NewDecoder(rec.Body).Decode(&payload))
 	assert.False(t, payload.VaultConnected)
 	assert.Equal(t, "vault unavailable", payload.VaultError)
+	assert.False(t, payload.AdminAPIEnabled)
 	assert.Len(t, payload.Vaults, 1)
 	assert.Equal(t, "v1", payload.Vaults[0].ID)
 	assert.Equal(t, "Vault 1", payload.Vaults[0].DisplayName)
@@ -57,7 +59,7 @@ func TestNewStatusHandler_AllConnected(t *testing.T) {
 	client2 := &vault.MockClient{}
 	client2.On("CheckConnection", mock.Anything).Return(nil)
 	statusClients := map[string]vault.Client{"v1": client1, "v2": client2}
-	h := newStatusHandler(cfg, primary, statusClients)
+	h := newStatusHandler(cfg, primary, statusClients, true)
 	req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
 	rec := httptest.NewRecorder()
 	h.ServeHTTP(rec, req)
@@ -66,6 +68,7 @@ func TestNewStatusHandler_AllConnected(t *testing.T) {
 	assert.NoError(t, json.NewDecoder(rec.Body).Decode(&payload))
 	assert.True(t, payload.VaultConnected)
 	assert.Equal(t, "", payload.VaultError)
+	assert.True(t, payload.AdminAPIEnabled)
 	assert.Len(t, payload.Vaults, 2)
 	assert.True(t, payload.Vaults[0].Connected)
 	assert.True(t, payload.Vaults[1].Connected)
