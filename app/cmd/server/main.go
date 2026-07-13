@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -32,6 +33,18 @@ const routerMaxBodyBytes int64 = 1 << 20
 const routerRateLimitMaxRequests int = 300
 const routerRateLimitWindow time.Duration = 1 * time.Minute
 
+// publicVaultStatusError maps internal vault connection errors to stable,
+// non-sensitive strings for the public /api/status response.
+func publicVaultStatusError(err error) string {
+	if err == nil {
+		return ""
+	}
+	if errors.Is(err, vault.ErrVaultNotConfigured) {
+		return "vault not configured"
+	}
+	return "vault unavailable"
+}
+
 func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, statusClients map[string]vault.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
@@ -50,7 +63,7 @@ func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, status
 		response := statusResponse{Version: version.Version, Vaults: make([]vaultStatusEntry, 0, len(cfg.Vaults))}
 		if err := primaryVaultClient.CheckConnection(ctx); err != nil {
 			response.VaultConnected = false
-			response.VaultError = err.Error()
+			response.VaultError = publicVaultStatusError(err)
 		} else {
 			response.VaultConnected = true
 		}
@@ -66,7 +79,7 @@ func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, status
 			}
 			if err := client.CheckConnection(ctx); err != nil {
 				entry.Connected = false
-				entry.Error = err.Error()
+				entry.Error = publicVaultStatusError(err)
 			} else {
 				entry.Connected = true
 			}

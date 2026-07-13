@@ -52,7 +52,7 @@ func TestNewStatusHandler_PrimaryDisconnected(t *testing.T) {
 	var resp map[string]any
 	require.NoError(t, json.Unmarshal(w.Body.Bytes(), &resp))
 	assert.False(t, resp["vault_connected"].(bool))
-	assert.Equal(t, "connection refused", resp["vault_error"])
+	assert.Equal(t, "vault unavailable", resp["vault_error"])
 	primary.AssertExpectations(t)
 }
 
@@ -96,7 +96,7 @@ func TestNewStatusHandler_StatusClients(t *testing.T) {
 	v2Status := vaults[1].(map[string]any)
 	assert.Equal(t, "v2", v2Status["id"])
 	assert.False(t, v2Status["connected"].(bool))
-	assert.Equal(t, "down", v2Status["error"])
+	assert.Equal(t, "vault unavailable", v2Status["error"])
 
 	v3Status := vaults[2].(map[string]any)
 	assert.Equal(t, "v3", v3Status["id"])
