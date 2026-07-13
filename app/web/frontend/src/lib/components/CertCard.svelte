@@ -10,20 +10,21 @@
   } from '$lib/utils/cert-status'
   import { formatDate, formatTime } from '$lib/utils/cert-filter'
   import { certDisplayName } from '$lib/utils/cert-label'
-  import type { Certificate } from '$lib/types'
+  import type { Certificate, ExpirationThresholds } from '$lib/types'
 
   interface Props {
     cert: Certificate
     showVaultMount: boolean
     statusLabel: string
+    thresholds?: ExpirationThresholds
     onSelect: (cert: Certificate) => void
   }
 
-  const { cert, showVaultMount, statusLabel, onSelect }: Props = $props()
+  const { cert, showVaultMount, statusLabel, thresholds = DEFAULT_THRESHOLDS, onSelect }: Props = $props()
 
   const i18n = getI18n()
 
-  const s = $derived(certStatus(cert, DEFAULT_THRESHOLDS))
+  const s = $derived(certStatus(cert, thresholds))
   const parts = $derived(parseCertID(cert.id))
 
   /** Localized expiry label: compact "{n}d" ahead, descriptive when due/past. */
