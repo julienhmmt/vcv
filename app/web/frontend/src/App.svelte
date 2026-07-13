@@ -383,7 +383,7 @@
 
 <svelte:window onkeydown={onSearchKeydown} />
 
-<Toaster richColors position="bottom-right" />
+<Toaster richColors position="bottom-right" theme={theme.theme} />
 
 <a href="#vcv-main-content" class="vcv-skip-link">{i18n.t('skipToContent', 'Skip to main content')}</a>
 
