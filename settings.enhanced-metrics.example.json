@@ -34,7 +34,14 @@
       "id": "vault-main",
       "address": "https://vault.production.local:8200",
       "token": "${VAULT_TOKEN}",
-      "pki_mounts": ["pki", "pki_dev", "pki_stage", "pki_production"]
+      "pki_mounts": [
+        "pki",
+        "pki_dev",
+        "pki_stage",
+        "pki_production"
+      ],
+      "tls_insecure": false,
+      "tls_ca_cert_base64": "BASE64_PEM_CA_BUNDLE"
     }
   ]
 }
