@@ -201,13 +201,9 @@
     min-width: 0;
   }
 
-  .vcv-footer-bottom {
+  .vcv-footer-row {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1rem;
-  }
-
-  .vcv-footer-links {
-    justify-content: flex-start;
+    gap: 0.5rem;
   }
 }

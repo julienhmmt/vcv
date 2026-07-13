@@ -377,22 +377,6 @@
   white-space: nowrap;
 }
 
-/* Compact single-row footer */
-.vcv-footer-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  padding: 0.75rem 0;
-}
-
-.vcv-footer-row .vcv-footer-title {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: var(--vcv-color-text-strong);
-}
-
 @media (720px >= width) {
   .vcv-auto-refresh-label {
     display: none;
