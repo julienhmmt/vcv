@@ -7,6 +7,7 @@ export const DEFAULT_THRESHOLDS: ExpirationThresholds = {
 
 export function daysUntilExpiry(cert: Certificate, now: Date = new Date()): number {
   const expires = new Date(cert.expiresAt).getTime()
+  if (!Number.isFinite(expires)) return Number.NaN
   return Math.floor((expires - now.getTime()) / (1000 * 60 * 60 * 24))
 }
 
@@ -17,6 +18,8 @@ export function certStatus(
 ): CertStatus {
   if (cert.revoked) return 'revoked'
   const days = daysUntilExpiry(cert, now)
+  // Unknown expiry is treated as expired for safety (NaN never compares as < or <=).
+  if (!Number.isFinite(days)) return 'expired'
   if (days < 0) return 'expired'
   if (days <= thresholds.critical) return 'critical'
   if (days <= thresholds.warning) return 'warning'

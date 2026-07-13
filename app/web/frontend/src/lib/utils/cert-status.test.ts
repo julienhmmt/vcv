@@ -46,6 +46,13 @@ describe('certStatus', () => {
     expect(certStatus(cert('2026-06-24T00:00:00Z'), undefined, NOW)).toBe('critical') // exactly 7d
     expect(certStatus(cert('2026-07-17T00:00:00Z'), undefined, NOW)).toBe('warning') // exactly 30d
   })
+
+  it('treats empty or unparseable expiresAt as expired', () => {
+    expect(certStatus(cert(''), undefined, NOW)).toBe('expired')
+    expect(certStatus(cert('not-a-date'), undefined, NOW)).toBe('expired')
+    expect(Number.isNaN(daysUntilExpiry(cert(''), NOW))).toBe(true)
+    expect(Number.isNaN(daysUntilExpiry(cert('not-a-date'), NOW))).toBe(true)
+  })
 })
 
 describe('class helpers', () => {
