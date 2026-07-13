@@ -113,4 +113,79 @@ describe('CertDetailModal', () => {
     expect(await screen.findByText('Example Intermediate CA')).toBeInTheDocument()
     expect(getCertificateDetails).toHaveBeenCalledTimes(2)
   })
+
+  it('ignores a stale details response after switching certificates', async () => {
+    const certB: Certificate = {
+      ...cert,
+      id: 'vault1|pki-int:cc:dd',
+      serialNumber: 'cc:dd',
+      commonName: 'other.example.com',
+    }
+    let resolveA: (value: DetailedCertificate) => void = () => {}
+    const deferredA = new Promise<DetailedCertificate>((resolve) => {
+      resolveA = resolve
+    })
+    getCertificateDetails.mockImplementation((id: string) => {
+      if (id === cert.id) return deferredA
+      return Promise.resolve(
+        detailed({
+          id: certB.id,
+          serialNumber: certB.serialNumber,
+          commonName: certB.commonName,
+          issuer: 'Issuer B',
+          subject: 'CN=other.example.com',
+        }),
+      )
+    })
+    const { rerender } = render(CertDetailModal, {
+      props: { cert, open: true, onOpenChange: vi.fn() },
+    })
+    await waitFor(() => expect(getCertificateDetails).toHaveBeenCalledWith(cert.id))
+    await rerender({ cert: certB, open: true, onOpenChange: vi.fn() })
+    expect(await screen.findByText('Issuer B')).toBeInTheDocument()
+    resolveA(
+      detailed({
+        id: cert.id,
+        issuer: 'Stale Issuer A',
+        subject: 'CN=web.example.com',
+      }),
+    )
+    await new Promise((r) => setTimeout(r, 20))
+    expect(screen.queryByText('Stale Issuer A')).not.toBeInTheDocument()
+    expect(screen.getByText('Issuer B')).toBeInTheDocument()
+  })
+
+  it('ignores a stale details error after a successful newer load', async () => {
+    const certB: Certificate = {
+      ...cert,
+      id: 'vault1|pki-int:ee:ff',
+      serialNumber: 'ee:ff',
+      commonName: 'third.example.com',
+    }
+    let rejectA: (reason?: unknown) => void = () => {}
+    const deferredA = new Promise<DetailedCertificate>((_resolve, reject) => {
+      rejectA = reject
+    })
+    getCertificateDetails.mockImplementation((id: string) => {
+      if (id === cert.id) return deferredA
+      return Promise.resolve(
+        detailed({
+          id: certB.id,
+          serialNumber: certB.serialNumber,
+          commonName: certB.commonName,
+          issuer: 'Issuer Fresh',
+        }),
+      )
+    })
+    const { rerender } = render(CertDetailModal, {
+      props: { cert, open: true, onOpenChange: vi.fn() },
+    })
+    await waitFor(() => expect(getCertificateDetails).toHaveBeenCalledWith(cert.id))
+    await rerender({ cert: certB, open: true, onOpenChange: vi.fn() })
+    expect(await screen.findByText('Issuer Fresh')).toBeInTheDocument()
+    rejectA(new Error('stale failure'))
+    await new Promise((r) => setTimeout(r, 20))
+    expect(screen.queryByText('Retry')).not.toBeInTheDocument()
+    expect(screen.getByText('Issuer Fresh')).toBeInTheDocument()
+  })
 })
