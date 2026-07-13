@@ -61,27 +61,37 @@ func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, status
 			Vaults         []vaultStatusEntry `json:"vaults"`
 		}
 		response := statusResponse{Version: version.Version, Vaults: make([]vaultStatusEntry, 0, len(cfg.Vaults))}
-		if err := primaryVaultClient.CheckConnection(ctx); err != nil {
-			response.VaultConnected = false
-			response.VaultError = publicVaultStatusError(err)
-		} else {
+		// Primary connection (historical field) checked in parallel with per-vault checks via helper.
+		primaryClients := map[string]vault.Client{"primary": primaryVaultClient}
+		primaryResults := vault.CheckInstances(ctx, []string{"primary"}, primaryClients, 5*time.Second)
+		if len(primaryResults) > 0 && primaryResults[0].Connected {
 			response.VaultConnected = true
+		} else {
+			response.VaultConnected = false
+			var primaryErr error
+			if len(primaryResults) > 0 {
+				primaryErr = primaryResults[0].Error
+			}
+			response.VaultError = publicVaultStatusError(primaryErr)
 		}
+		ordered := make([]string, 0, len(cfg.Vaults))
+		displayNames := make(map[string]string, len(cfg.Vaults))
 		for _, instance := range cfg.Vaults {
-			name := instance.DisplayName
-			client := statusClients[instance.ID]
-			entry := vaultStatusEntry{ID: instance.ID, DisplayName: name}
-			if client == nil {
+			ordered = append(ordered, instance.ID)
+			displayNames[instance.ID] = instance.DisplayName
+		}
+		clients := statusClients
+		if clients == nil {
+			clients = map[string]vault.Client{}
+		}
+		checked := vault.CheckInstances(ctx, ordered, clients, 5*time.Second)
+		for _, item := range checked {
+			entry := vaultStatusEntry{ID: item.ID, DisplayName: displayNames[item.ID], Connected: item.Connected}
+			if _, ok := clients[item.ID]; !ok || clients[item.ID] == nil {
 				entry.Connected = false
 				entry.Error = "missing vault status client"
-				response.Vaults = append(response.Vaults, entry)
-				continue
-			}
-			if err := client.CheckConnection(ctx); err != nil {
-				entry.Connected = false
-				entry.Error = publicVaultStatusError(err)
-			} else {
-				entry.Connected = true
+			} else if !item.Connected {
+				entry.Error = publicVaultStatusError(item.Error)
 			}
 			response.Vaults = append(response.Vaults, entry)
 		}
@@ -117,6 +127,7 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 
 	handlers.RegisterStaticRoutes(r, distFS)
 
+	// Public read APIs: assume network ACL. See app/README.md "Security & deployment assumptions".
 	// Health and readiness probes
 	r.Get("/api/health", handlers.HealthCheck)
 	r.Get("/api/ready", handlers.ReadinessCheck)
