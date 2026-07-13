@@ -45,7 +45,7 @@ func publicVaultStatusError(err error) string {
 	return "vault unavailable"
 }
 
-func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, statusClients map[string]vault.Client) http.HandlerFunc {
+func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, statusClients map[string]vault.Client, adminAPIEnabled bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 		type vaultStatusEntry struct {
@@ -55,12 +55,13 @@ func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, status
 			Error       string `json:"error,omitempty"`
 		}
 		type statusResponse struct {
-			Version        string             `json:"version"`
-			VaultConnected bool               `json:"vault_connected"`
-			VaultError     string             `json:"vault_error,omitempty"`
-			Vaults         []vaultStatusEntry `json:"vaults"`
+			Version         string             `json:"version"`
+			VaultConnected  bool               `json:"vault_connected"`
+			VaultError      string             `json:"vault_error,omitempty"`
+			AdminAPIEnabled bool               `json:"admin_api_enabled"`
+			Vaults          []vaultStatusEntry `json:"vaults"`
 		}
-		response := statusResponse{Version: version.Version, Vaults: make([]vaultStatusEntry, 0, len(cfg.Vaults))}
+		response := statusResponse{Version: version.Version, AdminAPIEnabled: adminAPIEnabled, Vaults: make([]vaultStatusEntry, 0, len(cfg.Vaults))}
 		// Primary connection (historical field) checked in parallel with per-vault checks via helper.
 		primaryClients := map[string]vault.Client{"primary": primaryVaultClient}
 		primaryResults := vault.CheckInstances(ctx, []string{"primary"}, primaryClients, 5*time.Second)
@@ -132,7 +133,9 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 	// Health and readiness probes
 	r.Get("/api/health", handlers.HealthCheck)
 	r.Get("/api/ready", handlers.ReadinessCheck)
-	r.Get("/api/status", newStatusHandler(cfg, primaryVaultClient, statusClients))
+	// Admin is optional; process stays up. Surface enablement on /api/status (not fail-ready).
+	adminAPIEnabled := handlers.RegisterAdminRoutes(r, settingsPath, cfg.Env, vaultRegistry, statusClients, multiVaultClient, cfg.TrustProxy)
+	r.Get("/api/status", newStatusHandler(cfg, primaryVaultClient, statusClients, adminAPIEnabled))
 	r.Get("/api/version", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(version.Info())
@@ -141,7 +144,6 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 	r.Get("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP)
 	handlers.RegisterI18nRoutes(r)
 	handlers.RegisterCertRoutes(r, multiVaultClient)
-	handlers.RegisterAdminRoutes(r, settingsPath, cfg.Env, vaultRegistry, statusClients, multiVaultClient, cfg.TrustProxy)
 
 	return r, nil
 }

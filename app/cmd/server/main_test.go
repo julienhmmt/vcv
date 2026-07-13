@@ -23,7 +23,7 @@ func TestNewStatusHandler_PrimaryConnected(t *testing.T) {
 	primary.On("CheckConnection", mock.Anything).Return(nil)
 
 	cfg := config.Config{Vaults: []config.VaultInstance{}}
-	handler := newStatusHandler(cfg, primary, nil)
+	handler := newStatusHandler(cfg, primary, nil, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
 	w := httptest.NewRecorder()
@@ -42,7 +42,7 @@ func TestNewStatusHandler_PrimaryDisconnected(t *testing.T) {
 	primary.On("CheckConnection", mock.Anything).Return(errors.New("connection refused"))
 
 	cfg := config.Config{Vaults: []config.VaultInstance{}}
-	handler := newStatusHandler(cfg, primary, nil)
+	handler := newStatusHandler(cfg, primary, nil, false)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
 	w := httptest.NewRecorder()
@@ -78,7 +78,7 @@ func TestNewStatusHandler_StatusClients(t *testing.T) {
 		// v3 intentionally missing
 	}
 
-	handler := newStatusHandler(cfg, primary, statusClients)
+	handler := newStatusHandler(cfg, primary, statusClients, true)
 	req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
 	w := httptest.NewRecorder()
 	handler(w, req)
