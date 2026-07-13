@@ -35,6 +35,7 @@ Guidance for agents working in this repository. Keep this file accurate as the a
 - Expiration thresholds from `/api/config` / the `config` store — never hardcode 7/30 in UI logic.
 - Encode cert IDs in paths (`encodeURIComponent`); composite IDs are parsed carefully (see `parseCertID` / backend handlers).
 - Treat partial vault failure as normal: `GET /api/certs` envelope has `certificates` + `errors[]`.
+- **Use graphify memory** (`graphify-frontend/`, `graphify-backend/`, `graphify-full/`) before broad code archaeology — see [Knowledge graphs (graphify)](#knowledge-graphs-graphify).
 
 ### Don’t
 
@@ -243,6 +244,85 @@ TLS: prefer `tls_ca_cert_base64`; `tls_insecure: true` only for labs (runtime wa
 
 Edit **examples** (`settings.example.json`, `settings.enhanced-metrics.example.json`) for repo changes — not local files that hold real tokens.
 
+## Knowledge graphs (graphify)
+
+**Use these aggressively.** They are local project memory (gitignored) for architecture, bugs, and cross-file links. Prefer graph query / report / wiki over re-reading large packages from scratch.
+
+### Layout
+
+| Directory | Scope | Prefer for |
+| --- | --- | --- |
+| `graphify-frontend/` | Svelte SPA (`app/web/frontend`) | UI, stores, `api.ts`, thresholds UX, Track C plans |
+| `graphify-backend/` | Go app (`app/cmd`, `app/internal`, embed) | Vault, middleware, admin sessions, metrics, Track D plans |
+| `graphify-full/` | FE ∪ BE + cross-stack bridges | API ↔ SPA contracts (list certs, config, admin token mask, i18n, status) |
+
+Each dir typically has:
+
+- `graph.html` — interactive graph  
+- `graph.json` — GraphRAG / CLI query target  
+- `GRAPH_REPORT.md` — god nodes, surprising edges, suggested questions  
+- Optional: `wiki/` (backend), `README.md` (how to rebuild)
+
+Fallback: `graphify-out/` if a one-off pipeline wrote there.
+
+### Mandatory habits (when the folders exist)
+
+1. **Start of a non-trivial task** (bug, feature, audit, “how does X work?”):  
+   - Frontend-only → open or query **`graphify-frontend`**.  
+   - Backend-only → **`graphify-backend`**.  
+   - Spans HTTP (handler ↔ store/component) → **`graphify-full`**, then drill into the layer graph.  
+2. **Before large greps** of a package you do not already know: query the graph first (`graphify query` / skill `/graphify query` with `--graph <path>/graph.json`).  
+3. **Read `GRAPH_REPORT.md` god nodes + surprising connections** for the layer you touch — often names the hub (`buildRouter`, `createCertsStore`, `certStatus`, …).  
+4. **Plans**: if `plans/README.md` exists (gitignored), check active Track C/D rows before inventing duplicate work. Graph findings should feed plans, not replace verification in code.  
+5. **Always verify in source** after a graph answer — edges can be INFERRED; line-level truth wins.  
+6. **After substantial architecture changes** (new routes, new stores, middleware reorder, multi-vault semantics): rebuild the affected layer graph, then re-merge full if needed (see rebuild). Do not block a small bugfix on a full rebuild.  
+7. **Do not commit** `graphify-*/` — already gitignored. Do not invent secrets into graph nodes.
+
+### Which graph to pick
+
+```text
+Is the change only under app/web/frontend/ ?
+  → graphify-frontend
+
+Is the change only under app/cmd or app/internal (or app/web/web.go embed) ?
+  → graphify-backend
+
+Does it cross FE api.ts / stores ↔ Go handlers / vault / middleware ?
+  → graphify-full first (bridges), then layer graph for implementation detail
+
+Unsure / onboarding / “map the system” ?
+  → GRAPH_REPORT.md in full or both layers; wiki under graphify-backend/wiki/ if present
+```
+
+### Query / CLI (repo root)
+
+Default graphify CLI looks at `graphify-out/graph.json`. **Always pass our paths:**
+
+```bash
+# Explore (examples)
+graphify query "How do cert list errors reach the UI?" --graph graphify-full/graph.json
+graphify query "Where is admin session rate limit keyed?" --graph graphify-backend/graph.json
+graphify query "expiry thresholds config store" --graph graphify-frontend/graph.json
+graphify path "mapVaultsForPut" "mergeVaultTokens" --graph graphify-full/graph.json
+graphify explain "buildRouter" --graph graphify-backend/graph.json
+```
+
+In agent sessions with the **graphify skill** (`/graphify`): run query/path/explain against the correct folder; if the skill defaults to `graphify-out/`, set the graph path to `graphify-frontend|backend|full/graph.json`.
+
+Open HTML in a browser for orientation:  
+`graphify-frontend/graph.html`, `graphify-backend/graph.html`, `graphify-full/graph.html`.
+
+### Rebuild / merge notes
+
+- **Independent layers** stay source of truth for deep work (backend may be directed; frontend undirected).  
+- **Full** is an undirected union with `fe_`/`be_` node prefixes + explicit **cross-stack** edges (`source_file: cross-stack`). Plain `graphify merge-graphs A B` fails if one graph is directed and the other is not — convert both to undirected (or use the session merge recipe in `graphify-full/README.md`).  
+- Quality levers: scope (no frontend noise in backend graph), deep semantic for backend, edge sanitizer (confidence + `source_file`), optional wiki.  
+- Rebuild when user asks `/graphify`, when graphs are missing, or after large refactors. Small PRs may skip rebuild.
+
+### When graphs are missing
+
+If `graphify-frontend/` or `graphify-backend/` is absent: continue with normal code tools, and offer to rebuild (`/graphify` on `app/web/frontend` or `app/` backend scope) so future sessions are faster. Prefer rebuilding **once** over re-deriving architecture every turn.
+
 ## Doc map
 
 | Topic | File |
@@ -252,8 +332,9 @@ Edit **examples** (`settings.example.json`, `settings.enhanced-metrics.example.j
 | Deep backend, API table, threat model | `app/README.md` |
 | User-facing product / deploy | `README.md` (+ `README.fr.md`, docker-hub readme) |
 | Prometheus metrics | `PROMETHEUS_METRICS.md`, `ALERTING.md` |
-| Admin operational docs (embedded) | `internal/docs/` |
-| Implementation plans / improve handoffs | `plans/` (often local/gitignored; execute only when present and asked) |
+| Admin operational docs (embedded) | `app/internal/docs/` |
+| Implementation plans / improve handoffs | `plans/` (local/gitignored; Track C frontend, Track D backend; execute when present) |
+| **Knowledge graphs (query before archaeology)** | `graphify-frontend/`, `graphify-backend/`, `graphify-full/` (local/gitignored) |
 
 When architecture or agent workflow drifts, update **AGENTS.md**. When handler/API/security detail drifts, update **`app/README.md`**. Prefer a **docs branch**, not drive-by edits on an unrelated fix PR.
 
@@ -277,10 +358,12 @@ Release: push a semver tag (e.g. `1.9`); GoReleaser does the rest.
 ## Agent habits for this repo
 
 1. Branch off `main` before edits; never commit on `main`. One branch per step.
-2. Prefer Make targets over ad-hoc `pnpm`/`go` paths when a target exists.
-3. Run the verification matrix for the change type before calling the work done.
-4. Keep UI strings in `internal/i18n` + frontend `t()` usage in sync (all five languages).
-5. Do not reintroduce HTMX or server-side templates.
-6. Do not expose secrets in logs, settings examples, or commits; mask admin tokens.
-7. When architecture or agent process drifts, update this file (and `app/README.md` for deep detail) on a docs branch.
-8. Honor intentional non-goals (public inventory APIs, in-memory admin sessions) unless the user reopens them.
+2. **Query graphify first** when the folders exist (frontend / backend / full) — then read code at the cited paths. Prefer graph + plans over blind multi-package search.
+3. Prefer Make targets over ad-hoc `pnpm`/`go` paths when a target exists.
+4. Run the verification matrix for the change type before calling the work done.
+5. Keep UI strings in `internal/i18n` + frontend `t()` usage in sync (all five languages).
+6. Do not reintroduce HTMX or server-side templates.
+7. Do not expose secrets in logs, settings examples, or commits; mask admin tokens.
+8. When architecture or agent process drifts, update this file (and `app/README.md` for deep detail) on a docs branch.
+9. Honor intentional non-goals (public inventory APIs, in-memory admin sessions) unless the user reopens them.
+10. After large structural changes, rebuild the affected graphify layer (and full if cross-stack) when practical — do not leave the graph permanently stale for the next agent.

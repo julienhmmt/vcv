@@ -132,11 +132,11 @@ vcv is designed for **private networks**. Do not expose the listen port to the p
 3. Scrape `/metrics` only from Prometheus on a private network; consider proxy auth for metrics.
 4. Vault token: least-privilege policy, for example:
 
-```hcl
-path "pki/certs"   { capabilities = ["list"] }
-path "pki/cert/*"  { capabilities = ["read"] }
-path "sys/health"  { capabilities = ["read"] }
-```
+    ```hcl
+    path "pki/certs"   { capabilities = ["list"] }
+    path "pki/cert/*"  { capabilities = ["read"] }
+    path "sys/health"  { capabilities = ["read"] }
+    ```
 
 5. Admin panel: set `admin.password` to a bcrypt hash to enable; omit the field (or use an invalid hash) to disable. Sessions are in-process memory (sticky sessions or external store needed for horizontal scale).
 6. TLS to Vault: `tls_insecure: false` plus CA material in production.
