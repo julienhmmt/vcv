@@ -8,6 +8,19 @@ import (
 
 const defaultPKIMount = "pki"
 
+// VaultPKIMounts returns the runtime PKI mount list for a vault instance.
+// PKIMounts is the source of truth; singular pki_mount is a deprecated alias
+// used only when PKIMounts is empty.
+func VaultPKIMounts(v VaultInstance) []string {
+	if len(v.PKIMounts) > 0 {
+		return v.PKIMounts
+	}
+	if m := strings.TrimSpace(v.PKIMount); m != "" {
+		return []string{m}
+	}
+	return []string{defaultPKIMount}
+}
+
 type VaultInstance struct {
 	ID              string   `json:"id"`
 	OriginalID      string   `json:"original_id,omitempty"`
@@ -93,6 +106,7 @@ func normalizeVaultInstance(instance VaultInstance) (VaultInstance, error) {
 	if token == "" {
 		return VaultInstance{}, fmt.Errorf("vault token is empty")
 	}
+	// PKIMounts wins when non-empty; otherwise fall back to singular pki_mount.
 	if len(pkiMounts) == 0 {
 		if pkiMount != "" {
 			pkiMounts = []string{pkiMount}
@@ -101,11 +115,11 @@ func normalizeVaultInstance(instance VaultInstance) (VaultInstance, error) {
 	if len(pkiMounts) == 0 {
 		pkiMounts = []string{defaultPKIMount}
 	}
-	if pkiMount == "" {
-		pkiMount = strings.TrimSpace(pkiMounts[0])
-	}
+	// Keep singular field mirrored for backward-compatible API responses.
+	pkiMount = strings.TrimSpace(pkiMounts[0])
 	if pkiMount == "" {
 		pkiMount = defaultPKIMount
+		pkiMounts[0] = pkiMount
 	}
 	if displayName == "" {
 		displayName = id
