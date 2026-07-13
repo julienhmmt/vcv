@@ -105,6 +105,12 @@ func NewClientFromConfig(cfg config.VaultConfig) (Client, error) {
 		Int("mount_count", len(cfg.PKIMounts)).
 		Msg("vault client created successfully")
 
+	if cfg.TLSInsecure {
+		logger.Get().Warn().
+			Str("vault_addr", cfg.Addr).
+			Msg("Vault TLS certificate verification is disabled (tls_insecure=true)")
+	}
+
 	// Start periodic cache cleanup
 	go func() {
 		ticker := time.NewTicker(1 * time.Minute)
@@ -203,7 +209,6 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 		return []certs.Certificate{}, ErrVaultNotConfigured
 	}
 	var allCertificates []certs.Certificate
-	revokedSet := make(map[string]bool)
 	listedMounts := 0
 	var lastError error
 
@@ -235,9 +240,6 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 
 		listedMounts += 1
 		allCertificates = append(allCertificates, mountCerts...)
-		for serial := range mountRevoked {
-			revokedSet[serial] = true
-		}
 	}
 	if listedMounts == 0 {
 		if lastError != nil {
@@ -401,7 +403,7 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 	}
 
 	path := fmt.Sprintf("%s/cert/%s", mount, serial)
-	secret, err := c.client.Logical().Read(path)
+	secret, err := c.client.Logical().ReadWithContext(ctx, path)
 	if err != nil {
 		logger.Get().Error().
 			Str("vault_addr", c.addr).
