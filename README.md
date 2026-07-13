@@ -27,6 +27,8 @@ The native Vault/OpenBao UI is heavy and not convenient for quickly checking cer
 
 VaultCertsViewer gives platform and security teams a fast, **read-only** view of the Vault/OpenBao certificates inventory with only the essential information.
 
+**Deployment note:** cert and metrics APIs are intentionally unauthenticated for private-network use. See [Security & deployment assumptions](app/README.md#security--deployment-assumptions) in `app/README.md`.
+
 ## 👥 Who should use it?
 
 - Teams operating Vault/OpenBao PKI who need visibility on their certificates.
