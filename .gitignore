@@ -29,3 +29,9 @@ app/web/frontend/dist/
 
 # GoReleaser output
 /dist/
+
+# Graphify output
+graphify-out/
+graphify-frontend/
+graphify-backend/
+graphify-full/
