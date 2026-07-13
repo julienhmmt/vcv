@@ -5,55 +5,62 @@
   "app": {
     "env": "prod",
     "logging": {
-      "level": "debug",
+      "level": "info",
       "format": "json",
-      "output": "both",
+      "output": "stdout",
       "file_path": "/var/log/app/vcv.log"
     },
     "port": 52000
   },
   "certificates": {
     "expiration_thresholds": {
-      "critical": 2,
-      "warning": 10
+      "critical": 7,
+      "warning": 30
     }
   },
   "metrics": {
-    "per_certificate": true,
-    "enhanced_metrics": false
+    "per_certificate": false,
+    "enhanced_metrics": true
   },
   "cors": {
     "allowed_origins": [
-      "https://172.16.20.50:8443",
-      "https://reproxy.vcv.local"
+      "https://vcv.example.com"
     ],
     "allow_credentials": true
   },
   "vaults": [
     {
       "id": "vault-main",
-      "address": "http://vault:8200",
-      "token": "root",
-      "pki_mounts": ["pki", "pki_dev", "pki_stage", "pki_production"],
+      "address": "https://vault.example.com:8200",
+      "token": "s.REPLACE_WITH_READ_ONLY_TOKEN",
+      "pki_mounts": [
+        "pki",
+        "pki_dev",
+        "pki_stage",
+        "pki_production"
+      ],
       "display_name": "Vault",
       "tls_ca_cert_base64": "BASE64_PEM_CA_BUNDLE",
       "tls_ca_cert": "",
       "tls_ca_path": "",
-      "tls_server_name": "vault.service.consul",
-      "tls_insecure": true,
+      "tls_server_name": "vault.example.com",
+      "tls_insecure": false,
       "enabled": true
     },
     {
       "id": "vault-dev",
-      "address": "http://vault-dev:8200",
-      "token": "root",
-      "pki_mounts": ["pki", "pki_corporate", "pki_external", "pki_partners"],
+      "address": "https://vault-dev.example.com:8200",
+      "token": "s.REPLACE_WITH_READ_ONLY_TOKEN",
+      "pki_mounts": [
+        "pki",
+        "pki_corporate"
+      ],
       "display_name": "Vault dev",
       "tls_ca_cert_base64": "BASE64_PEM_CA_BUNDLE",
       "tls_ca_cert": "",
       "tls_ca_path": "",
-      "tls_server_name": "vault-dev.service.consul",
-      "tls_insecure": true,
+      "tls_server_name": "vault-dev.example.com",
+      "tls_insecure": false,
       "enabled": true
     }
   ]

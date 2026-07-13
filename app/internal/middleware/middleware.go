@@ -232,8 +232,18 @@ func CSRFProtection(next http.Handler) http.Handler {
 			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 			return
 		}
+		// Cookie-bearing unsafe methods without Origin/Referer are likely
+		// browser session CSRF; allow only cookieless non-browser clients.
+		if hasCookies(r) {
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+			return
+		}
 		next.ServeHTTP(w, r)
 	})
+}
+
+func hasCookies(r *http.Request) bool {
+	return strings.TrimSpace(r.Header.Get("Cookie")) != ""
 }
 
 func targetOrigin(r *http.Request) string {
@@ -336,7 +346,7 @@ func shouldSkipRateLimit(r *http.Request, config RateLimitConfig) bool {
 
 func (l *rateLimiter) allow(now time.Time, key string) (bool, int) {
 	if key == "" {
-		return true, 0
+		key = "unknown"
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()

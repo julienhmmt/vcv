@@ -362,3 +362,29 @@ func writeSettingsFile(t *testing.T, dir, content string) {
 		t.Fatalf("failed to write settings file: %v", err)
 	}
 }
+
+func TestVaultPKIMounts(t *testing.T) {
+	tests := []struct {
+		name     string
+		instance VaultInstance
+		want     []string
+	}{
+		{name: "pki_mounts only", instance: VaultInstance{PKIMounts: []string{"a", "b"}}, want: []string{"a", "b"}},
+		{name: "pki_mount only", instance: VaultInstance{PKIMount: "singular"}, want: []string{"singular"}},
+		{name: "pki_mounts wins", instance: VaultInstance{PKIMount: "singular", PKIMounts: []string{"a"}}, want: []string{"a"}},
+		{name: "default", instance: VaultInstance{}, want: []string{defaultPKIMount}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := VaultPKIMounts(tt.instance)
+			if len(got) != len(tt.want) {
+				t.Fatalf("len got %d want %d", len(got), len(tt.want))
+			}
+			for i := range got {
+				if got[i] != tt.want[i] {
+					t.Fatalf("idx %d got %q want %q", i, got[i], tt.want[i])
+				}
+			}
+		})
+	}
+}

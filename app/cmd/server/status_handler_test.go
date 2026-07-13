@@ -39,7 +39,7 @@ func TestNewStatusHandler_PrimaryDisconnectedAndMissingClient(t *testing.T) {
 	var payload statusResponse
 	assert.NoError(t, json.NewDecoder(rec.Body).Decode(&payload))
 	assert.False(t, payload.VaultConnected)
-	assert.Contains(t, payload.VaultError, "primary down")
+	assert.Equal(t, "vault unavailable", payload.VaultError)
 	assert.Len(t, payload.Vaults, 1)
 	assert.Equal(t, "v1", payload.Vaults[0].ID)
 	assert.Equal(t, "Vault 1", payload.Vaults[0].DisplayName)

@@ -6,7 +6,6 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -86,16 +85,15 @@ func (s *adminSessionStore) loginFromJSON(w http.ResponseWriter, r *http.Request
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteStrictMode,
 		Secure:   s.secureCookies,
 		Expires:  expiresAt,
 	})
 	return true, ""
 }
 
-// registerAdminAPIRoutes mounts JSON admin endpoints alongside the existing
-// HTMX form routes. Shares the session and settings stores so both UIs see
-// the same state.
+// registerAdminAPIRoutes mounts JSON admin API endpoints for the Svelte admin panel.
+// Shares the session and settings stores with the rest of the admin routes.
 func registerAdminAPIRoutes(
 	router chi.Router,
 	sessions *adminSessionStore,
@@ -122,7 +120,7 @@ func registerAdminAPIRoutes(
 	})
 
 	router.Post("/api/admin/logout", func(w http.ResponseWriter, r *http.Request) {
-		sessions.clearCookie(w)
+		sessions.logout(w, r)
 		w.WriteHeader(http.StatusNoContent)
 	})
 
@@ -289,28 +287,31 @@ func mergeVaultTokens(incoming, existing []config.VaultInstance) []config.VaultI
 }
 
 func computeVaultStatuses(ctx context.Context, vaults []config.VaultInstance, clients map[string]vault.Client) []adminVaultStatus {
-	statuses := make([]adminVaultStatus, len(vaults))
-	var wg sync.WaitGroup
-	for i, v := range vaults {
-		enabled := config.IsVaultEnabled(v)
-		statuses[i] = adminVaultStatus{ID: v.ID, Enabled: enabled, Connected: false}
-		if !enabled || clients == nil {
-			continue
-		}
-		client, ok := clients[v.ID]
-		if !ok || client == nil {
-			continue
-		}
-		wg.Add(1)
-		go func(idx int, client vault.Client) {
-			defer wg.Done()
-			checkCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-			defer cancel()
-			if err := client.CheckConnection(checkCtx); err == nil {
-				statuses[idx].Connected = true
-			}
-		}(i, client)
+	ordered := make([]string, 0, len(vaults))
+	enabledByID := make(map[string]bool, len(vaults))
+	for _, v := range vaults {
+		ordered = append(ordered, v.ID)
+		enabledByID[v.ID] = config.IsVaultEnabled(v)
 	}
-	wg.Wait()
+	checkClients := clients
+	if checkClients == nil {
+		checkClients = map[string]vault.Client{}
+	}
+	// Only check enabled vaults; pass nil for disabled so CheckInstances skips work.
+	filtered := make(map[string]vault.Client, len(checkClients))
+	for id, client := range checkClients {
+		if enabledByID[id] {
+			filtered[id] = client
+		}
+	}
+	checked := vault.CheckInstances(ctx, ordered, filtered, 5*time.Second)
+	statuses := make([]adminVaultStatus, len(vaults))
+	for i, v := range vaults {
+		connected := false
+		if i < len(checked) {
+			connected = checked[i].Connected
+		}
+		statuses[i] = adminVaultStatus{ID: v.ID, Enabled: enabledByID[v.ID], Connected: connected}
+	}
 	return statuses
 }

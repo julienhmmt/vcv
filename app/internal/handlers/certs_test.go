@@ -272,18 +272,6 @@ func TestGetCertificatePEM_EncodingError_DoesNotPanic(t *testing.T) {
 	mockVault.AssertExpectations(t)
 }
 
-// TestDownloadCertificatePEM_Success is skipped because the download endpoint has been removed.
-// Operators only need to view certificates, not download them.
-func TestDownloadCertificatePEM_Success(t *testing.T) {
-	t.Skip("Download endpoint removed - operators only need to view certificates")
-}
-
-// TestDownloadCertificatePEM_WriteError_DoesNotPanic is skipped because the download endpoint has been removed.
-// Operators only need to view certificates, not download them.
-func TestDownloadCertificatePEM_WriteError_DoesNotPanic(t *testing.T) {
-	t.Skip("Download endpoint removed - operators only need to view certificates")
-}
-
 func TestGetIntermediateCA_Success(t *testing.T) {
 	mockVault := new(vault.MockClient)
 	expected := certs.DetailedCertificate{

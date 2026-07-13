@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -32,6 +33,18 @@ const routerMaxBodyBytes int64 = 1 << 20
 const routerRateLimitMaxRequests int = 300
 const routerRateLimitWindow time.Duration = 1 * time.Minute
 
+// publicVaultStatusError maps internal vault connection errors to stable,
+// non-sensitive strings for the public /api/status response.
+func publicVaultStatusError(err error) string {
+	if err == nil {
+		return ""
+	}
+	if errors.Is(err, vault.ErrVaultNotConfigured) {
+		return "vault not configured"
+	}
+	return "vault unavailable"
+}
+
 func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, statusClients map[string]vault.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
@@ -48,27 +61,37 @@ func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, status
 			Vaults         []vaultStatusEntry `json:"vaults"`
 		}
 		response := statusResponse{Version: version.Version, Vaults: make([]vaultStatusEntry, 0, len(cfg.Vaults))}
-		if err := primaryVaultClient.CheckConnection(ctx); err != nil {
-			response.VaultConnected = false
-			response.VaultError = err.Error()
-		} else {
+		// Primary connection (historical field) checked in parallel with per-vault checks via helper.
+		primaryClients := map[string]vault.Client{"primary": primaryVaultClient}
+		primaryResults := vault.CheckInstances(ctx, []string{"primary"}, primaryClients, 5*time.Second)
+		if len(primaryResults) > 0 && primaryResults[0].Connected {
 			response.VaultConnected = true
+		} else {
+			response.VaultConnected = false
+			var primaryErr error
+			if len(primaryResults) > 0 {
+				primaryErr = primaryResults[0].Error
+			}
+			response.VaultError = publicVaultStatusError(primaryErr)
 		}
+		ordered := make([]string, 0, len(cfg.Vaults))
+		displayNames := make(map[string]string, len(cfg.Vaults))
 		for _, instance := range cfg.Vaults {
-			name := instance.DisplayName
-			client := statusClients[instance.ID]
-			entry := vaultStatusEntry{ID: instance.ID, DisplayName: name}
-			if client == nil {
+			ordered = append(ordered, instance.ID)
+			displayNames[instance.ID] = instance.DisplayName
+		}
+		clients := statusClients
+		if clients == nil {
+			clients = map[string]vault.Client{}
+		}
+		checked := vault.CheckInstances(ctx, ordered, clients, 5*time.Second)
+		for _, item := range checked {
+			entry := vaultStatusEntry{ID: item.ID, DisplayName: displayNames[item.ID], Connected: item.Connected}
+			if _, ok := clients[item.ID]; !ok || clients[item.ID] == nil {
 				entry.Connected = false
 				entry.Error = "missing vault status client"
-				response.Vaults = append(response.Vaults, entry)
-				continue
-			}
-			if err := client.CheckConnection(ctx); err != nil {
-				entry.Connected = false
-				entry.Error = err.Error()
-			} else {
-				entry.Connected = true
+			} else if !item.Connected {
+				entry.Error = publicVaultStatusError(item.Error)
 			}
 			response.Vaults = append(response.Vaults, entry)
 		}
@@ -93,19 +116,18 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.SecurityHeaders)
 	r.Use(middleware.CORS(corsConfig))
-	if cfg.Env == config.EnvProd {
-		rateLimitConfig := middleware.DefaultRateLimitConfig()
-		rateLimitConfig.MaxRequests = routerRateLimitMaxRequests
-		rateLimitConfig.Window = routerRateLimitWindow
-		rateLimitConfig.ExemptPaths = []string{"/api/health", "/api/ready", "/metrics"}
-		rateLimitConfig.ExemptPathPrefixes = []string{"/assets/"}
-		r.Use(middleware.RateLimit(rateLimitConfig))
-	}
+	rateLimitConfig := middleware.DefaultRateLimitConfig()
+	rateLimitConfig.MaxRequests = routerRateLimitMaxRequests
+	rateLimitConfig.Window = routerRateLimitWindow
+	rateLimitConfig.ExemptPaths = []string{"/api/health", "/api/ready", "/metrics"}
+	rateLimitConfig.ExemptPathPrefixes = []string{"/assets/"}
+	r.Use(middleware.RateLimit(rateLimitConfig))
 	r.Use(middleware.BodyLimit(routerMaxBodyBytes))
 	r.Use(middleware.CSRFProtection)
 
 	handlers.RegisterStaticRoutes(r, distFS)
 
+	// Public read APIs: assume network ACL. See app/README.md "Security & deployment assumptions".
 	// Health and readiness probes
 	r.Get("/api/health", handlers.HealthCheck)
 	r.Get("/api/ready", handlers.ReadinessCheck)

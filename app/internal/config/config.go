@@ -19,14 +19,15 @@ const (
 
 // Config holds application configuration.
 type Config struct {
-	Env                  Environment
-	Port                 string
-	LogLevel             string
-	LogFormat            string
-	LogOutput            string
-	LogFilePath          string
-	SettingsPath         string
-	CORS                 CORSConfig
+	Env          Environment
+	Port         string
+	LogLevel     string
+	LogFormat    string
+	LogOutput    string
+	LogFilePath  string
+	SettingsPath string
+	CORS         CORSConfig
+	// Vault is deprecated; prefer Vaults / AllVaults. Kept for legacy logging and helpers.
 	Vault                VaultConfig
 	Vaults               []VaultInstance
 	AllVaults            []VaultInstance
@@ -266,14 +267,7 @@ func loadCORSConfig(env Environment) CORSConfig {
 }
 
 func convertVaultInstanceToLegacy(instance VaultInstance) VaultConfig {
-	defaultMount := defaultPKIMount
-	if strings.TrimSpace(instance.PKIMount) != "" {
-		defaultMount = strings.TrimSpace(instance.PKIMount)
-	}
-	pkiMounts := instance.PKIMounts
-	if len(pkiMounts) == 0 {
-		pkiMounts = []string{defaultMount}
-	}
+	pkiMounts := VaultPKIMounts(instance)
 	return VaultConfig{
 		Addr:            instance.Address,
 		PKIMounts:       pkiMounts,

@@ -89,12 +89,6 @@ func TestFilterCertificatesByMounts(t *testing.T) {
 	}
 }
 
-// TestBuildPEMDownloadFilename is skipped because the download functionality has been removed.
-// Operators only need to view certificates, not download them.
-func TestBuildPEMDownloadFilename(t *testing.T) {
-	t.Skip("Download functionality removed - operators only need to view certificates")
-}
-
 func TestParseMountsQueryParam(t *testing.T) {
 	tests := []struct {
 		name     string

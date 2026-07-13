@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"vcv/internal/config"
 	"vcv/internal/logger"
@@ -30,6 +31,18 @@ type VaultConfigResponse struct {
 	PKIMounts   []string `json:"pkiMounts"`
 }
 
+// publicVaultPKIMounts returns mounts without injecting the default "pki" when unset.
+// Used by the public config API so empty config stays empty in JSON.
+func publicVaultPKIMounts(instance config.VaultInstance) []string {
+	if len(instance.PKIMounts) > 0 {
+		return instance.PKIMounts
+	}
+	if m := strings.TrimSpace(instance.PKIMount); m != "" {
+		return []string{m}
+	}
+	return []string{}
+}
+
 // GetConfig returns the application configuration.
 func GetConfig(cfg config.Config, vaultRegistry *vault.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +53,8 @@ func GetConfig(cfg config.Config, vaultRegistry *vault.Registry) http.HandlerFun
 		resp.ExpirationThresholds.Warning = cfg.ExpirationThresholds.Warning
 		resp.Metrics.PerCertificate = cfg.Metrics.PerCertificate
 		resp.Metrics.EnhancedMetrics = cfg.Metrics.EnhancedMetrics
+		// Top-level PKIMounts remains the legacy primary snapshot when present.
+		// Otherwise empty (do not invent defaults for the public API).
 		resp.PKIMounts = cfg.Vault.PKIMounts
 		if resp.PKIMounts == nil {
 			resp.PKIMounts = []string{}
@@ -61,10 +76,7 @@ func GetConfig(cfg config.Config, vaultRegistry *vault.Registry) http.HandlerFun
 			if displayName == "" {
 				displayName = vaultID
 			}
-			pkiMounts := instance.PKIMounts
-			if pkiMounts == nil {
-				pkiMounts = []string{}
-			}
+			pkiMounts := publicVaultPKIMounts(instance)
 			resp.Vaults = append(resp.Vaults, VaultConfigResponse{ID: vaultID, DisplayName: displayName, PKIMounts: pkiMounts})
 		}
 

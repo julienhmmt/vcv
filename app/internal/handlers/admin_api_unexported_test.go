@@ -170,7 +170,7 @@ func TestAdminSessionStore_LoginFromJSON(t *testing.T) {
 				assert.NotEmpty(t, sessionCookie.Value)
 				assert.True(t, sessionCookie.HttpOnly)
 				assert.Equal(t, "/", sessionCookie.Path)
-				assert.Equal(t, http.SameSiteLaxMode, sessionCookie.SameSite)
+				assert.Equal(t, http.SameSiteStrictMode, sessionCookie.SameSite)
 				assert.False(t, sessionCookie.Secure) // false for non-secure cookies
 			}
 		})
@@ -624,6 +624,57 @@ func TestRegisterAdminAPIRoutes_Logout(t *testing.T) {
 		if c.Name == adminCookieName {
 			assert.Empty(t, c.Value)
 			assert.True(t, c.Expires.Before(time.Now()))
+		}
+	}
+}
+
+func TestRegisterAdminAPIRoutes_Logout_InvalidatesServerSession(t *testing.T) {
+	r, _, _, _ := setupAdminAPIRouter(t)
+	cookie := loginAdmin(t, r)
+	require.NotNil(t, cookie)
+	require.NotEmpty(t, cookie.Value)
+
+	// Logout with the session cookie; server session must be deleted.
+	logoutReq := httptest.NewRequest(http.MethodPost, "/api/admin/logout", nil)
+	logoutReq.AddCookie(cookie)
+	logoutW := httptest.NewRecorder()
+	r.ServeHTTP(logoutW, logoutReq)
+	assert.Equal(t, http.StatusNoContent, logoutW.Code)
+
+	// Reusing the old cookie must not grant access to protected endpoints.
+	settingsReq := httptest.NewRequest(http.MethodGet, "/api/admin/settings", nil)
+	settingsReq.AddCookie(cookie)
+	settingsW := httptest.NewRecorder()
+	r.ServeHTTP(settingsW, settingsReq)
+	assert.Equal(t, http.StatusUnauthorized, settingsW.Code)
+}
+
+func TestAdminSessionStore_LoginFromJSON_RateLimited_EmptyIP(t *testing.T) {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("testpassword"), bcrypt.DefaultCost)
+	require.NoError(t, err)
+
+	store := newAdminSessionStore(string(hashedPassword), false)
+
+	body := adminLoginRequest{
+		Username: "admin",
+		Password: "wrongpassword",
+	}
+
+	for i := range 6 {
+		w := httptest.NewRecorder()
+		bodyBytes, _ := json.Marshal(body)
+		req := httptest.NewRequest(http.MethodPost, "/login", bytes.NewBuffer(bodyBytes))
+		req.RemoteAddr = "" // empty client IP must still be rate-limited
+		req.Header.Set("Content-Type", "application/json")
+
+		success, errorMsg := store.loginFromJSON(w, req, body)
+
+		if i < 5 {
+			assert.False(t, success)
+			assert.Equal(t, "Invalid credentials", errorMsg)
+		} else {
+			assert.False(t, success)
+			assert.Equal(t, "Too many attempts", errorMsg)
 		}
 	}
 }

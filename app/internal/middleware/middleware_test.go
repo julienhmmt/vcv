@@ -149,6 +149,44 @@ func TestCSRFProtection_AllowsNonBrowserRequest(t *testing.T) {
 	}
 }
 
+func TestCSRFProtection_BlocksCookieWithoutOrigin(t *testing.T) {
+	h := middleware.CSRFProtection(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	req := httptest.NewRequest(http.MethodPost, "http://example.com/api/admin/logout", strings.NewReader(""))
+	req.Header.Set("Cookie", "vcv_admin_session=abc")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("expected status %d, got %d", http.StatusForbidden, rec.Code)
+	}
+}
+
+func TestRateLimit_BlocksAfterThreshold_EmptyIP(t *testing.T) {
+	config := middleware.DefaultRateLimitConfig()
+	config.MaxRequests = 2
+	config.Window = 10 * time.Second
+	h := middleware.RateLimit(config)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+
+	for i := range 3 {
+		req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
+		req.RemoteAddr = "" // empty client IP must still be rate-limited
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if i < 2 {
+			if rec.Code != http.StatusNoContent {
+				t.Fatalf("expected status %d, got %d", http.StatusNoContent, rec.Code)
+			}
+			continue
+		}
+		if rec.Code != http.StatusTooManyRequests {
+			t.Fatalf("expected status %d, got %d", http.StatusTooManyRequests, rec.Code)
+		}
+	}
+}
+
 func TestRecoverer_HandlesNormalRequest(t *testing.T) {
 	handler := middleware.Recoverer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
