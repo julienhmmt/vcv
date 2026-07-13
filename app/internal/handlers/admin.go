@@ -353,22 +353,23 @@ func isBcryptHash(s string) bool {
 // in favor of the Svelte admin panel that talks to /api/admin/*.
 // Admin remains optional: missing/invalid password skips registration with a clear log.
 // trustProxy should match app.trust_proxy (same as global RateLimit / CSRF).
-func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Environment, vaultRegistry *vault.Registry, vaultStatusClients map[string]vault.Client, cacheClient vault.Client, trustProxy bool) {
+// Returns true when admin routes were registered (bcrypt password present and valid).
+func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Environment, vaultRegistry *vault.Registry, vaultStatusClients map[string]vault.Client, cacheClient vault.Client, trustProxy bool) bool {
 	settingsStore := newAdminSettingsStore(settingsPath, env)
 	settings, err := settingsStore.load()
 	if err != nil {
 		logger.Get().Warn().Err(err).Msg("admin API disabled: settings load failed")
-		return
+		return false
 	}
 
 	password := strings.TrimSpace(settings.Admin.Password)
 	if password == "" {
 		logger.Get().Info().Msg("admin API disabled: admin.password empty")
-		return
+		return false
 	}
 	if !isBcryptHash(password) {
 		logger.Get().Warn().Msg("admin API disabled: admin.password is not a bcrypt hash")
-		return
+		return false
 	}
 
 	secureCookies := env == config.EnvProd
@@ -401,4 +402,5 @@ func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Envi
 		})
 	})
 	logger.Get().Info().Msg("admin API enabled")
+	return true
 }
