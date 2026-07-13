@@ -146,6 +146,41 @@ func TestLoadFromSettingsFile(t *testing.T) {
 	if cfg.Metrics.EnhancedMetrics {
 		t.Fatalf("expected enhanced metrics false, got %v", cfg.Metrics.EnhancedMetrics)
 	}
+	if cfg.TrustProxy {
+		t.Fatalf("expected TrustProxy false when omitted, got true")
+	}
+}
+
+func TestLoad_TrustProxyTrue(t *testing.T) {
+	tmpDir := t.TempDir()
+	settingsFile := filepath.Join(tmpDir, "settings.json")
+	settingsContent := `{
+		"app": {
+			"env": "dev",
+			"port": 52000,
+			"trust_proxy": true,
+			"logging": {"level": "debug", "format": "console", "output": "stdout"}
+		},
+		"vaults": []
+	}`
+	if err := os.WriteFile(settingsFile, []byte(settingsContent), 0644); err != nil {
+		t.Fatalf("failed to create test settings file: %v", err)
+	}
+	originalWd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("failed to get working directory: %v", err)
+	}
+	defer func() { _ = os.Chdir(originalWd) }()
+	if err := os.Chdir(tmpDir); err != nil {
+		t.Fatalf("failed to change directory: %v", err)
+	}
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !cfg.TrustProxy {
+		t.Fatalf("expected TrustProxy true when set, got false")
+	}
 }
 
 func TestLoadSettingsFile_MissingFile(t *testing.T) {

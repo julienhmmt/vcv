@@ -195,59 +195,74 @@ func sanitizeRequestID(value string) string {
 	return trimmed
 }
 
+// CSRFProtection is CSRF middleware with trustProxy=false (fail-closed on X-Forwarded-*).
 func CSRFProtection(next http.Handler) http.Handler {
+	return CSRFProtectionWithTrust(false)(next)
+}
+
+// CSRFProtectionWithTrust returns CSRF middleware. When trustProxy is true,
+// target origin prefers X-Forwarded-Host / X-Forwarded-Proto (for reverse proxies
+// that overwrite those headers). When false, only r.Host and TLS/http are used.
+func CSRFProtectionWithTrust(trustProxy bool) func(http.Handler) http.Handler {
 	safeMethods := map[string]struct{}{http.MethodGet: {}, http.MethodHead: {}, http.MethodOptions: {}}
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if _, ok := safeMethods[r.Method]; ok {
-			next.ServeHTTP(w, r)
-			return
-		}
-		fetchSite := strings.ToLower(strings.TrimSpace(r.Header.Get("Sec-Fetch-Site")))
-		// Only block cross-site requests; allow same-site and same-origin.
-		// This is necessary for reverse proxy deployments where the browser
-		// may categorize requests as same-site rather than same-origin.
-		if fetchSite == "cross-site" {
-			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-			return
-		}
-		origin := strings.TrimSpace(r.Header.Get("Origin"))
-		if origin != "" {
-			if sameOrigin(origin, targetOrigin(r)) {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if _, ok := safeMethods[r.Method]; ok {
 				next.ServeHTTP(w, r)
 				return
 			}
-			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-			return
-		}
-		referer := strings.TrimSpace(r.Header.Get("Referer"))
-		if referer != "" {
-			parsed, err := url.Parse(referer)
-			if err == nil {
-				refererOrigin := parsed.Scheme + "://" + parsed.Host
-				if sameOrigin(refererOrigin, targetOrigin(r)) {
+			fetchSite := strings.ToLower(strings.TrimSpace(r.Header.Get("Sec-Fetch-Site")))
+			// Only block cross-site requests; allow same-site and same-origin.
+			// This is necessary for reverse proxy deployments where the browser
+			// may categorize requests as same-site rather than same-origin.
+			if fetchSite == "cross-site" {
+				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+				return
+			}
+			origin := strings.TrimSpace(r.Header.Get("Origin"))
+			if origin != "" {
+				if sameOrigin(origin, targetOrigin(r, trustProxy)) {
 					next.ServeHTTP(w, r)
 					return
 				}
+				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+				return
 			}
-			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-			return
-		}
-		// Cookie-bearing unsafe methods without Origin/Referer are likely
-		// browser session CSRF; allow only cookieless non-browser clients.
-		if hasCookies(r) {
-			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
+			referer := strings.TrimSpace(r.Header.Get("Referer"))
+			if referer != "" {
+				parsed, err := url.Parse(referer)
+				if err == nil {
+					refererOrigin := parsed.Scheme + "://" + parsed.Host
+					if sameOrigin(refererOrigin, targetOrigin(r, trustProxy)) {
+						next.ServeHTTP(w, r)
+						return
+					}
+				}
+				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+				return
+			}
+			// Cookie-bearing unsafe methods without Origin/Referer are likely
+			// browser session CSRF; allow only cookieless non-browser clients.
+			if hasCookies(r) {
+				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func hasCookies(r *http.Request) bool {
 	return strings.TrimSpace(r.Header.Get("Cookie")) != ""
 }
 
-func targetOrigin(r *http.Request) string {
-	proto := strings.TrimSpace(r.Header.Get("X-Forwarded-Proto"))
+func targetOrigin(r *http.Request, trustProxy bool) string {
+	proto := ""
+	host := ""
+	if trustProxy {
+		proto = strings.TrimSpace(r.Header.Get("X-Forwarded-Proto"))
+		host = strings.TrimSpace(r.Header.Get("X-Forwarded-Host"))
+	}
 	if proto == "" {
 		if r.TLS != nil {
 			proto = "https"
@@ -255,7 +270,6 @@ func targetOrigin(r *http.Request) string {
 			proto = "http"
 		}
 	}
-	host := strings.TrimSpace(r.Header.Get("X-Forwarded-Host"))
 	if host == "" {
 		host = strings.TrimSpace(r.Host)
 	}
@@ -289,6 +303,9 @@ type RateLimitConfig struct {
 	MaxEntries         int
 	ExemptPaths        []string
 	ExemptPathPrefixes []string
+	// TrustProxy controls whether ClientIP honors X-Forwarded-For / X-Real-IP.
+	// Default false: key on RemoteAddr only (fail-closed without a stripping proxy).
+	TrustProxy bool
 }
 
 type rateLimiterEntry struct {
@@ -318,7 +335,7 @@ func RateLimit(config RateLimitConfig) func(http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
-			allowed, retryAfter := limiter.allow(time.Now(), httputil.ClientIP(r, true))
+			allowed, retryAfter := limiter.allow(time.Now(), httputil.ClientIP(r, config.TrustProxy))
 			if !allowed {
 				if retryAfter > 0 {
 					w.Header().Set("Retry-After", strconv.Itoa(retryAfter))
