@@ -121,9 +121,10 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 	rateLimitConfig.Window = routerRateLimitWindow
 	rateLimitConfig.ExemptPaths = []string{"/api/health", "/api/ready", "/metrics"}
 	rateLimitConfig.ExemptPathPrefixes = []string{"/assets/"}
+	rateLimitConfig.TrustProxy = cfg.TrustProxy
 	r.Use(middleware.RateLimit(rateLimitConfig))
 	r.Use(middleware.BodyLimit(routerMaxBodyBytes))
-	r.Use(middleware.CSRFProtection)
+	r.Use(middleware.CSRFProtectionWithTrust(cfg.TrustProxy))
 
 	handlers.RegisterStaticRoutes(r, distFS)
 

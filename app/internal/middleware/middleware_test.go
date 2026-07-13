@@ -1,6 +1,7 @@
 package middleware_test
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -184,6 +185,83 @@ func TestRateLimit_BlocksAfterThreshold_EmptyIP(t *testing.T) {
 		if rec.Code != http.StatusTooManyRequests {
 			t.Fatalf("expected status %d, got %d", http.StatusTooManyRequests, rec.Code)
 		}
+	}
+}
+
+func TestRateLimit_TrustProxyFalse_IgnoresXForwardedFor(t *testing.T) {
+	config := middleware.DefaultRateLimitConfig()
+	config.MaxRequests = 1
+	config.Window = 10 * time.Second
+	config.TrustProxy = false
+	h := middleware.RateLimit(config)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	// Same RemoteAddr, different XFF — without trust must share one bucket.
+	for i := range 2 {
+		req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
+		req.RemoteAddr = "192.0.2.10:1234"
+		req.Header.Set("X-Forwarded-For", fmt.Sprintf("203.0.113.%d", i+1))
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if i == 0 && rec.Code != http.StatusNoContent {
+			t.Fatalf("request %d: expected %d, got %d", i, http.StatusNoContent, rec.Code)
+		}
+		if i == 1 && rec.Code != http.StatusTooManyRequests {
+			t.Fatalf("request %d: expected %d, got %d", i, http.StatusTooManyRequests, rec.Code)
+		}
+	}
+}
+
+func TestRateLimit_TrustProxyTrue_UsesXForwardedFor(t *testing.T) {
+	config := middleware.DefaultRateLimitConfig()
+	config.MaxRequests = 1
+	config.Window = 10 * time.Second
+	config.TrustProxy = true
+	h := middleware.RateLimit(config)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	// Same RemoteAddr, different XFF — with trust should get separate buckets.
+	for i := range 2 {
+		req := httptest.NewRequest(http.MethodGet, "/api/status", nil)
+		req.RemoteAddr = "192.0.2.10:1234"
+		req.Header.Set("X-Forwarded-For", fmt.Sprintf("203.0.113.%d", i+1))
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, req)
+		if rec.Code != http.StatusNoContent {
+			t.Fatalf("request %d: expected separate bucket OK, got %d", i, rec.Code)
+		}
+	}
+}
+
+func TestCSRFProtectionWithTrust_UsesForwardedHostWhenTrusted(t *testing.T) {
+	h := middleware.CSRFProtectionWithTrust(true)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	req := httptest.NewRequest(http.MethodPost, "http://backend.internal/admin/login", strings.NewReader(""))
+	req.Host = "backend.internal"
+	req.Header.Set("X-Forwarded-Host", "app.example.com")
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("Origin", "https://app.example.com")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusNoContent {
+		t.Errorf("expected status %d when trusted forwarded host matches Origin, got %d", http.StatusNoContent, rec.Code)
+	}
+}
+
+func TestCSRFProtectionWithTrust_IgnoresForwardedHostWhenUntrusted(t *testing.T) {
+	h := middleware.CSRFProtectionWithTrust(false)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}))
+	req := httptest.NewRequest(http.MethodPost, "http://backend.internal/admin/login", strings.NewReader(""))
+	req.Host = "backend.internal"
+	req.Header.Set("X-Forwarded-Host", "app.example.com")
+	req.Header.Set("X-Forwarded-Proto", "https")
+	req.Header.Set("Origin", "https://app.example.com")
+	rec := httptest.NewRecorder()
+	h.ServeHTTP(rec, req)
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("expected status %d when untrusted X-Forwarded-* skews origin, got %d", http.StatusForbidden, rec.Code)
 	}
 }
 

@@ -4,6 +4,7 @@
   },
   "app": {
     "env": "prod",
+    "trust_proxy": false,
     "logging": {
       "level": "info",
       "format": "json",

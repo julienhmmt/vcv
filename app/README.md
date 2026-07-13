@@ -148,6 +148,14 @@ vcv is designed for **private networks**. Do not expose the listen port to the p
 - Security headers, body size limits, request IDs.
 - Public `/api/status` error strings are sanitized (no raw Vault internals).
 
+### Reverse proxy / `trust_proxy`
+
+Rate limiting keys and CSRF target-origin construction honor `X-Forwarded-For`, `X-Forwarded-Host`, and `X-Forwarded-Proto` **only** when `app.trust_proxy` is `true` (default **`false`**).
+
+Set `app.trust_proxy: true` **only** when a reverse proxy (nginx, Traefik, etc.) sits in front of vcv and **overwrites** client-supplied `X-Forwarded-*` headers with trusted values. If clients can reach vcv directly while this flag is true, they can spoof per-IP rate-limit buckets and skew CSRF origin checks.
+
+Lab `docker-compose` without a stripping proxy should leave `trust_proxy` false.
+
 ## Logging
 
 - Initialized in `cmd/server/main.go` via `internal/logger.Init`.

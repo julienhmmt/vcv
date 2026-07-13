@@ -1,6 +1,7 @@
 {
   "app": {
     "env": "prod",
+    "trust_proxy": false,
     "port": 52000,
     "logging": {
       "level": "info",
