@@ -93,9 +93,8 @@ func (s *adminSessionStore) loginFromJSON(w http.ResponseWriter, r *http.Request
 	return true, ""
 }
 
-// registerAdminAPIRoutes mounts JSON admin endpoints alongside the existing
-// HTMX form routes. Shares the session and settings stores so both UIs see
-// the same state.
+// registerAdminAPIRoutes mounts JSON admin API endpoints for the Svelte admin panel.
+// Shares the session and settings stores with the rest of the admin routes.
 func registerAdminAPIRoutes(
 	router chi.Router,
 	sessions *adminSessionStore,
