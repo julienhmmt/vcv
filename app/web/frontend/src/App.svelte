@@ -144,7 +144,11 @@
 
     void (async () => {
       await i18n.ready
-      await load(true)
+      try {
+        await load(true)
+      } catch {
+        // Hard cert failure: ErrorBanner shows certs.error; avoid unhandled rejection.
+      }
     })()
     const id = setInterval(() => {
       if (tabVisible()) void status.refresh()
@@ -156,7 +160,11 @@
   $effect(() => {
     if (autoRefreshSec <= 0) return
     const id = setInterval(() => {
-      if (tabVisible() && !certs.loading) void load()
+      if (tabVisible() && !certs.loading) {
+        void load().catch(() => {
+          // Hard cert failure: ErrorBanner shows certs.error.
+        })
+      }
     }, autoRefreshSec * 1000)
     return () => clearInterval(id)
   })
@@ -190,17 +198,15 @@
       } finally {
         initialLoad = false
       }
-      if (!certs.error) {
-        lastUpdated = new Date()
-        notifyExpiry(true)
-      }
+      if (certs.error) throw new Error(certs.error)
+      lastUpdated = new Date()
+      notifyExpiry(true)
       return
     }
     await Promise.all(promises)
-    if (!certs.error) {
-      lastUpdated = new Date()
-      notifyExpiry(false)
-    }
+    if (certs.error) throw new Error(certs.error)
+    lastUpdated = new Date()
+    notifyExpiry(false)
   }
 
   /**
@@ -237,7 +243,8 @@
     toast.promise(load(), {
       loading: i18n.t('toastRefreshing', 'Refreshing…'),
       success: () => i18n.t('loadSuccess', 'Certificates loaded'),
-      error: i18n.t('toastRefreshFailed', 'Refresh failed'),
+      error: (err) =>
+        err instanceof Error ? err.message : i18n.t('toastRefreshFailed', 'Refresh failed'),
     })
   }
 
