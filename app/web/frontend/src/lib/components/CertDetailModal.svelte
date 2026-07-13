@@ -46,37 +46,52 @@
   let issuerError = $state<string | null>(null)
 
   let copiedField = $state<string | null>(null)
+  let copyTimer: ReturnType<typeof setTimeout> | null = null
+  /** Bumped on each details request so stale responses are ignored. */
+  let detailsReqId = 0
+  /** Bumped on each issuer request so stale responses are ignored. */
+  let issuerReqId = 0
 
   function loadDetails(): void {
     if (!cert) return
+    const reqId = ++detailsReqId
+    const id = cert.id
     loading = true
     error = null
     api
-      .getCertificateDetails(cert.id)
+      .getCertificateDetails(id)
       .then((data) => {
+        if (reqId !== detailsReqId) return
         details = data
       })
       .catch((err: unknown) => {
+        if (reqId !== detailsReqId) return
         error = err instanceof ApiError ? err.message : i18n.t('loadDetailsNetworkError', 'Failed to load details')
       })
       .finally(() => {
+        if (reqId !== detailsReqId) return
         loading = false
       })
   }
 
   function loadIssuer(): void {
     if (!cert) return
+    const reqId = ++issuerReqId
+    const id = cert.id
     issuerLoading = true
     issuerError = null
     api
-      .getCertificateCA(cert.id)
+      .getCertificateCA(id)
       .then((data) => {
+        if (reqId !== issuerReqId) return
         issuer = data
       })
       .catch((err: unknown) => {
+        if (reqId !== issuerReqId) return
         issuerError = err instanceof ApiError ? err.message : i18n.t('loadDetailsNetworkError', 'Failed to load details')
       })
       .finally(() => {
+        if (reqId !== issuerReqId) return
         issuerLoading = false
       })
   }
@@ -84,11 +99,20 @@
   // Reset everything and (re)load whenever the dialog opens for a certificate.
   $effect(() => {
     if (!open || !cert) {
+      detailsReqId++
+      issuerReqId++
       details = null
       issuer = null
       error = null
       issuerError = null
+      loading = false
+      issuerLoading = false
       view = 'certificate'
+      if (copyTimer) {
+        clearTimeout(copyTimer)
+        copyTimer = null
+      }
+      copiedField = null
       return
     }
     // Depend on the selected certificate so switching certs reloads.
@@ -96,7 +120,12 @@
     view = 'certificate'
     issuer = null
     issuerError = null
+    issuerReqId++
     loadDetails()
+    return () => {
+      detailsReqId++
+      issuerReqId++
+    }
   })
 
   function showIssuer(): void {
@@ -114,9 +143,11 @@
       toast.error(i18n.t('copyFailed', 'Copy failed — clipboard unavailable'))
       return
     }
+    if (copyTimer) clearTimeout(copyTimer)
     copiedField = field
-    setTimeout(() => {
+    copyTimer = setTimeout(() => {
       if (copiedField === field) copiedField = null
+      copyTimer = null
     }, 1500)
   }
 
