@@ -141,7 +141,7 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 	r.Get("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP)
 	handlers.RegisterI18nRoutes(r)
 	handlers.RegisterCertRoutes(r, multiVaultClient)
-	handlers.RegisterAdminRoutes(r, settingsPath, cfg.Env, vaultRegistry, statusClients, multiVaultClient)
+	handlers.RegisterAdminRoutes(r, settingsPath, cfg.Env, vaultRegistry, statusClients, multiVaultClient, cfg.TrustProxy)
 
 	return r, nil
 }

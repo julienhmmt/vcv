@@ -87,7 +87,7 @@ func TestAdminSessionStore_LoginFromJSON(t *testing.T) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("testpassword"), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
-	store := newAdminSessionStore(string(hashedPassword), false)
+	store := newAdminSessionStore(string(hashedPassword), false, false)
 
 	tests := []struct {
 		name          string
@@ -181,7 +181,7 @@ func TestAdminSessionStore_LoginFromJSON_RateLimited(t *testing.T) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("testpassword"), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
-	store := newAdminSessionStore(string(hashedPassword), false)
+	store := newAdminSessionStore(string(hashedPassword), false, false)
 
 	// Make multiple failed attempts to trigger rate limiting
 	body := adminLoginRequest{
@@ -212,7 +212,7 @@ func TestAdminSessionStore_LoginFromJSON_ReplacesExistingSession(t *testing.T) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("testpassword"), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
-	store := newAdminSessionStore(string(hashedPassword), false)
+	store := newAdminSessionStore(string(hashedPassword), false, false)
 
 	// First login
 	body := adminLoginRequest{
@@ -569,7 +569,7 @@ func setupAdminAPIRouter(t *testing.T) (*chi.Mux, *adminSessionStore, *adminSett
 	require.NoError(t, os.WriteFile(settingsPath, data, 0644))
 
 	store := newAdminSettingsStore(settingsPath, config.EnvDev)
-	sessions := newAdminSessionStore(string(hashedPassword), false)
+	sessions := newAdminSessionStore(string(hashedPassword), false, false)
 
 	r := chi.NewRouter()
 	refreshRegistry := func() {}
@@ -687,7 +687,7 @@ func TestAdminSessionStore_LoginFromJSON_RateLimited_EmptyIP(t *testing.T) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("testpassword"), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
-	store := newAdminSessionStore(string(hashedPassword), false)
+	store := newAdminSessionStore(string(hashedPassword), false, false)
 
 	body := adminLoginRequest{
 		Username: "admin",
@@ -958,7 +958,7 @@ func TestRegisterAdminAPIRoutes_VaultDelete_SaveError(t *testing.T) {
 	require.NoError(t, os.WriteFile(settingsPath, data, 0644))
 
 	store := newAdminSettingsStore(settingsPath, config.EnvDev)
-	sessions := newAdminSessionStore(string(hashedPassword), false)
+	sessions := newAdminSessionStore(string(hashedPassword), false, false)
 
 	r := chi.NewRouter()
 	registerAdminAPIRoutes(r, sessions, store, map[string]vault.Client{}, func() {})

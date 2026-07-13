@@ -24,7 +24,7 @@ import (
 
 func TestAdminSessionStore_NewAdminSessionStore(t *testing.T) {
 	password := "$2a$10$testhashedpassword"
-	store := newAdminSessionStore(password, false)
+	store := newAdminSessionStore(password, false, false)
 
 	assert.NotNil(t, store)
 	assert.Equal(t, password, store.password)
@@ -34,7 +34,7 @@ func TestAdminSessionStore_NewAdminSessionStore(t *testing.T) {
 
 func TestAdminSessionStore_NewAdminSessionStore_SecureCookies(t *testing.T) {
 	password := "$2a$10$testhashedpassword"
-	store := newAdminSessionStore(password, true)
+	store := newAdminSessionStore(password, true, false)
 
 	assert.NotNil(t, store)
 	assert.Equal(t, password, store.password)
@@ -43,7 +43,7 @@ func TestAdminSessionStore_NewAdminSessionStore_SecureCookies(t *testing.T) {
 }
 
 func TestAdminSessionStore_CreateToken(t *testing.T) {
-	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false, false)
 
 	token, err := store.createToken()
 	assert.NoError(t, err)
@@ -56,7 +56,7 @@ func TestAdminSessionStore_Verify(t *testing.T) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte("testpassword"), bcrypt.DefaultCost)
 	require.NoError(t, err)
 
-	store := newAdminSessionStore(string(hashedPassword), false)
+	store := newAdminSessionStore(string(hashedPassword), false, false)
 
 	tests := []struct {
 		name     string
@@ -111,7 +111,7 @@ func TestAdminSessionStore_Verify(t *testing.T) {
 }
 
 func TestAdminSessionStore_Verify_PlaintextPassword(t *testing.T) {
-	store := newAdminSessionStore("plaintextpassword", false)
+	store := newAdminSessionStore("plaintextpassword", false, false)
 
 	// Should return false for plaintext passwords (not bcrypt)
 	result := store.verify("admin", "plaintextpassword")
@@ -119,7 +119,7 @@ func TestAdminSessionStore_Verify_PlaintextPassword(t *testing.T) {
 }
 
 func TestAdminSessionStore_ClearCookie(t *testing.T) {
-	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false, false)
 
 	w := httptest.NewRecorder()
 	store.clearCookie(w)
@@ -139,7 +139,7 @@ func TestAdminSessionStore_ClearCookie(t *testing.T) {
 }
 
 func TestAdminSessionStore_ClearCookie_Secure(t *testing.T) {
-	store := newAdminSessionStore("$2a$10$testhashedpassword", true)
+	store := newAdminSessionStore("$2a$10$testhashedpassword", true, false)
 
 	w := httptest.NewRecorder()
 	store.clearCookie(w)
@@ -153,7 +153,7 @@ func TestAdminSessionStore_ClearCookie_Secure(t *testing.T) {
 }
 
 func TestAdminSessionStore_IsAuthed(t *testing.T) {
-	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false, false)
 
 	// Test without cookie
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -189,7 +189,7 @@ func TestAdminSessionStore_IsAuthed(t *testing.T) {
 }
 
 func TestAdminSessionStore_RequireAuth(t *testing.T) {
-	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false, false)
 
 	// Create a test handler that sets a flag when called
 	handlerCalled := false
@@ -440,7 +440,7 @@ func TestShouldFallbackToDirectWrite(t *testing.T) {
 }
 
 func TestAdminSessionStore_PruneSessions(t *testing.T) {
-	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false, false)
 
 	now := time.Now()
 	// Add expired sessions
@@ -455,7 +455,7 @@ func TestAdminSessionStore_PruneSessions(t *testing.T) {
 }
 
 func TestAdminSessionStore_PruneSessions_MaxSessions(t *testing.T) {
-	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false, false)
 
 	now := time.Now()
 	// Add more sessions than max
@@ -469,7 +469,7 @@ func TestAdminSessionStore_PruneSessions_MaxSessions(t *testing.T) {
 }
 
 func TestAdminSessionStore_AllowLoginAttempt(t *testing.T) {
-	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false, false)
 
 	// Should allow initially
 	req := httptest.NewRequest(http.MethodPost, "/login", nil)
@@ -486,15 +486,39 @@ func TestAdminSessionStore_AllowLoginAttempt(t *testing.T) {
 }
 
 func TestAdminSessionStore_AllowLoginAttempt_NilLimiter(t *testing.T) {
-	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false, false)
 	store.limiter = nil
 
 	req := httptest.NewRequest(http.MethodPost, "/login", nil)
 	assert.True(t, store.allowLoginAttempt(req))
 }
 
+func TestAdminSessionStore_AllowLoginAttempt_TrustProxy(t *testing.T) {
+	// trustProxy false: forged XFF shares one bucket (RemoteAddr only).
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false, false)
+	for i := range 5 {
+		req := httptest.NewRequest(http.MethodPost, "/login", nil)
+		req.RemoteAddr = "192.0.2.10:1234"
+		req.Header.Set("X-Forwarded-For", fmt.Sprintf("203.0.113.%d", i+1))
+		assert.True(t, store.allowLoginAttempt(req), "attempt %d should pass under shared key", i)
+	}
+	req := httptest.NewRequest(http.MethodPost, "/login", nil)
+	req.RemoteAddr = "192.0.2.10:1234"
+	req.Header.Set("X-Forwarded-For", "203.0.113.99")
+	assert.False(t, store.allowLoginAttempt(req), "sixth attempt same RemoteAddr must trip limit")
+
+	// trustProxy true: different XFF get separate buckets.
+	storeTrusted := newAdminSessionStore("$2a$10$testhashedpassword", false, true)
+	for i := range 5 {
+		req := httptest.NewRequest(http.MethodPost, "/login", nil)
+		req.RemoteAddr = "192.0.2.10:1234"
+		req.Header.Set("X-Forwarded-For", fmt.Sprintf("203.0.113.%d", i+1))
+		assert.True(t, storeTrusted.allowLoginAttempt(req), "distinct XFF %d must have its own bucket", i)
+	}
+}
+
 func TestAdminSessionStore_RequireAuth_ExpiredSession(t *testing.T) {
-	store := newAdminSessionStore("$2a$10$testhashedpassword", false)
+	store := newAdminSessionStore("$2a$10$testhashedpassword", false, false)
 
 	testHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
@@ -566,7 +590,7 @@ func TestRegisterAdminRoutes(t *testing.T) {
 	vaultStatusClients := make(map[string]vault.Client)
 	cacheClient := &vault.MockClient{}
 
-	RegisterAdminRoutes(r, tmpFile, config.EnvDev, vaultRegistry, vaultStatusClients, cacheClient)
+	RegisterAdminRoutes(r, tmpFile, config.EnvDev, vaultRegistry, vaultStatusClients, cacheClient, false)
 
 	// Verify routes are registered
 	assert.NotNil(t, r)
@@ -593,7 +617,7 @@ func TestRegisterAdminRoutes_EmptyPassword_LoginNotFound(t *testing.T) {
 	require.NoError(t, os.WriteFile(settingsPath, data, 0644))
 
 	r := chi.NewRouter()
-	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil)
+	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil, false)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", strings.NewReader(`{}`))
 	w := httptest.NewRecorder()
@@ -613,7 +637,7 @@ func TestRegisterAdminRoutes_InvalidHash_LoginNotFound(t *testing.T) {
 	require.NoError(t, os.WriteFile(settingsPath, data, 0644))
 
 	r := chi.NewRouter()
-	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil)
+	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil, false)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", strings.NewReader(`{}`))
 	w := httptest.NewRecorder()
@@ -639,7 +663,7 @@ func TestRegisterAdminRoutes_CacheInvalidate(t *testing.T) {
 	cacheClient := &vault.MockClient{}
 	cacheClient.On("InvalidateCache").Return()
 
-	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, cacheClient)
+	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, cacheClient, false)
 
 	// Login to get session
 	loginBody, _ := json.Marshal(map[string]string{"username": "admin", "password": "testpassword"})
@@ -683,7 +707,7 @@ func TestRegisterAdminRoutes_NoCacheClient(t *testing.T) {
 	require.NoError(t, os.WriteFile(settingsPath, data, 0644))
 
 	r := chi.NewRouter()
-	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil)
+	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil, false)
 
 	// Login to get session
 	loginBody, _ := json.Marshal(map[string]string{"username": "admin", "password": "testpassword"})
