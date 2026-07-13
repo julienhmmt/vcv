@@ -1,6 +1,17 @@
 import { api, ApiError } from '$lib/api'
 import type { I18nStore } from '$lib/stores/i18n.svelte'
-import type { AdminVaultStatus, SettingsFile } from '$lib/types'
+import type { AdminVaultStatus, SettingsFile, VaultInstance } from '$lib/types'
+
+/**
+ * Prepare vaults for PUT /api/admin/settings.
+ * Blank tokens so the backend keeps existing secrets (mergeVaultTokens).
+ */
+export function mapVaultsForPut(vaults: VaultInstance[]): VaultInstance[] {
+  return vaults.map((v) => ({
+    ...v,
+    token: v.token && v.token.trim() !== '' ? v.token : '',
+  }))
+}
 
 export interface AdminStore {
   readonly authenticated: boolean
@@ -91,10 +102,7 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
       // token the admin actually typed into the field.
       const toSend: SettingsFile = {
         ...next,
-        vaults: next.vaults.map((v) => ({
-          ...v,
-          token: v.token && v.token.trim() !== '' ? v.token : '',
-        })),
+        vaults: mapVaultsForPut(next.vaults),
       }
       const response = await api.adminPutSettings(toSend)
       settings = {
