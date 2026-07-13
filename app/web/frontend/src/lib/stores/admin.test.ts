@@ -174,6 +174,22 @@ describe('createAdminStore', () => {
     expect(store.vaultStatuses).toEqual([])
   })
 
+  it('logout failure keeps authenticated and sets error', async () => {
+    const store = createAdminStore(i18n)
+    adminLogin.mockResolvedValueOnce({ authenticated: true })
+    await store.login('admin', 'secret')
+    adminGetSettings.mockResolvedValueOnce({
+      settings: sampleSettings([sampleVault()]),
+      vault_statuses: [],
+    })
+    await store.loadSettings()
+    adminLogout.mockRejectedValueOnce(new ApiError(403, 'CSRF validation failed'))
+    await store.logout()
+    expect(store.authenticated).toBe(true)
+    expect(store.settings).not.toBeNull()
+    expect(store.error).toBe('CSRF validation failed')
+  })
+
   it('invalidateCache sets successMessage on success', async () => {
     const store = createAdminStore(i18n)
     adminInvalidateCache.mockResolvedValueOnce(undefined)

@@ -69,10 +69,17 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
   }
 
   async function logout(): Promise<void> {
-    await api.adminLogout()
-    authenticated = false
-    settings = null
-    vaultStatuses = []
+    try {
+      await api.adminLogout()
+      authenticated = false
+      settings = null
+      vaultStatuses = []
+      error = null
+    } catch (err: unknown) {
+      // Keep local session until server logout succeeds so a failed CSRF/network
+      // call does not leave the user believing they are signed out.
+      applyError(err, i18n.t('adminLogoutFailed', 'Logout failed'))
+    }
   }
 
   async function loadSettings(): Promise<void> {

@@ -127,6 +127,7 @@ type Messages struct {
 	AdminTitle                  string `json:"adminTitle"`
 	AdminBackToVCV              string `json:"adminBackToVCV"`
 	AdminSettingsSaved          string `json:"adminSettingsSaved"`
+	AdminLogoutFailed           string `json:"adminLogoutFailed"`
 	AdminLogout                 string `json:"adminLogout"`
 	AdminLogin                  string `json:"adminLogin"`
 	AdminPassword               string `json:"adminPassword"`
@@ -335,6 +336,7 @@ var englishMessages = Messages{
 	AdminTitle:                     "VaultCertsViewer Admin",
 	AdminBackToVCV:                 "Back to VCV",
 	AdminSettingsSaved:             "Settings saved",
+	AdminLogoutFailed:              "Logout failed",
 	AdminLogout:                    "Logout",
 	AdminLogin:                     "Login",
 	AdminPassword:                  "Password",
@@ -533,6 +535,7 @@ var frenchMessages = Messages{
 	AdminTitle:                     "VaultCertsViewer Admin",
 	AdminBackToVCV:                 "Retour à VCV",
 	AdminSettingsSaved:             "Paramètres enregistrés",
+	AdminLogoutFailed:              "Échec de la déconnexion",
 	AdminLogout:                    "Déconnexion",
 	AdminLogin:                     "Connexion",
 	AdminPassword:                  "Mot de passe",
@@ -731,6 +734,7 @@ var spanishMessages = Messages{
 	AdminTitle:                     "VaultCertsViewer Admin",
 	AdminBackToVCV:                 "Volver a VCV",
 	AdminSettingsSaved:             "Configuración guardada",
+	AdminLogoutFailed:              "Error al cerrar sesión",
 	AdminLogout:                    "Cerrar sesión",
 	AdminLogin:                     "Iniciar sesión",
 	AdminPassword:                  "Contraseña",
@@ -929,6 +933,7 @@ var germanMessages = Messages{
 	AdminTitle:                     "VaultCertsViewer Admin",
 	AdminBackToVCV:                 "Zurück zu VCV",
 	AdminSettingsSaved:             "Einstellungen gespeichert",
+	AdminLogoutFailed:              "Abmelden fehlgeschlagen",
 	AdminLogout:                    "Abmelden",
 	AdminLogin:                     "Anmelden",
 	AdminPassword:                  "Passwort",
@@ -1127,6 +1132,7 @@ var italianMessages = Messages{
 	AdminTitle:                     "VaultCertsViewer Admin",
 	AdminBackToVCV:                 "Torna a VCV",
 	AdminSettingsSaved:             "Impostazioni salvate",
+	AdminLogoutFailed:              "Disconnessione non riuscita",
 	AdminLogout:                    "Disconnetti",
 	AdminLogin:                     "Accedi",
 	AdminPassword:                  "Password",
