@@ -86,7 +86,7 @@ func (s *adminSessionStore) loginFromJSON(w http.ResponseWriter, r *http.Request
 		Value:    token,
 		Path:     "/",
 		HttpOnly: true,
-		SameSite: http.SameSiteLaxMode,
+		SameSite: http.SameSiteStrictMode,
 		Secure:   s.secureCookies,
 		Expires:  expiresAt,
 	})
@@ -122,7 +122,7 @@ func registerAdminAPIRoutes(
 	})
 
 	router.Post("/api/admin/logout", func(w http.ResponseWriter, r *http.Request) {
-		sessions.clearCookie(w)
+		sessions.logout(w, r)
 		w.WriteHeader(http.StatusNoContent)
 	})
 

@@ -131,7 +131,7 @@ func TestAdminSessionStore_ClearCookie(t *testing.T) {
 	assert.Equal(t, "", cookie.Value)
 	assert.Equal(t, "/", cookie.Path)
 	assert.True(t, cookie.HttpOnly)
-	assert.Equal(t, http.SameSiteLaxMode, cookie.SameSite)
+	assert.Equal(t, http.SameSiteStrictMode, cookie.SameSite)
 	assert.False(t, cookie.Secure) // false for non-secure cookies
 	assert.True(t, cookie.Expires.Before(time.Now()))
 	assert.Equal(t, -1, cookie.MaxAge)
@@ -147,7 +147,7 @@ func TestAdminSessionStore_ClearCookie_Secure(t *testing.T) {
 	require.Len(t, cookies, 1)
 
 	cookie := cookies[0]
-	assert.Equal(t, http.SameSiteLaxMode, cookie.SameSite)
+	assert.Equal(t, http.SameSiteStrictMode, cookie.SameSite)
 	assert.True(t, cookie.Secure) // true for secure cookies
 }
 
