@@ -155,7 +155,11 @@
 
     void (async () => {
       await i18n.ready
-      await load(true)
+      try {
+        await load(true)
+      } catch {
+        // Hard cert failure: ErrorBanner shows certs.error; avoid unhandled rejection.
+      }
     })()
     const id = setInterval(() => {
       if (tabVisible()) void status.refresh()
@@ -180,7 +184,11 @@
   $effect(() => {
     if (autoRefreshSec <= 0) return
     const id = setInterval(() => {
-      if (tabVisible() && !certs.loading) void load()
+      if (tabVisible() && !certs.loading) {
+        void load().catch(() => {
+          // Hard cert failure: ErrorBanner shows certs.error.
+        })
+      }
     }, autoRefreshSec * 1000)
     return () => clearInterval(id)
   })
@@ -206,25 +214,21 @@
   })
 
   async function load(initial = false): Promise<void> {
-    const promises: Promise<void>[] = [certs.refresh(), status.refresh()]
+    // Always reload public config so admin threshold edits land without a full page reload.
+    const promises: Promise<void>[] = [certs.refresh(), status.refresh(), config.refresh()]
     if (initial) {
-      promises.push(config.refresh())
       try {
         await Promise.all(promises)
       } finally {
         initialLoad = false
       }
-      if (!certs.error) {
-        lastUpdated = new Date()
-        notifyExpiry(true)
-      }
-      return
+    } else {
+      await Promise.all(promises)
     }
-    await Promise.all(promises)
-    if (!certs.error) {
-      lastUpdated = new Date()
-      notifyExpiry(false)
-    }
+    // Config failure keeps last-good thresholds (config store). Cert hard-fail rejects for toast.
+    if (certs.error) throw new Error(certs.error)
+    lastUpdated = new Date()
+    notifyExpiry(initial)
   }
 
   /**
@@ -262,7 +266,8 @@
     toast.promise(load(), {
       loading: i18n.t('toastRefreshing', 'Refreshing…'),
       success: () => i18n.t('loadSuccess', 'Certificates loaded'),
-      error: i18n.t('toastRefreshFailed', 'Refresh failed'),
+      error: (err) =>
+        err instanceof Error ? err.message : i18n.t('toastRefreshFailed', 'Refresh failed'),
     })
   }
 
