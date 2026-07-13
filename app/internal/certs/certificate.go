@@ -1,7 +1,11 @@
 package certs
 
 import (
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/rsa"
 	"crypto/x509"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -15,6 +19,12 @@ type Certificate struct {
 	CreatedAt    time.Time `json:"createdAt"`
 	ExpiresAt    time.Time `json:"expiresAt"`
 	Revoked      bool      `json:"revoked"`
+	// IssuerCN is the issuer Common Name (list-time parse for metrics/UI).
+	IssuerCN string `json:"issuerCN,omitempty"`
+	// KeyAlgorithm is the public key algorithm (RSA, ECDSA, Ed25519, ...).
+	KeyAlgorithm string `json:"keyAlgorithm,omitempty"`
+	// KeySize is the public key size in bits (0 when not applicable).
+	KeySize int `json:"keySize,omitempty"`
 }
 
 type DetailedCertificate struct {
@@ -98,4 +108,29 @@ func InferCertType(cert *x509.Certificate) string {
 	default:
 		return "unknown"
 	}
+}
+
+// KeyAlgoAndSize returns the public key algorithm name and bit size for an x509 certificate.
+func KeyAlgoAndSize(certificate *x509.Certificate) (string, int) {
+	if certificate == nil {
+		return "", 0
+	}
+	switch pub := certificate.PublicKey.(type) {
+	case *rsa.PublicKey:
+		return "RSA", pub.N.BitLen()
+	case *ecdsa.PublicKey:
+		return "ECDSA", pub.Curve.Params().BitSize
+	case ed25519.PublicKey:
+		return "Ed25519", len(pub) * 8
+	default:
+		return certificate.PublicKeyAlgorithm.String(), 0
+	}
+}
+
+// KeySizeLabel formats a key size for metric labels.
+func KeySizeLabel(size int) string {
+	if size <= 0 {
+		return "0"
+	}
+	return strconv.Itoa(size)
 }

@@ -361,6 +361,7 @@ func (c *realClient) readCertificateFromMount(ctx context.Context, mount, serial
 
 	subjectAlternativeNames := buildSANs(x509Certificate)
 
+	algo, keySize := certs.KeyAlgoAndSize(x509Certificate)
 	// Prefix ID with mount to avoid collisions across mounts
 	return certs.Certificate{
 		ID:           fmt.Sprintf("%s:%s", mount, serial),
@@ -371,6 +372,9 @@ func (c *realClient) readCertificateFromMount(ctx context.Context, mount, serial
 		CreatedAt:    x509Certificate.NotBefore.UTC(),
 		ExpiresAt:    x509Certificate.NotAfter.UTC(),
 		Revoked:      false,
+		IssuerCN:     x509Certificate.Issuer.CommonName,
+		KeyAlgorithm: algo,
+		KeySize:      keySize,
 	}, nil
 }
 
@@ -461,6 +465,7 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 		return certs.DetailedCertificate{}, err
 	}
 
+	algo, keySize := certs.KeyAlgoAndSize(x509Certificate)
 	details := certs.DetailedCertificate{
 		Certificate: certs.Certificate{
 			ID:           serialNumber, // Keep the prefixed ID
@@ -471,11 +476,14 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 			CreatedAt:    x509Certificate.NotBefore.UTC(),
 			ExpiresAt:    x509Certificate.NotAfter.UTC(),
 			Revoked:      revokedSet[serial],
+			IssuerCN:     x509Certificate.Issuer.CommonName,
+			KeyAlgorithm: algo,
+			KeySize:      keySize,
 		},
 		Issuer:            x509Certificate.Issuer.String(),
 		Subject:           x509Certificate.Subject.String(),
-		KeyAlgorithm:      x509Certificate.SignatureAlgorithm.String(),
-		KeySize:           0, // Would need more complex parsing for RSA/EC key sizes
+		KeyAlgorithm:      algo,
+		KeySize:           keySize,
 		FingerprintSHA1:   hex.EncodeToString(sha1Fingerprint[:]),
 		FingerprintSHA256: hex.EncodeToString(sha256Fingerprint[:]),
 		Usage:             usage,
@@ -613,6 +621,7 @@ func (c *realClient) GetIntermediateCA(ctx context.Context, mount string) (certs
 	sha1Fingerprint := sha1.Sum(x509Certificate.Raw)
 	sha256Fingerprint := sha256.Sum256(x509Certificate.Raw)
 
+	algo, keySize := certs.KeyAlgoAndSize(x509Certificate)
 	details := certs.DetailedCertificate{
 		Certificate: certs.Certificate{
 			ID:           fmt.Sprintf("%s:ca", mount),
@@ -623,10 +632,14 @@ func (c *realClient) GetIntermediateCA(ctx context.Context, mount string) (certs
 			CreatedAt:    x509Certificate.NotBefore.UTC(),
 			ExpiresAt:    x509Certificate.NotAfter.UTC(),
 			Revoked:      false,
+			IssuerCN:     x509Certificate.Issuer.CommonName,
+			KeyAlgorithm: algo,
+			KeySize:      keySize,
 		},
 		Issuer:            x509Certificate.Issuer.String(),
 		Subject:           x509Certificate.Subject.String(),
-		KeyAlgorithm:      x509Certificate.SignatureAlgorithm.String(),
+		KeyAlgorithm:      algo,
+		KeySize:           keySize,
 		FingerprintSHA1:   hex.EncodeToString(sha1Fingerprint[:]),
 		FingerprintSHA256: hex.EncodeToString(sha256Fingerprint[:]),
 		PEM:               caPEM,

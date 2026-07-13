@@ -554,3 +554,14 @@ func TestInferCertType(t *testing.T) {
 	}
 	assert.Equal(t, "unknown", InferCertType(nil))
 }
+
+func TestKeyAlgoAndSize_Nil(t *testing.T) {
+	algo, size := KeyAlgoAndSize(nil)
+	assert.Equal(t, "", algo)
+	assert.Equal(t, 0, size)
+}
+
+func TestKeySizeLabel(t *testing.T) {
+	assert.Equal(t, "0", KeySizeLabel(0))
+	assert.Equal(t, "2048", KeySizeLabel(2048))
+}

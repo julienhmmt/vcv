@@ -35,7 +35,7 @@ func (collector *certificateCollector) emitIssuerMetrics(ch chan<- prometheus.Me
 	issuerCounts := make(map[string]map[string]map[string]int)
 	for _, certificate := range certificates {
 		vaultID, pki := extractVaultIDAndPKI(certificate.ID)
-		issuerCN := extractIssuerCN(certificate.CommonName)
+		issuerCN := extractIssuerCN(certificate)
 		if _, ok := issuerCounts[vaultID]; !ok {
 			issuerCounts[vaultID] = make(map[string]map[string]int)
 		}
@@ -59,7 +59,7 @@ func (collector *certificateCollector) emitKeyTypeMetrics(ch chan<- prometheus.M
 	weakKeyCounts := make(map[string]map[string]int)
 	for _, certificate := range certificates {
 		vaultID, pki := extractVaultIDAndPKI(certificate.ID)
-		algorithm, keySize := extractKeyInfo(certificate.CommonName)
+		algorithm, keySize := extractKeyInfo(certificate)
 		if _, ok := keyTypeCounts[vaultID]; !ok {
 			keyTypeCounts[vaultID] = make(map[string]map[string]int)
 		}
@@ -307,22 +307,22 @@ func (collector *certificateCollector) emitPinnedCertificateMetrics(ch chan<- pr
 	}
 }
 
-// extractIssuerCN extracts a simplified issuer CN from certificate data.
-// PLACEHOLDER: Returns domain-based heuristic until PEM parsing is implemented.
-// Real issuer CN requires parsing the x509 certificate issuer field.
-func extractIssuerCN(commonName string) string {
-	parts := strings.Split(commonName, ".")
-	if len(parts) > 1 {
-		return parts[len(parts)-2] + "." + parts[len(parts)-1]
+// extractIssuerCN returns the issuer Common Name from list-time certificate fields.
+func extractIssuerCN(certificate certs.Certificate) string {
+	issuerCN := strings.TrimSpace(certificate.IssuerCN)
+	if issuerCN != "" {
+		return issuerCN
 	}
-	return "self-signed"
+	return "unknown"
 }
 
-// extractKeyInfo extracts key algorithm and size information.
-// PLACEHOLDER: Returns hardcoded RSA 2048 until PEM parsing is implemented.
-// Real key info requires parsing the x509 certificate public key.
-func extractKeyInfo(commonName string) (string, string) {
-	return "RSA", "2048"
+// extractKeyInfo returns key algorithm and size labels from list-time certificate fields.
+func extractKeyInfo(certificate certs.Certificate) (string, string) {
+	algorithm := strings.TrimSpace(certificate.KeyAlgorithm)
+	if algorithm == "" {
+		algorithm = "unknown"
+	}
+	return algorithm, certs.KeySizeLabel(certificate.KeySize)
 }
 
 // isWeakKey determines if a key is considered weak based on algorithm and size.
