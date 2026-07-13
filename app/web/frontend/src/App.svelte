@@ -63,6 +63,8 @@
   const langName = $derived(LANGUAGES.find((l) => l.code === i18n.lang)?.name ?? i18n.lang.toUpperCase())
 
   let search = $state('')
+  /** Debounced search used by the filter pipeline (input stays snappy). */
+  let searchForFilter = $state('')
   let statusFilters = $state<CertStatus[]>([])
   let certTypeFilter = $state<CertTypeFilter>('all')
   let mountFilter = $state<string[] | null>(null)
@@ -99,7 +101,12 @@
     certs.certificates.filter((cert) =>
       matchesFilters(
         cert,
-        { search, statuses: statusFilters, certType: certTypeFilter, mounts: mountFilter },
+        {
+          search: searchForFilter,
+          statuses: statusFilters,
+          certType: certTypeFilter,
+          mounts: mountFilter,
+        },
         thresholds,
       ),
     ),
@@ -109,7 +116,10 @@
   const totalPages = $derived(Math.max(1, Math.ceil(sorted.length / pageSizeNum)))
   const safePage = $derived(Math.min(pageIndex, totalPages - 1))
   const paged = $derived(paginate(sorted, safePage, pageSize))
-  const counts = $derived(dashboardCounts(certs.certificates, thresholds))
+  function currentCounts() {
+    return dashboardCounts(certs.certificates, thresholds)
+  }
+  const counts = $derived(currentCounts())
   const hasActiveFilters = $derived(
     !!search || statusFilters.length > 0 || certTypeFilter !== 'all' || mountFilter !== null,
   )
@@ -133,6 +143,7 @@
   onMount(() => {
     const restored = parseUrlState(urlDefaults)
     search = restored.search
+    searchForFilter = restored.search
     statusFilters = restored.statusFilters
     certTypeFilter = restored.certTypeFilter
     mountFilter = restored.mountFilter
@@ -150,6 +161,19 @@
       if (tabVisible()) void status.refresh()
     }, 10_000)
     return () => clearInterval(id)
+  })
+
+  // Debounce search used for filtering; keep the input bound to `search` for snappy typing.
+  // Status / type / mount filters stay immediate (discrete UI).
+  $effect(() => {
+    const q = search
+    const id = setTimeout(() => {
+      if (searchForFilter !== q) {
+        searchForFilter = q
+        pageIndex = 0
+      }
+    }, 150)
+    return () => clearTimeout(id)
   })
 
   // Opt-in certificate auto-refresh: re-poll on the chosen interval while not already loading.
@@ -208,7 +232,8 @@
    * Initial load always notifies when tier ≠ none; later loads only when tier increases.
    */
   function notifyExpiry(isInitial: boolean): void {
-    const c = dashboardCounts(certs.certificates, thresholds)
+    // Same algorithm as StatusOverview counts (avoid divergent threshold logic).
+    const c = currentCounts()
     const tier = expiryTier(c)
     if (tier === 'none') {
       lastNotifiedTier = 'none'
@@ -297,6 +322,7 @@
 
   function clearAllFilters(): void {
     search = ''
+    searchForFilter = ''
     statusFilters = []
     certTypeFilter = 'all'
     mountFilter = null
@@ -488,7 +514,11 @@
       {certTypeFilter}
       {mountFilter}
       allMountsCount={allMounts.length}
-      onClearSearch={() => (search = '')}
+      onClearSearch={() => {
+        search = ''
+        searchForFilter = ''
+        pageIndex = 0
+      }}
       onRemoveStatus={removeStatus}
       onClearCertType={() => (certTypeFilter = 'all')}
       onClearMounts={() => (mountFilter = null)}
