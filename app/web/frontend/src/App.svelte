@@ -63,6 +63,8 @@
   const langName = $derived(LANGUAGES.find((l) => l.code === i18n.lang)?.name ?? i18n.lang.toUpperCase())
 
   let search = $state('')
+  /** Debounced search used by the filter pipeline (input stays snappy). */
+  let searchForFilter = $state('')
   let statusFilters = $state<CertStatus[]>([])
   let certTypeFilter = $state<CertTypeFilter>('all')
   let mountFilter = $state<string[] | null>(null)
@@ -99,7 +101,12 @@
     certs.certificates.filter((cert) =>
       matchesFilters(
         cert,
-        { search, statuses: statusFilters, certType: certTypeFilter, mounts: mountFilter },
+        {
+          search: searchForFilter,
+          statuses: statusFilters,
+          certType: certTypeFilter,
+          mounts: mountFilter,
+        },
         thresholds,
       ),
     ),
@@ -109,7 +116,10 @@
   const totalPages = $derived(Math.max(1, Math.ceil(sorted.length / pageSizeNum)))
   const safePage = $derived(Math.min(pageIndex, totalPages - 1))
   const paged = $derived(paginate(sorted, safePage, pageSize))
-  const counts = $derived(dashboardCounts(certs.certificates, thresholds))
+  function currentCounts() {
+    return dashboardCounts(certs.certificates, thresholds)
+  }
+  const counts = $derived(currentCounts())
   const hasActiveFilters = $derived(
     !!search || statusFilters.length > 0 || certTypeFilter !== 'all' || mountFilter !== null,
   )
@@ -133,6 +143,7 @@
   onMount(() => {
     const restored = parseUrlState(urlDefaults)
     search = restored.search
+    searchForFilter = restored.search
     statusFilters = restored.statusFilters
     certTypeFilter = restored.certTypeFilter
     mountFilter = restored.mountFilter
@@ -144,7 +155,11 @@
 
     void (async () => {
       await i18n.ready
-      await load(true)
+      try {
+        await load(true)
+      } catch {
+        // Hard cert failure: ErrorBanner shows certs.error; avoid unhandled rejection.
+      }
     })()
     const id = setInterval(() => {
       if (tabVisible()) void status.refresh()
@@ -152,11 +167,28 @@
     return () => clearInterval(id)
   })
 
+  // Debounce search used for filtering; keep the input bound to `search` for snappy typing.
+  // Status / type / mount filters stay immediate (discrete UI).
+  $effect(() => {
+    const q = search
+    const id = setTimeout(() => {
+      if (searchForFilter !== q) {
+        searchForFilter = q
+        pageIndex = 0
+      }
+    }, 150)
+    return () => clearTimeout(id)
+  })
+
   // Opt-in certificate auto-refresh: re-poll on the chosen interval while not already loading.
   $effect(() => {
     if (autoRefreshSec <= 0) return
     const id = setInterval(() => {
-      if (tabVisible() && !certs.loading) void load()
+      if (tabVisible() && !certs.loading) {
+        void load().catch(() => {
+          // Hard cert failure: ErrorBanner shows certs.error.
+        })
+      }
     }, autoRefreshSec * 1000)
     return () => clearInterval(id)
   })
@@ -182,25 +214,21 @@
   })
 
   async function load(initial = false): Promise<void> {
-    const promises: Promise<void>[] = [certs.refresh(), status.refresh()]
+    // Always reload public config so admin threshold edits land without a full page reload.
+    const promises: Promise<void>[] = [certs.refresh(), status.refresh(), config.refresh()]
     if (initial) {
-      promises.push(config.refresh())
       try {
         await Promise.all(promises)
       } finally {
         initialLoad = false
       }
-      if (!certs.error) {
-        lastUpdated = new Date()
-        notifyExpiry(true)
-      }
-      return
+    } else {
+      await Promise.all(promises)
     }
-    await Promise.all(promises)
-    if (!certs.error) {
-      lastUpdated = new Date()
-      notifyExpiry(false)
-    }
+    // Config failure keeps last-good thresholds (config store). Cert hard-fail rejects for toast.
+    if (certs.error) throw new Error(certs.error)
+    lastUpdated = new Date()
+    notifyExpiry(initial)
   }
 
   /**
@@ -208,7 +236,8 @@
    * Initial load always notifies when tier ≠ none; later loads only when tier increases.
    */
   function notifyExpiry(isInitial: boolean): void {
-    const c = dashboardCounts(certs.certificates, thresholds)
+    // Same algorithm as StatusOverview counts (avoid divergent threshold logic).
+    const c = currentCounts()
     const tier = expiryTier(c)
     if (tier === 'none') {
       lastNotifiedTier = 'none'
@@ -237,7 +266,8 @@
     toast.promise(load(), {
       loading: i18n.t('toastRefreshing', 'Refreshing…'),
       success: () => i18n.t('loadSuccess', 'Certificates loaded'),
-      error: i18n.t('toastRefreshFailed', 'Refresh failed'),
+      error: (err) =>
+        err instanceof Error ? err.message : i18n.t('toastRefreshFailed', 'Refresh failed'),
     })
   }
 
@@ -297,6 +327,7 @@
 
   function clearAllFilters(): void {
     search = ''
+    searchForFilter = ''
     statusFilters = []
     certTypeFilter = 'all'
     mountFilter = null
@@ -488,7 +519,11 @@
       {certTypeFilter}
       {mountFilter}
       allMountsCount={allMounts.length}
-      onClearSearch={() => (search = '')}
+      onClearSearch={() => {
+        search = ''
+        searchForFilter = ''
+        pageIndex = 0
+      }}
       onRemoveStatus={removeStatus}
       onClearCertType={() => (certTypeFilter = 'all')}
       onClearMounts={() => (mountFilter = null)}
