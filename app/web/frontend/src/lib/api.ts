@@ -23,8 +23,20 @@ export class ApiError extends Error {
   }
 }
 
+async function parseErrorMessage(response: Response, path: string, method: string): Promise<string> {
+  let message = `${method} ${path} failed: ${response.status}`
+  try {
+    const body = (await response.json()) as { error?: string }
+    if (body?.error) message = body.error
+  } catch {
+    // non-JSON body
+  }
+  return message
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const { headers: initHeaders, ...restInit } = init ?? {}
+  const method = init?.method ?? 'GET'
   const response = await fetch(path, {
     credentials: 'same-origin',
     ...restInit,
@@ -34,16 +46,26 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     },
   })
   if (!response.ok) {
-    let message = `${init?.method ?? 'GET'} ${path} failed: ${response.status}`
-    try {
-      const body = (await response.json()) as { error?: string }
-      if (body?.error) message = body.error
-    } catch {
-      // non-JSON body
-    }
-    throw new ApiError(response.status, message)
+    throw new ApiError(response.status, await parseErrorMessage(response, path, method))
   }
   return (await response.json()) as T
+}
+
+/** POST/DELETE with no response body on success; still parses body.error on failure. */
+async function requestVoid(path: string, init?: RequestInit): Promise<void> {
+  const { headers: initHeaders, ...restInit } = init ?? {}
+  const method = init?.method ?? 'GET'
+  const response = await fetch(path, {
+    credentials: 'same-origin',
+    ...restInit,
+    headers: {
+      Accept: 'application/json',
+      ...(initHeaders ?? {}),
+    },
+  })
+  if (!response.ok) {
+    throw new ApiError(response.status, await parseErrorMessage(response, path, method))
+  }
 }
 
 export const api = {
@@ -86,8 +108,8 @@ export const api = {
       body: JSON.stringify({ username, password }),
     })
   },
-  async adminLogout(): Promise<void> {
-    await fetch('/api/admin/logout', { method: 'POST', credentials: 'same-origin' })
+  adminLogout(): Promise<void> {
+    return requestVoid('/api/admin/logout', { method: 'POST' })
   },
   adminGetSettings(): Promise<AdminSettingsResponse> {
     return request<AdminSettingsResponse>('/api/admin/settings')
@@ -102,22 +124,10 @@ export const api = {
   adminAddVault(): Promise<AdminVaultAddedResponse> {
     return request<AdminVaultAddedResponse>('/api/admin/vault', { method: 'POST' })
   },
-  async adminDeleteVault(id: string): Promise<void> {
-    const response = await fetch(`/api/admin/vault/${encodeURIComponent(id)}`, {
-      method: 'DELETE',
-      credentials: 'same-origin',
-    })
-    if (!response.ok) {
-      throw new ApiError(response.status, `DELETE /api/admin/vault/${id} failed`)
-    }
+  adminDeleteVault(id: string): Promise<void> {
+    return requestVoid(`/api/admin/vault/${encodeURIComponent(id)}`, { method: 'DELETE' })
   },
-  async adminInvalidateCache(): Promise<void> {
-    const response = await fetch('/api/cache/invalidate', {
-      method: 'POST',
-      credentials: 'same-origin',
-    })
-    if (!response.ok) {
-      throw new ApiError(response.status, 'cache invalidate failed')
-    }
+  adminInvalidateCache(): Promise<void> {
+    return requestVoid('/api/cache/invalidate', { method: 'POST' })
   },
 }
