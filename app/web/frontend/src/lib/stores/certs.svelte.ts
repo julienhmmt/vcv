@@ -17,16 +17,21 @@ export function createCertsStore(i18n: I18nStore): CertsStore {
   let loading = $state(false)
   let error = $state<string | null>(null)
   let lastFetched = $state<Date | null>(null)
+  /** Ignores out-of-order list responses when refreshes overlap. */
+  let refreshGen = 0
 
   async function refresh(mounts?: string[]): Promise<void> {
+    const gen = ++refreshGen
     loading = true
     error = null
     try {
       const envelope = await api.listCertificates(mounts)
+      if (gen !== refreshGen) return
       certificates = envelope.certificates ?? []
       vaultErrors = envelope.errors ?? []
       lastFetched = new Date()
     } catch (err: unknown) {
+      if (gen !== refreshGen) return
       error =
         err instanceof ApiError
           ? err.message
@@ -34,7 +39,8 @@ export function createCertsStore(i18n: I18nStore): CertsStore {
       certificates = []
       vaultErrors = []
     } finally {
-      loading = false
+      // Only the latest in-flight request may clear loading.
+      if (gen === refreshGen) loading = false
     }
   }
 
