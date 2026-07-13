@@ -142,3 +142,11 @@ export interface AdminVaultAddedResponse {
   key: string
   vault: VaultInstance
 }
+
+/** Public config from GET /api/config (no secrets). */
+export interface PublicConfigResponse {
+  expirationThresholds: ExpirationThresholds
+  metrics?: { per_certificate?: boolean; enhanced_metrics?: boolean }
+  pkiMounts?: string[]
+  vaults?: { id: string; displayName: string; pkiMounts: string[] }[]
+}

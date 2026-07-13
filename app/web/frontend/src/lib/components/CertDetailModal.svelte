@@ -14,15 +14,16 @@
   import { formatDate, formatTime } from '$lib/utils/cert-filter'
   import { copyToClipboard } from '$lib/utils/clipboard'
   import { getI18n } from '$lib/stores/i18n.svelte'
-  import type { Certificate, CertStatus, DetailedCertificate } from '$lib/types'
+  import type { Certificate, CertStatus, DetailedCertificate, ExpirationThresholds } from '$lib/types'
 
   interface Props {
     cert: Certificate | null
     open: boolean
     onOpenChange: (open: boolean) => void
+    thresholds?: ExpirationThresholds
   }
 
-  const { cert, open, onOpenChange }: Props = $props()
+  const { cert, open, onOpenChange, thresholds = DEFAULT_THRESHOLDS }: Props = $props()
   const i18n = getI18n()
 
   const statusLabels = $derived<Record<CertStatus, string>>({
@@ -146,7 +147,7 @@
     }
   }
 
-  const status = $derived(cert ? certStatus(cert, DEFAULT_THRESHOLDS) : 'valid')
+  const status = $derived(cert ? certStatus(cert, thresholds) : 'valid')
   const days = $derived(cert ? daysUntilExpiry(cert) : 0)
   const expiryTone = $derived(cert ? tone(status) : 'ok')
   const source = $derived(cert ? parseCertID(cert.id) : null)

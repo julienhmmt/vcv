@@ -7,6 +7,7 @@ import type {
   DetailedCertificate,
   I18nResponse,
   PemResponse,
+  PublicConfigResponse,
   SettingsFile,
   StatusResponse,
   VersionInfo,
@@ -58,6 +59,9 @@ export const api = {
   },
   status(): Promise<StatusResponse> {
     return request<StatusResponse>('/api/status')
+  },
+  config(): Promise<PublicConfigResponse> {
+    return request<PublicConfigResponse>('/api/config')
   },
   version(): Promise<VersionInfo> {
     return request<VersionInfo>('/api/version')

@@ -19,6 +19,7 @@
   import CertCard from '$lib/components/CertCard.svelte'
   import CommandPalette from '$lib/components/CommandPalette.svelte'
   import { createCertsStore } from '$lib/stores/certs.svelte'
+  import { createConfigStore } from '$lib/stores/config.svelte'
   import { createStatusStore } from '$lib/stores/status.svelte'
   import { createThemeStore } from '$lib/stores/theme.svelte'
   import { createI18nStore, setI18nContext, LANGUAGES } from '$lib/stores/i18n.svelte'
@@ -28,7 +29,6 @@
     parseCertID,
     statusBadgeClass,
     rowClassForStatus,
-    DEFAULT_THRESHOLDS,
   } from '$lib/utils/cert-status'
   import {
     matchesFilters,
@@ -48,19 +48,21 @@
 
   const i18n = setI18nContext(createI18nStore())
   const certs = createCertsStore(i18n)
+  const config = createConfigStore()
   const status = createStatusStore()
   const theme = createThemeStore()
+  const thresholds = $derived(config.thresholds)
 
   type StatusKey = 'valid' | 'warning' | 'critical' | 'expired' | 'revoked'
   const statusMeta = $derived<Record<StatusKey, { label: string; desc: string }>>({
     valid: { label: i18n.t('statusLabelValid', 'Valid'), desc: i18n.t('statusDescValid', 'All good') },
     warning: {
       label: i18n.t('statusLabelWarning', 'Warning'),
-      desc: i18n.t('statusDescWarning', '≤ {days} days', { days: DEFAULT_THRESHOLDS.warning }),
+      desc: i18n.t('statusDescWarning', '≤ {days} days', { days: thresholds.warning }),
     },
     critical: {
       label: i18n.t('statusLabelCritical', 'Critical'),
-      desc: i18n.t('statusDescCritical', '≤ {days} days', { days: DEFAULT_THRESHOLDS.critical }),
+      desc: i18n.t('statusDescCritical', '≤ {days} days', { days: thresholds.critical }),
     },
     expired: { label: i18n.t('statusLabelExpired', 'Expired'), desc: i18n.t('statusDescExpired', 'Past expiry') },
     revoked: { label: i18n.t('statusLabelRevoked', 'Revoked'), desc: i18n.t('statusDescRevoked', 'Revoked by CA') },
@@ -109,7 +111,11 @@
 
   const filtered = $derived(
     certs.certificates.filter((cert) =>
-      matchesFilters(cert, { search, statuses: statusFilters, certType: certTypeFilter, mounts: mountFilter }),
+      matchesFilters(
+        cert,
+        { search, statuses: statusFilters, certType: certTypeFilter, mounts: mountFilter },
+        thresholds,
+      ),
     ),
   )
   const sorted = $derived(sortCerts(filtered, sortKey, sortDir))
@@ -117,7 +123,7 @@
   const totalPages = $derived(Math.max(1, Math.ceil(sorted.length / pageSizeNum)))
   const safePage = $derived(Math.min(pageIndex, totalPages - 1))
   const paged = $derived(paginate(sorted, safePage, pageSize))
-  const counts = $derived(dashboardCounts(certs.certificates, DEFAULT_THRESHOLDS))
+  const counts = $derived(dashboardCounts(certs.certificates, thresholds))
   const hasActiveFilters = $derived(
     !!search || statusFilters.length > 0 || certTypeFilter !== 'all' || mountFilter !== null,
   )
@@ -190,8 +196,9 @@
   })
 
   async function load(initial = false): Promise<void> {
-    const promises = [certs.refresh(), status.refresh()]
+    const promises: Promise<void>[] = [certs.refresh(), status.refresh()]
     if (initial) {
+      promises.push(config.refresh())
       try {
         await Promise.all(promises)
       } finally {
@@ -212,19 +219,19 @@
 
   /** Toast a single expiry summary after a load (critical takes precedence over warning). */
   function notifyExpiry(): void {
-    const c = dashboardCounts(certs.certificates, DEFAULT_THRESHOLDS)
+    const c = dashboardCounts(certs.certificates, thresholds)
     if (c.critical > 0) {
       toast.warning(
         i18n.t('notificationCritical', '{count} certificate(s) expiring within {threshold} days or fewer!', {
           count: c.critical,
-          threshold: DEFAULT_THRESHOLDS.critical,
+          threshold: thresholds.critical,
         }),
       )
     } else if (c.warning > 0) {
       toast(
         i18n.t('notificationWarning', '{count} certificate(s) expiring within {threshold} days or fewer', {
           count: c.warning,
-          threshold: DEFAULT_THRESHOLDS.warning,
+          threshold: thresholds.warning,
         }),
       )
     }
@@ -243,7 +250,7 @@
       toast.error(i18n.t('exportEmpty', 'Nothing to export'))
       return
     }
-    downloadExport(sorted, format)
+    downloadExport(sorted, format, thresholds)
     toast.success(i18n.t('exportSuccess', 'Exported {count} certificate(s)', { count: sorted.length }))
   }
 
@@ -615,7 +622,7 @@
               </tr>
             {:else}
               {#each paged as cert (cert.id)}
-                {@const s = certStatus(cert, DEFAULT_THRESHOLDS)}
+                {@const s = certStatus(cert, thresholds)}
                 {@const parts = parseCertID(cert.id)}
                 <!-- Whole-row button: role="button" + aria-label gives SR users a single
                      focusable target named by the common name; Enter activates the detail
@@ -694,8 +701,8 @@
         </div>
       {:else}
         {#each paged as cert (cert.id)}
-          {@const s = certStatus(cert, DEFAULT_THRESHOLDS)}
-          <CertCard {cert} {showVaultMount} statusLabel={statusMeta[s].label} onSelect={selectCert} />
+          {@const s = certStatus(cert, thresholds)}
+          <CertCard {cert} {showVaultMount} statusLabel={statusMeta[s].label} {thresholds} onSelect={selectCert} />
         {/each}
       {/if}
     </div>
@@ -764,6 +771,7 @@
   cert={selected}
   open={certModalOpen}
   onOpenChange={(value) => (certModalOpen = value)}
+  {thresholds}
 />
 
 <CommandPalette
