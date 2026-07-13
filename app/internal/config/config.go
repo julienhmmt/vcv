@@ -19,14 +19,14 @@ const (
 
 // Config holds application configuration.
 type Config struct {
-	Env                  Environment
-	Port                 string
-	LogLevel             string
-	LogFormat            string
-	LogOutput            string
-	LogFilePath          string
-	SettingsPath         string
-	CORS                 CORSConfig
+	Env          Environment
+	Port         string
+	LogLevel     string
+	LogFormat    string
+	LogOutput    string
+	LogFilePath  string
+	SettingsPath string
+	CORS         CORSConfig
 	// Vault is deprecated; prefer Vaults / AllVaults. Kept for legacy logging and helpers.
 	Vault                VaultConfig
 	Vaults               []VaultInstance

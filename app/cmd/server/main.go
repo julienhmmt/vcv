@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	"errors"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"

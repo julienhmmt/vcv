@@ -149,7 +149,6 @@ func TestCSRFProtection_AllowsNonBrowserRequest(t *testing.T) {
 	}
 }
 
-
 func TestCSRFProtection_BlocksCookieWithoutOrigin(t *testing.T) {
 	h := middleware.CSRFProtection(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNoContent)

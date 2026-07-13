@@ -306,4 +306,3 @@ func extractVaultMountFromCertificateID(value string) (string, string) {
 	}
 	return vaultID + "|" + mountName, mountName
 }
-

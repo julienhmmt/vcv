@@ -272,7 +272,6 @@ func TestGetCertificatePEM_EncodingError_DoesNotPanic(t *testing.T) {
 	mockVault.AssertExpectations(t)
 }
 
-
 func TestGetIntermediateCA_Success(t *testing.T) {
 	mockVault := new(vault.MockClient)
 	expected := certs.DetailedCertificate{

@@ -18,8 +18,8 @@ func TestCheckInstances_ParallelAndNil(t *testing.T) {
 	fast.On("CheckConnection", mock.Anything).Return(nil).Once()
 	slow := &vault.MockClient{}
 	slow.On("CheckConnection", mock.Anything).Run(func(args mock.Arguments) {
-			time.Sleep(50 * time.Millisecond)
-		}).Return(nil).Once()
+		time.Sleep(50 * time.Millisecond)
+	}).Return(nil).Once()
 	failing := &vault.MockClient{}
 	failing.On("CheckConnection", mock.Anything).Return(errors.New("down")).Once()
 

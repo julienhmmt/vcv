@@ -89,7 +89,6 @@ func TestFilterCertificatesByMounts(t *testing.T) {
 	}
 }
 
-
 func TestParseMountsQueryParam(t *testing.T) {
 	tests := []struct {
 		name     string
