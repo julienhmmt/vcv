@@ -44,6 +44,7 @@
   import { certDisplayName } from '$lib/utils/cert-label'
   import { parseUrlState, writeUrlState, type UrlState } from '$lib/utils/url-state'
   import { downloadExport, type ExportFormat } from '$lib/utils/export'
+  import { expiryTier, shouldNotifyExpiry, type ExpiryTier } from '$lib/utils/expiry-notify'
   import type { Certificate, CertStatus } from '$lib/types'
 
   const i18n = setI18nContext(createI18nStore())
@@ -108,6 +109,8 @@
   // Opt-in certificate auto-refresh interval in seconds; 0 = off (default).
   let autoRefreshSec = $state(0)
   const AUTO_REFRESH_OPTIONS = [0, 30, 60, 300]
+  /** Last expiry tier we toasted, so auto-refresh does not spam identical alerts. */
+  let lastNotifiedTier = $state<ExpiryTier>('none')
 
   const filtered = $derived(
     certs.certificates.filter((cert) =>
@@ -206,28 +209,37 @@
       }
       if (!certs.error) {
         lastUpdated = new Date()
-        notifyExpiry()
+        notifyExpiry(true)
       }
       return
     }
     await Promise.all(promises)
     if (!certs.error) {
       lastUpdated = new Date()
-      notifyExpiry()
+      notifyExpiry(false)
     }
   }
 
-  /** Toast a single expiry summary after a load (critical takes precedence over warning). */
-  function notifyExpiry(): void {
+  /**
+   * Toast a single expiry summary after a load.
+   * Initial load always notifies when tier ≠ none; later loads only when tier increases.
+   */
+  function notifyExpiry(isInitial: boolean): void {
     const c = dashboardCounts(certs.certificates, thresholds)
-    if (c.critical > 0) {
+    const tier = expiryTier(c)
+    if (tier === 'none') {
+      lastNotifiedTier = 'none'
+      return
+    }
+    if (!shouldNotifyExpiry({ isInitial, tier, lastNotifiedTier })) return
+    if (tier === 'critical') {
       toast.warning(
         i18n.t('notificationCritical', '{count} certificate(s) expiring within {threshold} days or fewer!', {
           count: c.critical,
           threshold: thresholds.critical,
         }),
       )
-    } else if (c.warning > 0) {
+    } else {
       toast(
         i18n.t('notificationWarning', '{count} certificate(s) expiring within {threshold} days or fewer', {
           count: c.warning,
@@ -235,6 +247,7 @@
         }),
       )
     }
+    lastNotifiedTier = tier
   }
 
   async function manualRefresh(): Promise<void> {
