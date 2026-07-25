@@ -265,27 +265,7 @@ func (collector *certificateCollector) countStatuses(certificates []certs.Certif
 }
 
 func (collector *certificateCollector) countExpiringSoon(certificates []certs.Certificate, now time.Time) (int, int) {
-	warningCount := 0
-	criticalCount := 0
-	for _, certificate := range certificates {
-		if collector.statusLabel(certificate, now) != "valid" {
-			continue
-		}
-		if certificate.ExpiresAt.IsZero() {
-			continue
-		}
-		daysRemaining := daysUntil(certificate.ExpiresAt.UTC(), now.UTC())
-		if daysRemaining < 0 {
-			continue
-		}
-		if collector.thresholds.Warning > 0 && daysRemaining <= collector.thresholds.Warning {
-			warningCount++
-		}
-		if collector.thresholds.Critical > 0 && daysRemaining <= collector.thresholds.Critical {
-			criticalCount++
-		}
-	}
-	return warningCount, criticalCount
+	return certs.CountExpiring(certificates, collector.thresholds.Warning, collector.thresholds.Critical, now)
 }
 
 func (collector *certificateCollector) getCacheSize() int {

@@ -158,6 +158,7 @@ func registerAdminAPIRoutes(
 				if !errors.Is(saveErr, vcverrors.ErrInvalidAddress) &&
 					!errors.Is(saveErr, vcverrors.ErrInvalidToken) &&
 					!errors.Is(saveErr, vcverrors.ErrInvalidThreshold) &&
+					!errors.Is(saveErr, vcverrors.ErrInvalidWebhookURL) &&
 					!errors.Is(saveErr, vcverrors.ErrVaultIDEmpty) &&
 					!errors.Is(saveErr, vcverrors.ErrDuplicateVaultID) {
 					status = http.StatusInternalServerError

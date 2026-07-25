@@ -19,6 +19,7 @@ func TestErrorVariables(t *testing.T) {
 		{"ErrInvalidAddress", ErrInvalidAddress, "invalid vault address"},
 		{"ErrInvalidToken", ErrInvalidToken, "invalid vault token"},
 		{"ErrInvalidThreshold", ErrInvalidThreshold, "invalid expiration threshold"},
+		{"ErrInvalidWebhookURL", ErrInvalidWebhookURL, "invalid webhook url"},
 	}
 
 	for _, tt := range tests {
@@ -36,6 +37,7 @@ func TestErrorUniqueness(t *testing.T) {
 		ErrInvalidAddress,
 		ErrInvalidToken,
 		ErrInvalidThreshold,
+		ErrInvalidWebhookURL,
 	}
 
 	seen := make(map[string]bool)

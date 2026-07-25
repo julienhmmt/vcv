@@ -37,6 +37,7 @@ type Config struct {
 	AllVaults            []VaultInstance
 	ExpirationThresholds ExpirationThresholds
 	Metrics              MetricsConfig
+	Notifications        NotificationsConfig
 }
 
 // CORSConfig holds CORS-specific configuration.
@@ -69,13 +70,21 @@ type MetricsConfig struct {
 	PinnedCertificates []string `json:"pinned_certificates"`
 }
 
+// NotificationsConfig holds outbound alert delivery configuration.
+type NotificationsConfig struct {
+	// WebhookURL receives a JSON POST when a certificate crosses into the
+	// warning or critical expiration window. Empty disables webhook delivery.
+	WebhookURL string
+}
+
 type SettingsFile struct {
-	App          AppSettings         `json:"app"`
-	Admin        AdminSettings       `json:"admin"`
-	Certificates CertificateSettings `json:"certificates"`
-	Metrics      MetricsSettings     `json:"metrics"`
-	CORS         CORSSettings        `json:"cors"`
-	Vaults       []VaultInstance     `json:"vaults"`
+	App           AppSettings          `json:"app"`
+	Admin         AdminSettings        `json:"admin"`
+	Certificates  CertificateSettings  `json:"certificates"`
+	Metrics       MetricsSettings      `json:"metrics"`
+	CORS          CORSSettings         `json:"cors"`
+	Notifications NotificationSettings `json:"notifications"`
+	Vaults        []VaultInstance      `json:"vaults"`
 }
 
 type AppSettings struct {
@@ -105,6 +114,10 @@ type MetricsSettings struct {
 	PerCertificate     *bool    `json:"per_certificate"`
 	EnhancedMetrics    *bool    `json:"enhanced_metrics"`
 	PinnedCertificates []string `json:"pinned_certificates"`
+}
+
+type NotificationSettings struct {
+	WebhookURL string `json:"webhook_url"`
 }
 
 type AdminSettings struct {
@@ -214,6 +227,7 @@ func buildConfigFromSettings(settings SettingsFile) Config {
 		metrics.PinnedCertificates = settings.Metrics.PinnedCertificates
 	}
 	// Otherwise, keep defaults (PerCertificate: false, EnhancedMetrics: true)
+	notifications := NotificationsConfig{WebhookURL: strings.TrimSpace(settings.Notifications.WebhookURL)}
 	return Config{
 		Env:                  env,
 		Port:                 port,
@@ -227,6 +241,7 @@ func buildConfigFromSettings(settings SettingsFile) Config {
 		Vaults:               []VaultInstance{},
 		ExpirationThresholds: expirations,
 		Metrics:              metrics,
+		Notifications:        notifications,
 	}
 }
 
