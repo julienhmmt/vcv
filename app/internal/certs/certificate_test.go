@@ -1,8 +1,15 @@
 package certs
 
 import (
+	"crypto/ecdsa"
+	"crypto/ed25519"
+	"crypto/elliptic"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/json"
+	"math/big"
 	"testing"
 	"time"
 
@@ -559,6 +566,66 @@ func TestKeyAlgoAndSize_Nil(t *testing.T) {
 	algo, size := KeyAlgoAndSize(nil)
 	assert.Equal(t, "", algo)
 	assert.Equal(t, 0, size)
+}
+
+func selfSignedCertWithPublicKey(t *testing.T, pub, priv any) *x509.Certificate {
+	t.Helper()
+	template := &x509.Certificate{
+		SerialNumber: big.NewInt(1),
+		Subject:      pkix.Name{CommonName: "key-algo-test"},
+		NotBefore:    time.Now().Add(-time.Hour),
+		NotAfter:     time.Now().Add(time.Hour),
+	}
+	der, err := x509.CreateCertificate(rand.Reader, template, template, pub, priv)
+	if err != nil {
+		t.Fatalf("failed to create certificate: %v", err)
+	}
+	cert, err := x509.ParseCertificate(der)
+	if err != nil {
+		t.Fatalf("failed to parse certificate: %v", err)
+	}
+	return cert
+}
+
+func TestKeyAlgoAndSize_RealKeyTypes(t *testing.T) {
+	rsaKey1024, err := rsa.GenerateKey(rand.Reader, 1024)
+	if err != nil {
+		t.Fatalf("failed to generate rsa 1024 key: %v", err)
+	}
+	rsaKey2048, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		t.Fatalf("failed to generate rsa 2048 key: %v", err)
+	}
+	ecdsaKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		t.Fatalf("failed to generate ecdsa key: %v", err)
+	}
+	ed25519Pub, ed25519Priv, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		t.Fatalf("failed to generate ed25519 key: %v", err)
+	}
+
+	tests := []struct {
+		name         string
+		pub          any
+		priv         any
+		expectedAlgo string
+		expectedBits int
+	}{
+		{name: "RSA 1024 (weak)", pub: &rsaKey1024.PublicKey, priv: rsaKey1024, expectedAlgo: "RSA", expectedBits: 1024},
+		{name: "RSA 2048", pub: &rsaKey2048.PublicKey, priv: rsaKey2048, expectedAlgo: "RSA", expectedBits: 2048},
+		{name: "ECDSA P-256", pub: &ecdsaKey.PublicKey, priv: ecdsaKey, expectedAlgo: "ECDSA", expectedBits: 256},
+		{name: "Ed25519", pub: ed25519Pub, priv: ed25519Priv, expectedAlgo: "Ed25519", expectedBits: 256},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cert := selfSignedCertWithPublicKey(t, tt.pub, tt.priv)
+			algo, bits := KeyAlgoAndSize(cert)
+			assert.Equal(t, tt.expectedAlgo, algo)
+			assert.Equal(t, tt.expectedBits, bits)
+		})
+	}
 }
 
 func TestKeySizeLabel(t *testing.T) {
