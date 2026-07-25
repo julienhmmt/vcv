@@ -434,18 +434,18 @@ func TestMergeVaultTokens_PreservesEmptyTokens(t *testing.T) {
 }
 
 func TestIsBlankOrMaskedToken(t *testing.T) {
-	assert.True(t, isBlankOrMaskedToken(""))
-	assert.True(t, isBlankOrMaskedToken("   "))
-	assert.True(t, isBlankOrMaskedToken("***"))
-	assert.True(t, isBlankOrMaskedToken("********"))
-	assert.True(t, isBlankOrMaskedToken("••••••••"))
-	assert.True(t, isBlankOrMaskedToken("__MASKED__"))
-	assert.True(t, isBlankOrMaskedToken("[masked]"))
-	assert.True(t, isBlankOrMaskedToken("*****"))
-	assert.False(t, isBlankOrMaskedToken("s.real-vault-token"))
-	assert.False(t, isBlankOrMaskedToken("hvs.real"))
-	assert.False(t, isBlankOrMaskedToken("*"))  // too short to treat as mask
-	assert.False(t, isBlankOrMaskedToken("**")) // too short
+	assert.True(t, isBlankOrMaskedSecret(""))
+	assert.True(t, isBlankOrMaskedSecret("   "))
+	assert.True(t, isBlankOrMaskedSecret("***"))
+	assert.True(t, isBlankOrMaskedSecret("********"))
+	assert.True(t, isBlankOrMaskedSecret("••••••••"))
+	assert.True(t, isBlankOrMaskedSecret("__MASKED__"))
+	assert.True(t, isBlankOrMaskedSecret("[masked]"))
+	assert.True(t, isBlankOrMaskedSecret("*****"))
+	assert.False(t, isBlankOrMaskedSecret("s.real-vault-token"))
+	assert.False(t, isBlankOrMaskedSecret("hvs.real"))
+	assert.False(t, isBlankOrMaskedSecret("*"))  // too short to treat as mask
+	assert.False(t, isBlankOrMaskedSecret("**")) // too short
 }
 
 func TestMergeVaultTokens_PreservesMaskedPlaceholders(t *testing.T) {
@@ -465,6 +465,38 @@ func TestMergeVaultTokens_PreservesMaskedPlaceholders(t *testing.T) {
 	}, existing)
 	require.Len(t, result, 1)
 	assert.Equal(t, "brand-new-token", result[0].Token)
+}
+
+func TestMergeSecret(t *testing.T) {
+	assert.Equal(t, "new-url", mergeSecret("new-url", "old-url"))
+	assert.Equal(t, "old-url", mergeSecret("", "old-url"))
+	for _, masked := range []string{"***", "********", "__MASKED__", "[masked]", "••••••••"} {
+		assert.Equal(t, "old-url", mergeSecret(masked, "old-url"), "mask %q must preserve the stored value", masked)
+	}
+}
+
+func TestMaskSecrets_BlanksWebhookURL(t *testing.T) {
+	settings := config.SettingsFile{
+		Notifications: config.NotificationSettings{WebhookURL: "https://hooks.example.com/services/T000/B000/SECRET"},
+		Vaults:        []config.VaultInstance{{ID: "vault1", Token: "s.real-token"}},
+	}
+
+	masked := maskSecrets(settings)
+
+	assert.Empty(t, masked.Notifications.WebhookURL)
+	assert.Empty(t, masked.Vaults[0].Token)
+}
+
+func TestMergeAdminSettings_WebhookURL(t *testing.T) {
+	current := config.SettingsFile{Notifications: config.NotificationSettings{WebhookURL: "https://hooks.example.com/existing"}}
+
+	// Blank incoming (masked GET response round-tripped unchanged) preserves the stored URL.
+	unchanged := mergeAdminSettings(current, config.SettingsFile{})
+	assert.Equal(t, "https://hooks.example.com/existing", unchanged.Notifications.WebhookURL)
+
+	// A real new URL replaces it.
+	updated := mergeAdminSettings(current, config.SettingsFile{Notifications: config.NotificationSettings{WebhookURL: "https://hooks.example.com/new"}})
+	assert.Equal(t, "https://hooks.example.com/new", updated.Notifications.WebhookURL)
 }
 
 func TestComputeVaultStatuses(t *testing.T) {
