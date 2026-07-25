@@ -13,3 +13,9 @@ updates:
     directory: "/app/web/frontend"
     schedule:
       interval: "weekly"
+    ignore:
+      # TS 7.0 ships no stable programmatic compiler API; svelte-check crashes
+      # on startup under it (upstream: sveltejs/language-tools#3063, no fix as
+      # of 2026-07). Revisit once svelte-check or TS 7.1's API lands. See PR #90.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
