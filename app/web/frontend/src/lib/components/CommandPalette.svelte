@@ -36,13 +36,20 @@
     revoked: i18n.t('statusLabelRevoked', 'Revoked'),
   })
 
+  /** Lowercase search haystack per certificate, rebuilt only when the cert list changes (not per keystroke). */
+  const certHaystacks = $derived.by(() =>
+    certs.map((cert) => ({
+      cert,
+      haystack: `${cert.commonName} ${cert.serialNumber} ${cert.sans.join(' ')}`.toLowerCase(),
+    })),
+  )
+
   /** Cert matches when the query appears in its CN, serial, or any SAN. Capped for performance. */
   const matchingCerts = $derived.by(() => {
     const q = query.trim().toLowerCase()
     if (!q) return []
     const out: Certificate[] = []
-    for (const cert of certs) {
-      const haystack = `${cert.commonName} ${cert.serialNumber} ${cert.sans.join(' ')}`.toLowerCase()
+    for (const { cert, haystack } of certHaystacks) {
       if (haystack.includes(q)) out.push(cert)
       if (out.length >= 25) break
     }
