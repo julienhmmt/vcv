@@ -47,6 +47,19 @@ A comma-separated list of origins permitted to call the JSON API from a
 browser, e.g. `https://app.example.com, https://other.example.com`. Leave
 empty to keep the API same-origin only.
 
+## Notifications
+
+Set a **webhook URL** to get a JSON alert POSTed whenever a certificate
+crosses the warning or critical expiration threshold — no browser tab needs
+to stay open. Checked once at startup, then every 15 minutes; one alert per
+threshold crossed, not a repeat every check. Leave blank to disable.
+
+The URL is treated as a secret (many providers embed an auth token in the
+path) and handled the same way as a vault token: it's never sent back to
+the browser, and leaving the field blank when editing keeps the existing
+URL. See `ALERTING.md` in the repo for the payload shape and a
+Prometheus/Alertmanager alternative.
+
 ## Vaults
 
 Each vault row maps to one HashiCorp Vault or OpenBao instance:

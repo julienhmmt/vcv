@@ -76,6 +76,7 @@ Configuration is loaded from the first file found in this order (see `settingsCa
 - `cors.allowed_origins`, `cors.allow_credentials`
 - `certificates.expiration_thresholds.critical`, `certificates.expiration_thresholds.warning`
 - `metrics.per_certificate` (default **false**; prefer aggregate vault|pki|status metrics. When true, emits per-series labels for `certificate_id` and `common_name` — lab only; startup scrape logs a Warn. Per-cert `status` is only valid|revoked|expired, not warning/critical tiers), `metrics.enhanced_metrics`
+- `notifications.webhook_url` (optional; empty disables). POSTs a JSON alert when a certificate crosses the warning or critical threshold — see `ALERTING.md`.
 - `vaults[]`: list of Vault instances
   - `address`, `token`
   - `pki_mounts` (source of truth; recommended)
@@ -142,6 +143,16 @@ vcv is designed for **private networks**. Do not expose the listen port to the p
 
 5. Admin panel: set `admin.password` to a bcrypt hash to enable; omit the field (or use an invalid hash) to disable. Sessions are in-process memory (sticky sessions or external store needed for horizontal scale).
 6. TLS to Vault: `tls_insecure: false` plus CA material in production.
+
+### Outbound webhook notifications
+
+When `notifications.webhook_url` is configured, this is the app's only
+outbound network call (everything else is inbound HTTP or reads from
+Vault). The URL is operator-configured, not derived from any request input,
+so it carries the same trust level as a Vault address or CORS origin — no
+additional allowlisting beyond requiring an absolute `http`/`https` URL.
+The admin API masks it like a Vault token (see `ALERTING.md`) since
+provider-issued webhook URLs commonly embed an auth token in the path.
 
 ### App-layer controls already present
 
