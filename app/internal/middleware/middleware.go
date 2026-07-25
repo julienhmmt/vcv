@@ -110,8 +110,14 @@ func CORS(config CORSConfig) func(http.Handler) http.Handler {
 				return
 			}
 			allowed := false
+			wildcard := false
 			for _, o := range config.AllowedOrigins {
-				if o == "*" || o == origin {
+				if o == "*" {
+					allowed = true
+					wildcard = true
+					break
+				}
+				if o == origin {
 					allowed = true
 					break
 				}
@@ -121,7 +127,10 @@ func CORS(config CORSConfig) func(http.Handler) http.Handler {
 				return
 			}
 			w.Header().Set("Access-Control-Allow-Origin", origin)
-			if config.AllowCredentials {
+			// Credentialed requests must never be paired with a wildcard origin match:
+			// reflecting any Origin while allowing credentials lets any site read
+			// authenticated responses using the browser's ambient session cookie.
+			if config.AllowCredentials && !wildcard {
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
 			}
 			if r.Method == http.MethodOptions {
