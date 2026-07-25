@@ -3,7 +3,7 @@
 
   type Props = {
     message: string
-    variant?: 'error' | 'warning'
+    variant?: 'error' | 'warning' | 'success'
     onDismiss?: () => void
   }
 

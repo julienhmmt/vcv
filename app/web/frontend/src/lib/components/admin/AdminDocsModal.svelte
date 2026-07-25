@@ -38,16 +38,16 @@
 <Dialog.Root {open} {onOpenChange}>
   <Dialog.Content class="max-w-3xl p-0 overflow-hidden">
     <Dialog.Header class="px-6 pt-6">
-      <Dialog.Title class="flex items-center gap-2">
-        <BookOpen class="h-5 w-5 text-primary" />
+      <Dialog.Title class="flex items-center gap-2" style="color: var(--vcv-color-text-strong)">
+        <BookOpen class="h-5 w-5" style="color: var(--vcv-color-primary)" />
         {i18n.t('adminDocsTitle', 'Documentation')}
       </Dialog.Title>
     </Dialog.Header>
 
     {#if loading && html === null}
-      <div class="px-6 py-8 text-sm text-muted-foreground">{i18n.t('labelLoading', 'Loading…')}</div>
+      <div class="px-6 py-8" style="font-size: 0.875rem; color: var(--vcv-color-muted)">{i18n.t('labelLoading', 'Loading…')}</div>
     {:else if error}
-      <div class="px-6 py-8 text-sm text-destructive">{error}</div>
+      <div class="px-6 py-8" style="font-size: 0.875rem; color: var(--vcv-color-danger)">{error}</div>
     {:else if html !== null}
       <ScrollArea class="max-h-[75vh]">
         <!-- Trusted: rendered from the binary-embedded ADMIN.md, not user input. -->
@@ -84,18 +84,18 @@
     margin: 0.25rem 0;
   }
   .vcv-docs :global(a) {
-    color: var(--primary);
+    color: var(--vcv-color-primary);
     text-decoration: underline;
   }
   .vcv-docs :global(code) {
-    font-family: var(--font-mono, ui-monospace, monospace);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     font-size: 0.8125rem;
-    background: color-mix(in oklab, var(--muted) 60%, transparent);
+    background: var(--vcv-color-surface-muted);
     padding: 0.1em 0.35em;
     border-radius: 0.25rem;
   }
   .vcv-docs :global(pre) {
-    background: color-mix(in oklab, var(--muted) 60%, transparent);
+    background: var(--vcv-color-surface-muted);
     padding: 0.75rem 1rem;
     border-radius: 0.5rem;
     overflow-x: auto;
@@ -106,10 +106,10 @@
     padding: 0;
   }
   .vcv-docs :global(blockquote) {
-    border-left: 3px solid var(--border);
+    border-left: 3px solid var(--vcv-color-border);
     padding-left: 0.75rem;
     margin: 0.75rem 0;
-    color: var(--muted-foreground);
+    color: var(--vcv-color-muted);
     font-size: 0.85rem;
   }
 </style>

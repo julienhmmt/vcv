@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import { Button } from '$lib/components/ui/button'
   import { Input } from '$lib/components/ui/input'
   import { Label } from '$lib/components/ui/label'
@@ -25,51 +26,50 @@
 
 <div class="admin-login-root">
   <div class="admin-login-brand">
-    <div class="admin-login-icon">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-      </svg>
-    </div>
+    <span class="vcv-brand-mark admin-login-mark" aria-hidden="true">
+      <ShieldCheck class="h-6 w-6" />
+    </span>
     <div class="admin-login-wordmark">VCV Admin</div>
     <div class="admin-login-path">/admin</div>
   </div>
 
-  <form class="admin-login-form" onsubmit={submit} autocomplete="on">
-    <div class="admin-login-field">
-      <Label for="username" class="admin-login-label">{i18n.t('adminUsername', 'Username')}</Label>
-      <Input
-        id="username"
-        type="text"
-        bind:value={username}
-        required
-        autocomplete="username"
-        class="admin-login-input"
-      />
-    </div>
+  <div class="admin-login-card">
+    <form class="admin-login-form" onsubmit={submit} autocomplete="on">
+      <div class="admin-login-field">
+        <Label for="username" class="admin-login-label">{i18n.t('adminUsername', 'Username')}</Label>
+        <Input
+          id="username"
+          type="text"
+          bind:value={username}
+          required
+          autocomplete="username"
+          class="admin-login-input"
+        />
+      </div>
 
-    <div class="admin-login-field">
-      <Label for="password" class="admin-login-label">{i18n.t('adminPassword', 'Password')}</Label>
-      <Input
-        id="password"
-        type="password"
-        bind:value={password}
-        required
-        autocomplete="current-password"
-        class="admin-login-input"
-      />
-    </div>
+      <div class="admin-login-field">
+        <Label for="password" class="admin-login-label">{i18n.t('adminPassword', 'Password')}</Label>
+        <Input
+          id="password"
+          type="password"
+          bind:value={password}
+          required
+          autocomplete="current-password"
+          class="admin-login-input"
+        />
+      </div>
 
-    {#if error}
-      <p class="admin-login-error" role="alert">{error}</p>
-    {/if}
+      {#if error}
+        <p class="admin-login-error" role="alert">{error}</p>
+      {/if}
 
-    <Button type="submit" class="admin-login-submit" disabled={loading}>
-      {loading ? i18n.t('adminSigningIn', 'Signing in…') : i18n.t('adminLogin', 'Sign In')}
-    </Button>
+      <Button type="submit" class="admin-login-submit" disabled={loading}>
+        {loading ? i18n.t('adminSigningIn', 'Signing in…') : i18n.t('adminLogin', 'Sign In')}
+      </Button>
 
-    <a href="/" class="admin-login-back">{i18n.t('adminBackToVCV', 'Back to VCV')}</a>
-  </form>
+      <a href="/" class="admin-login-back">{i18n.t('adminBackToVCV', 'Back to VCV')}</a>
+    </form>
+  </div>
 </div>
 
 <style>
@@ -91,16 +91,10 @@
     margin-bottom: 2.5rem;
   }
 
-  .admin-login-icon {
-    width: 2.5rem;
-    height: 2.5rem;
-    color: var(--vcv-color-primary);
+  .admin-login-mark {
+    width: 3.25rem;
+    height: 3.25rem;
     margin-bottom: 0.25rem;
-  }
-
-  .admin-login-icon svg {
-    width: 100%;
-    height: 100%;
   }
 
   .admin-login-wordmark {
@@ -117,9 +111,17 @@
     letter-spacing: 0.04em;
   }
 
-  .admin-login-form {
+  .admin-login-card {
     width: 100%;
     max-width: 22rem;
+    padding: 1.75rem;
+    background: var(--vcv-color-surface);
+    border: 1px solid var(--vcv-color-border);
+    border-radius: var(--vcv-radius-lg);
+    box-shadow: var(--vcv-shadow-card);
+  }
+
+  .admin-login-form {
     display: flex;
     flex-direction: column;
     gap: 1rem;
