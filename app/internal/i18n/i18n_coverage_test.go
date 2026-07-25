@@ -3,6 +3,7 @@ package i18n
 import (
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 )
 
@@ -149,6 +150,26 @@ func TestMessagesForLanguage_AllLanguages(t *testing.T) {
 			}
 			if msg.StatusLabelValid == "" {
 				t.Errorf("MessagesForLanguage(%v).StatusLabelValid is empty", lang)
+			}
+		})
+	}
+}
+
+// TestMessages_AllFieldsPopulated guards against a field omitted from one
+// language's struct literal: Go silently zero-values a missing keyed field
+// to "", so a typo or forgotten entry ships a blank UI string with no
+// compiler error. Every field on every language must be non-empty.
+func TestMessages_AllFieldsPopulated(t *testing.T) {
+	languages := []Language{LanguageEnglish, LanguageFrench, LanguageSpanish, LanguageGerman, LanguageItalian}
+	messagesType := reflect.TypeFor[Messages]()
+	for _, lang := range languages {
+		t.Run(string(lang), func(t *testing.T) {
+			value := reflect.ValueOf(MessagesForLanguage(lang))
+			for i := 0; i < value.NumField(); i++ {
+				fieldName := messagesType.Field(i).Name
+				if value.Field(i).String() == "" {
+					t.Errorf("Messages.%s is empty for language %v", fieldName, lang)
+				}
 			}
 		})
 	}
