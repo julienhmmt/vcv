@@ -397,6 +397,17 @@ func TestRealClient_GetIntermediateCA(t *testing.T) {
 	}
 }
 
+func TestRealClient_GetIntermediateCA_UnconfiguredMount(t *testing.T) {
+	certificatePEM := newVaultTestCertificatePEM(t)
+	server := newVaultTestServer(vaultTestServerState{certificatePEM: certificatePEM})
+	defer server.Close()
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+	_, err := client.GetIntermediateCA(context.Background(), "other")
+	if err == nil {
+		t.Fatalf("expected error for unconfigured mount")
+	}
+}
+
 func TestRealClient_GetIntermediateCA_BadResponse(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet && r.URL.Path == "/v1/pki/ca/pem" {
