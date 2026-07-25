@@ -348,6 +348,47 @@ func TestCORS_Preflight(t *testing.T) {
 	}
 }
 
+func TestCORS_WildcardOrigin_NeverSetsCredentials(t *testing.T) {
+	config := middleware.DefaultCORSConfig()
+	config.AllowedOrigins = []string{"*"}
+	config.AllowCredentials = true
+	handler := middleware.CORS(config)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("Origin", "https://evil.example.com")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Header().Get("Access-Control-Allow-Origin") != "https://evil.example.com" {
+		t.Errorf("expected Access-Control-Allow-Origin to reflect origin, got %q", rec.Header().Get("Access-Control-Allow-Origin"))
+	}
+	if rec.Header().Get("Access-Control-Allow-Credentials") != "" {
+		t.Error("expected no Access-Control-Allow-Credentials header when origin matched via wildcard")
+	}
+}
+
+func TestCORS_ExplicitOrigin_AllowsCredentials(t *testing.T) {
+	config := middleware.DefaultCORSConfig()
+	config.AllowedOrigins = []string{"https://app.example.com"}
+	config.AllowCredentials = true
+	handler := middleware.CORS(config)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("Origin", "https://app.example.com")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Header().Get("Access-Control-Allow-Credentials") != "true" {
+		t.Errorf("expected Access-Control-Allow-Credentials=true for explicitly allowed origin, got %q", rec.Header().Get("Access-Control-Allow-Credentials"))
+	}
+}
+
 func TestRateLimit_BlocksAfterThreshold_PerIP(t *testing.T) {
 	config := middleware.DefaultRateLimitConfig()
 	config.MaxRequests = 2
