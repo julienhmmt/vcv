@@ -88,6 +88,12 @@
   color: var(--vcv-status-warning-text);
 }
 
+.vcv-error-banner-success {
+  border: 1px solid var(--vcv-color-success-border);
+  background: var(--vcv-color-success-surface);
+  color: var(--vcv-color-success-text);
+}
+
 .vcv-error-banner-text {
   flex: 1;
 }

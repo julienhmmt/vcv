@@ -1,5 +1,8 @@
 <script lang="ts">
+  import Server from '@lucide/svelte/icons/server'
+  import ChevronDown from '@lucide/svelte/icons/chevron-down'
   import { getI18n } from '$lib/stores/i18n.svelte'
+  import ToggleSwitch from './ToggleSwitch.svelte'
   import type { AdminVaultStatus, VaultInstance } from '$lib/types'
 
   interface Props {
@@ -75,6 +78,15 @@
     unknown: i18n.t('adminVaultUnknown', 'Unknown'),
   })
 
+  // Reuses the same badge classes CertStatusBadge applies to cert rows, so a
+  // vault's connection state reads with the exact same color language.
+  const statusBadgeClasses: Record<StatusKind, string> = {
+    connected: 'vcv-badge-valid',
+    disconnected: 'vcv-badge-critical',
+    disabled: 'vcv-badge-revoked',
+    unknown: 'vcv-badge-revoked',
+  }
+
   const kind = $derived(statusKind())
   const vaultLabel = $derived(vault.display_name || vault.id || i18n.t('adminVaultNew', 'new vault'))
 </script>
@@ -82,14 +94,17 @@
 <div class="ve-card" class:ve-card--collapsed={!expanded}>
   <!-- Summary row (always visible) -->
   <div class="ve-summary" role="button" tabindex="0" aria-expanded={expanded} aria-controls="ve-body-{uid}" onclick={toggleExpanded} onkeydown={onSummaryKeydown}>
-    <span class="ve-status-dot ve-status-dot--{kind}" title={statusLabels[kind]}></span>
+    <Server class="h-4 w-4 ve-summary-icon" aria-hidden="true" />
     <div class="ve-summary-info">
       <span class="ve-summary-id">{vaultLabel}</span>
       {#if vault.address}
         <span class="ve-summary-addr">{vault.address}</span>
       {/if}
     </div>
-    <span class="ve-status-label ve-status-label--{kind}">{statusLabels[kind]}</span>
+    <span class="vcv-badge {statusBadgeClasses[kind]} ve-status-badge">
+      <span class="ve-status-dot ve-status-dot--{kind}" aria-hidden="true"></span>
+      {statusLabels[kind]}
+    </span>
     <button
       type="button"
       class="ve-toggle-btn"
@@ -97,9 +112,7 @@
       onclick={onToggleClick}
       aria-label={expanded ? i18n.t('adminVaultCollapse', 'Collapse') : i18n.t('adminVaultExpand', 'Expand')}
     >
-      <svg class="ve-toggle-icon" class:ve-toggle-icon--open={expanded} viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-        <path d="M4 6l4 4 4-4"/>
-      </svg>
+      <ChevronDown class="ve-toggle-icon {expanded ? 've-toggle-icon--open' : ''}" aria-hidden="true" />
     </button>
   </div>
 
@@ -109,11 +122,10 @@
       <!-- Row: enabled toggle + remove -->
       <div class="ve-control-row">
         <label class="ve-enabled-toggle">
-          <input
-            type="checkbox"
+          <ToggleSwitch
             name="ve-enabled-{uid}"
             checked={enabled}
-            onchange={(event) => update('enabled', (event.target as HTMLInputElement).checked)}
+            onCheckedChange={(checked) => update('enabled', checked)}
           />
           <span>{i18n.t('adminVaultEnabled', 'Enabled')}</span>
         </label>
@@ -193,7 +205,10 @@
 
       <!-- TLS section -->
       <details class="ve-tls-details">
-        <summary class="ve-tls-summary">{i18n.t('adminVaultTLSOptions', 'TLS options')}</summary>
+        <summary class="ve-tls-summary">
+          {i18n.t('adminVaultTLSOptions', 'TLS options')}
+          <ChevronDown class="ve-tls-chevron" aria-hidden="true" />
+        </summary>
         <div class="ve-tls-body">
           <div class="ve-field">
             <label class="ve-label" for="ve-tls-ca-b64-{uid}">{i18n.t('adminVaultTLSCABase64', 'CA cert (base64)')}</label>
@@ -238,11 +253,10 @@
             />
           </div>
           <label class="ve-enabled-toggle">
-            <input
-              type="checkbox"
+            <ToggleSwitch
               name="ve-tls-insecure-{uid}"
               checked={vault.tls_insecure ?? false}
-              onchange={(event) => update('tls_insecure', (event.target as HTMLInputElement).checked)}
+              onCheckedChange={(checked) => update('tls_insecure', checked)}
             />
             <span>{i18n.t('adminVaultTLSInsecure', 'Skip TLS verification')}</span>
           </label>
@@ -302,47 +316,28 @@
     text-overflow: ellipsis;
   }
 
-  /* Status dot */
+  /* Server icon */
+  .ve-summary :global(.ve-summary-icon) {
+    color: var(--vcv-color-muted);
+    flex-shrink: 0;
+  }
+
+  /* Status dot (nested inside the badge) */
   .ve-status-dot {
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     flex-shrink: 0;
   }
 
-  .ve-status-dot--connected { background: var(--vcv-color-primary); }
-  .ve-status-dot--disconnected { background: var(--vcv-color-danger); }
-  .ve-status-dot--disabled { background: var(--vcv-color-muted); }
-  .ve-status-dot--unknown { background: var(--vcv-color-border-strong); }
+  .ve-status-dot--connected { background: var(--vcv-status-valid-text); }
+  .ve-status-dot--disconnected { background: var(--vcv-status-critical-text); }
+  .ve-status-dot--disabled { background: var(--vcv-status-revoked-text); }
+  .ve-status-dot--unknown { background: var(--vcv-color-muted); }
 
-  /* Status label */
-  .ve-status-label {
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    padding: 0.15rem 0.45rem;
-    border-radius: var(--vcv-radius-sm);
-  }
-
-  .ve-status-label--connected {
-    color: var(--vcv-color-success-text);
-    background: var(--vcv-color-success-surface);
-  }
-
-  .ve-status-label--disconnected {
-    color: var(--vcv-color-danger-text);
-    background: var(--vcv-color-danger-surface);
-  }
-
-  .ve-status-label--disabled {
-    color: var(--vcv-color-muted);
-    background: var(--vcv-color-surface-muted);
-  }
-
-  .ve-status-label--unknown {
-    color: var(--vcv-color-muted);
-    background: var(--vcv-color-surface-muted);
+  /* Status badge: color comes from the shared .vcv-badge-{tone} classes */
+  .ve-status-badge {
+    flex-shrink: 0;
   }
 
   /* Toggle button */
@@ -363,13 +358,13 @@
     background: var(--vcv-color-bg-hover);
   }
 
-  .ve-toggle-icon {
+  .ve-toggle-btn :global(.ve-toggle-icon) {
     width: 16px;
     height: 16px;
     transition: transform 0.18s ease-out;
   }
 
-  .ve-toggle-icon--open {
+  .ve-toggle-btn :global(.ve-toggle-icon--open) {
     transform: rotate(180deg);
   }
 
@@ -398,8 +393,8 @@
     cursor: pointer;
   }
 
-  .ve-enabled-toggle input {
-    accent-color: var(--vcv-color-primary);
+  .ve-enabled-toggle :global(.tgl-switch) {
+    flex-shrink: 0;
   }
 
   .ve-remove-btn {
@@ -499,6 +494,9 @@
   }
 
   .ve-tls-summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     padding: 0.5rem 0.75rem;
     font-size: 0.75rem;
     font-weight: 500;
@@ -514,6 +512,17 @@
 
   .ve-tls-summary:hover {
     color: var(--vcv-color-text);
+  }
+
+  .ve-tls-summary :global(.ve-tls-chevron) {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    transition: transform 0.18s ease-out;
+  }
+
+  .ve-tls-details[open] .ve-tls-summary :global(.ve-tls-chevron) {
+    transform: rotate(180deg);
   }
 
   .ve-tls-body {

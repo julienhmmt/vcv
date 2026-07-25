@@ -1,10 +1,21 @@
 <script lang="ts">
   import { untrack } from 'svelte'
+  import ShieldCheck from '@lucide/svelte/icons/shield-check'
+  import BookOpen from '@lucide/svelte/icons/book-open'
+  import RefreshCw from '@lucide/svelte/icons/refresh-cw'
+  import LogOut from '@lucide/svelte/icons/log-out'
+  import Clock from '@lucide/svelte/icons/clock'
+  import Activity from '@lucide/svelte/icons/activity'
+  import Globe from '@lucide/svelte/icons/globe'
+  import Bell from '@lucide/svelte/icons/bell'
+  import Server from '@lucide/svelte/icons/server'
   import { Button } from '$lib/components/ui/button'
   import { Input } from '$lib/components/ui/input'
   import { Label } from '$lib/components/ui/label'
   import VaultEditor from './VaultEditor.svelte'
   import AdminDocsModal from './AdminDocsModal.svelte'
+  import ToggleSwitch from './ToggleSwitch.svelte'
+  import ErrorBanner from '$lib/components/ErrorBanner.svelte'
   import { getI18n } from '$lib/stores/i18n.svelte'
   import type { AdminVaultStatus, SettingsFile, VaultInstance } from '$lib/types'
 
@@ -118,42 +129,48 @@
   }
 
   const navItems = $derived([
-    { id: 'thresholds', label: i18n.t('adminNavThresholds', 'Thresholds') },
-    { id: 'metrics', label: i18n.t('adminNavMetrics', 'Metrics') },
-    { id: 'cors', label: i18n.t('adminNavCors', 'CORS') },
-    { id: 'notifications', label: i18n.t('adminNavNotifications', 'Notifications') },
-    { id: 'vaults', label: i18n.t('adminNavVaults', 'Vaults') },
+    { id: 'thresholds', label: i18n.t('adminNavThresholds', 'Thresholds'), icon: Clock },
+    { id: 'metrics', label: i18n.t('adminNavMetrics', 'Metrics'), icon: Activity },
+    { id: 'cors', label: i18n.t('adminNavCors', 'CORS'), icon: Globe },
+    { id: 'notifications', label: i18n.t('adminNavNotifications', 'Notifications'), icon: Bell },
+    { id: 'vaults', label: i18n.t('adminNavVaults', 'Vaults'), icon: Server },
   ])
 </script>
 
 <div class="adm-layout">
   <!-- Top bar -->
   <header class="adm-topbar">
-    <div class="adm-topbar-left">
-      <span class="adm-topbar-title">VCV Admin</span>
-      <span class="adm-topbar-sep">/</span>
-      <span class="adm-topbar-sub">{i18n.t('adminTitle', 'Settings')}</span>
+    <div class="vcv-header-bar adm-topbar-bar">
+      <div class="vcv-header-brand">
+        <span class="vcv-brand-mark" aria-hidden="true">
+          <ShieldCheck class="h-5 w-5" />
+        </span>
+        <div class="vcv-brand-text">
+          <h1 class="vcv-title">VCV Admin</h1>
+          <p class="vcv-title-subtitle">{i18n.t('adminTitle', 'Settings')}</p>
+        </div>
+      </div>
+      <nav class="vcv-header-actions">
+        <a href="/" class="adm-action-link">{i18n.t('adminBackToVCV', 'Back to VCV')}</a>
+        <button type="button" class="vcv-button vcv-button-icon" title={i18n.t('adminDocsTitle', 'Documentation')} aria-label={i18n.t('adminDocsTitle', 'Documentation')} onclick={openDocs}>
+          <BookOpen class="h-4 w-4" />
+        </button>
+        <button type="button" class="vcv-button vcv-button-icon" title={i18n.t('adminInvalidateCache', 'Flush cache')} aria-label={i18n.t('adminInvalidateCache', 'Flush cache')} onclick={onInvalidateCache}>
+          <RefreshCw class="h-4 w-4" />
+        </button>
+        <button type="button" class="vcv-button vcv-button-icon" title={i18n.t('adminLogout', 'Sign out')} aria-label={i18n.t('adminLogout', 'Sign out')} onclick={onLogout}>
+          <LogOut class="h-4 w-4" />
+        </button>
+      </nav>
     </div>
-    <nav class="adm-topbar-actions">
-      <a href="/" class="adm-action-link">{i18n.t('adminBackToVCV', 'Back to VCV')}</a>
-      <button type="button" class="adm-action-link" aria-label={i18n.t('adminDocsTitle', 'Documentation')} onclick={openDocs}>
-        {i18n.t('adminDocsTitle', 'Docs')}
-      </button>
-      <button type="button" class="adm-action-btn adm-action-btn--secondary" aria-label={i18n.t('adminInvalidateCache', 'Flush cache')} onclick={onInvalidateCache}>
-        {i18n.t('adminInvalidateCache', 'Flush cache')}
-      </button>
-      <button type="button" class="adm-action-btn adm-action-btn--ghost" aria-label={i18n.t('adminLogout', 'Sign out')} onclick={onLogout}>
-        {i18n.t('adminLogout', 'Sign out')}
-      </button>
-    </nav>
   </header>
 
   <!-- Feedback bar -->
   {#if error}
-    <div class="adm-feedback adm-feedback--error" role="alert">{error}</div>
+    <ErrorBanner message={error} variant="error" />
   {/if}
   {#if successMessage}
-    <div class="adm-feedback adm-feedback--success" role="status">{successMessage}</div>
+    <ErrorBanner message={successMessage} variant="success" />
   {/if}
 
   <!-- Body: nav + content -->
@@ -161,7 +178,11 @@
     <!-- Sticky left nav -->
     <aside class="adm-sidenav">
       {#each navItems as item}
-        <a href="#{item.id}" class="adm-sidenav-item">{item.label}</a>
+        {@const Icon = item.icon}
+        <a href="#{item.id}" class="adm-sidenav-item">
+          <Icon class="h-3.5 w-3.5" aria-hidden="true" />
+          {item.label}
+        </a>
       {/each}
     </aside>
 
@@ -171,7 +192,7 @@
       <!-- Section: Thresholds -->
       <section class="adm-section" id="thresholds">
         <div class="adm-section-head">
-          <h2 class="adm-section-title">{i18n.t('adminThresholdsTitle', 'Expiration thresholds')}</h2>
+          <h2 class="adm-section-title"><Clock class="h-3.5 w-3.5" aria-hidden="true" />{i18n.t('adminThresholdsTitle', 'Expiration thresholds')}</h2>
           <p class="adm-section-hint">{i18n.t('adminThresholdsHint', 'Days before a certificate is flagged.')}</p>
         </div>
         <div class="adm-grid adm-grid--2">
@@ -203,17 +224,15 @@
       <!-- Section: Metrics -->
       <section class="adm-section" id="metrics">
         <div class="adm-section-head">
-          <h2 class="adm-section-title">{i18n.t('adminMetrics', 'Metrics')}</h2>
+          <h2 class="adm-section-title"><Activity class="h-3.5 w-3.5" aria-hidden="true" />{i18n.t('adminMetrics', 'Metrics')}</h2>
           <p class="adm-section-hint">{i18n.t('adminMetricsHint', 'Prometheus scrape configuration.')}</p>
         </div>
         <div class="adm-toggles">
           <label class="adm-toggle">
-            <input
-              type="checkbox"
+            <ToggleSwitch
               name="metrics_per_certificate"
-              class="adm-toggle-input"
               checked={working.metrics.per_certificate ?? false}
-              onchange={(event) => updateMetric('per_certificate', (event.target as HTMLInputElement).checked)}
+              onCheckedChange={(checked) => updateMetric('per_certificate', checked)}
             />
             <div class="adm-toggle-body">
               <span class="adm-toggle-label">{i18n.t('adminMetricsPerCertificate', 'Per-certificate metrics')}</span>
@@ -221,12 +240,10 @@
             </div>
           </label>
           <label class="adm-toggle">
-            <input
-              type="checkbox"
+            <ToggleSwitch
               name="metrics_enhanced"
-              class="adm-toggle-input"
               checked={working.metrics.enhanced_metrics ?? true}
-              onchange={(event) => updateMetric('enhanced_metrics', (event.target as HTMLInputElement).checked)}
+              onCheckedChange={(checked) => updateMetric('enhanced_metrics', checked)}
             />
             <div class="adm-toggle-body">
               <span class="adm-toggle-label">{i18n.t('adminMetricsEnhanced', 'Enhanced metrics')}</span>
@@ -241,7 +258,7 @@
       <!-- Section: CORS -->
       <section class="adm-section" id="cors">
         <div class="adm-section-head">
-          <h2 class="adm-section-title">{i18n.t('adminCORSOrigins', 'CORS origins')}</h2>
+          <h2 class="adm-section-title"><Globe class="h-3.5 w-3.5" aria-hidden="true" />{i18n.t('adminCORSOrigins', 'CORS origins')}</h2>
           <p class="adm-section-hint">{i18n.t('adminCORSOriginsHint', 'Comma-separated list of allowed origins.')}</p>
         </div>
         <div class="adm-field">
@@ -258,7 +275,7 @@
       <!-- Section: Notifications -->
       <section class="adm-section" id="notifications">
         <div class="adm-section-head">
-          <h2 class="adm-section-title">{i18n.t('adminWebhookURL', 'Webhook URL')}</h2>
+          <h2 class="adm-section-title"><Bell class="h-3.5 w-3.5" aria-hidden="true" />{i18n.t('adminWebhookURL', 'Webhook URL')}</h2>
           <p class="adm-section-hint">{i18n.t('adminWebhookURLHint', 'POSTed a JSON alert when a certificate crosses the warning or critical threshold. Leave blank to disable.')}</p>
         </div>
         <div class="adm-field">
@@ -277,7 +294,7 @@
         <div class="adm-section-head">
           <div class="adm-section-head-row">
             <div>
-              <h2 class="adm-section-title">{i18n.t('adminVaults', 'Vaults')}</h2>
+              <h2 class="adm-section-title"><Server class="h-3.5 w-3.5" aria-hidden="true" />{i18n.t('adminVaults', 'Vaults')}</h2>
               <p class="adm-section-hint">{i18n.t('adminVaultsHint', 'Vault and OpenBao instances to read from.')}</p>
             </div>
             <Button type="button" variant="outline" size="sm" onclick={onAddVault}>
@@ -326,11 +343,6 @@
 
   /* Top bar */
   .adm-topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 1.5rem;
-    height: 3rem;
     border-bottom: 1px solid var(--vcv-color-border);
     background: var(--vcv-color-surface);
     flex-shrink: 0;
@@ -339,31 +351,9 @@
     z-index: 20;
   }
 
-  .adm-topbar-left {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.8125rem;
-  }
-
-  .adm-topbar-title {
-    font-weight: 600;
-    color: var(--vcv-color-text-strong);
-    letter-spacing: 0.01em;
-  }
-
-  .adm-topbar-sep {
-    color: var(--vcv-color-border-strong);
-  }
-
-  .adm-topbar-sub {
-    color: var(--vcv-color-muted);
-  }
-
-  .adm-topbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.25rem;
+  .adm-topbar-bar {
+    padding: 0.625rem 1.5rem;
+    max-width: none;
   }
 
   .adm-action-link {
@@ -381,54 +371,6 @@
   .adm-action-link:hover {
     color: var(--vcv-color-text);
     background: var(--vcv-color-bg-hover);
-  }
-
-  .adm-action-btn {
-    padding: 0.25rem 0.75rem;
-    font-size: 0.75rem;
-    border-radius: var(--vcv-radius-sm);
-    cursor: pointer;
-    transition: background 0.12s, border-color 0.12s;
-  }
-
-  .adm-action-btn--secondary {
-    background: var(--vcv-color-surface);
-    border: 1px solid var(--vcv-color-border-strong);
-    color: var(--vcv-color-text);
-  }
-
-  .adm-action-btn--secondary:hover {
-    background: var(--vcv-color-bg-hover);
-  }
-
-  .adm-action-btn--ghost {
-    background: none;
-    border: 1px solid transparent;
-    color: var(--vcv-color-muted);
-  }
-
-  .adm-action-btn--ghost:hover {
-    color: var(--vcv-color-text);
-    background: var(--vcv-color-bg-hover);
-  }
-
-  /* Feedback */
-  .adm-feedback {
-    padding: 0.6rem 1.5rem;
-    font-size: 0.8125rem;
-    border-bottom: 1px solid;
-  }
-
-  .adm-feedback--error {
-    background: var(--vcv-color-danger-surface);
-    border-color: var(--vcv-color-danger-border);
-    color: var(--vcv-color-danger-text);
-  }
-
-  .adm-feedback--success {
-    background: var(--vcv-color-success-surface);
-    border-color: var(--vcv-color-success-border);
-    color: var(--vcv-color-success-text);
   }
 
   /* Body */
@@ -499,10 +441,18 @@
   }
 
   .adm-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
     font-size: 0.875rem;
     font-weight: 600;
     color: var(--vcv-color-text-strong);
     margin: 0;
+  }
+
+  .adm-section-title :global(svg) {
+    color: var(--vcv-color-primary);
+    flex-shrink: 0;
   }
 
   .adm-section-hint {
@@ -576,9 +526,8 @@
     background: var(--vcv-color-bg-hover);
   }
 
-  .adm-toggle-input {
+  .adm-toggle :global(.tgl-switch) {
     margin-top: 0.1rem;
-    accent-color: var(--vcv-color-primary);
     flex-shrink: 0;
   }
 
