@@ -17,6 +17,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -369,6 +370,58 @@ func TestRealClient_ListCertificates_And_Details(t *testing.T) {
 	}
 	client.InvalidateCache()
 	client.Shutdown()
+}
+
+func TestRealClient_ListCertificates_CacheHit(t *testing.T) {
+	certificatePEM := newVaultTestCertificatePEM(t)
+	var requestCount atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestCount.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"aa", "bb"}}})
+			return
+		}
+		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs/revoked" {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"bb"}}})
+			return
+		}
+		if r.Method == http.MethodGet && (r.URL.Path == "/v1/pki/cert/aa" || r.URL.Path == "/v1/pki/cert/bb") {
+			w.WriteHeader(http.StatusOK)
+			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"certificate": certificatePEM}})
+			return
+		}
+		w.WriteHeader(http.StatusNotFound)
+	}))
+	defer server.Close()
+
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+	ctx := context.Background()
+
+	first, err := client.ListCertificates(ctx)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if len(first) != 2 {
+		t.Fatalf("expected 2 certificates, got %d", len(first))
+	}
+	countAfterFirst := requestCount.Load()
+	if countAfterFirst == 0 {
+		t.Fatalf("expected the first call to reach the vault server")
+	}
+
+	second, err := client.ListCertificates(ctx)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if len(second) != len(first) {
+		t.Fatalf("expected cached result length %d, got %d", len(first), len(second))
+	}
+	if got := requestCount.Load(); got != countAfterFirst {
+		t.Fatalf("expected second ListCertificates call to be served from cache with no new vault requests, got %d additional requests", got-countAfterFirst)
+	}
 }
 
 func TestRealClient_GetIntermediateCA(t *testing.T) {
