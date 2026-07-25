@@ -182,44 +182,48 @@ type Messages struct {
 
 	// Added for the Svelte UI: status labels/descriptions, pagination,
 	// banners, copy actions and admin strings the rewrite previously hardcoded.
-	StatusLabelCritical      string `json:"statusLabelCritical"`
-	StatusLabelWarning       string `json:"statusLabelWarning"`
-	StatusDescValid          string `json:"statusDescValid"`
-	StatusDescWarning        string `json:"statusDescWarning"`
-	StatusDescCritical       string `json:"statusDescCritical"`
-	StatusDescExpired        string `json:"statusDescExpired"`
-	StatusDescRevoked        string `json:"statusDescRevoked"`
-	LabelValidity            string `json:"labelValidity"`
-	LabelCopy                string `json:"labelCopy"`
-	LabelCopied              string `json:"labelCopied"`
-	LabelCopyPEM             string `json:"labelCopyPem"`
-	ButtonDone               string `json:"buttonDone"`
-	MountNoMatch             string `json:"mountNoMatch"`
-	CAIssuerCertificate      string `json:"caIssuerCertificate"`
-	AdminUsername            string `json:"adminUsername"`
-	AdminSigningIn           string `json:"adminSigningIn"`
-	AdminInvalidateCache     string `json:"adminInvalidateCache"`
-	AdminThresholdsTitle     string `json:"adminThresholdsTitle"`
-	AdminSaving              string `json:"adminSaving"`
-	AdminVaultUnknown        string `json:"adminVaultUnknown"`
-	NavAdmin                 string `json:"navAdmin"`
-	ToastRefreshing          string `json:"toastRefreshing"`
-	ToastRefreshFailed       string `json:"toastRefreshFailed"`
-	SkipToContent            string `json:"skipToContent"`
-	VaultsUnreachable        string `json:"vaultsUnreachable"`
-	VaultsUnreachableHint    string `json:"vaultsUnreachableHint"`
-	TableNoMatch             string `json:"tableNoMatch"`
-	TableEmpty               string `json:"tableEmpty"`
-	TableEmptyHint           string `json:"tableEmptyHint"`
-	FooterMoreInfo           string `json:"footerMoreInfo"`
-	FooterLicense            string `json:"footerLicense"`
-	FooterLabel              string `json:"footerLabel"`
-	StatusConnecting         string `json:"statusConnecting"`
-	StatusNoVaults           string `json:"statusNoVaults"`
-	StatusNoVaultsConfigured string `json:"statusNoVaultsConfigured"`
-	PaginationRange          string `json:"paginationRange"`
-	PaginationResults        string `json:"paginationResults"`
-	PaginationPageSizeAll    string `json:"paginationPageSizeAll"`
+	StatusLabelCritical        string `json:"statusLabelCritical"`
+	StatusLabelWarning         string `json:"statusLabelWarning"`
+	StatusDescValid            string `json:"statusDescValid"`
+	StatusDescWarning          string `json:"statusDescWarning"`
+	StatusDescCritical         string `json:"statusDescCritical"`
+	StatusDescExpired          string `json:"statusDescExpired"`
+	StatusDescRevoked          string `json:"statusDescRevoked"`
+	LabelValidity              string `json:"labelValidity"`
+	LabelCopy                  string `json:"labelCopy"`
+	LabelCopied                string `json:"labelCopied"`
+	LabelCopyPEM               string `json:"labelCopyPem"`
+	ButtonDone                 string `json:"buttonDone"`
+	MountNoMatch               string `json:"mountNoMatch"`
+	CAIssuerCertificate        string `json:"caIssuerCertificate"`
+	AdminUsername              string `json:"adminUsername"`
+	AdminSigningIn             string `json:"adminSigningIn"`
+	AdminInvalidateCache       string `json:"adminInvalidateCache"`
+	AdminThresholdsTitle       string `json:"adminThresholdsTitle"`
+	AdminSaving                string `json:"adminSaving"`
+	AdminVaultUnknown          string `json:"adminVaultUnknown"`
+	NavAdmin                   string `json:"navAdmin"`
+	ToastRefreshing            string `json:"toastRefreshing"`
+	ToastRefreshFailed         string `json:"toastRefreshFailed"`
+	SkipToContent              string `json:"skipToContent"`
+	VaultsUnreachable          string `json:"vaultsUnreachable"`
+	VaultsUnreachableHint      string `json:"vaultsUnreachableHint"`
+	TableNoMatch               string `json:"tableNoMatch"`
+	TableEmpty                 string `json:"tableEmpty"`
+	TableEmptyHint             string `json:"tableEmptyHint"`
+	FooterMoreInfo             string `json:"footerMoreInfo"`
+	FooterLicense              string `json:"footerLicense"`
+	FooterLabel                string `json:"footerLabel"`
+	StatusConnecting           string `json:"statusConnecting"`
+	StatusNoVaults             string `json:"statusNoVaults"`
+	StatusNoVaultsConfigured   string `json:"statusNoVaultsConfigured"`
+	PaginationRange            string `json:"paginationRange"`
+	PaginationResults          string `json:"paginationResults"`
+	PaginationPageSizeAll      string `json:"paginationPageSizeAll"`
+	AdminNavNotifications      string `json:"adminNavNotifications"`
+	AdminWebhookURL            string `json:"adminWebhookURL"`
+	AdminWebhookURLHint        string `json:"adminWebhookURLHint"`
+	AdminWebhookURLPlaceholder string `json:"adminWebhookURLPlaceholder"`
 }
 
 // Response is the payload returned by the /api/i18n endpoint.
@@ -387,44 +391,48 @@ var englishMessages = Messages{
 	AdminVaultTLSOptions:           "TLS options",
 	CopyFailed:                     "Copy failed — clipboard unavailable",
 
-	StatusLabelCritical:      "Critical",
-	StatusLabelWarning:       "Warning",
-	StatusDescValid:          "All good",
-	StatusDescWarning:        "≤ {days} days",
-	StatusDescCritical:       "≤ {days} days",
-	StatusDescExpired:        "Past expiry",
-	StatusDescRevoked:        "Revoked by CA",
-	LabelValidity:            "Validity",
-	LabelCopy:                "Copy",
-	LabelCopied:              "Copied!",
-	LabelCopyPEM:             "Copy PEM",
-	ButtonDone:               "Done",
-	MountNoMatch:             "No mount matches.",
-	CAIssuerCertificate:      "Issuer certificate",
-	AdminUsername:            "Username",
-	AdminSigningIn:           "Signing in…",
-	AdminInvalidateCache:     "Invalidate cache",
-	AdminThresholdsTitle:     "Expiration thresholds (days)",
-	AdminSaving:              "Saving…",
-	AdminVaultUnknown:        "Unknown",
-	NavAdmin:                 "Admin",
-	ToastRefreshing:          "Refreshing…",
-	ToastRefreshFailed:       "Refresh failed",
-	SkipToContent:            "Skip to main content",
-	VaultsUnreachable:        "{count} vault(s) unreachable",
-	VaultsUnreachableHint:    "Showing partial results.",
-	TableNoMatch:             "No certificates match the current filters.",
-	TableEmpty:               "No certificates found.",
-	TableEmptyHint:           "No PKI mount returned any certificates yet.",
-	FooterMoreInfo:           "More info",
-	FooterLicense:            "License",
-	FooterLabel:              "Site information",
-	StatusConnecting:         "connecting…",
-	StatusNoVaults:           "no vaults",
-	StatusNoVaultsConfigured: "No vaults configured.",
-	PaginationRange:          "{start}–{end} of {total}",
-	PaginationResults:        "{count} results",
-	PaginationPageSizeAll:    "All",
+	StatusLabelCritical:        "Critical",
+	StatusLabelWarning:         "Warning",
+	StatusDescValid:            "All good",
+	StatusDescWarning:          "≤ {days} days",
+	StatusDescCritical:         "≤ {days} days",
+	StatusDescExpired:          "Past expiry",
+	StatusDescRevoked:          "Revoked by CA",
+	LabelValidity:              "Validity",
+	LabelCopy:                  "Copy",
+	LabelCopied:                "Copied!",
+	LabelCopyPEM:               "Copy PEM",
+	ButtonDone:                 "Done",
+	MountNoMatch:               "No mount matches.",
+	CAIssuerCertificate:        "Issuer certificate",
+	AdminUsername:              "Username",
+	AdminSigningIn:             "Signing in…",
+	AdminInvalidateCache:       "Invalidate cache",
+	AdminThresholdsTitle:       "Expiration thresholds (days)",
+	AdminSaving:                "Saving…",
+	AdminVaultUnknown:          "Unknown",
+	NavAdmin:                   "Admin",
+	ToastRefreshing:            "Refreshing…",
+	ToastRefreshFailed:         "Refresh failed",
+	SkipToContent:              "Skip to main content",
+	VaultsUnreachable:          "{count} vault(s) unreachable",
+	VaultsUnreachableHint:      "Showing partial results.",
+	TableNoMatch:               "No certificates match the current filters.",
+	TableEmpty:                 "No certificates found.",
+	TableEmptyHint:             "No PKI mount returned any certificates yet.",
+	FooterMoreInfo:             "More info",
+	FooterLicense:              "License",
+	FooterLabel:                "Site information",
+	StatusConnecting:           "connecting…",
+	StatusNoVaults:             "no vaults",
+	StatusNoVaultsConfigured:   "No vaults configured.",
+	PaginationRange:            "{start}–{end} of {total}",
+	PaginationResults:          "{count} results",
+	PaginationPageSizeAll:      "All",
+	AdminNavNotifications:      "Notifications",
+	AdminWebhookURL:            "Webhook URL",
+	AdminWebhookURLHint:        "POSTed a JSON alert when a certificate crosses the warning or critical threshold. Leave blank to disable.",
+	AdminWebhookURLPlaceholder: "Enter a new webhook URL to replace the stored one",
 }
 
 var frenchMessages = Messages{
@@ -586,44 +594,48 @@ var frenchMessages = Messages{
 	AdminVaultTLSOptions:           "Options TLS",
 	CopyFailed:                     "Échec de la copie — presse-papiers indisponible",
 
-	StatusLabelCritical:      "Critique",
-	StatusLabelWarning:       "Avertissement",
-	StatusDescValid:          "Tout va bien",
-	StatusDescWarning:        "≤ {days} jours",
-	StatusDescCritical:       "≤ {days} jours",
-	StatusDescExpired:        "Date dépassée",
-	StatusDescRevoked:        "Révoqué par l'autorité",
-	LabelValidity:            "Validité",
-	LabelCopy:                "Copier",
-	LabelCopied:              "Copié !",
-	LabelCopyPEM:             "Copier le PEM",
-	ButtonDone:               "Terminé",
-	MountNoMatch:             "Aucun montage correspondant.",
-	CAIssuerCertificate:      "Certificat émetteur",
-	AdminUsername:            "Identifiant",
-	AdminSigningIn:           "Connexion…",
-	AdminInvalidateCache:     "Vider le cache",
-	AdminThresholdsTitle:     "Seuils d'expiration (jours)",
-	AdminSaving:              "Enregistrement…",
-	AdminVaultUnknown:        "Inconnu",
-	NavAdmin:                 "Administration",
-	ToastRefreshing:          "Actualisation…",
-	ToastRefreshFailed:       "Échec de l'actualisation",
-	SkipToContent:            "Aller au contenu principal",
-	VaultsUnreachable:        "{count} vault(s) injoignable(s)",
-	VaultsUnreachableHint:    "Résultats partiels affichés.",
-	TableNoMatch:             "Aucun certificat ne correspond aux filtres actuels.",
-	TableEmpty:               "Aucun certificat trouvé.",
-	TableEmptyHint:           "Aucun montage PKI n'a encore renvoyé de certificat.",
-	FooterMoreInfo:           "En savoir plus",
-	FooterLicense:            "Licence",
-	FooterLabel:              "Informations sur le site",
-	StatusConnecting:         "connexion…",
-	StatusNoVaults:           "aucun vault",
-	StatusNoVaultsConfigured: "Aucun vault configuré.",
-	PaginationRange:          "{start}–{end} sur {total}",
-	PaginationResults:        "{count} résultats",
-	PaginationPageSizeAll:    "Tous",
+	StatusLabelCritical:        "Critique",
+	StatusLabelWarning:         "Avertissement",
+	StatusDescValid:            "Tout va bien",
+	StatusDescWarning:          "≤ {days} jours",
+	StatusDescCritical:         "≤ {days} jours",
+	StatusDescExpired:          "Date dépassée",
+	StatusDescRevoked:          "Révoqué par l'autorité",
+	LabelValidity:              "Validité",
+	LabelCopy:                  "Copier",
+	LabelCopied:                "Copié !",
+	LabelCopyPEM:               "Copier le PEM",
+	ButtonDone:                 "Terminé",
+	MountNoMatch:               "Aucun montage correspondant.",
+	CAIssuerCertificate:        "Certificat émetteur",
+	AdminUsername:              "Identifiant",
+	AdminSigningIn:             "Connexion…",
+	AdminInvalidateCache:       "Vider le cache",
+	AdminThresholdsTitle:       "Seuils d'expiration (jours)",
+	AdminSaving:                "Enregistrement…",
+	AdminVaultUnknown:          "Inconnu",
+	NavAdmin:                   "Administration",
+	ToastRefreshing:            "Actualisation…",
+	ToastRefreshFailed:         "Échec de l'actualisation",
+	SkipToContent:              "Aller au contenu principal",
+	VaultsUnreachable:          "{count} vault(s) injoignable(s)",
+	VaultsUnreachableHint:      "Résultats partiels affichés.",
+	TableNoMatch:               "Aucun certificat ne correspond aux filtres actuels.",
+	TableEmpty:                 "Aucun certificat trouvé.",
+	TableEmptyHint:             "Aucun montage PKI n'a encore renvoyé de certificat.",
+	FooterMoreInfo:             "En savoir plus",
+	FooterLicense:              "Licence",
+	FooterLabel:                "Informations sur le site",
+	StatusConnecting:           "connexion…",
+	StatusNoVaults:             "aucun vault",
+	StatusNoVaultsConfigured:   "Aucun vault configuré.",
+	PaginationRange:            "{start}–{end} sur {total}",
+	PaginationResults:          "{count} résultats",
+	PaginationPageSizeAll:      "Tous",
+	AdminNavNotifications:      "Notifications",
+	AdminWebhookURL:            "URL du webhook",
+	AdminWebhookURLHint:        "Reçoit une alerte JSON par POST lorsqu'un certificat franchit le seuil d'avertissement ou critique. Laisser vide pour désactiver.",
+	AdminWebhookURLPlaceholder: "Saisir une nouvelle URL de webhook pour remplacer celle enregistrée",
 }
 
 var spanishMessages = Messages{
@@ -785,44 +797,48 @@ var spanishMessages = Messages{
 	AdminVaultTLSOptions:           "Opciones TLS",
 	CopyFailed:                     "Error al copiar — portapapeles no disponible",
 
-	StatusLabelCritical:      "Crítico",
-	StatusLabelWarning:       "Advertencia",
-	StatusDescValid:          "Todo correcto",
-	StatusDescWarning:        "≤ {days} días",
-	StatusDescCritical:       "≤ {days} días",
-	StatusDescExpired:        "Fecha vencida",
-	StatusDescRevoked:        "Revocado por la autoridad",
-	LabelValidity:            "Validez",
-	LabelCopy:                "Copiar",
-	LabelCopied:              "¡Copiado!",
-	LabelCopyPEM:             "Copiar PEM",
-	ButtonDone:               "Hecho",
-	MountNoMatch:             "Ningún montaje coincide.",
-	CAIssuerCertificate:      "Certificado emisor",
-	AdminUsername:            "Usuario",
-	AdminSigningIn:           "Iniciando sesión…",
-	AdminInvalidateCache:     "Vaciar caché",
-	AdminThresholdsTitle:     "Umbrales de expiración (días)",
-	AdminSaving:              "Guardando…",
-	AdminVaultUnknown:        "Desconocido",
-	NavAdmin:                 "Administración",
-	ToastRefreshing:          "Actualizando…",
-	ToastRefreshFailed:       "Error al actualizar",
-	SkipToContent:            "Ir al contenido principal",
-	VaultsUnreachable:        "{count} vault(s) inaccesible(s)",
-	VaultsUnreachableHint:    "Mostrando resultados parciales.",
-	TableNoMatch:             "Ningún certificado coincide con los filtros actuales.",
-	TableEmpty:               "No se encontraron certificados.",
-	TableEmptyHint:           "Ningún montaje PKI ha devuelto certificados todavía.",
-	FooterMoreInfo:           "Más información",
-	FooterLicense:            "Licencia",
-	FooterLabel:              "Información del sitio",
-	StatusConnecting:         "conectando…",
-	StatusNoVaults:           "sin vaults",
-	StatusNoVaultsConfigured: "Ningún vault configurado.",
-	PaginationRange:          "{start}–{end} de {total}",
-	PaginationResults:        "{count} resultados",
-	PaginationPageSizeAll:    "Todos",
+	StatusLabelCritical:        "Crítico",
+	StatusLabelWarning:         "Advertencia",
+	StatusDescValid:            "Todo correcto",
+	StatusDescWarning:          "≤ {days} días",
+	StatusDescCritical:         "≤ {days} días",
+	StatusDescExpired:          "Fecha vencida",
+	StatusDescRevoked:          "Revocado por la autoridad",
+	LabelValidity:              "Validez",
+	LabelCopy:                  "Copiar",
+	LabelCopied:                "¡Copiado!",
+	LabelCopyPEM:               "Copiar PEM",
+	ButtonDone:                 "Hecho",
+	MountNoMatch:               "Ningún montaje coincide.",
+	CAIssuerCertificate:        "Certificado emisor",
+	AdminUsername:              "Usuario",
+	AdminSigningIn:             "Iniciando sesión…",
+	AdminInvalidateCache:       "Vaciar caché",
+	AdminThresholdsTitle:       "Umbrales de expiración (días)",
+	AdminSaving:                "Guardando…",
+	AdminVaultUnknown:          "Desconocido",
+	NavAdmin:                   "Administración",
+	ToastRefreshing:            "Actualizando…",
+	ToastRefreshFailed:         "Error al actualizar",
+	SkipToContent:              "Ir al contenido principal",
+	VaultsUnreachable:          "{count} vault(s) inaccesible(s)",
+	VaultsUnreachableHint:      "Mostrando resultados parciales.",
+	TableNoMatch:               "Ningún certificado coincide con los filtros actuales.",
+	TableEmpty:                 "No se encontraron certificados.",
+	TableEmptyHint:             "Ningún montaje PKI ha devuelto certificados todavía.",
+	FooterMoreInfo:             "Más información",
+	FooterLicense:              "Licencia",
+	FooterLabel:                "Información del sitio",
+	StatusConnecting:           "conectando…",
+	StatusNoVaults:             "sin vaults",
+	StatusNoVaultsConfigured:   "Ningún vault configurado.",
+	PaginationRange:            "{start}–{end} de {total}",
+	PaginationResults:          "{count} resultados",
+	PaginationPageSizeAll:      "Todos",
+	AdminNavNotifications:      "Notificaciones",
+	AdminWebhookURL:            "URL del webhook",
+	AdminWebhookURLHint:        "Recibe una alerta JSON por POST cuando un certificado cruza el umbral de advertencia o crítico. Dejar en blanco para desactivar.",
+	AdminWebhookURLPlaceholder: "Introduce una nueva URL de webhook para reemplazar la almacenada",
 }
 
 var germanMessages = Messages{
@@ -984,44 +1000,48 @@ var germanMessages = Messages{
 	AdminVaultTLSOptions:           "TLS-Optionen",
 	CopyFailed:                     "Kopieren fehlgeschlagen — Zwischenablage nicht verfügbar",
 
-	StatusLabelCritical:      "Kritisch",
-	StatusLabelWarning:       "Warnung",
-	StatusDescValid:          "Alles in Ordnung",
-	StatusDescWarning:        "≤ {days} Tage",
-	StatusDescCritical:       "≤ {days} Tage",
-	StatusDescExpired:        "Abgelaufen",
-	StatusDescRevoked:        "Von der CA widerrufen",
-	LabelValidity:            "Gültigkeit",
-	LabelCopy:                "Kopieren",
-	LabelCopied:              "Kopiert!",
-	LabelCopyPEM:             "PEM kopieren",
-	ButtonDone:               "Fertig",
-	MountNoMatch:             "Kein Mount gefunden.",
-	CAIssuerCertificate:      "Aussteller-Zertifikat",
-	AdminUsername:            "Benutzername",
-	AdminSigningIn:           "Anmeldung…",
-	AdminInvalidateCache:     "Cache leeren",
-	AdminThresholdsTitle:     "Ablaufschwellen (Tage)",
-	AdminSaving:              "Speichern…",
-	AdminVaultUnknown:        "Unbekannt",
-	NavAdmin:                 "Verwaltung",
-	ToastRefreshing:          "Aktualisierung…",
-	ToastRefreshFailed:       "Aktualisierung fehlgeschlagen",
-	SkipToContent:            "Zum Hauptinhalt springen",
-	VaultsUnreachable:        "{count} Vault(s) nicht erreichbar",
-	VaultsUnreachableHint:    "Teilergebnisse werden angezeigt.",
-	TableEmpty:               "Keine Zertifikate gefunden.",
-	TableEmptyHint:           "Noch hat kein PKI-Mount Zertifikate zurückgegeben.",
-	TableNoMatch:             "Keine Zertifikate entsprechen den aktuellen Filtern.",
-	FooterMoreInfo:           "Mehr Infos",
-	FooterLicense:            "Lizenz",
-	FooterLabel:              "Seiteninformationen",
-	StatusConnecting:         "verbinde…",
-	StatusNoVaults:           "keine Vaults",
-	StatusNoVaultsConfigured: "Keine Vaults konfiguriert.",
-	PaginationRange:          "{start}–{end} von {total}",
-	PaginationResults:        "{count} Ergebnisse",
-	PaginationPageSizeAll:    "Alle",
+	StatusLabelCritical:        "Kritisch",
+	StatusLabelWarning:         "Warnung",
+	StatusDescValid:            "Alles in Ordnung",
+	StatusDescWarning:          "≤ {days} Tage",
+	StatusDescCritical:         "≤ {days} Tage",
+	StatusDescExpired:          "Abgelaufen",
+	StatusDescRevoked:          "Von der CA widerrufen",
+	LabelValidity:              "Gültigkeit",
+	LabelCopy:                  "Kopieren",
+	LabelCopied:                "Kopiert!",
+	LabelCopyPEM:               "PEM kopieren",
+	ButtonDone:                 "Fertig",
+	MountNoMatch:               "Kein Mount gefunden.",
+	CAIssuerCertificate:        "Aussteller-Zertifikat",
+	AdminUsername:              "Benutzername",
+	AdminSigningIn:             "Anmeldung…",
+	AdminInvalidateCache:       "Cache leeren",
+	AdminThresholdsTitle:       "Ablaufschwellen (Tage)",
+	AdminSaving:                "Speichern…",
+	AdminVaultUnknown:          "Unbekannt",
+	NavAdmin:                   "Verwaltung",
+	ToastRefreshing:            "Aktualisierung…",
+	ToastRefreshFailed:         "Aktualisierung fehlgeschlagen",
+	SkipToContent:              "Zum Hauptinhalt springen",
+	VaultsUnreachable:          "{count} Vault(s) nicht erreichbar",
+	VaultsUnreachableHint:      "Teilergebnisse werden angezeigt.",
+	TableEmpty:                 "Keine Zertifikate gefunden.",
+	TableEmptyHint:             "Noch hat kein PKI-Mount Zertifikate zurückgegeben.",
+	TableNoMatch:               "Keine Zertifikate entsprechen den aktuellen Filtern.",
+	FooterMoreInfo:             "Mehr Infos",
+	FooterLicense:              "Lizenz",
+	FooterLabel:                "Seiteninformationen",
+	StatusConnecting:           "verbinde…",
+	StatusNoVaults:             "keine Vaults",
+	StatusNoVaultsConfigured:   "Keine Vaults konfiguriert.",
+	PaginationRange:            "{start}–{end} von {total}",
+	PaginationResults:          "{count} Ergebnisse",
+	PaginationPageSizeAll:      "Alle",
+	AdminNavNotifications:      "Benachrichtigungen",
+	AdminWebhookURL:            "Webhook-URL",
+	AdminWebhookURLHint:        "Erhält einen JSON-Alarm per POST, wenn ein Zertifikat die Warn- oder kritische Schwelle überschreitet. Leer lassen zum Deaktivieren.",
+	AdminWebhookURLPlaceholder: "Neue Webhook-URL eingeben, um die gespeicherte zu ersetzen",
 }
 
 var italianMessages = Messages{
@@ -1183,44 +1203,48 @@ var italianMessages = Messages{
 	AdminVaultTLSOptions:           "Opzioni TLS",
 	CopyFailed:                     "Copia non riuscita — appunti non disponibili",
 
-	StatusLabelCritical:      "Critico",
-	StatusLabelWarning:       "Avviso",
-	StatusDescValid:          "Tutto a posto",
-	StatusDescWarning:        "≤ {days} giorni",
-	StatusDescCritical:       "≤ {days} giorni",
-	StatusDescExpired:        "Data superata",
-	StatusDescRevoked:        "Revocato dalla CA",
-	LabelValidity:            "Validità",
-	LabelCopy:                "Copia",
-	LabelCopied:              "Copiato!",
-	LabelCopyPEM:             "Copia PEM",
-	ButtonDone:               "Fatto",
-	MountNoMatch:             "Nessun mount corrispondente.",
-	CAIssuerCertificate:      "Certificato emittente",
-	AdminUsername:            "Nome utente",
-	AdminSigningIn:           "Accesso…",
-	AdminInvalidateCache:     "Svuota cache",
-	AdminThresholdsTitle:     "Soglie di scadenza (giorni)",
-	AdminSaving:              "Salvataggio…",
-	AdminVaultUnknown:        "Sconosciuto",
-	NavAdmin:                 "Amministrazione",
-	ToastRefreshing:          "Aggiornamento…",
-	ToastRefreshFailed:       "Aggiornamento non riuscito",
-	SkipToContent:            "Vai al contenuto principale",
-	VaultsUnreachable:        "{count} vault non raggiungibile/i",
-	VaultsUnreachableHint:    "Risultati parziali mostrati.",
-	TableNoMatch:             "Nessun certificato corrisponde ai filtri attuali.",
-	TableEmpty:               "Nessun certificato trovato.",
-	TableEmptyHint:           "Nessun mount PKI ha ancora restituito certificati.",
-	FooterMoreInfo:           "Maggiori informazioni",
-	FooterLicense:            "Licenza",
-	FooterLabel:              "Informazioni sul sito",
-	StatusConnecting:         "connessione…",
-	StatusNoVaults:           "nessun vault",
-	StatusNoVaultsConfigured: "Nessun vault configurato.",
-	PaginationRange:          "{start}–{end} di {total}",
-	PaginationResults:        "{count} risultati",
-	PaginationPageSizeAll:    "Tutti",
+	StatusLabelCritical:        "Critico",
+	StatusLabelWarning:         "Avviso",
+	StatusDescValid:            "Tutto a posto",
+	StatusDescWarning:          "≤ {days} giorni",
+	StatusDescCritical:         "≤ {days} giorni",
+	StatusDescExpired:          "Data superata",
+	StatusDescRevoked:          "Revocato dalla CA",
+	LabelValidity:              "Validità",
+	LabelCopy:                  "Copia",
+	LabelCopied:                "Copiato!",
+	LabelCopyPEM:               "Copia PEM",
+	ButtonDone:                 "Fatto",
+	MountNoMatch:               "Nessun mount corrispondente.",
+	CAIssuerCertificate:        "Certificato emittente",
+	AdminUsername:              "Nome utente",
+	AdminSigningIn:             "Accesso…",
+	AdminInvalidateCache:       "Svuota cache",
+	AdminThresholdsTitle:       "Soglie di scadenza (giorni)",
+	AdminSaving:                "Salvataggio…",
+	AdminVaultUnknown:          "Sconosciuto",
+	NavAdmin:                   "Amministrazione",
+	ToastRefreshing:            "Aggiornamento…",
+	ToastRefreshFailed:         "Aggiornamento non riuscito",
+	SkipToContent:              "Vai al contenuto principale",
+	VaultsUnreachable:          "{count} vault non raggiungibile/i",
+	VaultsUnreachableHint:      "Risultati parziali mostrati.",
+	TableNoMatch:               "Nessun certificato corrisponde ai filtri attuali.",
+	TableEmpty:                 "Nessun certificato trovato.",
+	TableEmptyHint:             "Nessun mount PKI ha ancora restituito certificati.",
+	FooterMoreInfo:             "Maggiori informazioni",
+	FooterLicense:              "Licenza",
+	FooterLabel:                "Informazioni sul sito",
+	StatusConnecting:           "connessione…",
+	StatusNoVaults:             "nessun vault",
+	StatusNoVaultsConfigured:   "Nessun vault configurato.",
+	PaginationRange:            "{start}–{end} di {total}",
+	PaginationResults:          "{count} risultati",
+	PaginationPageSizeAll:      "Tutti",
+	AdminNavNotifications:      "Notifiche",
+	AdminWebhookURL:            "URL webhook",
+	AdminWebhookURLHint:        "Riceve un avviso JSON via POST quando un certificato supera la soglia di avviso o critica. Lasciare vuoto per disabilitare.",
+	AdminWebhookURLPlaceholder: "Inserisci un nuovo URL webhook per sostituire quello memorizzato",
 }
 
 // MessagesForLanguage returns the translations for a given language code.
