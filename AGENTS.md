@@ -74,6 +74,9 @@ make dev
 # Lint (go fmt + go vet)
 make go-lint
 
+# Full lint (golangci-lint, same checks/version as CI) - slower, run before pushing
+make go-lint-full
+
 # Go unit tests offline (no Vault), with coverage
 make test-offline
 
