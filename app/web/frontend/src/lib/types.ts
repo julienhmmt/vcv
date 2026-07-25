@@ -96,6 +96,10 @@ export interface CORSSettings {
   allow_credentials?: boolean
 }
 
+export interface NotificationSettings {
+  webhook_url?: string
+}
+
 export interface AppSettings {
   env: string
   port: number
@@ -111,6 +115,7 @@ export interface SettingsFile {
   certificates: CertificateSettings
   metrics: MetricsSettings
   cors: CORSSettings
+  notifications?: NotificationSettings
   vaults: VaultInstance[]
 }
 

@@ -38,11 +38,15 @@
 
   let working = $state<SettingsFile>(untrack(() => $state.snapshot(settings)))
   let lastSyncedRef: SettingsFile | null = null
+  // The server always returns a masked (empty) webhook URL, same as vault tokens.
+  // Track the input separately so a successful save doesn't leave a stale value.
+  let webhookInput = $state(untrack(() => settings.notifications?.webhook_url ?? ''))
 
   $effect(() => {
     if (settings !== lastSyncedRef) {
       lastSyncedRef = settings
       working = $state.snapshot(settings)
+      webhookInput = settings.notifications?.webhook_url ?? ''
     }
   })
 
@@ -68,6 +72,11 @@
   }
 
   const corsText = $derived((working.cors.allowed_origins ?? []).join(', '))
+
+  function updateWebhookURL(value: string): void {
+    webhookInput = value
+    working = { ...working, notifications: { ...working.notifications, webhook_url: value } }
+  }
 
   function updateCors(value: string): void {
     working = {
@@ -112,6 +121,7 @@
     { id: 'thresholds', label: i18n.t('adminNavThresholds', 'Thresholds') },
     { id: 'metrics', label: i18n.t('adminNavMetrics', 'Metrics') },
     { id: 'cors', label: i18n.t('adminNavCors', 'CORS') },
+    { id: 'notifications', label: i18n.t('adminNavNotifications', 'Notifications') },
     { id: 'vaults', label: i18n.t('adminNavVaults', 'Vaults') },
   ])
 </script>
@@ -239,6 +249,23 @@
             value={corsText}
             placeholder="https://app.example.com, https://other.example.com"
             oninput={(event) => updateCors((event.target as HTMLInputElement).value)}
+          />
+        </div>
+      </section>
+
+      <hr class="adm-divider" />
+
+      <!-- Section: Notifications -->
+      <section class="adm-section" id="notifications">
+        <div class="adm-section-head">
+          <h2 class="adm-section-title">{i18n.t('adminWebhookURL', 'Webhook URL')}</h2>
+          <p class="adm-section-hint">{i18n.t('adminWebhookURLHint', 'POSTed a JSON alert when a certificate crosses the warning or critical threshold. Leave blank to disable.')}</p>
+        </div>
+        <div class="adm-field">
+          <Input
+            value={webhookInput}
+            placeholder={i18n.t('adminWebhookURLPlaceholder', 'Enter a new webhook URL to replace the stored one')}
+            oninput={(event) => updateWebhookURL((event.target as HTMLInputElement).value)}
           />
         </div>
       </section>

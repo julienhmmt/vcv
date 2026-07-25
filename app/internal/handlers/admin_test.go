@@ -379,6 +379,34 @@ func TestValidateSettings(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "empty webhook url is valid (disabled)",
+			settings: config.SettingsFile{
+				Notifications: config.NotificationSettings{WebhookURL: ""},
+			},
+			wantErr: false,
+		},
+		{
+			name: "https webhook url is valid",
+			settings: config.SettingsFile{
+				Notifications: config.NotificationSettings{WebhookURL: "https://hooks.example.com/services/T000/B000/XXXX"},
+			},
+			wantErr: false,
+		},
+		{
+			name: "webhook url missing scheme is invalid",
+			settings: config.SettingsFile{
+				Notifications: config.NotificationSettings{WebhookURL: "hooks.example.com/webhook"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "webhook url with non-http scheme is invalid",
+			settings: config.SettingsFile{
+				Notifications: config.NotificationSettings{WebhookURL: "file:///etc/passwd"},
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {

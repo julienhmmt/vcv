@@ -138,7 +138,7 @@ func registerAdminAPIRoutes(
 				return
 			}
 			statuses := computeVaultStatuses(req.Context(), settings.Vaults, vaultStatusClients)
-			writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskVaultTokens(settings), VaultStatuses: statuses})
+			writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskSecrets(settings), VaultStatuses: statuses})
 		})
 
 		r.Put("/api/admin/settings", func(w http.ResponseWriter, req *http.Request) {
@@ -158,6 +158,7 @@ func registerAdminAPIRoutes(
 				if !errors.Is(saveErr, vcverrors.ErrInvalidAddress) &&
 					!errors.Is(saveErr, vcverrors.ErrInvalidToken) &&
 					!errors.Is(saveErr, vcverrors.ErrInvalidThreshold) &&
+					!errors.Is(saveErr, vcverrors.ErrInvalidWebhookURL) &&
 					!errors.Is(saveErr, vcverrors.ErrVaultIDEmpty) &&
 					!errors.Is(saveErr, vcverrors.ErrDuplicateVaultID) {
 					status = http.StatusInternalServerError
@@ -172,7 +173,7 @@ func registerAdminAPIRoutes(
 				return
 			}
 			statuses := computeVaultStatuses(req.Context(), updated.Vaults, vaultStatusClients)
-			writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskVaultTokens(updated), VaultStatuses: statuses})
+			writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskSecrets(updated), VaultStatuses: statuses})
 		})
 
 		r.Post("/api/admin/vault", func(w http.ResponseWriter, req *http.Request) {
@@ -240,27 +241,43 @@ func mergeAdminSettings(current, incoming config.SettingsFile) config.SettingsFi
 	merged.Metrics.EnhancedMetrics = incoming.Metrics.EnhancedMetrics
 	merged.Metrics.PinnedCertificates = incoming.Metrics.PinnedCertificates
 	merged.CORS.AllowedOrigins = incoming.CORS.AllowedOrigins
+	merged.Notifications.WebhookURL = mergeSecret(incoming.Notifications.WebhookURL, current.Notifications.WebhookURL)
 	merged.Vaults = mergeVaultTokens(incoming.Vaults, current.Vaults)
 	return merged
 }
 
-// maskVaultTokens returns a copy of settings with every vault's Token blanked
-// so cleartext tokens never reach the browser. Stored tokens are preserved on
-// save by mergeVaultTokens when the incoming Token is empty, so the round-trip
-// still works with masked responses.
-func maskVaultTokens(s config.SettingsFile) config.SettingsFile {
+// mergeSecret returns incoming unless it's blank or a UI mask sentinel, in
+// which case the previously stored value is preserved. Used for any
+// settings field whose GET response must never round-trip a masked value
+// back into storage (webhook URL may carry an auth token in its path, same
+// concern as vault tokens).
+func mergeSecret(incoming, existing string) string {
+	if isBlankOrMaskedSecret(incoming) {
+		return existing
+	}
+	return incoming
+}
+
+// maskSecrets returns a copy of settings with every vault's Token and the
+// webhook URL blanked, so cleartext secrets never reach the browser. Stored
+// values are preserved on save by mergeVaultTokens/mergeSecret when the
+// incoming field is empty, so the round-trip still works with masked
+// responses.
+func maskSecrets(s config.SettingsFile) config.SettingsFile {
 	out := s
 	out.Vaults = make([]config.VaultInstance, len(s.Vaults))
 	for i, v := range s.Vaults {
 		v.Token = ""
 		out.Vaults[i] = v
 	}
+	out.Notifications.WebhookURL = ""
 	return out
 }
 
-// isBlankOrMaskedToken reports whether token is empty or a common UI mask
-// sentinel that must not overwrite a stored Vault token on admin PUT.
-func isBlankOrMaskedToken(token string) bool {
+// isBlankOrMaskedSecret reports whether value is empty or a common UI mask
+// sentinel that must not overwrite a stored secret (vault token, webhook
+// URL) on admin PUT.
+func isBlankOrMaskedSecret(token string) bool {
 	t := strings.TrimSpace(token)
 	if t == "" {
 		return true
@@ -282,7 +299,7 @@ func mergeVaultTokens(incoming, existing []config.VaultInstance) []config.VaultI
 	}
 	merged := make([]config.VaultInstance, 0, len(incoming))
 	for _, v := range incoming {
-		if isBlankOrMaskedToken(v.Token) {
+		if isBlankOrMaskedSecret(v.Token) {
 			lookupKey := v.OriginalID
 			if lookupKey == "" {
 				lookupKey = v.ID

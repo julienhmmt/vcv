@@ -17,6 +17,7 @@ import (
 	"vcv/internal/handlers"
 	"vcv/internal/logger"
 	"vcv/internal/middleware"
+	"vcv/internal/notify"
 	"vcv/internal/vault"
 	"vcv/internal/version"
 	"vcv/web"
@@ -31,6 +32,7 @@ const serverReadHeaderTimeout time.Duration = 5 * time.Second
 const serverMaxHeaderBytes int = 1 << 20
 const routerMaxBodyBytes int64 = 1 << 20
 const routerRateLimitMaxRequests int = 300
+const notifyCheckInterval time.Duration = 15 * time.Minute
 const routerRateLimitWindow time.Duration = 1 * time.Minute
 
 // publicVaultStatusError maps internal vault connection errors to stable,
@@ -243,11 +245,30 @@ func main() {
 		}
 	}()
 
+	notifier := notify.New(multiVaultClient, config.Load)
+	notifyCtx, notifyCancel := context.WithCancel(context.Background())
+	go func() {
+		// Check once shortly after startup so an already-crossed threshold
+		// notifies promptly, then on a fixed interval.
+		notifier.Check(notifyCtx)
+		ticker := time.NewTicker(notifyCheckInterval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				notifier.Check(notifyCtx)
+			case <-notifyCtx.Done():
+				return
+			}
+		}
+	}()
+
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 	<-quit
 
 	log.Info().Msg("Shutting down server...")
+	notifyCancel()
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

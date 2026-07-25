@@ -1,4 +1,42 @@
-# VaultCertsViewer alerting with Prometheus and Alertmanager
+# VaultCertsViewer alerting
+
+Two independent alerting paths: a built-in webhook for teams without a
+Prometheus/Alertmanager stack, and Prometheus metrics + Alertmanager rules
+for teams that already have one. Use either, or both.
+
+## Built-in webhook notifications
+
+Set a webhook URL (Settings → Notifications in the admin panel, or
+`notifications.webhook_url` in `settings.json`) and the server POSTs a JSON
+alert whenever a certificate crosses the warning or critical expiration
+threshold — no browser tab needs to be open.
+
+```json
+{
+  "text": "3 certificate(s) expiring within 7 days or fewer (critical)",
+  "tier": "critical",
+  "warning_count": 5,
+  "critical_count": 3,
+  "thresholds": { "warning_days": 30, "critical_days": 7 }
+}
+```
+
+The top-level `text` field renders as-is in Slack, Discord, and Mattermost
+incoming webhooks with no extra configuration; the structured fields are
+there for anything else (n8n, a custom script, a second Slack block).
+
+- **Cadence**: checked once on startup, then every 15 minutes.
+- **Escalate-only**: one alert per tier (warning, then critical) — it doesn't
+  repeat every 15 minutes at the same tier. Once expiry clears back below the
+  warning threshold, the next crossing alerts again from the top.
+- **Failure handling**: a failed delivery (timeout, non-2xx, DNS failure) is
+  logged and retried on the next check; it never affects the rest of the app.
+- **Treat the URL as a secret**: many providers (Slack, Discord) embed an
+  auth token in the webhook path. The admin API masks it the same way it
+  masks Vault tokens — blank on every read, and a blank/masked value on save
+  preserves the stored URL rather than clearing it.
+
+## Prometheus and Alertmanager
 
 If you are using AlertManager, you can create alerts based on these metrics.
 

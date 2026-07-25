@@ -303,6 +303,13 @@ func shouldFallbackToDirectWrite(err error) bool {
 }
 
 func validateSettings(settings config.SettingsFile) error {
+	if webhookURL := strings.TrimSpace(settings.Notifications.WebhookURL); webhookURL != "" {
+		parsed, err := url.Parse(webhookURL)
+		if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+			return vcverrors.ErrInvalidWebhookURL
+		}
+	}
+
 	normalizedVaults := make([]config.VaultInstance, len(settings.Vaults))
 	copy(normalizedVaults, settings.Vaults)
 	seen := make(map[string]struct{})

@@ -29,6 +29,9 @@
     ],
     "allow_credentials": true
   },
+  "notifications": {
+    "webhook_url": ""
+  },
   "vaults": [
     {
       "id": "vault-main",
