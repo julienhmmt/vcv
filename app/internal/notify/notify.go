@@ -26,9 +26,11 @@ type CertLister interface {
 	ListCertificates(ctx context.Context) ([]certs.Certificate, error)
 }
 
-// SettingsLoader returns the current admin settings. Read fresh on every
-// check so a webhook URL or threshold edit takes effect without a restart.
-type SettingsLoader func() (config.SettingsFile, error)
+// SettingsLoader returns the current app configuration, read fresh from
+// disk. Satisfied by config.Load - passing it directly means a webhook URL
+// or threshold edit via the admin panel takes effect on the next Check
+// without a restart.
+type SettingsLoader func() (config.Config, error)
 
 type tier int
 
@@ -114,7 +116,7 @@ func (n *Notifier) Check(ctx context.Context) {
 		return
 	}
 
-	thresholds := settings.Certificates.ExpirationThresholds
+	thresholds := settings.ExpirationThresholds
 	warning, critical := certs.CountExpiring(certificates, thresholds.Warning, thresholds.Critical, n.now())
 	current := currentTier(warning, critical)
 

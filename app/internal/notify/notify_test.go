@@ -29,10 +29,10 @@ func certExpiringIn(id string, days int) certs.Certificate {
 	return certs.Certificate{ID: id, ExpiresAt: time.Now().Add(time.Duration(days) * 24 * time.Hour)}
 }
 
-func settingsWithWebhook(url string) config.SettingsFile {
-	return config.SettingsFile{
-		Notifications: config.NotificationSettings{WebhookURL: url},
-		Certificates:  config.CertificateSettings{ExpirationThresholds: config.ExpirationThresholds{Warning: 30, Critical: 7}},
+func settingsWithWebhook(url string) config.Config {
+	return config.Config{
+		Notifications:        config.NotificationsConfig{WebhookURL: url},
+		ExpirationThresholds: config.ExpirationThresholds{Warning: 30, Critical: 7},
 	}
 }
 
@@ -45,7 +45,7 @@ func TestNotifier_NoWebhookConfigured_NeverCallsOut(t *testing.T) {
 	defer server.Close()
 
 	lister := fakeCertLister{certificates: []certs.Certificate{certExpiringIn("a", 1)}}
-	settings := func() (config.SettingsFile, error) { return settingsWithWebhook(""), nil }
+	settings := func() (config.Config, error) { return settingsWithWebhook(""), nil }
 	n := New(lister, settings)
 
 	n.Check(context.Background())
@@ -62,7 +62,7 @@ func TestNotifier_EscalatesFromNoneToWarning_Delivers(t *testing.T) {
 	defer server.Close()
 
 	lister := fakeCertLister{certificates: []certs.Certificate{certExpiringIn("a", 20)}}
-	settings := func() (config.SettingsFile, error) { return settingsWithWebhook(server.URL), nil }
+	settings := func() (config.Config, error) { return settingsWithWebhook(server.URL), nil }
 	n := New(lister, settings)
 
 	n.Check(context.Background())
@@ -82,7 +82,7 @@ func TestNotifier_SameTierTwice_DeliversOnce(t *testing.T) {
 	defer server.Close()
 
 	lister := fakeCertLister{certificates: []certs.Certificate{certExpiringIn("a", 20)}}
-	settings := func() (config.SettingsFile, error) { return settingsWithWebhook(server.URL), nil }
+	settings := func() (config.Config, error) { return settingsWithWebhook(server.URL), nil }
 	n := New(lister, settings)
 
 	n.Check(context.Background())
@@ -103,7 +103,7 @@ func TestNotifier_EscalatesWarningToCritical_DeliversAgain(t *testing.T) {
 	defer server.Close()
 
 	lister := &mutableCertLister{certificates: []certs.Certificate{certExpiringIn("a", 20)}}
-	settings := func() (config.SettingsFile, error) { return settingsWithWebhook(server.URL), nil }
+	settings := func() (config.Config, error) { return settingsWithWebhook(server.URL), nil }
 	n := New(lister, settings)
 
 	n.Check(context.Background()) // none -> warning: delivers
@@ -122,7 +122,7 @@ func TestNotifier_ClearsToNone_ThenReescalates(t *testing.T) {
 	defer server.Close()
 
 	lister := &mutableCertLister{certificates: []certs.Certificate{certExpiringIn("a", 20)}}
-	settings := func() (config.SettingsFile, error) { return settingsWithWebhook(server.URL), nil }
+	settings := func() (config.Config, error) { return settingsWithWebhook(server.URL), nil }
 	n := New(lister, settings)
 
 	n.Check(context.Background()) // none -> warning: delivers (1)
@@ -147,7 +147,7 @@ func TestNotifier_DeliveryFailure_RetriesOnNextCheck(t *testing.T) {
 	defer server.Close()
 
 	lister := fakeCertLister{certificates: []certs.Certificate{certExpiringIn("a", 20)}}
-	settings := func() (config.SettingsFile, error) { return settingsWithWebhook(server.URL), nil }
+	settings := func() (config.Config, error) { return settingsWithWebhook(server.URL), nil }
 	n := New(lister, settings)
 
 	n.Check(context.Background()) // fails (500), lastTier stays none
@@ -158,7 +158,7 @@ func TestNotifier_DeliveryFailure_RetriesOnNextCheck(t *testing.T) {
 
 func TestNotifier_SettingsLoadError_NoOp(t *testing.T) {
 	lister := fakeCertLister{certificates: []certs.Certificate{certExpiringIn("a", 1)}}
-	settings := func() (config.SettingsFile, error) { return config.SettingsFile{}, assert.AnError }
+	settings := func() (config.Config, error) { return config.Config{}, assert.AnError }
 	n := New(lister, settings)
 
 	assert.NotPanics(t, func() { n.Check(context.Background()) })
@@ -166,7 +166,7 @@ func TestNotifier_SettingsLoadError_NoOp(t *testing.T) {
 
 func TestNotifier_CertListError_NoOp(t *testing.T) {
 	lister := fakeCertLister{err: assert.AnError}
-	settings := func() (config.SettingsFile, error) { return settingsWithWebhook("https://example.com/hook"), nil }
+	settings := func() (config.Config, error) { return settingsWithWebhook("https://example.com/hook"), nil }
 	n := New(lister, settings)
 
 	assert.NotPanics(t, func() { n.Check(context.Background()) })
@@ -179,7 +179,7 @@ func TestNotifier_CertListError_NoOp(t *testing.T) {
 func TestNotifier_DeliveryErrorNeverLeaksURL(t *testing.T) {
 	const secretURL = "http://127.0.0.1:1/services/T000SECRET/B111SECRET/XXXXSECRETTOKEN"
 	lister := fakeCertLister{certificates: []certs.Certificate{certExpiringIn("a", 20)}}
-	settings := func() (config.SettingsFile, error) { return settingsWithWebhook(secretURL), nil }
+	settings := func() (config.Config, error) { return settingsWithWebhook(secretURL), nil }
 	n := New(lister, settings)
 
 	err := n.deliver(context.Background(), secretURL, tierWarning, 1, 0, config.ExpirationThresholds{Warning: 30, Critical: 7})
