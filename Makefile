@@ -3,7 +3,7 @@
 VCV_VERSION ?= dev-$(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 VCV_TAG ?= latest
 
-.PHONY: help web-install web-dev web-build web-check web-test web-test-coverage dev docker-build test-offline test-dev go-update go-lint go-coverage
+.PHONY: help web-install web-dev web-build web-check web-test web-test-coverage dev docker-build test-offline test-dev go-update go-lint go-lint-full go-coverage
 
 help:
 	@printf '%s\n' \
@@ -20,6 +20,7 @@ help:
 		'  test-dev           Run Go tests against the development stack with coverage' \
 		'  go-update          Update Go dependencies' \
 		'  go-lint            Run go fmt and go vet' \
+		'  go-lint-full       Run golangci-lint (same checks and version as CI)' \
 		'  go-coverage        Run Go unit tests with coverage' \
 		'' \
 		'Variables:' \
@@ -68,6 +69,10 @@ go-update:
 
 go-lint:
 	cd app && go fmt ./... && go vet ./...
+
+# Pinned to the same version as .github/workflows/go.yml; bump both together.
+go-lint-full:
+	cd app && go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2 run --timeout=3m
 
 go-coverage:
 	cd app && go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out
