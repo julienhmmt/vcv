@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@lucide/svelte':
-        specifier: 1.24.0
-        version: 1.24.0(svelte@5.56.4)
+        specifier: 1.26.0
+        version: 1.26.0(svelte@5.56.4)
       bits-ui:
         specifier: ^2.18.1
         version: 2.18.1(@internationalized/date@3.12.2)(svelte@5.56.4)
@@ -208,8 +208,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@lucide/svelte@1.24.0':
-    resolution: {integrity: sha512-yXwewA7ANQ5hfaSDrvsecosWjZn5RglzeXUZRSnxeANBskpNwblOkEJTqD0ujDdNKIKL8E9eVc2U/P3ziJr7OA==}
+  '@lucide/svelte@1.26.0':
+    resolution: {integrity: sha512-KUfLTlNRVrHZ460Um7jdrvh46hI/8Sw4+1k/Ttj4g6JI9bCrjD7HZVG4cqhh7LasjfDz5b+CuKrjd/k/3obYcA==}
     peerDependencies:
       svelte: ^5
 
@@ -1264,7 +1264,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@lucide/svelte@1.24.0(svelte@5.56.4)':
+  '@lucide/svelte@1.26.0(svelte@5.56.4)':
     dependencies:
       svelte: 5.56.4
 
