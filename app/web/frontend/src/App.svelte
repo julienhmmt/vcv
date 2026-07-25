@@ -4,15 +4,14 @@
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import Moon from '@lucide/svelte/icons/moon'
   import RefreshCw from '@lucide/svelte/icons/refresh-cw'
-  import Search from '@lucide/svelte/icons/search'
   import Sun from '@lucide/svelte/icons/sun'
   import { Toaster } from '$lib/components/ui/sonner'
   import * as Select from '$lib/components/ui/select'
   import CertDetailModal from '$lib/components/CertDetailModal.svelte'
-  import CertTypeSelect from '$lib/components/CertTypeSelect.svelte'
   import VaultStatusPill from '$lib/components/VaultStatusPill.svelte'
   import ActiveFilters from '$lib/components/ActiveFilters.svelte'
   import ErrorBanner from '$lib/components/ErrorBanner.svelte'
+  import FilterBar from '$lib/components/FilterBar.svelte'
   import MountSelectorDialog from '$lib/components/MountSelectorDialog.svelte'
   import StatusOverview from '$lib/components/StatusOverview.svelte'
   import CertTable from '$lib/components/CertTable.svelte'
@@ -475,43 +474,21 @@
       </div>
     </div>
 
-    <div id="vcv-filter-bar" class="vcv-filter-bar">
-      <div class="vcv-filter-bar-inner">
-        <div class="vcv-filter-palette">
-          <div class="vcv-palette-item">
-            <span class="vcv-palette-label">{i18n.t('filterChipSources', 'Sources')}</span>
-            <button type="button" class="vcv-mount-filter" onclick={() => (mountModalOpen = true)}>
-              {#if mountFilter === null || mountFilter.length === allMounts.length}
-                {i18n.t('sourcesButtonAll', 'All mounts ({total})', { total: allMounts.length })}
-              {:else}
-                {i18n.t('sourcesButtonPartial', '{selected} / {total} mounts', {
-                  selected: mountFilter.length,
-                  total: allMounts.length,
-                })}
-              {/if}
-            </button>
-          </div>
-          <span class="vcv-palette-separator" aria-hidden="true"></span>
-          <div class="vcv-palette-item">
-            <span class="vcv-palette-label">{i18n.t('filterChipCertType', 'Type')}</span>
-            <CertTypeSelect value={certTypeFilter} onChange={(next) => { certTypeFilter = next; pageIndex = 0 }} />
-          </div>
-        </div>
-        <div class="vcv-search-wrapper">
-          <Search class="vcv-search-icon h-[18px] w-[18px]" aria-hidden="true" />
-          <input
-            id="vcv-search"
-            class="vcv-input vcv-input-search"
-            type="search"
-            aria-label={i18n.t('searchLabel', 'Search certificates')}
-            placeholder={i18n.t('searchPlaceholder', 'Search certificates, serials, SANs…')}
-            bind:value={search}
-            oninput={() => (pageIndex = 0)}
-          />
-          <kbd class="vcv-search-shortcut" aria-label={i18n.t('searchShortcutHint', 'Press / to focus search')}>/</kbd>
-        </div>
-      </div>
-    </div>
+    <FilterBar
+      {search}
+      {certTypeFilter}
+      {mountFilter}
+      allMountsCount={allMounts.length}
+      onSearchInput={(value) => {
+        search = value
+        pageIndex = 0
+      }}
+      onCertTypeChange={(next) => {
+        certTypeFilter = next
+        pageIndex = 0
+      }}
+      onOpenMountModal={() => (mountModalOpen = true)}
+    />
 
     <ActiveFilters
       {search}
