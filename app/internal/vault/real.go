@@ -556,6 +556,9 @@ func (c *realClient) GetIntermediateCA(ctx context.Context, mount string) (certs
 	if mount == "" {
 		return certs.DetailedCertificate{}, fmt.Errorf("mount cannot be empty")
 	}
+	if !slices.Contains(c.mounts, mount) {
+		return certs.DetailedCertificate{}, fmt.Errorf("mount %s is not configured", mount)
+	}
 
 	// Try cache first
 	cacheKey := fmt.Sprintf("%s:ca_%s", cacheVersion, mount)
