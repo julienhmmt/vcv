@@ -5,9 +5,9 @@
   "type": "module",
   "scripts": {
     "lint": "npm run lint:css && npm run lint:format",
-    "lint:css": "stylelint \"app/web/assets/**/*.css\"",
+    "lint:css": "stylelint \"app/web/frontend/src/**/*.css\"",
     "lint:format": "prettier --check \"**/*.{css,md,json,yml,yaml}\"",
-    "lint:fix": "stylelint \"app/web/assets/**/*.css\" --fix && prettier --write \"**/*.{css,md,json,yml,yaml}\""
+    "lint:fix": "stylelint \"app/web/frontend/src/**/*.css\" --fix && prettier --write \"**/*.{css,md,json,yml,yaml}\""
   },
   "devDependencies": {
     "stylelint": "^17.11.0",
