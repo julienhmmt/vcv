@@ -93,6 +93,10 @@
   // Opt-in certificate auto-refresh interval in seconds; 0 = off (default).
   let autoRefreshSec = $state(0)
   const AUTO_REFRESH_OPTIONS = [0, 30, 60, 300]
+  /** Vault status poll cadence while the tab is visible. */
+  const STATUS_POLL_MS = 10_000
+  /** Shared debounce for search filtering and URL-state writes. */
+  const DEBOUNCE_MS = 150
   /** Last expiry tier we toasted, so auto-refresh does not spam identical alerts. */
   let lastNotifiedTier = $state<ExpiryTier>('none')
 
@@ -162,7 +166,7 @@
     })()
     const id = setInterval(() => {
       if (tabVisible()) void status.refresh()
-    }, 10_000)
+    }, STATUS_POLL_MS)
     return () => clearInterval(id)
   })
 
@@ -175,7 +179,7 @@
         searchForFilter = q
         pageIndex = 0
       }
-    }, 150)
+    }, DEBOUNCE_MS)
     return () => clearTimeout(id)
   })
 
@@ -208,7 +212,7 @@
     if (!urlHydrated) return
     // Read the reactive deps above; defer the history write so a burst of
     // keystrokes produces one replaceState instead of one per character.
-    const id = setTimeout(() => writeUrlState(snapshot, urlDefaults), 150)
+    const id = setTimeout(() => writeUrlState(snapshot, urlDefaults), DEBOUNCE_MS)
     return () => clearTimeout(id)
   })
 

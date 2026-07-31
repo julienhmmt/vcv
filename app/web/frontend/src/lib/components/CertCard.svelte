@@ -1,15 +1,8 @@
 <script lang="ts">
   import { getI18n } from '$lib/stores/i18n.svelte'
-  import {
-    certStatus,
-    daysUntilExpiry,
-    parseCertID,
-    statusBadgeClass,
-    rowClassForStatus,
-    DEFAULT_THRESHOLDS,
-  } from '$lib/utils/cert-status'
+  import { certStatus, parseCertID, statusBadgeClass, rowClassForStatus, DEFAULT_THRESHOLDS } from '$lib/utils/cert-status'
   import { formatDate, formatTime } from '$lib/utils/cert-filter'
-  import { certDisplayName } from '$lib/utils/cert-label'
+  import { certDisplayName, certExpiryLabel } from '$lib/utils/cert-label'
   import type { Certificate, ExpirationThresholds } from '$lib/types'
 
   interface Props {
@@ -26,15 +19,7 @@
 
   const s = $derived(certStatus(cert, thresholds))
   const parts = $derived(parseCertID(cert.id))
-
-  /** Localized expiry label: compact "{n}d" ahead, descriptive when due/past. */
-  const expiry = $derived.by(() => {
-    const days = daysUntilExpiry(cert)
-    if (days > 0) return i18n.t('daysRemainingShort', '{days}d', { days })
-    if (days === 0) return i18n.t('expiringToday', 'Expires today')
-    const ago = Math.abs(days)
-    return i18n.t(ago === 1 ? 'expiredDaysSingular' : 'expiredDays', 'Expired {days} days ago', { days: ago })
-  })
+  const expiry = $derived(certExpiryLabel(cert, i18n.t))
 </script>
 
 <div

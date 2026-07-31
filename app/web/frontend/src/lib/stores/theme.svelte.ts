@@ -10,10 +10,28 @@ export interface ThemeStore {
   set(theme: Theme): void
 }
 
+/** localStorage can throw (private browsing, quota); fall back to defaults. */
+function readStoredTheme(): Theme | null {
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY)
+    return stored === 'light' || stored === 'dark' ? stored : null
+  } catch {
+    return null
+  }
+}
+
+function persistTheme(theme: Theme): void {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, theme)
+  } catch {
+    // Ignore: persistence is best-effort.
+  }
+}
+
 function detectInitial(): Theme {
   if (typeof window === 'undefined') return 'light'
-  const stored = window.localStorage.getItem(STORAGE_KEY)
-  if (stored === 'light' || stored === 'dark') return stored
+  const stored = readStoredTheme()
+  if (stored) return stored
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
@@ -32,7 +50,7 @@ export function createThemeStore(): ThemeStore {
     theme = next
     applyToDocument(next)
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STORAGE_KEY, next)
+      persistTheme(next)
     }
   }
 
