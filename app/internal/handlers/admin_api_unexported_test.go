@@ -588,6 +588,9 @@ func setupAdminAPIRouter(t *testing.T) (*chi.Mux, *adminSessionStore, *adminSett
 	settings := config.SettingsFile{
 		App:   config.AppSettings{Env: "dev", Port: 52000},
 		Admin: config.AdminSettings{Password: string(hashedPassword)},
+		Certificates: config.CertificateSettings{
+			ExpirationThresholds: config.ExpirationThresholds{Critical: 7, Warning: 30},
+		},
 		Vaults: []config.VaultInstance{
 			{
 				ID:        "v1",
@@ -977,6 +980,9 @@ func TestRegisterAdminAPIRoutes_VaultDelete_SaveError(t *testing.T) {
 	settings := config.SettingsFile{
 		App:   config.AppSettings{Env: "dev", Port: 52000},
 		Admin: config.AdminSettings{Password: string(hashedPassword)},
+		Certificates: config.CertificateSettings{
+			ExpirationThresholds: config.ExpirationThresholds{Critical: 7, Warning: 30},
+		},
 		Vaults: []config.VaultInstance{
 			{
 				ID:        "v1",

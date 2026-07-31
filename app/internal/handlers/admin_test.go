@@ -290,6 +290,9 @@ func TestAdminSettingsStore_Save(t *testing.T) {
 			Env:  "prod",
 			Port: 8080,
 		},
+		Certificates: config.CertificateSettings{
+			ExpirationThresholds: config.ExpirationThresholds{Critical: 7, Warning: 30},
+		},
 		Vaults: []config.VaultInstance{
 			{
 				ID:      "test-vault",
@@ -325,6 +328,9 @@ func TestValidateSettings(t *testing.T) {
 		{
 			name: "valid settings",
 			settings: config.SettingsFile{
+				Certificates: config.CertificateSettings{
+					ExpirationThresholds: config.ExpirationThresholds{Critical: 7, Warning: 30},
+				},
 				Vaults: []config.VaultInstance{
 					{
 						ID:      "vault1",
@@ -334,6 +340,51 @@ func TestValidateSettings(t *testing.T) {
 				},
 			},
 			wantErr: false,
+		},
+		{
+			name: "warning threshold equal to critical is invalid",
+			settings: config.SettingsFile{
+				Certificates: config.CertificateSettings{
+					ExpirationThresholds: config.ExpirationThresholds{Critical: 14, Warning: 14},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "warning threshold lower than critical is invalid",
+			settings: config.SettingsFile{
+				Certificates: config.CertificateSettings{
+					ExpirationThresholds: config.ExpirationThresholds{Critical: 30, Warning: 7},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "zero critical threshold is invalid",
+			settings: config.SettingsFile{
+				Certificates: config.CertificateSettings{
+					ExpirationThresholds: config.ExpirationThresholds{Critical: 0, Warning: 30},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "zero warning threshold is invalid",
+			settings: config.SettingsFile{
+				Certificates: config.CertificateSettings{
+					ExpirationThresholds: config.ExpirationThresholds{Critical: 7, Warning: 0},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "negative critical threshold is invalid",
+			settings: config.SettingsFile{
+				Certificates: config.CertificateSettings{
+					ExpirationThresholds: config.ExpirationThresholds{Critical: -1, Warning: 30},
+				},
+			},
+			wantErr: true,
 		},
 		{
 			name: "empty vault ID",
@@ -382,6 +433,9 @@ func TestValidateSettings(t *testing.T) {
 		{
 			name: "empty webhook url is valid (disabled)",
 			settings: config.SettingsFile{
+				Certificates: config.CertificateSettings{
+					ExpirationThresholds: config.ExpirationThresholds{Critical: 7, Warning: 30},
+				},
 				Notifications: config.NotificationSettings{WebhookURL: ""},
 			},
 			wantErr: false,
@@ -389,6 +443,9 @@ func TestValidateSettings(t *testing.T) {
 		{
 			name: "https webhook url is valid",
 			settings: config.SettingsFile{
+				Certificates: config.CertificateSettings{
+					ExpirationThresholds: config.ExpirationThresholds{Critical: 7, Warning: 30},
+				},
 				Notifications: config.NotificationSettings{WebhookURL: "https://hooks.example.com/services/T000/B000/XXXX"},
 			},
 			wantErr: false,
@@ -396,6 +453,9 @@ func TestValidateSettings(t *testing.T) {
 		{
 			name: "webhook url missing scheme is invalid",
 			settings: config.SettingsFile{
+				Certificates: config.CertificateSettings{
+					ExpirationThresholds: config.ExpirationThresholds{Critical: 7, Warning: 30},
+				},
 				Notifications: config.NotificationSettings{WebhookURL: "hooks.example.com/webhook"},
 			},
 			wantErr: true,
@@ -403,6 +463,9 @@ func TestValidateSettings(t *testing.T) {
 		{
 			name: "webhook url with non-http scheme is invalid",
 			settings: config.SettingsFile{
+				Certificates: config.CertificateSettings{
+					ExpirationThresholds: config.ExpirationThresholds{Critical: 7, Warning: 30},
+				},
 				Notifications: config.NotificationSettings{WebhookURL: "file:///etc/passwd"},
 			},
 			wantErr: true,

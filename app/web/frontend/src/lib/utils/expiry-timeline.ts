@@ -30,8 +30,10 @@ export function buildExpiryTimeline(
 ): ExpiryBucket[] {
   const buckets: ExpiryBucket[] = [
     { key: 'critical', from: 0, to: thresholds.critical, count: 0, tone: 'critical' },
-    { key: 'warning', from: thresholds.critical + 1, to: thresholds.warning, count: 0, tone: 'warning' },
   ]
+  if (thresholds.warning > thresholds.critical) {
+    buckets.push({ key: 'warning', from: thresholds.critical + 1, to: thresholds.warning, count: 0, tone: 'warning' })
+  }
   // The near bucket only exists when the warning threshold leaves room before the far horizon.
   if (thresholds.warning < TIMELINE_FAR_HORIZON_DAYS) {
     buckets.push({ key: 'near', from: thresholds.warning + 1, to: TIMELINE_FAR_HORIZON_DAYS, count: 0, tone: 'neutral' })

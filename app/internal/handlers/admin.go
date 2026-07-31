@@ -303,6 +303,10 @@ func shouldFallbackToDirectWrite(err error) bool {
 }
 
 func validateSettings(settings config.SettingsFile) error {
+	thresholds := settings.Certificates.ExpirationThresholds
+	if thresholds.Critical <= 0 || thresholds.Warning <= 0 || thresholds.Warning <= thresholds.Critical {
+		return vcverrors.ErrInvalidThreshold
+	}
 	if webhookURL := strings.TrimSpace(settings.Notifications.WebhookURL); webhookURL != "" {
 		parsed, err := url.Parse(webhookURL)
 		if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {

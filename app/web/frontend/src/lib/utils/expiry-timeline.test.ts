@@ -93,4 +93,15 @@ describe('buildExpiryTimeline', () => {
     expect(buckets.map((bucket) => bucket.key)).toEqual(['critical', 'warning', 'later'])
     expect(buckets.at(-1)).toMatchObject({ key: 'later', from: TIMELINE_FAR_HORIZON_DAYS + 11, to: null, count: 1 })
   })
+
+  it('skips the warning bucket when thresholds are inverted', () => {
+    const inverted: ExpirationThresholds = { critical: 30, warning: 7 }
+    const buckets = buildExpiryTimeline(
+      [cert({ expiresAt: expiresInDays(20.5) }), cert({ expiresAt: expiresInDays(5.5) })],
+      inverted,
+      NOW,
+    )
+    expect(buckets.map((bucket) => bucket.key)).toEqual(['critical', 'near', 'later'])
+    expect(counts(buckets)).toEqual({ critical: 2, near: 0, later: 0 })
+  })
 })
