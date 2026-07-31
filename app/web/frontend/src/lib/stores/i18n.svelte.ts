@@ -34,10 +34,28 @@ function applyLangToDocument(lang: string): void {
   document.documentElement.setAttribute('lang', lang)
 }
 
+/** localStorage can throw (private browsing, quota); fall back to defaults. */
+function readStoredLang(): string | null {
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY)
+    return stored && SUPPORTED.has(stored) ? stored : null
+  } catch {
+    return null
+  }
+}
+
+function persistLang(lang: string): void {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, lang)
+  } catch {
+    // Ignore: persistence is best-effort.
+  }
+}
+
 function detectInitial(): string {
   if (typeof window === 'undefined') return FALLBACK
-  const stored = window.localStorage.getItem(STORAGE_KEY)
-  if (stored && SUPPORTED.has(stored)) return stored
+  const stored = readStoredLang()
+  if (stored) return stored
   const browserLang = window.navigator.language.split('-')[0]
   return browserLang && SUPPORTED.has(browserLang) ? browserLang : FALLBACK
 }
@@ -60,18 +78,23 @@ export function createI18nStore(): I18nStore {
   let messages = $state<Record<string, string>>({})
   let loading = $state(false)
   let error = $state<string | null>(null)
+  /** Ignores out-of-order translation responses when language switches overlap. */
+  let loadGen = 0
 
   async function load(target: string): Promise<void> {
+    const gen = ++loadGen
     loading = true
     error = null
     try {
       const response = await api.i18n(target)
+      if (gen !== loadGen) return
       messages = response.messages ?? {}
     } catch (err: unknown) {
+      if (gen !== loadGen) return
       error = err instanceof ApiError ? err.message : 'Failed to load translations'
       messages = {}
     } finally {
-      loading = false
+      if (gen === loadGen) loading = false
     }
   }
 
@@ -82,7 +105,7 @@ export function createI18nStore(): I18nStore {
     lang = next
     applyLangToDocument(next)
     if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STORAGE_KEY, next)
+      persistLang(next)
     }
     await load(next)
   }

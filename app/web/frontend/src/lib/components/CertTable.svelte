@@ -1,15 +1,9 @@
 <script lang="ts">
   import { Skeleton } from '$lib/components/ui/skeleton'
   import { getI18n } from '$lib/stores/i18n.svelte'
-  import {
-    certStatus,
-    daysUntilExpiry,
-    parseCertID,
-    statusBadgeClass,
-    rowClassForStatus,
-  } from '$lib/utils/cert-status'
+  import { certStatus, parseCertID, statusBadgeClass, rowClassForStatus } from '$lib/utils/cert-status'
   import { formatDate, formatTime } from '$lib/utils/cert-filter'
-  import { certDisplayName } from '$lib/utils/cert-label'
+  import { certDisplayName, certExpiryLabel } from '$lib/utils/cert-label'
   import type { Certificate, CertStatus, ExpirationThresholds } from '$lib/types'
 
   interface Props {
@@ -39,15 +33,6 @@
   }: Props = $props()
 
   const i18n = getI18n()
-
-  /** Localized expiry label for the table: compact "{n}d" ahead, descriptive when due/past. */
-  function expiryLabel(cert: Certificate): string {
-    const days = daysUntilExpiry(cert)
-    if (days > 0) return i18n.t('daysRemainingShort', '{days}d', { days })
-    if (days === 0) return i18n.t('expiringToday', 'Expires today')
-    const ago = Math.abs(days)
-    return i18n.t(ago === 1 ? 'expiredDaysSingular' : 'expiredDays', 'Expired {days} days ago', { days: ago })
-  }
 </script>
 
 <div class="vcv-table-wrapper">
@@ -134,7 +119,7 @@
               <td class="vcv-col-expiry">
                 <div class="vcv-expiry-cell">
                   <div class="vcv-expiry-main">
-                    <div class="vcv-expiry-count vcv-days-{s}">{expiryLabel(cert)}</div>
+                    <div class="vcv-expiry-count vcv-days-{s}">{certExpiryLabel(cert, i18n.t)}</div>
                     <div class="vcv-expiry-datetime">
                       <span class="vcv-expiry-date">{formatDate(cert.expiresAt)}</span>
                       <span class="vcv-date-secondary">· {formatTime(cert.expiresAt)} UTC</span>
