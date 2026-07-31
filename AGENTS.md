@@ -360,7 +360,19 @@ Release: push a semver tag (e.g. `1.9`); GoReleaser does the rest.
 
 ## App skills
 
-Task-specific checklists live in `skills/`. When a task matches a skill (API endpoint, UI change, admin settings, security review, high-coverage tests, debugging), read the matching file in `skills/` first and follow its verification steps. Keep `skills/` and this file in sync when workflows drift.
+Task-specific checklists live in `.claude/skills/<name>/SKILL.md` (Claude Code auto-loads them by `description`; other harnesses read the file directly):
+
+| Skill | Use when |
+| --- | --- |
+| `vcv-add-api-endpoint` | adding or changing a JSON API route, end to end |
+| `vcv-frontend-ui-change` | Svelte component, store, or util work |
+| `vcv-i18n-string` | any user-visible copy change (five languages) |
+| `vcv-admin-settings-field` | admin settings gains or changes a field |
+| `vcv-high-coverage-tests` | adding Go coverage or fixing a Go test |
+| `vcv-security-check` | before shipping handler/middleware/config changes |
+| `vcv-debug-investigate` | investigating a bug, regression, or flaky test |
+
+Follow the skill's verification steps. Keep the skills and this file in sync when workflows drift; see `.claude/skills/README.md` for how to write one.
 
 ## Agent habits for this repo
 
