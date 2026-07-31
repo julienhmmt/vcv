@@ -108,6 +108,7 @@ type Messages struct {
 	LabelSource                 string `json:"labelSource"`
 	SortLabel                   string `json:"sortLabel"`
 	SortDirectionToggle         string `json:"sortDirectionToggle"`
+	SortByColumn                string `json:"sortByColumn"`
 	DashboardResultCount        string `json:"dashboardResultCount"`
 	SearchPlaceholder           string `json:"searchPlaceholder"`
 	SearchShortcutHint          string `json:"searchShortcutHint"`
@@ -322,6 +323,7 @@ var englishMessages = Messages{
 	LabelSource:                    "Source",
 	SortLabel:                      "Sort",
 	SortDirectionToggle:            "Toggle sort direction",
+	SortByColumn:                   "Sort by {column}",
 	DashboardResultCount:           "{count} certificates",
 	SearchPlaceholder:              "Search by Serial Number, Common Name (CN) or SAN",
 	SelectAll:                      "Select all",
@@ -525,6 +527,7 @@ var frenchMessages = Messages{
 	LabelSource:                    "Source",
 	SortLabel:                      "Trier",
 	SortDirectionToggle:            "Inverser le sens du tri",
+	SortByColumn:                   "Trier par {column}",
 	DashboardResultCount:           "{count} certificats",
 	SearchPlaceholder:              "Rechercher par numéro de série, nom commun (CN) ou SAN",
 	SelectAll:                      "Tout sélectionner",
@@ -728,6 +731,7 @@ var spanishMessages = Messages{
 	LabelSource:                    "Origen",
 	SortLabel:                      "Ordenar",
 	SortDirectionToggle:            "Invertir el sentido de orden",
+	SortByColumn:                   "Ordenar por {column}",
 	DashboardResultCount:           "{count} certificados",
 	SearchPlaceholder:              "Buscar por Número de Serie, Nombre Común (CN) o SAN",
 	SelectAll:                      "Seleccionar todo",
@@ -931,6 +935,7 @@ var germanMessages = Messages{
 	LabelSource:                    "Quelle",
 	SortLabel:                      "Sortieren",
 	SortDirectionToggle:            "Sortierrichtung umschalten",
+	SortByColumn:                   "Sortieren nach {column}",
 	DashboardResultCount:           "{count} Zertifikate",
 	SearchPlaceholder:              "Suche nach Seriennummer, Common Name (CN) oder SAN",
 	SelectAll:                      "Alle auswählen",
@@ -1134,6 +1139,7 @@ var italianMessages = Messages{
 	LabelSource:                    "Origine",
 	SortLabel:                      "Ordina",
 	SortDirectionToggle:            "Inverti la direzione di ordinamento",
+	SortByColumn:                   "Ordina per {column}",
 	DashboardResultCount:           "{count} certificati",
 	SearchPlaceholder:              "Cerca per Numero di Serie, Nome Comune (CN) o SAN",
 	SelectAll:                      "Seleziona tutto",

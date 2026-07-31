@@ -311,6 +311,15 @@
     sortDir = sortDir === 'asc' ? 'desc' : 'asc'
   }
 
+  /** Column-header click: switch key with ascending default, or flip direction when re-clicked. */
+  function onHeaderSort(key: SortKey): void {
+    if (sortKey === key) {
+      toggleSortDir()
+    } else {
+      setSortKey(key)
+    }
+  }
+
   function selectCert(cert: Certificate): void {
     selected = cert
     certModalOpen = true
@@ -597,6 +606,9 @@
       {showVaultMount}
       {statusMeta}
       {thresholds}
+      {sortKey}
+      {sortDir}
+      onSort={onHeaderSort}
       onSelect={selectCert}
       onClearFilters={clearAllFilters}
     />

@@ -2,7 +2,7 @@
   import { Skeleton } from '$lib/components/ui/skeleton'
   import { getI18n } from '$lib/stores/i18n.svelte'
   import { certStatus, parseCertID, statusBadgeClass, rowClassForStatus } from '$lib/utils/cert-status'
-  import { formatDate, formatTime } from '$lib/utils/cert-filter'
+  import { formatDate, formatTime, type SortDirection, type SortKey } from '$lib/utils/cert-filter'
   import { certDisplayName, certExpiryLabel } from '$lib/utils/cert-label'
   import type { Certificate, CertStatus, ExpirationThresholds } from '$lib/types'
 
@@ -15,6 +15,9 @@
     showVaultMount: boolean
     statusMeta: Record<CertStatus, { label: string; desc: string }>
     thresholds: ExpirationThresholds
+    sortKey: SortKey
+    sortDir: SortDirection
+    onSort: (key: SortKey) => void
     onSelect: (cert: Certificate) => void
     onClearFilters: () => void
   }
@@ -28,11 +31,28 @@
     showVaultMount,
     statusMeta,
     thresholds,
+    sortKey,
+    sortDir,
+    onSort,
     onSelect,
     onClearFilters,
   }: Props = $props()
 
   const i18n = getI18n()
+
+  function ariaSort(key: SortKey): 'ascending' | 'descending' | 'none' {
+    if (sortKey !== key) return 'none'
+    return sortDir === 'asc' ? 'ascending' : 'descending'
+  }
+
+  function sortIcon(key: SortKey): string {
+    if (sortKey !== key) return '↕'
+    return sortDir === 'asc' ? '↑' : '↓'
+  }
+
+  function sortLabel(column: string): string {
+    return i18n.t('sortByColumn', 'Sort by {column}', { column })
+  }
 </script>
 
 <div class="vcv-table-wrapper">
@@ -54,8 +74,30 @@
       </colgroup>
       <thead>
         <tr>
-          <th scope="col">{i18n.t('columnCommonName', 'Common Name')}</th>
-          <th scope="col" class="vcv-col-expiry-head">{i18n.t('columnExpiresAt', 'Expires')}</th>
+          <th scope="col" aria-sort={ariaSort('commonName')}>
+            <button
+              type="button"
+              class="vcv-th-sort"
+              class:vcv-th-sort-active={sortKey === 'commonName'}
+              title={sortLabel(i18n.t('columnCommonName', 'Common Name'))}
+              onclick={() => onSort('commonName')}
+            >
+              {i18n.t('columnCommonName', 'Common Name')}
+              <span class="vcv-th-sort-icon" aria-hidden="true">{sortIcon('commonName')}</span>
+            </button>
+          </th>
+          <th scope="col" class="vcv-col-expiry-head" aria-sort={ariaSort('expiresAt')}>
+            <button
+              type="button"
+              class="vcv-th-sort"
+              class:vcv-th-sort-active={sortKey === 'expiresAt'}
+              title={sortLabel(i18n.t('columnExpiresAt', 'Expires'))}
+              onclick={() => onSort('expiresAt')}
+            >
+              {i18n.t('columnExpiresAt', 'Expires')}
+              <span class="vcv-th-sort-icon" aria-hidden="true">{sortIcon('expiresAt')}</span>
+            </button>
+          </th>
         </tr>
       </thead>
       <tbody>
