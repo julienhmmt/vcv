@@ -26,5 +26,6 @@ export function certExpiryLabel(cert: Certificate, t: TranslateFn): string {
   if (days > 0) return t('daysRemainingShort', '{days}d', { days })
   if (days === 0) return t('expiringToday', 'Expires today')
   const ago = Math.abs(days)
-  return t(ago === 1 ? 'expiredDaysSingular' : 'expiredDays', 'Expired {days} days ago', { days: ago })
+  if (ago === 1) return t('expiredDaysSingular', 'Expired 1 day ago', { days: ago })
+  return t('expiredDays', 'Expired {days} days ago', { days: ago })
 }

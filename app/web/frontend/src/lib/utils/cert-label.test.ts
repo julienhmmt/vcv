@@ -53,7 +53,7 @@ describe('certExpiryLabel', () => {
   const cases: { name: string; expiresAt: string; expected: string }[] = [
     { name: 'compact days ahead while valid', expiresAt: expiresInDays(5.5), expected: '5d' },
     { name: 'descriptive when expiring today', expiresAt: expiresInDays(0.5), expected: 'Expires today' },
-    { name: 'singular when expired one day ago', expiresAt: expiresInDays(-0.5), expected: 'Expired 1 days ago' },
+    { name: 'singular when expired one day ago', expiresAt: expiresInDays(-0.5), expected: 'Expired 1 day ago' },
     { name: 'plural when expired several days ago', expiresAt: expiresInDays(-4.5), expected: 'Expired 5 days ago' },
   ]
 
