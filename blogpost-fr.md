@@ -93,7 +93,33 @@ VCV est particulièrement utile si vous :
 
 ## Images de l'application
 
-Placeholder
+### Tableau de bord principal
+
+Mode clair :
+
+![Page principale - mode clair](img/VaultCertsViewer-1.9-light.png)
+
+Mode sombre :
+
+![Page principale - mode sombre](img/VaultCertsViewer-1.9-dark.png)
+
+### Détail d'un certificat et autorité de signature
+
+![Détail du certificat](img/VaultCertsViewer-1.9-certs-details.png)
+
+En un clic, l'autorité de signature (CA intermédiaire ou racine) :
+
+![Vue de l'autorité de signature](img/VaultCertsViewer-1.9-ca-details.png)
+
+### Choisir ses sources de certificats
+
+![Sélecteur de sources de certificats](img/VaultCertsViewer-1.9-certs-sources.png)
+
+### Connexion et panneau d'administration
+
+![Connexion admin](img/VaultCertsViewer-1.9-login.png)
+
+![Page d'administration](img/VaultCertsViewer-1.9-admin.png)
 
 ## Pourquoi VCV est volontairement "petit”
 

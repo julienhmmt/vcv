@@ -8,7 +8,7 @@ VaultCertsViewer can simultaneously monitor multiple PKI engines through a singl
 
 **OpenBao compatible**: VCV works seamlessly with both HashiCorp Vault and OpenBao, as they share the same PKI API. Tested with OpenBao 2.4+ and Vault 1.20+ (as of 02/2026).
 
-![Light mode](img/VaultCertsViewer-1.8.png)
+![Light mode](img/VaultCertsViewer-1.9-light.png)
 
 ## ✨ What it does?
 
@@ -40,27 +40,35 @@ VaultCertsViewer gives platform and security teams a fast, **read-only** view of
 
 Main page:
 
-![Main page](img/VaultCertsViewer-1.8.png)
+![Main page](img/VaultCertsViewer-1.9-light.png)
 
-Admin page:
+Admin login:
 
-![Admin page](img/VaultCertsViewer-1.8-admin.png)
+![Admin login](img/VaultCertsViewer-1.9-login.png)
+
+Admin panel:
+
+![Admin panel](img/VaultCertsViewer-1.9-admin.png)
 
 ### Dark mode
 
 Main page:
 
-![Main page](img/VaultCertsViewer-1.8-dark.png)
+![Main page](img/VaultCertsViewer-1.9-dark.png)
 
 ## Certificate detail modal
 
-Light mode:
+![Certificate detail](img/VaultCertsViewer-1.9-certs-details.png)
 
-![Certificate detail modal - light](img/VaultCertsViewer-1.8-cert-modal.png)
+Signing authority (intermediate/root CA) view, one click away:
 
-Dark mode:
+![Signing authority view](img/VaultCertsViewer-1.9-ca-details.png)
 
-![Certificate detail modal - dark](img/VaultCertsViewer-1.8-cert-modal-dark.png)
+## Certificate sources selector
+
+Choose which Vault/OpenBao instances and PKI mounts to display:
+
+![Certificate sources selector](img/VaultCertsViewer-1.9-certs-sources.png)
 
 ## 🚀 How to deploy and use for Hashicorp Vault
 

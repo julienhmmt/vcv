@@ -93,7 +93,33 @@ VCV is ideal if you are:
 
 ## Application screenshots
 
-Placeholder
+### Main dashboard
+
+Light mode:
+
+![Main page - light mode](img/VaultCertsViewer-1.9-light.png)
+
+Dark mode:
+
+![Main page - dark mode](img/VaultCertsViewer-1.9-dark.png)
+
+### Certificate detail & signing authority
+
+![Certificate detail](img/VaultCertsViewer-1.9-certs-details.png)
+
+One click away, the signing authority (intermediate/root CA):
+
+![Signing authority view](img/VaultCertsViewer-1.9-ca-details.png)
+
+### Choosing your certificate sources
+
+![Certificate sources selector](img/VaultCertsViewer-1.9-certs-sources.png)
+
+### Admin login & panel
+
+![Admin login](img/VaultCertsViewer-1.9-login.png)
+
+![Admin panel](img/VaultCertsViewer-1.9-admin.png)
 
 ## Why VCV is intentionally “small”
 
