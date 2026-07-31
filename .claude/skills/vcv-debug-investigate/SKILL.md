@@ -21,6 +21,7 @@ description: Systematic root-cause debugging in vcv — reproduce, trace with re
 2. **Reproduce** — smallest possible repro: one request, one component state, one settings file. Capture structured logs and correlate on the request ID (`HTTPEvent` / `HTTPError` / `PanicEvent`). No repro means no verified fix.
 
 3. **Localize** — which layer actually owns the behavior?
+
    | Symptom | Look at |
    | --- | --- |
    | Wrong/missing certs, partial list | `internal/vault` (multi/registry), `certs.go` envelope |

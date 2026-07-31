@@ -16,6 +16,7 @@ Backend is JSON-only; there are no server-rendered HTML routes. Everything the U
    - Log with `logger.HTTPError(method, path, status, err)` plus `middleware.GetRequestID(ctx)`.
 
 2. **Route registration** — pick the right register func, do not hand-roll a new router:
+
    | Kind | Func | File |
    | --- | --- | --- |
    | Cert routes | `RegisterCertRoutes` | `internal/handlers/certs.go` |
