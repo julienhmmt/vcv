@@ -27,6 +27,9 @@ app/web/dist/*
 app/web/frontend/dist/
 .gstack/
 
+# Personal Claude Code permissions (.claude/skills/ is committed)
+.claude/settings.local.json
+
 # GoReleaser output
 /dist/
 

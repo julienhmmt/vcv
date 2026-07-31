@@ -165,6 +165,7 @@ VCV_TAG=1.9 make docker-build
 ### Go
 
 - Prefer table-driven tests; use `_test` package for black-box when practical; name `Test<Func>_<Scenario>`.
+- Target high coverage (≥90%) for new or refactored packages; use `github.com/stretchr/testify/assert` and `testify/mock` for external boundaries (e.g. `vault.MockClient`).
 - Pass `context.Context` into Vault I/O and long-running work.
 - Match existing JSON error shapes in handlers (`error` field when clients expect it).
 - Prometheus: register on the **private** registry from `main` — not the global default registry.
@@ -356,7 +357,23 @@ When architecture or agent workflow drifts, update **AGENTS.md**. When handler/A
 - **`lint.yml`** — repo-wide linting
 - **`release.yml`** — on tag: GoReleaser `~> v2` builds frontend (pnpm), embeds dist, cross-compiles `vcv` (`./cmd/server`), publishes archives + Docker (`.goreleaser.yaml`)
 
-Release: push a semver tag (e.g. `1.9`); GoReleaser does the rest.
+Release: push a semver tag (e.g. `1.9`); GoReleaser does the rest. Only `version.Version` is injected via `-ldflags` (`-X vcv/internal/version.Version=...`); commit/build-time metadata is intentionally omitted.
+
+## App skills
+
+Task-specific checklists live in `.claude/skills/<name>/SKILL.md` (Claude Code auto-loads them by `description`; other harnesses read the file directly):
+
+| Skill | Use when |
+| --- | --- |
+| `vcv-add-api-endpoint` | adding or changing a JSON API route, end to end |
+| `vcv-frontend-ui-change` | Svelte component, store, or util work |
+| `vcv-i18n-string` | any user-visible copy change (five languages) |
+| `vcv-admin-settings-field` | admin settings gains or changes a field |
+| `vcv-high-coverage-tests` | adding Go coverage or fixing a Go test |
+| `vcv-security-check` | before shipping handler/middleware/config changes |
+| `vcv-debug-investigate` | investigating a bug, regression, or flaky test |
+
+Follow the skill's verification steps. Keep the skills and this file in sync when workflows drift; see `.claude/skills/README.md` for how to write one.
 
 ## Agent habits for this repo
 
