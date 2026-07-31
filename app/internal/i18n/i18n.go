@@ -109,6 +109,10 @@ type Messages struct {
 	SortLabel                   string `json:"sortLabel"`
 	SortDirectionToggle         string `json:"sortDirectionToggle"`
 	DashboardResultCount        string `json:"dashboardResultCount"`
+	ExpiryTimelineLabel         string `json:"expiryTimelineLabel"`
+	TimelineWithinDays          string `json:"timelineWithinDays"`
+	TimelineRangeDays           string `json:"timelineRangeDays"`
+	TimelineBeyondDays          string `json:"timelineBeyondDays"`
 	SearchPlaceholder           string `json:"searchPlaceholder"`
 	SearchShortcutHint          string `json:"searchShortcutHint"`
 	SelectAll                   string `json:"selectAll"`
@@ -323,6 +327,10 @@ var englishMessages = Messages{
 	SortLabel:                      "Sort",
 	SortDirectionToggle:            "Toggle sort direction",
 	DashboardResultCount:           "{count} certificates",
+	ExpiryTimelineLabel:            "Upcoming expirations",
+	TimelineWithinDays:             "≤ {days} days",
+	TimelineRangeDays:              "{from}–{to} days",
+	TimelineBeyondDays:             "> {days} days",
 	SearchPlaceholder:              "Search by Serial Number, Common Name (CN) or SAN",
 	SelectAll:                      "Select all",
 	FilterChipSearch:               "Search",
@@ -526,6 +534,10 @@ var frenchMessages = Messages{
 	SortLabel:                      "Trier",
 	SortDirectionToggle:            "Inverser le sens du tri",
 	DashboardResultCount:           "{count} certificats",
+	ExpiryTimelineLabel:            "Expirations à venir",
+	TimelineWithinDays:             "≤ {days} jours",
+	TimelineRangeDays:              "{from}–{to} jours",
+	TimelineBeyondDays:             "> {days} jours",
 	SearchPlaceholder:              "Rechercher par numéro de série, nom commun (CN) ou SAN",
 	SelectAll:                      "Tout sélectionner",
 	FilterChipSearch:               "Recherche",
@@ -729,6 +741,10 @@ var spanishMessages = Messages{
 	SortLabel:                      "Ordenar",
 	SortDirectionToggle:            "Invertir el sentido de orden",
 	DashboardResultCount:           "{count} certificados",
+	ExpiryTimelineLabel:            "Próximos vencimientos",
+	TimelineWithinDays:             "≤ {days} días",
+	TimelineRangeDays:              "{from}–{to} días",
+	TimelineBeyondDays:             "> {days} días",
 	SearchPlaceholder:              "Buscar por Número de Serie, Nombre Común (CN) o SAN",
 	SelectAll:                      "Seleccionar todo",
 	FilterChipSearch:               "Search",
@@ -932,6 +948,10 @@ var germanMessages = Messages{
 	SortLabel:                      "Sortieren",
 	SortDirectionToggle:            "Sortierrichtung umschalten",
 	DashboardResultCount:           "{count} Zertifikate",
+	ExpiryTimelineLabel:            "Bevorstehende Abläufe",
+	TimelineWithinDays:             "≤ {days} Tage",
+	TimelineRangeDays:              "{from}–{to} Tage",
+	TimelineBeyondDays:             "> {days} Tage",
 	SearchPlaceholder:              "Suche nach Seriennummer, Common Name (CN) oder SAN",
 	SelectAll:                      "Alle auswählen",
 	FilterChipSearch:               "Search",
@@ -1135,6 +1155,10 @@ var italianMessages = Messages{
 	SortLabel:                      "Ordina",
 	SortDirectionToggle:            "Inverti la direzione di ordinamento",
 	DashboardResultCount:           "{count} certificati",
+	ExpiryTimelineLabel:            "Scadenze imminenti",
+	TimelineWithinDays:             "≤ {days} giorni",
+	TimelineRangeDays:              "{from}–{to} giorni",
+	TimelineBeyondDays:             "> {days} giorni",
 	SearchPlaceholder:              "Cerca per Numero di Serie, Nome Comune (CN) o SAN",
 	SelectAll:                      "Seleziona tutto",
 	FilterChipSearch:               "Search",
