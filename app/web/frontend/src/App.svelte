@@ -14,6 +14,7 @@
   import FilterBar from '$lib/components/FilterBar.svelte'
   import MountSelectorDialog from '$lib/components/MountSelectorDialog.svelte'
   import StatusOverview from '$lib/components/StatusOverview.svelte'
+  import ExpiryTimeline from '$lib/components/ExpiryTimeline.svelte'
   import CertTable from '$lib/components/CertTable.svelte'
   import CertMobileList from '$lib/components/CertMobileList.svelte'
   import PaginationBar from '$lib/components/PaginationBar.svelte'
@@ -548,6 +549,8 @@
       regionLabel={i18n.t('dashboardOverviewLabel', 'Certificate status overview')}
       onSelect={toggleStatus}
     />
+
+    <ExpiryTimeline certs={certs.certificates} {thresholds} />
 
     <div class="vcv-results-bar">
       <span class="vcv-results-count" aria-live="polite">{resultCountText}</span>
