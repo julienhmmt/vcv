@@ -358,6 +358,10 @@ When architecture or agent workflow drifts, update **AGENTS.md**. When handler/A
 
 Release: push a semver tag (e.g. `1.9`); GoReleaser does the rest.
 
+## App skills
+
+Task-specific checklists live in `skills/`. When a task matches a skill (API endpoint, UI change, admin settings, security review, high-coverage tests, debugging), read the matching file in `skills/` first and follow its verification steps. Keep `skills/` and this file in sync when workflows drift.
+
 ## Agent habits for this repo
 
 1. Branch off `main` before edits; never commit on `main`. One branch per step.
