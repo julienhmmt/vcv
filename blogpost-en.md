@@ -26,6 +26,8 @@ VCV lists certificates issued by your Vault PKI engines with the details you act
 - Expiration date (the most needed)
 - Remaining days
 - Status (revoked, expired, valid)
+- Inferred certificate type (machine / user / both / unknown)
+- Signing authority (intermediate or root CA), one click away in the detail modal
 
 The goal is to let you answer quickly:
 
@@ -44,8 +46,17 @@ VCV is designed to be:
 - Easy to run (self-hosted)
 - Fast to navigate
 - Accessible for operators
+- Available in 5 languages (English, French, German, Italian, Spanish), with light and dark themes
 
 No complex setup, no unnecessary dependencies—just the dashboard.
+
+### Built for fast triage
+
+- **Command palette** (Cmd/Ctrl-K) to jump straight to a certificate or action.
+- **CSV/JSON export** of the filtered certificate list.
+- **Shareable URL filter state**—send a teammate the exact view you're looking at.
+- **Sortable table columns** and a dedicated **expiry timeline** highlighting what's coming due next.
+- **Mobile card view** on small screens, opt-in **auto-refresh**, expiry **toasts**, and connectivity warnings when a vault becomes unreachable.
 
 ### Metrics-ready (for monitoring & alerting)
 
@@ -54,6 +65,8 @@ VCV exposes metrics so you can integrate it into your monitoring stack (e.g., Pr
 - “Certificates expiring in < 7 days detected”
 - “Vault connectivity issue”
 - “Last successful fetch too old”
+
+VCV can also push its own alerts directly: configure a `notifications.webhook_url` and it POSTs a JSON alert the moment a certificate crosses your warning or critical threshold—no separate alerting stack required.
 
 ## How it fits into your workflow
 
@@ -180,7 +193,7 @@ docker run -d \
   -v "$(pwd)/settings.json:/app/settings.json:rw" \
   -v "$(pwd)/logs:/var/log/app:rw" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
-  -p 52000:52000 jhmmt/vcv:1.8
+  -p 52000:52000 jhmmt/vcv:1.9
 ```
 
 ### Using a docker-compose file
@@ -191,7 +204,7 @@ Create the file `docker-compose.yml` and type these information:
 ---
 services:
   vcv:
-    image: jhmmt/vcv:1.8
+    image: jhmmt/vcv:1.9
     container_name: vcv
     restart: unless-stopped
     ports:
@@ -250,7 +263,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: vcv
-          image: jhmmt/vcv:1.8
+          image: jhmmt/vcv:1.9
           imagePullPolicy: IfNotPresent
           ports:
             - name: http

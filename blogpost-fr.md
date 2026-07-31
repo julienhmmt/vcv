@@ -26,6 +26,8 @@ VCV liste les certificats émis par vos moteurs PKI Vault avec les informations 
 - Date d’expiration (le plus important)
 - Jours restants
 - Statut (révoqué, expiré, valide)
+- Type de certificat déduit (machine / utilisateur / les deux / inconnu)
+- Autorité de signature (CA intermédiaire ou racine), accessible en un clic depuis la fenêtre de détail
 
 L’objectif : répondre rapidement à des questions comme :
 
@@ -44,8 +46,17 @@ VCV est conçu pour être :
 - Facile à exécuter (auto-hébergé)
 - Rapide à utiliser
 - Accessible aux opérateurs
+- Disponible en 5 langues (français, anglais, allemand, italien, espagnol), avec thème clair et sombre
 
 Pas de complexité inutile : juste le tableau de bord.
+
+### Pensé pour le triage rapide
+
+- **Palette de commandes** (Cmd/Ctrl-K) pour accéder directement à un certificat ou une action.
+- **Export CSV/JSON** de la liste filtrée de certificats.
+- **État des filtres partageable via l'URL** — envoyez à un collègue exactement la vue que vous consultez.
+- **Colonnes de tableau triables** et une **frise chronologique des expirations** dédiée pour voir d'un coup d'œil ce qui arrive.
+- **Vue en cartes sur mobile**, **rafraîchissement automatique** optionnel, **notifications toast** d'expiration, et avertissements de connectivité quand un vault devient injoignable.
 
 ### Prêt pour la supervision (métriques & alerting)
 
@@ -54,6 +65,8 @@ VCV expose des métriques pour s’intégrer à votre stack de supervision (ex. 
 - « Des certificats expirent dans < 7 jours »
 - « Problème de connectivité à Vault »
 - « Dernière récupération trop ancienne »
+
+VCV peut aussi pousser ses propres alertes directement : configurez un `notifications.webhook_url` et l'application envoie un POST JSON dès qu'un certificat franchit votre seuil d'avertissement ou critique — sans stack d'alerting supplémentaire.
 
 ## Comment VCV s’intègre dans votre workflow
 
@@ -180,7 +193,7 @@ docker run -d \
   -v "$(pwd)/settings.json:/app/settings.json:rw" \
   -v "$(pwd)/logs:/var/log/app:rw" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
-  -p 52000:52000 jhmmt/vcv:1.8
+  -p 52000:52000 jhmmt/vcv:1.9
 ```
 
 ### Mise en production avec un fichier docker-compose
@@ -191,7 +204,7 @@ Créez ce fichier `docker-compose.yml` et saisissez ces informations :
 ---
 services:
   vcv:
-    image: jhmmt/vcv:1.8
+    image: jhmmt/vcv:1.9
     container_name: vcv
     restart: unless-stopped
     ports:
@@ -250,7 +263,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: vcv
-          image: jhmmt/vcv:1.8
+          image: jhmmt/vcv:1.9
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
