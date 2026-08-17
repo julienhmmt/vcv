@@ -1,0 +1,58 @@
+---
+# Local SonarQube Community Build server and one-shot scanner for VCV.
+# Use with the matching Makefile targets (sonar-up, sonar-scan, sonar-down, ...).
+
+services:
+  sonarqube:
+    image: sonarqube:26.6.0.123539-community
+    container_name: vcv-sonarqube
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      # Disable Elasticsearch bootstrap checks so the container starts locally
+      # without tuning vm.max_map_count on Docker Desktop / OrbStack.
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - vcv_sonarqube_data:/opt/sonarqube/data
+      - vcv_sonarqube_logs:/opt/sonarqube/logs
+      - vcv_sonarqube_extensions:/opt/sonarqube/extensions
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    deploy:
+      resources:
+        limits:
+          cpus: "2"
+          memory: 4G
+    networks:
+      - sonarqube
+
+  sonar-scanner:
+    image: sonarsource/sonar-scanner-cli:12.1.0.3233_8.0.1
+    container_name: vcv-sonar-scanner
+    restart: "no"
+    environment:
+      SONAR_HOST_URL: http://sonarqube:9000
+    volumes:
+      - .:/usr/src
+      - vcv_sonar_cache:/opt/sonar-scanner/.sonar
+    working_dir: /usr/src
+    networks:
+      - sonarqube
+    depends_on:
+      - sonarqube
+    profiles:
+      - scan
+
+volumes:
+  vcv_sonarqube_data:
+  vcv_sonarqube_logs:
+  vcv_sonarqube_extensions:
+  vcv_sonar_cache:
+
+networks:
+  sonarqube:
+    name: vcv_sonarqube
+    driver: bridge

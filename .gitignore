@@ -38,3 +38,6 @@ graphify-out/
 graphify-frontend/
 graphify-backend/
 graphify-full/
+
+# SonarQube local artifacts (token, admin password, coverage reports)
+.sonar/
