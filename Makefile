@@ -76,3 +76,38 @@ go-lint-full:
 
 go-coverage:
 	cd app && go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out
+
+# --- SonarQube (local container, Go-only) -------------------------------------
+COMPOSE_SONAR := docker compose -f docker-compose.sonarqube.yml
+
+.PHONY: sonar-up sonar-down sonar-logs sonar-status sonar-bootstrap sonar-coverage sonar-scan sonar-scan-server sonar-query sonar-clean
+
+sonar-up:
+	$(COMPOSE_SONAR) up -d sonarqube
+
+sonar-down:
+	$(COMPOSE_SONAR) down
+
+sonar-logs:
+	$(COMPOSE_SONAR) logs -f sonarqube
+
+sonar-status:
+	@docker ps --filter "name=vcv-sonarqube" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+sonar-bootstrap:
+	@chmod +x tools/sonar-bootstrap.sh && tools/sonar-bootstrap.sh && echo "SonarQube token ready in .sonar/token"
+
+sonar-coverage:
+	@chmod +x tools/sonar-coverage.sh && GO_TEST_FLAGS="$(GO_TEST_FLAGS)" SERVER_DIR="$(SERVER_DIR)" tools/sonar-coverage.sh && echo "Coverage reports ready in .sonar/"
+
+sonar-scan: sonar-coverage
+	@chmod +x tools/sonar-scan.sh && tools/sonar-scan.sh
+
+sonar-scan-server:
+	@chmod +x tools/sonar-scan.sh && tools/sonar-scan.sh server
+
+sonar-query:
+	python3 tools/sonar-query.py $(CMD)
+
+sonar-clean: sonar-down
+	rm -rf .sonar
