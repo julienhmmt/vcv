@@ -237,10 +237,28 @@ type Response struct {
 	Messages Messages `json:"messages"`
 }
 
+// Shared literals reused verbatim across language bundles (fallbacks kept
+// identical where no translation is needed).
+const (
+	msgAppSubtitle        = "Monitor Vault/OpenBao certificate expirations"
+	msgSearchShortcutHint = "Press / to focus search"
+	msgResetFilters       = "Reset filters"
+	msgSourcesAll         = "Sources: {total}/{total}"
+	msgSourcesPartial     = "Sources: {selected}/{total}"
+	msgAdminTitle         = "VaultCertsViewer Admin"
+	msgVaultsOK           = "Vaults: {{up}}/{{total}} OK"
+	msgLangResolved       = "language resolved"
+	msgWithinDaysEN       = "≤ {days} days"
+	msgWithinDaysFR       = "≤ {days} jours"
+	msgWithinDaysES       = "≤ {days} días"
+	msgWithinDaysDE       = "≤ {days} Tage"
+	msgWithinDaysIT       = "≤ {days} giorni"
+)
+
 var englishMessages = Messages{
 	AppTitle:                       "VaultCertsViewer",
-	AppSubtitle:                    "Monitor Vault/OpenBao certificate expirations",
-	SearchShortcutHint:             "Press / to focus search",
+	AppSubtitle:                    msgAppSubtitle,
+	SearchShortcutHint:             msgSearchShortcutHint,
 	ButtonToggleTheme:              "Toggle theme",
 	ButtonClose:                    "Close",
 	ButtonDetails:                  "Details",
@@ -330,7 +348,7 @@ var englishMessages = Messages{
 	SortByColumn:                   "Sort by {column}",
 	DashboardResultCount:           "{count} certificates",
 	ExpiryTimelineLabel:            "Upcoming expirations",
-	TimelineWithinDays:             "≤ {days} days",
+	TimelineWithinDays:             msgWithinDaysEN,
 	TimelineRangeDays:              "{from}–{to} days",
 	TimelineBeyondDays:             "> {days} days",
 	SearchPlaceholder:              "Search by Serial Number, Common Name (CN) or SAN",
@@ -339,15 +357,15 @@ var englishMessages = Messages{
 	FilterChipStatus:               "Status",
 	FilterChipCertType:             "Type",
 	FilterChipSources:              "Sources",
-	FilterChipReset:                "Reset filters",
-	SourcesButtonAll:               "Sources: {total}/{total}",
-	SourcesButtonPartial:           "Sources: {selected}/{total}",
+	FilterChipReset:                msgResetFilters,
+	SourcesButtonAll:               msgSourcesAll,
+	SourcesButtonPartial:           msgSourcesPartial,
 	StatusLabelExpired:             "Expired",
 	StatusLabelRevoked:             "Revoked",
 	StatusLabelValid:               "Valid",
 	VaultConnectionLost:            "Vault connection lost",
 	VaultConnectionRestored:        "Vault connection restored",
-	AdminTitle:                     "VaultCertsViewer Admin",
+	AdminTitle:                     msgAdminTitle,
 	AdminBackToVCV:                 "Back to VCV",
 	AdminSettingsSaved:             "Settings saved",
 	AdminLogoutFailed:              "Logout failed",
@@ -404,8 +422,8 @@ var englishMessages = Messages{
 	StatusLabelCritical:        "Critical",
 	StatusLabelWarning:         "Warning",
 	StatusDescValid:            "All good",
-	StatusDescWarning:          "≤ {days} days",
-	StatusDescCritical:         "≤ {days} days",
+	StatusDescWarning:          msgWithinDaysEN,
+	StatusDescCritical:         msgWithinDaysEN,
 	StatusDescExpired:          "Past expiry",
 	StatusDescRevoked:          "Revoked by CA",
 	LabelValidity:              "Validity",
@@ -538,7 +556,7 @@ var frenchMessages = Messages{
 	SortByColumn:                   "Trier par {column}",
 	DashboardResultCount:           "{count} certificats",
 	ExpiryTimelineLabel:            "Expirations à venir",
-	TimelineWithinDays:             "≤ {days} jours",
+	TimelineWithinDays:             msgWithinDaysFR,
 	TimelineRangeDays:              "{from}–{to} jours",
 	TimelineBeyondDays:             "> {days} jours",
 	SearchPlaceholder:              "Rechercher par numéro de série, nom commun (CN) ou SAN",
@@ -555,7 +573,7 @@ var frenchMessages = Messages{
 	StatusLabelValid:               "Valide",
 	VaultConnectionLost:            "Connexion à Vault perdue",
 	VaultConnectionRestored:        "Connexion à Vault rétablie",
-	AdminTitle:                     "VaultCertsViewer Admin",
+	AdminTitle:                     msgAdminTitle,
 	AdminBackToVCV:                 "Retour à VCV",
 	AdminSettingsSaved:             "Paramètres enregistrés",
 	AdminLogoutFailed:              "Échec de la déconnexion",
@@ -612,8 +630,8 @@ var frenchMessages = Messages{
 	StatusLabelCritical:        "Critique",
 	StatusLabelWarning:         "Avertissement",
 	StatusDescValid:            "Tout va bien",
-	StatusDescWarning:          "≤ {days} jours",
-	StatusDescCritical:         "≤ {days} jours",
+	StatusDescWarning:          msgWithinDaysFR,
+	StatusDescCritical:         msgWithinDaysFR,
 	StatusDescExpired:          "Date dépassée",
 	StatusDescRevoked:          "Révoqué par l'autorité",
 	LabelValidity:              "Validité",
@@ -655,8 +673,8 @@ var frenchMessages = Messages{
 
 var spanishMessages = Messages{
 	AppTitle:                       "VaultCertsViewer",
-	AppSubtitle:                    "Monitor Vault/OpenBao certificate expirations",
-	SearchShortcutHint:             "Press / to focus search",
+	AppSubtitle:                    msgAppSubtitle,
+	SearchShortcutHint:             msgSearchShortcutHint,
 	ButtonToggleTheme:              "Cambiar tema",
 	ButtonClose:                    "Cerrar",
 	ButtonDetails:                  "Detalles",
@@ -702,7 +720,7 @@ var spanishMessages = Messages{
 	CertTypeFilterMachine:          "Máquina",
 	CertTypeFilterUnknown:          "Tipo desconocido",
 	CertTypeFilterUser:             "Usuario",
-	FooterVaultSummary:             "Vaults: {{up}}/{{total}} OK",
+	FooterVaultSummary:             msgVaultsOK,
 	LabelFingerprintSHA1:           "Huella SHA-1",
 	LabelFingerprintSHA256:         "Huella SHA-256",
 	LabelIssuer:                    "Emisor",
@@ -746,7 +764,7 @@ var spanishMessages = Messages{
 	SortByColumn:                   "Ordenar por {column}",
 	DashboardResultCount:           "{count} certificados",
 	ExpiryTimelineLabel:            "Próximos vencimientos",
-	TimelineWithinDays:             "≤ {days} días",
+	TimelineWithinDays:             msgWithinDaysES,
 	TimelineRangeDays:              "{from}–{to} días",
 	TimelineBeyondDays:             "> {days} días",
 	SearchPlaceholder:              "Buscar por Número de Serie, Nombre Común (CN) o SAN",
@@ -755,15 +773,15 @@ var spanishMessages = Messages{
 	FilterChipStatus:               "Status",
 	FilterChipCertType:             "Type",
 	FilterChipSources:              "Sources",
-	FilterChipReset:                "Reset filters",
-	SourcesButtonAll:               "Sources: {total}/{total}",
-	SourcesButtonPartial:           "Sources: {selected}/{total}",
+	FilterChipReset:                msgResetFilters,
+	SourcesButtonAll:               msgSourcesAll,
+	SourcesButtonPartial:           msgSourcesPartial,
 	StatusLabelExpired:             "Caducado",
 	StatusLabelRevoked:             "Revocado",
 	StatusLabelValid:               "Válido",
 	VaultConnectionLost:            "Conexión a Vault perdida",
 	VaultConnectionRestored:        "Conexión a Vault restablecida",
-	AdminTitle:                     "VaultCertsViewer Admin",
+	AdminTitle:                     msgAdminTitle,
 	AdminBackToVCV:                 "Volver a VCV",
 	AdminSettingsSaved:             "Configuración guardada",
 	AdminLogoutFailed:              "Error al cerrar sesión",
@@ -820,8 +838,8 @@ var spanishMessages = Messages{
 	StatusLabelCritical:        "Crítico",
 	StatusLabelWarning:         "Advertencia",
 	StatusDescValid:            "Todo correcto",
-	StatusDescWarning:          "≤ {days} días",
-	StatusDescCritical:         "≤ {days} días",
+	StatusDescWarning:          msgWithinDaysES,
+	StatusDescCritical:         msgWithinDaysES,
 	StatusDescExpired:          "Fecha vencida",
 	StatusDescRevoked:          "Revocado por la autoridad",
 	LabelValidity:              "Validez",
@@ -863,8 +881,8 @@ var spanishMessages = Messages{
 
 var germanMessages = Messages{
 	AppTitle:                       "VaultCertsViewer",
-	AppSubtitle:                    "Monitor Vault/OpenBao certificate expirations",
-	SearchShortcutHint:             "Press / to focus search",
+	AppSubtitle:                    msgAppSubtitle,
+	SearchShortcutHint:             msgSearchShortcutHint,
 	ButtonToggleTheme:              "Design umschalten",
 	ButtonClose:                    "Schließen",
 	ButtonDetails:                  "Details",
@@ -910,7 +928,7 @@ var germanMessages = Messages{
 	CertTypeFilterMachine:          "Maschine",
 	CertTypeFilterUnknown:          "Unbekannter Typ",
 	CertTypeFilterUser:             "Benutzer",
-	FooterVaultSummary:             "Vaults: {{up}}/{{total}} OK",
+	FooterVaultSummary:             msgVaultsOK,
 	LabelFingerprintSHA1:           "SHA-1-Fingerabdruck",
 	LabelFingerprintSHA256:         "SHA-256-Fingerabdruck",
 	LabelIssuer:                    "Aussteller",
@@ -954,7 +972,7 @@ var germanMessages = Messages{
 	SortByColumn:                   "Sortieren nach {column}",
 	DashboardResultCount:           "{count} Zertifikate",
 	ExpiryTimelineLabel:            "Bevorstehende Abläufe",
-	TimelineWithinDays:             "≤ {days} Tage",
+	TimelineWithinDays:             msgWithinDaysDE,
 	TimelineRangeDays:              "{from}–{to} Tage",
 	TimelineBeyondDays:             "> {days} Tage",
 	SearchPlaceholder:              "Suche nach Seriennummer, Common Name (CN) oder SAN",
@@ -963,15 +981,15 @@ var germanMessages = Messages{
 	FilterChipStatus:               "Status",
 	FilterChipCertType:             "Type",
 	FilterChipSources:              "Sources",
-	FilterChipReset:                "Reset filters",
-	SourcesButtonAll:               "Sources: {total}/{total}",
-	SourcesButtonPartial:           "Sources: {selected}/{total}",
+	FilterChipReset:                msgResetFilters,
+	SourcesButtonAll:               msgSourcesAll,
+	SourcesButtonPartial:           msgSourcesPartial,
 	StatusLabelExpired:             "Abgelaufen",
 	StatusLabelRevoked:             "Widerrufen",
 	StatusLabelValid:               "Gültig",
 	VaultConnectionLost:            "Verbindung zu Vault unterbrochen",
 	VaultConnectionRestored:        "Verbindung zu Vault wiederhergestellt",
-	AdminTitle:                     "VaultCertsViewer Admin",
+	AdminTitle:                     msgAdminTitle,
 	AdminBackToVCV:                 "Zurück zu VCV",
 	AdminSettingsSaved:             "Einstellungen gespeichert",
 	AdminLogoutFailed:              "Abmelden fehlgeschlagen",
@@ -1028,8 +1046,8 @@ var germanMessages = Messages{
 	StatusLabelCritical:        "Kritisch",
 	StatusLabelWarning:         "Warnung",
 	StatusDescValid:            "Alles in Ordnung",
-	StatusDescWarning:          "≤ {days} Tage",
-	StatusDescCritical:         "≤ {days} Tage",
+	StatusDescWarning:          msgWithinDaysDE,
+	StatusDescCritical:         msgWithinDaysDE,
 	StatusDescExpired:          "Abgelaufen",
 	StatusDescRevoked:          "Von der CA widerrufen",
 	LabelValidity:              "Gültigkeit",
@@ -1071,8 +1089,8 @@ var germanMessages = Messages{
 
 var italianMessages = Messages{
 	AppTitle:                       "VaultCertsViewer",
-	AppSubtitle:                    "Monitor Vault/OpenBao certificate expirations",
-	SearchShortcutHint:             "Press / to focus search",
+	AppSubtitle:                    msgAppSubtitle,
+	SearchShortcutHint:             msgSearchShortcutHint,
 	ButtonToggleTheme:              "Cambia tema",
 	ButtonClose:                    "Chiudi",
 	ButtonDetails:                  "Dettagli",
@@ -1118,7 +1136,7 @@ var italianMessages = Messages{
 	CertTypeFilterMachine:          "Macchina",
 	CertTypeFilterUnknown:          "Tipo sconosciuto",
 	CertTypeFilterUser:             "Utente",
-	FooterVaultSummary:             "Vaults: {{up}}/{{total}} OK",
+	FooterVaultSummary:             msgVaultsOK,
 	LabelFingerprintSHA1:           "Impronta SHA-1",
 	LabelFingerprintSHA256:         "Impronta SHA-256",
 	LabelIssuer:                    "Emittente",
@@ -1162,7 +1180,7 @@ var italianMessages = Messages{
 	SortByColumn:                   "Ordina per {column}",
 	DashboardResultCount:           "{count} certificati",
 	ExpiryTimelineLabel:            "Scadenze imminenti",
-	TimelineWithinDays:             "≤ {days} giorni",
+	TimelineWithinDays:             msgWithinDaysIT,
 	TimelineRangeDays:              "{from}–{to} giorni",
 	TimelineBeyondDays:             "> {days} giorni",
 	SearchPlaceholder:              "Cerca per Numero di Serie, Nome Comune (CN) o SAN",
@@ -1171,15 +1189,15 @@ var italianMessages = Messages{
 	FilterChipStatus:               "Status",
 	FilterChipCertType:             "Type",
 	FilterChipSources:              "Sources",
-	FilterChipReset:                "Reset filters",
-	SourcesButtonAll:               "Sources: {total}/{total}",
-	SourcesButtonPartial:           "Sources: {selected}/{total}",
+	FilterChipReset:                msgResetFilters,
+	SourcesButtonAll:               msgSourcesAll,
+	SourcesButtonPartial:           msgSourcesPartial,
 	StatusLabelExpired:             "Scaduto",
 	StatusLabelRevoked:             "Revocato",
 	StatusLabelValid:               "Valido",
 	VaultConnectionLost:            "Connessione al Vault interrotta",
 	VaultConnectionRestored:        "Connessione al Vault ripristinata",
-	AdminTitle:                     "VaultCertsViewer Admin",
+	AdminTitle:                     msgAdminTitle,
 	AdminBackToVCV:                 "Torna a VCV",
 	AdminSettingsSaved:             "Impostazioni salvate",
 	AdminLogoutFailed:              "Disconnessione non riuscita",
@@ -1236,8 +1254,8 @@ var italianMessages = Messages{
 	StatusLabelCritical:        "Critico",
 	StatusLabelWarning:         "Avviso",
 	StatusDescValid:            "Tutto a posto",
-	StatusDescWarning:          "≤ {days} giorni",
-	StatusDescCritical:         "≤ {days} giorni",
+	StatusDescWarning:          msgWithinDaysIT,
+	StatusDescCritical:         msgWithinDaysIT,
 	StatusDescExpired:          "Data superata",
 	StatusDescRevoked:          "Revocato dalla CA",
 	LabelValidity:              "Validità",
@@ -1347,7 +1365,7 @@ func ResolveLanguage(r *http.Request) Language {
 	// 1. Check query parameter
 	if lang := r.URL.Query().Get("lang"); lang != "" {
 		if l, ok := GetLanguage(lang); ok {
-			logger.Get().Debug().Str("source", "query_param").Str("lang", lang).Msg("language resolved")
+			logger.Get().Debug().Str("source", "query_param").Str("lang", lang).Msg(msgLangResolved)
 			return l
 		}
 	}
@@ -1360,7 +1378,7 @@ func ResolveLanguage(r *http.Request) Language {
 			headerLanguage := parsed.Query().Get("lang")
 			if headerLanguage != "" {
 				if language, ok := GetLanguage(headerLanguage); ok {
-					logger.Get().Debug().Str("source", "hx_current_url").Str("lang", headerLanguage).Msg("language resolved")
+					logger.Get().Debug().Str("source", "hx_current_url").Str("lang", headerLanguage).Msg(msgLangResolved)
 					return language
 				}
 			}
@@ -1370,7 +1388,7 @@ func ResolveLanguage(r *http.Request) Language {
 	// 3. Check cookie
 	if cookie, err := r.Cookie("lang"); err == nil {
 		if l, ok := GetLanguage(cookie.Value); ok {
-			logger.Get().Debug().Str("source", "cookie").Str("lang", cookie.Value).Msg("language resolved")
+			logger.Get().Debug().Str("source", "cookie").Str("lang", cookie.Value).Msg(msgLangResolved)
 			return l
 		}
 	}
@@ -1378,6 +1396,6 @@ func ResolveLanguage(r *http.Request) Language {
 	// 4. Use Accept-Language header
 	acceptLang := r.Header.Get("Accept-Language")
 	lang := FromAcceptLanguage(acceptLang)
-	logger.Get().Debug().Str("source", "accept_language").Str("header", acceptLang).Str("lang", string(lang)).Msg("language resolved")
+	logger.Get().Debug().Str("source", "accept_language").Str("header", acceptLang).Str("lang", string(lang)).Msg(msgLangResolved)
 	return lang
 }

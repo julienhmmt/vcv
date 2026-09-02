@@ -19,6 +19,18 @@ import (
 
 const allLabelValue string = "__all__"
 
+// expiryBucketNames lists the expiry time buckets in emission order.
+var expiryBucketNames = []string{"0-7d", "7-30d", "30-90d", "90d+", "expired", "revoked"}
+
+// zeroExpiryBuckets returns a fresh counter map with every expiry bucket at 0.
+func zeroExpiryBuckets() map[string]int {
+	counts := make(map[string]int, len(expiryBucketNames))
+	for _, bucket := range expiryBucketNames {
+		counts[bucket] = 0
+	}
+	return counts
+}
+
 // perCertificateCardinalityWarnThreshold logs an extra warn when inventory size exceeds this while per_certificate is on.
 const perCertificateCardinalityWarnThreshold = 500
 
@@ -490,7 +502,7 @@ func (collector *certificateCollector) emitEnhancedMetrics(ch chan<- prometheus.
 			buckets[vaultID] = make(map[string]map[string]int)
 		}
 		if _, ok := buckets[vaultID][pki]; !ok {
-			buckets[vaultID][pki] = map[string]int{"0-7d": 0, "7-30d": 0, "30-90d": 0, "90d+": 0, "expired": 0, "revoked": 0}
+			buckets[vaultID][pki] = zeroExpiryBuckets()
 		}
 		if certificate.Revoked {
 			buckets[vaultID][pki]["revoked"]++
@@ -524,12 +536,12 @@ func (collector *certificateCollector) emitEnhancedMetrics(ch chan<- prometheus.
 		}
 		sort.Strings(pkis)
 		for _, pki := range pkis {
-			for _, bucket := range []string{"0-7d", "7-30d", "30-90d", "90d+", "expired", "revoked"} {
+			for _, bucket := range expiryBucketNames {
 				ch <- prometheus.MustNewConstMetric(expiryBucketDesc, prometheus.GaugeValue, float64(buckets[vaultID][pki][bucket]), vaultID, pki, bucket)
 			}
 		}
 	}
-	allBuckets := map[string]int{"0-7d": 0, "7-30d": 0, "30-90d": 0, "90d+": 0, "expired": 0, "revoked": 0}
+	allBuckets := zeroExpiryBuckets()
 	for vaultID := range buckets {
 		for pki := range buckets[vaultID] {
 			for bucket, count := range buckets[vaultID][pki] {
@@ -537,7 +549,7 @@ func (collector *certificateCollector) emitEnhancedMetrics(ch chan<- prometheus.
 			}
 		}
 	}
-	for _, bucket := range []string{"0-7d", "7-30d", "30-90d", "90d+", "expired", "revoked"} {
+	for _, bucket := range expiryBucketNames {
 		ch <- prometheus.MustNewConstMetric(expiryBucketDesc, prometheus.GaugeValue, float64(allBuckets[bucket]), allLabelValue, allLabelValue, bucket)
 	}
 }

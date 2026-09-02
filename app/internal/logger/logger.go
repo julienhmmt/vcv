@@ -15,6 +15,9 @@ import (
 // This allows other packages to depend only on vcv/internal/logger instead of importing zerolog directly.
 type Logger = zerolog.Logger
 
+// consoleTimeFormat is the timestamp layout used by the console (non-JSON) writer.
+const consoleTimeFormat = "2006-01-02 15:04:05"
+
 // Init initializes the logger with the specified log level
 func Init(level string) {
 	// Set time format
@@ -46,7 +49,7 @@ func Init(level string) {
 		} else {
 			consoleWriter := zerolog.ConsoleWriter{
 				Out:        os.Stdout,
-				TimeFormat: "2006-01-02 15:04:05",
+				TimeFormat: consoleTimeFormat,
 			}
 			writers = append(writers, consoleWriter)
 		}
@@ -66,7 +69,7 @@ func Init(level string) {
 				} else {
 					consoleWriter := zerolog.ConsoleWriter{
 						Out:        file,
-						TimeFormat: "2006-01-02 15:04:05",
+						TimeFormat: consoleTimeFormat,
 					}
 					writers = append(writers, consoleWriter)
 				}
@@ -78,7 +81,7 @@ func Init(level string) {
 	if len(writers) == 0 {
 		consoleWriter := zerolog.ConsoleWriter{
 			Out:        os.Stdout,
-			TimeFormat: "2006-01-02 15:04:05",
+			TimeFormat: consoleTimeFormat,
 		}
 		writers = append(writers, consoleWriter)
 		deferredWarnings = append(deferredWarnings, "No valid log output configured, falling back to stdout console")

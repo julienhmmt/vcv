@@ -11,6 +11,18 @@ import (
 	"vcv/internal/certs"
 )
 
+// ageBucketNames lists the certificate age buckets in emission order.
+var ageBucketNames = []string{"0-30d", "30-90d", "90-180d", "180-365d", "1y+"}
+
+// zeroAgeBuckets returns a fresh counter map with every age bucket at 0.
+func zeroAgeBuckets() map[string]int {
+	counts := make(map[string]int, len(ageBucketNames))
+	for _, bucket := range ageBucketNames {
+		counts[bucket] = 0
+	}
+	return counts
+}
+
 // sortedStringKeys returns sorted keys from a string-keyed map.
 func sortedStringKeys[V any](m map[string]V) []string {
 	keys := make([]string, 0, len(m))
@@ -155,7 +167,7 @@ func (collector *certificateCollector) emitAgeMetrics(ch chan<- prometheus.Metri
 			ageBuckets[vaultID] = make(map[string]map[string]int)
 		}
 		if _, ok := ageBuckets[vaultID][pki]; !ok {
-			ageBuckets[vaultID][pki] = map[string]int{"0-30d": 0, "30-90d": 0, "90-180d": 0, "180-365d": 0, "1y+": 0}
+			ageBuckets[vaultID][pki] = zeroAgeBuckets()
 		}
 		if ageDays <= 30 {
 			ageBuckets[vaultID][pki]["0-30d"]++
@@ -171,7 +183,7 @@ func (collector *certificateCollector) emitAgeMetrics(ch chan<- prometheus.Metri
 	}
 	for _, vaultID := range sortedStringKeys(ageBuckets) {
 		for _, pki := range sortedStringKeys(ageBuckets[vaultID]) {
-			for _, bucket := range []string{"0-30d", "30-90d", "90-180d", "180-365d", "1y+"} {
+			for _, bucket := range ageBucketNames {
 				ch <- prometheus.MustNewConstMetric(ageBucketDesc, prometheus.GaugeValue, float64(ageBuckets[vaultID][pki][bucket]), vaultID, pki, bucket)
 			}
 		}

@@ -69,7 +69,7 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 		filteredCertificates := filterCertificatesByMounts(certificates, selectedMounts)
 		envelope := certsEnvelope{Certificates: filteredCertificates, Errors: vaultErrors}
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		if encodeErr := json.NewEncoder(w).Encode(envelope); encodeErr != nil {
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, encodeErr).
 				Str("request_id", requestID).
@@ -112,7 +112,7 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		if err := json.NewEncoder(w).Encode(details); err != nil {
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
@@ -147,7 +147,7 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		if err := json.NewEncoder(w).Encode(caDetails); err != nil {
 			requestID := middleware.GetRequestID(req.Context())
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
@@ -185,7 +185,7 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set(contentTypeHeader, contentTypeJSON)
 		if err := json.NewEncoder(w).Encode(pemResponse); err != nil {
 			requestID := middleware.GetRequestID(req.Context())
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).

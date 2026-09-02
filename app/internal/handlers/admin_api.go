@@ -47,8 +47,16 @@ type adminVaultAddedResponse struct {
 	Vault config.VaultInstance `json:"vault"`
 }
 
+const (
+	contentTypeHeader = "Content-Type"
+	contentTypeJSON   = "application/json"
+	// errLoadSettings is the sanitized message returned when the settings
+	// file cannot be read or parsed.
+	errLoadSettings = "failed to load settings"
+)
+
 func writeJSON(w http.ResponseWriter, status int, body any) {
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(contentTypeHeader, contentTypeJSON)
 	w.WriteHeader(status)
 	if body == nil {
 		return
@@ -134,7 +142,7 @@ func registerAdminAPIRoutes(
 		r.Get("/api/admin/settings", func(w http.ResponseWriter, req *http.Request) {
 			settings, err := store.load()
 			if err != nil {
-				writeJSONError(w, http.StatusInternalServerError, "failed to load settings")
+				writeJSONError(w, http.StatusInternalServerError, errLoadSettings)
 				return
 			}
 			statuses := computeVaultStatuses(req.Context(), settings.Vaults, vaultStatusClients)
@@ -149,7 +157,7 @@ func registerAdminAPIRoutes(
 			}
 			current, err := store.load()
 			if err != nil {
-				writeJSONError(w, http.StatusInternalServerError, "failed to load settings")
+				writeJSONError(w, http.StatusInternalServerError, errLoadSettings)
 				return
 			}
 			merged := mergeAdminSettings(current, incoming)
@@ -203,7 +211,7 @@ func registerAdminAPIRoutes(
 			}
 			settings, err := store.load()
 			if err != nil {
-				writeJSONError(w, http.StatusInternalServerError, "failed to load settings")
+				writeJSONError(w, http.StatusInternalServerError, errLoadSettings)
 				return
 			}
 			updatedVaults := make([]config.VaultInstance, 0, len(settings.Vaults))

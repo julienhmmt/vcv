@@ -2,6 +2,7 @@ package vault
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -11,6 +12,14 @@ import (
 	"vcv/internal/certs"
 	"vcv/internal/config"
 	"vcv/internal/logger"
+)
+
+const (
+	// errMissingVaultClient is the format used when an operation targets a
+	// vault ID that has no registered client.
+	errMissingVaultClient = "missing vault client for %s"
+	// errInvalidCertID is returned when a certificate ID cannot be parsed.
+	errInvalidCertID = "invalid certificate id"
 )
 
 type multiClient struct {
@@ -84,7 +93,7 @@ func (c *multiClient) CheckConnection(ctx context.Context) error {
 			logger.Get().Error().
 				Str("vault_id", vaultID).
 				Msg("missing vault client for connection check")
-			return fmt.Errorf("missing vault client for %s", vaultID)
+			return fmt.Errorf(errMissingVaultClient, vaultID)
 		}
 
 		logger.Get().Debug().
@@ -115,7 +124,7 @@ func (c *multiClient) GetCertificateDetails(ctx context.Context, serialNumber st
 	}
 	client := c.clientsByVault[vaultID]
 	if client == nil {
-		return certs.DetailedCertificate{}, fmt.Errorf("missing vault client for %s", vaultID)
+		return certs.DetailedCertificate{}, fmt.Errorf(errMissingVaultClient, vaultID)
 	}
 	details, err := client.GetCertificateDetails(ctx, mountSerial)
 	if err != nil {
@@ -132,7 +141,7 @@ func (c *multiClient) GetCertificatePEM(ctx context.Context, serialNumber string
 	}
 	client := c.clientsByVault[vaultID]
 	if client == nil {
-		return certs.PEMResponse{}, fmt.Errorf("missing vault client for %s", vaultID)
+		return certs.PEMResponse{}, fmt.Errorf(errMissingVaultClient, vaultID)
 	}
 	return client.GetCertificatePEM(ctx, mountSerial)
 }
@@ -144,7 +153,7 @@ func (c *multiClient) GetIntermediateCA(ctx context.Context, mount string) (cert
 	}
 	client := c.clientsByVault[vaultID]
 	if client == nil {
-		return certs.DetailedCertificate{}, fmt.Errorf("missing vault client for %s", vaultID)
+		return certs.DetailedCertificate{}, fmt.Errorf(errMissingVaultClient, vaultID)
 	}
 	details, err := client.GetIntermediateCA(ctx, pureMount)
 	if err != nil {
@@ -193,7 +202,7 @@ func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate
 			logger.Get().Error().
 				Str("vault_id", vaultID).
 				Msg("missing vault client for certificate listing")
-			resultChan <- result{vaultID: vaultID, certificates: []certs.Certificate{}, err: fmt.Errorf("missing vault client for %s", vaultID)}
+			resultChan <- result{vaultID: vaultID, certificates: []certs.Certificate{}, err: fmt.Errorf(errMissingVaultClient, vaultID)}
 			continue
 		}
 		wg.Add(1)
@@ -286,7 +295,7 @@ func (c *multiClient) ListCertificatesEnvelope(ctx context.Context) ([]certs.Cer
 	for _, vaultID := range active {
 		client := c.clientsByVault[vaultID]
 		if client == nil {
-			resultChan <- result{vaultID: vaultID, err: fmt.Errorf("missing vault client for %s", vaultID)}
+			resultChan <- result{vaultID: vaultID, err: fmt.Errorf(errMissingVaultClient, vaultID)}
 			continue
 		}
 		wg.Add(1)
@@ -337,7 +346,7 @@ func (c *multiClient) ListCertificatesByVault(ctx context.Context) []ListCertifi
 	for _, vaultID := range active {
 		client := c.clientsByVault[vaultID]
 		if client == nil {
-			results = append(results, ListCertificatesByVaultResult{VaultID: vaultID, Certificates: []certs.Certificate{}, Duration: 0, ListError: fmt.Errorf("missing vault client for %s", vaultID)})
+			results = append(results, ListCertificatesByVaultResult{VaultID: vaultID, Certificates: []certs.Certificate{}, Duration: 0, ListError: fmt.Errorf(errMissingVaultClient, vaultID)})
 			continue
 		}
 		start := time.Now()
@@ -394,16 +403,16 @@ func parseCompositeCertificateID(orderedVaultIDs []string, value string) (string
 		vaultID := strings.TrimSpace(parts[0])
 		mountSerial := strings.TrimSpace(parts[1])
 		if vaultID == "" || mountSerial == "" {
-			return "", "", fmt.Errorf("invalid certificate id")
+			return "", "", errors.New(errInvalidCertID)
 		}
 		return vaultID, mountSerial, nil
 	}
 	if len(orderedVaultIDs) == 0 {
-		return "", "", fmt.Errorf("invalid certificate id")
+		return "", "", errors.New(errInvalidCertID)
 	}
 	mountSerial := strings.TrimSpace(value)
 	if mountSerial == "" {
-		return "", "", fmt.Errorf("invalid certificate id")
+		return "", "", errors.New(errInvalidCertID)
 	}
 	return orderedVaultIDs[0], mountSerial, nil
 }
