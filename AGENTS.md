@@ -95,6 +95,19 @@ make web-check           # svelte-check + tsc
 make web-test            # vitest run
 make web-test-coverage   # vitest + coverage
 
+# SonarQube (local container, 2 projects: vcv-server, vcv-web)
+make sonar              # Full pipeline: start, token, coverage, lint, scan both
+make sonar-up           # Start the server on http://localhost:9000
+make sonar-bootstrap    # Provision both projects + rotate the analysis token
+make sonar-coverage     # Generate the Go coverage report for app/
+make sonar-lint         # ESLint on app/web/frontend (incl. .svelte) → SonarQube
+make sonar-scan         # Scan both projects + print a summary table
+make sonar-scan-server  # Scan server (Go) only
+make sonar-scan-web     # Scan web (Svelte + ESLint import) only
+make sonar-query CMD="summary"   # Also: projects, issues <key>, metrics <key>, gate <key>
+make sonar-down         # Stop the server
+make sonar-clean        # Stop and remove all SonarQube data
+
 # Multi-arch docker images push
 VCV_TAG=1.9 make docker-build
 ```

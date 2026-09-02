@@ -16,6 +16,11 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    // jsdom's default about:blank URL is an opaque origin: window.localStorage
+    // is undefined there (jsdom 30), which broke storage.test.ts.
+    environmentOptions: {
+      jsdom: { url: 'http://localhost/' },
+    },
     setupFiles: ['./vitest.setup.ts'],
     include: ['src/**/*.{test,spec}.ts'],
     coverage: {
@@ -23,7 +28,7 @@ export default defineConfig({
       include: ['src/lib/utils/**/*.ts'],
       // cert-icons.ts is a thin Svelte-component lookup with no logic to cover.
       exclude: ['src/lib/utils/cert-icons.ts', 'src/**/*.{test,spec}.ts'],
-      reporter: ['text', 'html'],
+      reporter: ['text', 'html', 'lcov'],
     },
   },
 })

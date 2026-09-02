@@ -12,6 +12,18 @@ class ResizeObserverMock {
 
 Object.defineProperty(globalThis, 'ResizeObserver', { configurable: true, value: ResizeObserverMock })
 
+// Node ≥23 defines a non-functional global `localStorage` (it requires
+// --localstorage-file). Its presence makes vitest's jsdom environment skip
+// copying jsdom's working localStorage onto the test global, leaving
+// window.localStorage undefined. Re-expose jsdom's implementation.
+if (typeof window !== 'undefined' && typeof window.localStorage === 'undefined') {
+  const jsdom = (globalThis as { jsdom?: { window?: { localStorage?: Storage } } }).jsdom
+  const storage = jsdom?.window?.localStorage
+  if (storage) {
+    Object.defineProperty(globalThis, 'localStorage', { value: storage, configurable: true })
+  }
+}
+
 // jsdom doesn't implement scrollIntoView; bits-ui's Command component calls it
 // when the highlighted item changes (e.g. CommandPalette filtering as you type).
 // Most test files run in the default 'node' environment, where Element is undefined.
