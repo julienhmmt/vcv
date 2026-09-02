@@ -501,7 +501,7 @@
 
 .vcv-ca-cn {
   font-size: 1.3rem !important;
-  letter-spacing: -0.035em !important;
+  letter-spacing: -0.035em;
   color: var(--vcv-color-text-strong) !important;
   line-height: 1.25 !important;
   font-weight: 700 !important;

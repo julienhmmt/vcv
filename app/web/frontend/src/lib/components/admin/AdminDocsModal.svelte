@@ -51,6 +51,7 @@
     {:else if html !== null}
       <ScrollArea class="max-h-[75vh]">
         <!-- Trusted: rendered from the binary-embedded ADMIN.md, not user input. -->
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
         <div class="vcv-docs px-6 pb-6">{@html html}</div>
       </ScrollArea>
     {/if}

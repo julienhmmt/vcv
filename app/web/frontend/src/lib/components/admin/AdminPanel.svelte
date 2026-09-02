@@ -62,6 +62,7 @@
   })
 
   const statusById = $derived.by(() => {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local to this derivation, rebuilt on each run
     const map = new Map<string, AdminVaultStatus>()
     for (const status of statuses) map.set(status.id, status)
     return map
@@ -177,7 +178,7 @@
   <div class="adm-body">
     <!-- Sticky left nav -->
     <aside class="adm-sidenav">
-      {#each navItems as item}
+      {#each navItems as item (item.id)}
         {@const Icon = item.icon}
         <a href="#{item.id}" class="adm-sidenav-item">
           <Icon class="h-3.5 w-3.5" aria-hidden="true" />

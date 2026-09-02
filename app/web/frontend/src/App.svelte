@@ -129,6 +129,7 @@
   )
 
   const allMounts = $derived.by(() => {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local to this derivation, rebuilt on each run
     const set = new Set<string>()
     for (const cert of certs.certificates) {
       set.add(parseCertID(cert.id).mountKey)
@@ -387,6 +388,7 @@
   })
 
   // Toast vault connectivity transitions detected by the status poll.
+  // eslint-disable-next-line svelte/prefer-svelte-reactivity -- scratch state; SvelteMap would make the effect depend on its own writes
   const prevConnected = new Map<string, boolean>()
   let statusSeeded = false
   $effect(() => {

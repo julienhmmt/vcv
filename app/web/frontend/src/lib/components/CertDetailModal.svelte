@@ -283,7 +283,7 @@
                 <div class="vcv-cd-detail-row vcv-cd-detail-row-stack">
                   <span>{i18n.t('columnSan', 'SANs')}</span>
                   <div class="vcv-cd-san-list">
-                    {#each details.sans as san}
+                    {#each details.sans as san (san)}
                       <span class="vcv-cd-san-chip"><code>{san}</code></span>
                     {/each}
                   </div>
