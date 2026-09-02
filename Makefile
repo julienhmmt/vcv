@@ -77,10 +77,10 @@ go-lint-full:
 go-coverage:
 	cd app && go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out
 
-# --- SonarQube (local container, Go-only) -------------------------------------
+# --- SonarQube (local container, 2 projects: vcv-server, vcv-web) -------------
 COMPOSE_SONAR := docker compose -f docker-compose.sonarqube.yml
 
-.PHONY: sonar-up sonar-down sonar-logs sonar-status sonar-bootstrap sonar-coverage sonar-scan sonar-scan-server sonar-query sonar-clean
+.PHONY: sonar-up sonar-down sonar-logs sonar-status sonar-bootstrap sonar-coverage sonar-lint sonar-scan sonar-scan-server sonar-scan-web sonar sonar-query sonar-clean
 
 sonar-up:
 	$(COMPOSE_SONAR) up -d sonarqube
@@ -100,11 +100,20 @@ sonar-bootstrap:
 sonar-coverage:
 	@chmod +x tools/sonar-coverage.sh && GO_TEST_FLAGS="$(GO_TEST_FLAGS)" SERVER_DIR="$(SERVER_DIR)" tools/sonar-coverage.sh && echo "Coverage reports ready in .sonar/"
 
-sonar-scan: sonar-coverage
+sonar-lint:
+	@chmod +x tools/sonar-frontend-lint.sh && tools/sonar-frontend-lint.sh && echo "ESLint reports ready in .sonar/"
+
+sonar-scan: sonar-coverage sonar-lint
 	@chmod +x tools/sonar-scan.sh && tools/sonar-scan.sh
 
 sonar-scan-server:
 	@chmod +x tools/sonar-scan.sh && tools/sonar-scan.sh server
+
+sonar-scan-web: sonar-lint
+	@chmod +x tools/sonar-scan.sh && tools/sonar-scan.sh web
+
+sonar: sonar-up sonar-bootstrap sonar-scan
+	@echo "SonarQube analysis complete. See http://localhost:9000/projects"
 
 sonar-query:
 	python3 tools/sonar-query.py $(CMD)

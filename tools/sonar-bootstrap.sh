@@ -20,7 +20,8 @@ PASS_FILE=".sonar/admin-password"
 
 # SonarQube projects to provision (one per line, key|name format).
 # Newlines separate entries so names with spaces are preserved.
-PROJECTS="vcv-server|VaultCertsViewer (Go)"
+PROJECTS="vcv-server|VaultCertsViewer (Go)
+vcv-web|VaultCertsViewer frontend"
 
 mkdir -p .sonar
 
