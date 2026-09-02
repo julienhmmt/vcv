@@ -103,9 +103,23 @@ func newStatusHandler(cfg config.Config, primaryVaultClient vault.Client, status
 	}
 }
 
-func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClients map[string]vault.Client, multiVaultClient vault.Client, registry *prometheus.Registry, webFS fs.FS, settingsPath string, vaultRegistry *vault.Registry) (*chi.Mux, error) {
+// routerDeps bundles the collaborators buildRouter needs, keeping the
+// function signature within the parameter limit.
+type routerDeps struct {
+	cfg           config.Config
+	primaryVault  vault.Client
+	statusClients map[string]vault.Client
+	multiVault    vault.Client
+	vaultRegistry *vault.Registry
+	promRegistry  *prometheus.Registry
+	webFS         fs.FS
+	settingsPath  string
+}
+
+func buildRouter(deps routerDeps) (*chi.Mux, error) {
+	cfg := deps.cfg
 	r := chi.NewRouter()
-	distFS, distError := fs.Sub(webFS, "dist")
+	distFS, distError := fs.Sub(deps.webFS, "dist")
 	if distError != nil {
 		return nil, distError
 	}
@@ -136,16 +150,16 @@ func buildRouter(cfg config.Config, primaryVaultClient vault.Client, statusClien
 	r.Get("/api/health", handlers.HealthCheck)
 	r.Get("/api/ready", handlers.ReadinessCheck)
 	// Admin is optional; process stays up. Surface enablement on /api/status (not fail-ready).
-	adminAPIEnabled := handlers.RegisterAdminRoutes(r, settingsPath, cfg.Env, vaultRegistry, statusClients, multiVaultClient, cfg.TrustProxy)
-	r.Get("/api/status", newStatusHandler(cfg, primaryVaultClient, statusClients, adminAPIEnabled))
+	adminAPIEnabled := handlers.RegisterAdminRoutes(r, deps.settingsPath, cfg.Env, deps.vaultRegistry, deps.statusClients, deps.multiVault, cfg.TrustProxy)
+	r.Get("/api/status", newStatusHandler(cfg, deps.primaryVault, deps.statusClients, adminAPIEnabled))
 	r.Get("/api/version", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(version.Info())
 	})
-	r.Get("/api/config", handlers.GetConfig(cfg, vaultRegistry))
-	r.Get("/metrics", promhttp.HandlerFor(registry, promhttp.HandlerOpts{}).ServeHTTP)
+	r.Get("/api/config", handlers.GetConfig(cfg, deps.vaultRegistry))
+	r.Get("/metrics", promhttp.HandlerFor(deps.promRegistry, promhttp.HandlerOpts{}).ServeHTTP)
 	handlers.RegisterI18nRoutes(r)
-	handlers.RegisterCertRoutes(r, multiVaultClient)
+	handlers.RegisterCertRoutes(r, deps.multiVault)
 
 	return r, nil
 }
@@ -222,7 +236,16 @@ func main() {
 		Str("settings_path", settingsPath).
 		Msg("Using admin settings file")
 
-	router, buildErr := buildRouter(cfg, primaryVaultClient, allClients, multiVaultClient, promRegistry, webFS, settingsPath, vaultRegistry)
+	router, buildErr := buildRouter(routerDeps{
+		cfg:           cfg,
+		primaryVault:  primaryVaultClient,
+		statusClients: allClients,
+		multiVault:    multiVaultClient,
+		vaultRegistry: vaultRegistry,
+		promRegistry:  promRegistry,
+		webFS:         webFS,
+		settingsPath:  settingsPath,
+	})
 	if buildErr != nil {
 		log.Fatal().Err(buildErr).
 			Msg("Failed to initialize router")

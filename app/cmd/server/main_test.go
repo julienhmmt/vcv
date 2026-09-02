@@ -126,7 +126,7 @@ func TestBuildRouter_Dev(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	vaultRegistry := vault.NewRegistry(cfg.Vaults)
 
-	router, err := buildRouter(cfg, primary, map[string]vault.Client{"v1": primary}, multi, registry, webFS, "/tmp/settings.json", vaultRegistry)
+	router, err := buildRouter(routerDeps{cfg: cfg, primaryVault: primary, statusClients: map[string]vault.Client{"v1": primary}, multiVault: multi, vaultRegistry: vaultRegistry, promRegistry: registry, webFS: webFS, settingsPath: "/tmp/settings.json"})
 	require.NoError(t, err)
 	assert.NotNil(t, router)
 
@@ -152,7 +152,7 @@ func TestBuildRouter_Prod(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	vaultRegistry := vault.NewRegistry(cfg.Vaults)
 
-	router, err := buildRouter(cfg, primary, map[string]vault.Client{}, multi, registry, webFS, "/tmp/settings.json", vaultRegistry)
+	router, err := buildRouter(routerDeps{cfg: cfg, primaryVault: primary, statusClients: map[string]vault.Client{}, multiVault: multi, vaultRegistry: vaultRegistry, promRegistry: registry, webFS: webFS, settingsPath: "/tmp/settings.json"})
 	require.NoError(t, err)
 	assert.NotNil(t, router)
 }
@@ -169,7 +169,7 @@ func TestBuildRouter_MissingDist(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	vaultRegistry := vault.NewRegistry(nil)
 
-	_, err := buildRouter(cfg, primary, nil, multi, registry, errFS{}, "/tmp/settings.json", vaultRegistry)
+	_, err := buildRouter(routerDeps{cfg: cfg, primaryVault: primary, statusClients: nil, multiVault: multi, vaultRegistry: vaultRegistry, promRegistry: registry, webFS: errFS{}, settingsPath: "/tmp/settings.json"})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "no dist dir")
 }
@@ -189,7 +189,7 @@ func TestBuildRouter_Routes(t *testing.T) {
 	registry := prometheus.NewRegistry()
 	vaultRegistry := vault.NewRegistry(cfg.Vaults)
 
-	router, err := buildRouter(cfg, primary, map[string]vault.Client{}, multi, registry, webFS, "/tmp/settings.json", vaultRegistry)
+	router, err := buildRouter(routerDeps{cfg: cfg, primaryVault: primary, statusClients: map[string]vault.Client{}, multiVault: multi, vaultRegistry: vaultRegistry, promRegistry: registry, webFS: webFS, settingsPath: "/tmp/settings.json"})
 	require.NoError(t, err)
 
 	// Test /api/version
