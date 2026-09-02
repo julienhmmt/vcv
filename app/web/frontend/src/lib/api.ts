@@ -42,7 +42,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     ...restInit,
     headers: {
       Accept: 'application/json',
-      ...(initHeaders ?? {}),
+      ...initHeaders,
     },
   })
   if (!response.ok) {
@@ -60,7 +60,7 @@ async function requestVoid(path: string, init?: RequestInit): Promise<void> {
     ...restInit,
     headers: {
       Accept: 'application/json',
-      ...(initHeaders ?? {}),
+      ...initHeaders,
     },
   })
   if (!response.ok) {

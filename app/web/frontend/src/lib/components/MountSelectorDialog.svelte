@@ -32,6 +32,7 @@
 
   // Group flat "vault|mount" keys under their vault, preserving sort order.
   const groups = $derived.by<VaultGroup[]>(() => {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local to this derivation, rebuilt on each run
     const byVault = new Map<string, VaultGroup>()
     for (const key of allMounts) {
       const sep = key.indexOf('|')
@@ -76,6 +77,7 @@
   }
 
   function toggle(key: string): void {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local copy replaced wholesale via commit()
     const next = new Set(selectedSet)
     if (next.has(key)) next.delete(key)
     else next.add(key)
@@ -83,6 +85,7 @@
   }
 
   function toggleVault(group: VaultGroup): void {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local copy replaced wholesale via commit()
     const next = new Set(selectedSet)
     if (vaultState(group) === 'all') {
       for (const m of group.mounts) next.delete(m.key)

@@ -60,7 +60,7 @@ function sanitizeCsvCell(value: string): string {
 
 /** Escape a value for RFC 4180 CSV: wrap in quotes when it contains a comma, quote, or newline. */
 function escapeCsv(value: string): string {
-  if (/[",\n\r]/.test(value)) return `"${value.replace(/"/g, '""')}"`
+  if (/[",\n\r]/.test(value)) return `"${value.replaceAll('"', '""')}"`
   return value
 }
 
