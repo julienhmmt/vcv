@@ -32,6 +32,7 @@ func (c *disabledClient) GetIntermediateCA(_ context.Context, _ string) (certs.D
 	return certs.DetailedCertificate{}, ErrVaultNotConfigured
 }
 
+// InvalidateCache is a no-op: the disabled client holds no cache.
 func (c *disabledClient) InvalidateCache() {
 }
 
@@ -39,5 +40,6 @@ func (c *disabledClient) ListCertificates(_ context.Context) ([]certs.Certificat
 	return []certs.Certificate{}, nil
 }
 
+// Shutdown is a no-op: the disabled client holds no resources to release.
 func (c *disabledClient) Shutdown() {
 }
