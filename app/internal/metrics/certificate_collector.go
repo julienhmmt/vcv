@@ -31,6 +31,62 @@ func zeroExpiryBuckets() map[string]int {
 	return counts
 }
 
+// incCounter2 increments a vaultID → pki counter, allocating intermediate maps.
+func incCounter2(m map[string]map[string]int, vaultID string, pki string) {
+	if m[vaultID] == nil {
+		m[vaultID] = make(map[string]int)
+	}
+	m[vaultID][pki]++
+}
+
+// counter2At reads a vaultID → pki counter, returning 0 for missing keys.
+func counter2At(m map[string]map[string]int, vaultID string, pki string) int {
+	return m[vaultID][pki]
+}
+
+// incCounter3 increments a vaultID → pki → label counter, allocating intermediate maps.
+func incCounter3(m map[string]map[string]map[string]int, vaultID string, pki string, label string) {
+	if m[vaultID] == nil {
+		m[vaultID] = make(map[string]map[string]int)
+	}
+	if m[vaultID][pki] == nil {
+		m[vaultID][pki] = make(map[string]int)
+	}
+	m[vaultID][pki][label]++
+}
+
+// unionKeys returns the sorted union of the key sets of the given maps.
+func unionKeys[V any](maps ...map[string]V) []string {
+	seen := make(map[string]struct{})
+	for _, m := range maps {
+		for key := range m {
+			seen[key] = struct{}{}
+		}
+	}
+	keys := make([]string, 0, len(seen))
+	for key := range seen {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// expiryBucketLabel classifies days-until-expiry into an expiry bucket name.
+func expiryBucketLabel(daysRemaining int) string {
+	switch {
+	case daysRemaining < 0:
+		return "expired"
+	case daysRemaining <= 7:
+		return "0-7d"
+	case daysRemaining <= 30:
+		return "7-30d"
+	case daysRemaining <= 90:
+		return "30-90d"
+	default:
+		return "90d+"
+	}
+}
+
 // perCertificateCardinalityWarnThreshold logs an extra warn when inventory size exceeds this while per_certificate is on.
 const perCertificateCardinalityWarnThreshold = 500
 
@@ -361,36 +417,39 @@ func (collector *certificateCollector) emitVaultListingFailureMetrics(ch chan<- 
 	ch <- prometheus.MustNewConstMetric(partialScrapeDesc, prometheus.GaugeValue, 1, allLabelValue)
 }
 
+// tallyAggregation accumulates one certificate into the status totals and
+// expiring-soon counters keyed by vault+PKI.
+func (collector *certificateCollector) tallyAggregation(certificate certs.Certificate, now time.Time, totals map[string]map[string]int, soon map[string]map[string]int) {
+	vaultID, pki := extractVaultIDAndPKI(certificate.ID)
+	key := buildAggregationKey(vaultID, pki)
+	status := collector.statusLabel(certificate, now)
+	if totals[key] == nil {
+		totals[key] = map[string]int{"valid": 0, "revoked": 0, "expired": 0}
+	}
+	totals[key][status] = totals[key][status] + 1
+	if status != "valid" || certificate.ExpiresAt.IsZero() {
+		return
+	}
+	daysRemaining := daysUntil(certificate.ExpiresAt.UTC(), now.UTC())
+	if daysRemaining < 0 {
+		return
+	}
+	if soon[key] == nil {
+		soon[key] = map[string]int{"warning": 0, "critical": 0}
+	}
+	if collector.thresholds.Warning > 0 && daysRemaining <= collector.thresholds.Warning {
+		soon[key]["warning"] = soon[key]["warning"] + 1
+	}
+	if collector.thresholds.Critical > 0 && daysRemaining <= collector.thresholds.Critical {
+		soon[key]["critical"] = soon[key]["critical"] + 1
+	}
+}
+
 func (collector *certificateCollector) emitCertificateAggregationMetrics(ch chan<- prometheus.Metric, certificates []certs.Certificate, now time.Time) {
 	totals := make(map[string]map[string]int)
 	soon := make(map[string]map[string]int)
 	for _, certificate := range certificates {
-		vaultID, pki := extractVaultIDAndPKI(certificate.ID)
-		key := buildAggregationKey(vaultID, pki)
-		status := collector.statusLabel(certificate, now)
-		if _, ok := totals[key]; !ok {
-			totals[key] = map[string]int{"valid": 0, "revoked": 0, "expired": 0}
-		}
-		totals[key][status] = totals[key][status] + 1
-		if status != "valid" {
-			continue
-		}
-		if certificate.ExpiresAt.IsZero() {
-			continue
-		}
-		daysRemaining := daysUntil(certificate.ExpiresAt.UTC(), now.UTC())
-		if daysRemaining < 0 {
-			continue
-		}
-		if _, ok := soon[key]; !ok {
-			soon[key] = map[string]int{"warning": 0, "critical": 0}
-		}
-		if collector.thresholds.Warning > 0 && daysRemaining <= collector.thresholds.Warning {
-			soon[key]["warning"] = soon[key]["warning"] + 1
-		}
-		if collector.thresholds.Critical > 0 && daysRemaining <= collector.thresholds.Critical {
-			soon[key]["critical"] = soon[key]["critical"] + 1
-		}
+		collector.tallyAggregation(certificate, now, totals, soon)
 	}
 
 	keys := make([]string, 0, len(totals))
@@ -498,44 +557,17 @@ func (collector *certificateCollector) emitEnhancedMetrics(ch chan<- prometheus.
 	buckets := make(map[string]map[string]map[string]int)
 	for _, certificate := range certificates {
 		vaultID, pki := extractVaultIDAndPKI(certificate.ID)
-		if _, ok := buckets[vaultID]; !ok {
-			buckets[vaultID] = make(map[string]map[string]int)
-		}
-		if _, ok := buckets[vaultID][pki]; !ok {
-			buckets[vaultID][pki] = zeroExpiryBuckets()
-		}
 		if certificate.Revoked {
-			buckets[vaultID][pki]["revoked"]++
+			incCounter3(buckets, vaultID, pki, "revoked")
 			continue
 		}
 		if certificate.ExpiresAt.IsZero() {
 			continue
 		}
-		daysRemaining := daysUntil(certificate.ExpiresAt.UTC(), now.UTC())
-		if daysRemaining < 0 {
-			buckets[vaultID][pki]["expired"]++
-		} else if daysRemaining <= 7 {
-			buckets[vaultID][pki]["0-7d"]++
-		} else if daysRemaining <= 30 {
-			buckets[vaultID][pki]["7-30d"]++
-		} else if daysRemaining <= 90 {
-			buckets[vaultID][pki]["30-90d"]++
-		} else {
-			buckets[vaultID][pki]["90d+"]++
-		}
+		incCounter3(buckets, vaultID, pki, expiryBucketLabel(daysUntil(certificate.ExpiresAt.UTC(), now.UTC())))
 	}
-	vaultIDs := make([]string, 0, len(buckets))
-	for vaultID := range buckets {
-		vaultIDs = append(vaultIDs, vaultID)
-	}
-	sort.Strings(vaultIDs)
-	for _, vaultID := range vaultIDs {
-		pkis := make([]string, 0, len(buckets[vaultID]))
-		for pki := range buckets[vaultID] {
-			pkis = append(pkis, pki)
-		}
-		sort.Strings(pkis)
-		for _, pki := range pkis {
+	for _, vaultID := range sortedStringKeys(buckets) {
+		for _, pki := range sortedStringKeys(buckets[vaultID]) {
 			for _, bucket := range expiryBucketNames {
 				ch <- prometheus.MustNewConstMetric(expiryBucketDesc, prometheus.GaugeValue, float64(buckets[vaultID][pki][bucket]), vaultID, pki, bucket)
 			}

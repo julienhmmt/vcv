@@ -14,15 +14,6 @@ import (
 // ageBucketNames lists the certificate age buckets in emission order.
 var ageBucketNames = []string{"0-30d", "30-90d", "90-180d", "180-365d", "1y+"}
 
-// zeroAgeBuckets returns a fresh counter map with every age bucket at 0.
-func zeroAgeBuckets() map[string]int {
-	counts := make(map[string]int, len(ageBucketNames))
-	for _, bucket := range ageBucketNames {
-		counts[bucket] = 0
-	}
-	return counts
-}
-
 // sortedStringKeys returns sorted keys from a string-keyed map.
 func sortedStringKeys[V any](m map[string]V) []string {
 	keys := make([]string, 0, len(m))
@@ -42,19 +33,26 @@ func matchesPattern(pattern, value string) bool {
 	return matched
 }
 
+// sanBucketLabel classifies a SAN count into a SAN bucket name.
+func sanBucketLabel(sanCount int) string {
+	switch {
+	case sanCount == 0:
+		return "0"
+	case sanCount <= 5:
+		return "1-5"
+	case sanCount <= 10:
+		return "6-10"
+	default:
+		return "11+"
+	}
+}
+
 // emitIssuerMetrics emits metrics grouped by certificate issuer CN.
 func (collector *certificateCollector) emitIssuerMetrics(ch chan<- prometheus.Metric, certificates []certs.Certificate) {
 	issuerCounts := make(map[string]map[string]map[string]int)
 	for _, certificate := range certificates {
 		vaultID, pki := extractVaultIDAndPKI(certificate.ID)
-		issuerCN := extractIssuerCN(certificate)
-		if _, ok := issuerCounts[vaultID]; !ok {
-			issuerCounts[vaultID] = make(map[string]map[string]int)
-		}
-		if _, ok := issuerCounts[vaultID][pki]; !ok {
-			issuerCounts[vaultID][pki] = make(map[string]int)
-		}
-		issuerCounts[vaultID][pki][issuerCN]++
+		incCounter3(issuerCounts, vaultID, pki, extractIssuerCN(certificate))
 	}
 	for _, vaultID := range sortedStringKeys(issuerCounts) {
 		for _, pki := range sortedStringKeys(issuerCounts[vaultID]) {
@@ -72,19 +70,9 @@ func (collector *certificateCollector) emitKeyTypeMetrics(ch chan<- prometheus.M
 	for _, certificate := range certificates {
 		vaultID, pki := extractVaultIDAndPKI(certificate.ID)
 		algorithm, keySize := extractKeyInfo(certificate)
-		if _, ok := keyTypeCounts[vaultID]; !ok {
-			keyTypeCounts[vaultID] = make(map[string]map[string]int)
-		}
-		if _, ok := keyTypeCounts[vaultID][pki]; !ok {
-			keyTypeCounts[vaultID][pki] = make(map[string]int)
-		}
-		keyTypeLabel := algorithm + "_" + keySize
-		keyTypeCounts[vaultID][pki][keyTypeLabel]++
+		incCounter3(keyTypeCounts, vaultID, pki, algorithm+"_"+keySize)
 		if isWeakKey(algorithm, keySize) {
-			if _, ok := weakKeyCounts[vaultID]; !ok {
-				weakKeyCounts[vaultID] = make(map[string]int)
-			}
-			weakKeyCounts[vaultID][pki]++
+			incCounter2(weakKeyCounts, vaultID, pki)
 		}
 	}
 	for _, vaultID := range sortedStringKeys(keyTypeCounts) {
@@ -99,11 +87,7 @@ func (collector *certificateCollector) emitKeyTypeMetrics(ch chan<- prometheus.M
 				}
 				ch <- prometheus.MustNewConstMetric(certsByKeyTypeDesc, prometheus.GaugeValue, float64(keyTypeCounts[vaultID][pki][keyType]), vaultID, pki, algorithm, keySize)
 			}
-			weakCount := 0
-			if counts, ok := weakKeyCounts[vaultID]; ok {
-				weakCount = counts[pki]
-			}
-			ch <- prometheus.MustNewConstMetric(weakKeysDesc, prometheus.GaugeValue, float64(weakCount), vaultID, pki)
+			ch <- prometheus.MustNewConstMetric(weakKeysDesc, prometheus.GaugeValue, float64(counter2At(weakKeyCounts, vaultID, pki)), vaultID, pki)
 		}
 	}
 }
@@ -115,35 +99,14 @@ func (collector *certificateCollector) emitSANMetrics(ch chan<- prometheus.Metri
 	for _, certificate := range certificates {
 		vaultID, pki := extractVaultIDAndPKI(certificate.ID)
 		sanCount := len(certificate.Sans)
-		if _, ok := sanCounts[vaultID]; !ok {
-			sanCounts[vaultID] = make(map[string]int)
-		}
 		if sanCount > 0 {
-			sanCounts[vaultID][pki]++
+			incCounter2(sanCounts, vaultID, pki)
 		}
-		if _, ok := sanBuckets[vaultID]; !ok {
-			sanBuckets[vaultID] = make(map[string]map[string]int)
-		}
-		if _, ok := sanBuckets[vaultID][pki]; !ok {
-			sanBuckets[vaultID][pki] = map[string]int{"0": 0, "1-5": 0, "6-10": 0, "11+": 0}
-		}
-		if sanCount == 0 {
-			sanBuckets[vaultID][pki]["0"]++
-		} else if sanCount <= 5 {
-			sanBuckets[vaultID][pki]["1-5"]++
-		} else if sanCount <= 10 {
-			sanBuckets[vaultID][pki]["6-10"]++
-		} else {
-			sanBuckets[vaultID][pki]["11+"]++
-		}
+		incCounter3(sanBuckets, vaultID, pki, sanBucketLabel(sanCount))
 	}
 	for _, vaultID := range sortedStringKeys(sanBuckets) {
 		for _, pki := range sortedStringKeys(sanBuckets[vaultID]) {
-			count := 0
-			if counts, ok := sanCounts[vaultID]; ok {
-				count = counts[pki]
-			}
-			ch <- prometheus.MustNewConstMetric(certsWithSansDesc, prometheus.GaugeValue, float64(count), vaultID, pki)
+			ch <- prometheus.MustNewConstMetric(certsWithSansDesc, prometheus.GaugeValue, float64(counter2At(sanCounts, vaultID, pki)), vaultID, pki)
 			for _, bucket := range []string{"0", "1-5", "6-10", "11+"} {
 				ch <- prometheus.MustNewConstMetric(sanCountBucketDesc, prometheus.GaugeValue, float64(sanBuckets[vaultID][pki][bucket]), vaultID, pki, bucket)
 			}
@@ -163,23 +126,7 @@ func (collector *certificateCollector) emitAgeMetrics(ch chan<- prometheus.Metri
 		if ageDays < 0 {
 			continue
 		}
-		if _, ok := ageBuckets[vaultID]; !ok {
-			ageBuckets[vaultID] = make(map[string]map[string]int)
-		}
-		if _, ok := ageBuckets[vaultID][pki]; !ok {
-			ageBuckets[vaultID][pki] = zeroAgeBuckets()
-		}
-		if ageDays <= 30 {
-			ageBuckets[vaultID][pki]["0-30d"]++
-		} else if ageDays <= 90 {
-			ageBuckets[vaultID][pki]["30-90d"]++
-		} else if ageDays <= 180 {
-			ageBuckets[vaultID][pki]["90-180d"]++
-		} else if ageDays <= 365 {
-			ageBuckets[vaultID][pki]["180-365d"]++
-		} else {
-			ageBuckets[vaultID][pki]["1y+"]++
-		}
+		incCounter3(ageBuckets, vaultID, pki, ageBucketLabel(ageDays))
 	}
 	for _, vaultID := range sortedStringKeys(ageBuckets) {
 		for _, pki := range sortedStringKeys(ageBuckets[vaultID]) {
@@ -187,6 +134,22 @@ func (collector *certificateCollector) emitAgeMetrics(ch chan<- prometheus.Metri
 				ch <- prometheus.MustNewConstMetric(ageBucketDesc, prometheus.GaugeValue, float64(ageBuckets[vaultID][pki][bucket]), vaultID, pki, bucket)
 			}
 		}
+	}
+}
+
+// ageBucketLabel classifies a certificate age in days into an age bucket name.
+func ageBucketLabel(ageDays int) string {
+	switch {
+	case ageDays <= 30:
+		return "0-30d"
+	case ageDays <= 90:
+		return "30-90d"
+	case ageDays <= 180:
+		return "90-180d"
+	case ageDays <= 365:
+		return "180-365d"
+	default:
+		return "1y+"
 	}
 }
 
@@ -205,69 +168,42 @@ func (collector *certificateCollector) emitRenewalMetrics(ch chan<- prometheus.M
 			continue
 		}
 		if ageDuration <= 24*time.Hour {
-			if _, ok := issued24h[vaultID]; !ok {
-				issued24h[vaultID] = make(map[string]int)
-			}
-			issued24h[vaultID][pki]++
+			incCounter2(issued24h, vaultID, pki)
 		}
 		if ageDuration <= 7*24*time.Hour {
-			if _, ok := issued7d[vaultID]; !ok {
-				issued7d[vaultID] = make(map[string]int)
-			}
-			issued7d[vaultID][pki]++
+			incCounter2(issued7d, vaultID, pki)
 		}
 		if ageDuration <= 30*24*time.Hour {
-			if _, ok := issued30d[vaultID]; !ok {
-				issued30d[vaultID] = make(map[string]int)
-			}
-			issued30d[vaultID][pki]++
+			incCounter2(issued30d, vaultID, pki)
 		}
 	}
-	allVaultIDs := make(map[string]bool)
-	for vaultID := range issued24h {
-		allVaultIDs[vaultID] = true
-	}
-	for vaultID := range issued7d {
-		allVaultIDs[vaultID] = true
-	}
-	for vaultID := range issued30d {
-		allVaultIDs[vaultID] = true
-	}
-	for _, vaultID := range sortedStringKeys(allVaultIDs) {
-		allPKIs := make(map[string]bool)
-		if pkis, ok := issued24h[vaultID]; ok {
-			for pki := range pkis {
-				allPKIs[pki] = true
-			}
-		}
-		if pkis, ok := issued7d[vaultID]; ok {
-			for pki := range pkis {
-				allPKIs[pki] = true
-			}
-		}
-		if pkis, ok := issued30d[vaultID]; ok {
-			for pki := range pkis {
-				allPKIs[pki] = true
-			}
-		}
-		for _, pki := range sortedStringKeys(allPKIs) {
-			count24h := 0
-			if counts, ok := issued24h[vaultID]; ok {
-				count24h = counts[pki]
-			}
-			count7d := 0
-			if counts, ok := issued7d[vaultID]; ok {
-				count7d = counts[pki]
-			}
-			count30d := 0
-			if counts, ok := issued30d[vaultID]; ok {
-				count30d = counts[pki]
-			}
-			ch <- prometheus.MustNewConstMetric(issuedLast24hDesc, prometheus.GaugeValue, float64(count24h), vaultID, pki)
-			ch <- prometheus.MustNewConstMetric(issuedLast7dDesc, prometheus.GaugeValue, float64(count7d), vaultID, pki)
-			ch <- prometheus.MustNewConstMetric(issuedLast30dDesc, prometheus.GaugeValue, float64(count30d), vaultID, pki)
+	for _, vaultID := range unionKeys(issued24h, issued7d, issued30d) {
+		for _, pki := range unionKeys(issued24h[vaultID], issued7d[vaultID], issued30d[vaultID]) {
+			ch <- prometheus.MustNewConstMetric(issuedLast24hDesc, prometheus.GaugeValue, float64(counter2At(issued24h, vaultID, pki)), vaultID, pki)
+			ch <- prometheus.MustNewConstMetric(issuedLast7dDesc, prometheus.GaugeValue, float64(counter2At(issued7d, vaultID, pki)), vaultID, pki)
+			ch <- prometheus.MustNewConstMetric(issuedLast30dDesc, prometheus.GaugeValue, float64(counter2At(issued30d, vaultID, pki)), vaultID, pki)
 		}
 	}
+}
+
+// isPinnedCertificate reports whether the certificate matches any pinned
+// pattern by common name, ID, or SAN.
+func isPinnedCertificate(pinnedPatterns map[string]bool, certificate certs.Certificate) bool {
+	values := []string{
+		strings.ToLower(strings.TrimSpace(certificate.CommonName)),
+		strings.ToLower(strings.TrimSpace(certificate.ID)),
+	}
+	for _, san := range certificate.Sans {
+		values = append(values, strings.ToLower(strings.TrimSpace(san)))
+	}
+	for pattern := range pinnedPatterns {
+		for _, value := range values {
+			if matchesPattern(pattern, value) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // emitPinnedCertificateMetrics emits per-certificate metrics only for pinned certificates.
@@ -277,37 +213,10 @@ func (collector *certificateCollector) emitPinnedCertificateMetrics(ch chan<- pr
 	}
 	pinnedMap := make(map[string]bool)
 	for _, pinned := range collector.pinnedCertificates {
-		normalized := strings.ToLower(strings.TrimSpace(pinned))
-		pinnedMap[normalized] = true
+		pinnedMap[strings.ToLower(strings.TrimSpace(pinned))] = true
 	}
 	for _, certificate := range certificates {
-		normalizedCN := strings.ToLower(strings.TrimSpace(certificate.CommonName))
-		normalizedID := strings.ToLower(strings.TrimSpace(certificate.ID))
-		isPinned := false
-		for pattern := range pinnedMap {
-			if matchesPattern(pattern, normalizedCN) || matchesPattern(pattern, normalizedID) {
-				isPinned = true
-				break
-			}
-		}
-		if !isPinned {
-			for _, san := range certificate.Sans {
-				normalizedSAN := strings.ToLower(strings.TrimSpace(san))
-				for pattern := range pinnedMap {
-					if matchesPattern(pattern, normalizedSAN) {
-						isPinned = true
-						break
-					}
-				}
-				if isPinned {
-					break
-				}
-			}
-		}
-		if !isPinned {
-			continue
-		}
-		if certificate.ExpiresAt.IsZero() {
+		if !isPinnedCertificate(pinnedMap, certificate) || certificate.ExpiresAt.IsZero() {
 			continue
 		}
 		vaultID, pki := extractVaultIDAndPKI(certificate.ID)
