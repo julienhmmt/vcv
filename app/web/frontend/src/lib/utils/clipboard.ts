@@ -29,12 +29,13 @@ function legacyCopy(text: string): boolean {
   textarea.style.opacity = '0'
   document.body.appendChild(textarea)
   textarea.select()
-  let ok = false
+  let ok: boolean
   try {
+    // NOSONAR: intentional legacy fallback for insecure (http) contexts.
     ok = document.execCommand('copy')
   } catch {
     ok = false
   }
-  document.body.removeChild(textarea)
+  textarea.remove()
   return ok
 }
