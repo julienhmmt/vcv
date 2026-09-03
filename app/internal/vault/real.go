@@ -24,6 +24,10 @@ import (
 
 const cacheVersion = "v2"
 
+// errParseCertificate is the format used when a certificate PEM cannot be
+// parsed for a given serial and mount.
+const errParseCertificate = "failed to parse certificate %s in mount %s: %w"
+
 type realClient struct {
 	client   *api.Client
 	mounts   []string
@@ -356,7 +360,7 @@ func (c *realClient) readCertificateFromMount(ctx context.Context, mount, serial
 
 	x509Certificate, parseError := x509.ParseCertificate(block.Bytes)
 	if parseError != nil {
-		return certs.Certificate{}, fmt.Errorf("failed to parse certificate %s in mount %s: %w", serial, mount, parseError)
+		return certs.Certificate{}, fmt.Errorf(errParseCertificate, serial, mount, parseError)
 	}
 
 	subjectAlternativeNames := buildSANs(x509Certificate)
@@ -376,6 +380,55 @@ func (c *realClient) readCertificateFromMount(ctx context.Context, mount, serial
 		KeyAlgorithm: algo,
 		KeySize:      keySize,
 	}, nil
+}
+
+// fetchCertificatePEM reads the certificate field for a serial from Vault
+// and returns the PEM payload.
+func (c *realClient) fetchCertificatePEM(ctx context.Context, mount string, serial string) (string, error) {
+	path := fmt.Sprintf("%s/cert/%s", mount, serial)
+	secret, err := c.client.Logical().ReadWithContext(ctx, path)
+	if err != nil {
+		logger.Get().Error().
+			Str("vault_addr", c.addr).
+			Str("mount", mount).
+			Str("serial", serial).
+			Err(err).
+			Msg("failed to read certificate from vault")
+		return "", fmt.Errorf("failed to read certificate %s from mount %s: %w", serial, mount, err)
+	}
+	if secret == nil || secret.Data == nil {
+		return "", fmt.Errorf("certificate %s not found in mount %s", serial, mount)
+	}
+	certificatePEM, ok := secret.Data["certificate"].(string)
+	if !ok || certificatePEM == "" {
+		return "", fmt.Errorf("certificate field missing for %s in mount %s", serial, mount)
+	}
+	block, _ := pem.Decode([]byte(certificatePEM))
+	if block == nil {
+		return "", fmt.Errorf("failed to decode PEM for certificate %s in mount %s", serial, mount)
+	}
+	if _, parseError := x509.ParseCertificate(block.Bytes); parseError != nil {
+		return "", fmt.Errorf(errParseCertificate, serial, mount, parseError)
+	}
+	return certificatePEM, nil
+}
+
+// extKeyUsageLabels maps extended key usages to human-readable labels.
+func extKeyUsageLabels(certificate *x509.Certificate) []string {
+	var usage []string
+	for _, extUsage := range certificate.ExtKeyUsage {
+		switch extUsage {
+		case x509.ExtKeyUsageServerAuth:
+			usage = append(usage, "Server Auth")
+		case x509.ExtKeyUsageClientAuth:
+			usage = append(usage, "Client Auth")
+		case x509.ExtKeyUsageCodeSigning:
+			usage = append(usage, "Code Signing")
+		case x509.ExtKeyUsageEmailProtection:
+			usage = append(usage, "Email Protection")
+		}
+	}
+	return usage
 }
 
 func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber string) (certs.DetailedCertificate, error) {
@@ -406,34 +459,15 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 		}
 	}
 
-	path := fmt.Sprintf("%s/cert/%s", mount, serial)
-	secret, err := c.client.Logical().ReadWithContext(ctx, path)
+	certificatePEM, err := c.fetchCertificatePEM(ctx, mount, serial)
 	if err != nil {
-		logger.Get().Error().
-			Str("vault_addr", c.addr).
-			Str("mount", mount).
-			Str("serial", serial).
-			Err(err).
-			Msg("failed to read certificate from vault")
-		return certs.DetailedCertificate{}, fmt.Errorf("failed to read certificate %s from mount %s: %w", serial, mount, err)
-	}
-	if secret == nil || secret.Data == nil {
-		return certs.DetailedCertificate{}, fmt.Errorf("certificate %s not found in mount %s", serial, mount)
-	}
-
-	certificatePEM, ok := secret.Data["certificate"].(string)
-	if !ok || certificatePEM == "" {
-		return certs.DetailedCertificate{}, fmt.Errorf("certificate field missing for %s in mount %s", serial, mount)
+		return certs.DetailedCertificate{}, err
 	}
 
 	block, _ := pem.Decode([]byte(certificatePEM))
-	if block == nil {
-		return certs.DetailedCertificate{}, fmt.Errorf("failed to decode PEM for certificate %s in mount %s", serial, mount)
-	}
-
 	x509Certificate, parseError := x509.ParseCertificate(block.Bytes)
 	if parseError != nil {
-		return certs.DetailedCertificate{}, fmt.Errorf("failed to parse certificate %s in mount %s: %w", serial, mount, parseError)
+		return certs.DetailedCertificate{}, fmt.Errorf(errParseCertificate, serial, mount, parseError)
 	}
 
 	// Calculate fingerprints
@@ -441,23 +475,7 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 	sha256Fingerprint := sha256.Sum256(x509Certificate.Raw)
 
 	subjectAlternativeNames := buildSANs(x509Certificate)
-
-	// Extract key usage
-	var usage []string
-	if len(x509Certificate.ExtKeyUsage) > 0 {
-		for _, extUsage := range x509Certificate.ExtKeyUsage {
-			switch extUsage {
-			case x509.ExtKeyUsageServerAuth:
-				usage = append(usage, "Server Auth")
-			case x509.ExtKeyUsageClientAuth:
-				usage = append(usage, "Client Auth")
-			case x509.ExtKeyUsageCodeSigning:
-				usage = append(usage, "Code Signing")
-			case x509.ExtKeyUsageEmailProtection:
-				usage = append(usage, "Email Protection")
-			}
-		}
-	}
+	usage := extKeyUsageLabels(x509Certificate)
 
 	// Get revoked status
 	revokedSet, err := c.fetchRevokedSerialsFromMount(ctx, mount)

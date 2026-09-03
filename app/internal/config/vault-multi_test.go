@@ -4,6 +4,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLoad_VaultsFromSettings(t *testing.T) {
@@ -207,29 +210,15 @@ func TestNormalizeVaultInstance(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := normalizeVaultInstance(tt.instance)
 			if tt.error {
-				if err == nil {
-					t.Fatalf("expected error but got none")
-				}
+				require.Error(t, err)
 				return
 			}
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if result.ID != tt.expected.ID {
-				t.Fatalf("expected ID %s, got %s", tt.expected.ID, result.ID)
-			}
-			if result.Address != tt.expected.Address {
-				t.Fatalf("expected Address %s, got %s", tt.expected.Address, result.Address)
-			}
-			if result.Token != tt.expected.Token {
-				t.Fatalf("expected Token %s, got %s", tt.expected.Token, result.Token)
-			}
-			if result.DisplayName != tt.expected.DisplayName {
-				t.Fatalf("expected DisplayName %s, got %s", tt.expected.DisplayName, result.DisplayName)
-			}
-			if result.TLSInsecure != tt.expected.TLSInsecure {
-				t.Fatalf("expected TLSInsecure %v, got %v", tt.expected.TLSInsecure, result.TLSInsecure)
-			}
+			require.NoError(t, err)
+			assert.Equal(t, tt.expected.ID, result.ID)
+			assert.Equal(t, tt.expected.Address, result.Address)
+			assert.Equal(t, tt.expected.Token, result.Token)
+			assert.Equal(t, tt.expected.DisplayName, result.DisplayName)
+			assert.Equal(t, tt.expected.TLSInsecure, result.TLSInsecure)
 		})
 	}
 }
