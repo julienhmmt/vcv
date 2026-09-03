@@ -43,6 +43,30 @@ func publicVaultPKIMounts(instance config.VaultInstance) []string {
 	return []string{}
 }
 
+// publicVaultResponses builds the visible vault list for the public config API.
+func publicVaultResponses(cfg config.Config, vaultRegistry *vault.Registry) []VaultConfigResponse {
+	allVaults := cfg.AllVaults
+	if len(allVaults) == 0 {
+		allVaults = cfg.Vaults
+	}
+	resp := make([]VaultConfigResponse, 0, len(allVaults))
+	for _, instance := range allVaults {
+		vaultID := instance.ID
+		if vaultID == "" {
+			continue
+		}
+		if vaultRegistry != nil && !vaultRegistry.IsEnabled(vaultID) {
+			continue
+		}
+		displayName := instance.DisplayName
+		if displayName == "" {
+			displayName = vaultID
+		}
+		resp = append(resp, VaultConfigResponse{ID: vaultID, DisplayName: displayName, PKIMounts: publicVaultPKIMounts(instance)})
+	}
+	return resp
+}
+
 // GetConfig returns the application configuration.
 func GetConfig(cfg config.Config, vaultRegistry *vault.Registry) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -59,26 +83,7 @@ func GetConfig(cfg config.Config, vaultRegistry *vault.Registry) http.HandlerFun
 		if resp.PKIMounts == nil {
 			resp.PKIMounts = []string{}
 		}
-		allVaults := cfg.AllVaults
-		if len(allVaults) == 0 {
-			allVaults = cfg.Vaults
-		}
-		resp.Vaults = make([]VaultConfigResponse, 0, len(allVaults))
-		for _, instance := range allVaults {
-			vaultID := instance.ID
-			if vaultID == "" {
-				continue
-			}
-			if vaultRegistry != nil && !vaultRegistry.IsEnabled(vaultID) {
-				continue
-			}
-			displayName := instance.DisplayName
-			if displayName == "" {
-				displayName = vaultID
-			}
-			pkiMounts := publicVaultPKIMounts(instance)
-			resp.Vaults = append(resp.Vaults, VaultConfigResponse{ID: vaultID, DisplayName: displayName, PKIMounts: pkiMounts})
-		}
+		resp.Vaults = publicVaultResponses(cfg, vaultRegistry)
 
 		w.Header().Set("Content-Type", "application/json")
 

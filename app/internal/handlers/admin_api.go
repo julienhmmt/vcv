@@ -149,40 +149,7 @@ func registerAdminAPIRoutes(
 			writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskSecrets(settings), VaultStatuses: statuses})
 		})
 
-		r.Put("/api/admin/settings", func(w http.ResponseWriter, req *http.Request) {
-			var incoming config.SettingsFile
-			if err := json.NewDecoder(req.Body).Decode(&incoming); err != nil {
-				writeJSONError(w, http.StatusBadRequest, "invalid settings payload")
-				return
-			}
-			current, err := store.load()
-			if err != nil {
-				writeJSONError(w, http.StatusInternalServerError, errLoadSettings)
-				return
-			}
-			merged := mergeAdminSettings(current, incoming)
-			if saveErr := store.save(merged); saveErr != nil {
-				status := http.StatusBadRequest
-				if !errors.Is(saveErr, vcverrors.ErrInvalidAddress) &&
-					!errors.Is(saveErr, vcverrors.ErrInvalidToken) &&
-					!errors.Is(saveErr, vcverrors.ErrInvalidThreshold) &&
-					!errors.Is(saveErr, vcverrors.ErrInvalidWebhookURL) &&
-					!errors.Is(saveErr, vcverrors.ErrVaultIDEmpty) &&
-					!errors.Is(saveErr, vcverrors.ErrDuplicateVaultID) {
-					status = http.StatusInternalServerError
-				}
-				writeJSONError(w, status, saveErr.Error())
-				return
-			}
-			refreshRegistry()
-			updated, err := store.load()
-			if err != nil {
-				writeJSONError(w, http.StatusInternalServerError, "failed to reload settings")
-				return
-			}
-			statuses := computeVaultStatuses(req.Context(), updated.Vaults, vaultStatusClients)
-			writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskSecrets(updated), VaultStatuses: statuses})
-		})
+		r.Put("/api/admin/settings", adminSettingsPut(store, vaultStatusClients, refreshRegistry))
 
 		r.Post("/api/admin/vault", func(w http.ResponseWriter, req *http.Request) {
 			key, err := newVaultKey()
@@ -203,43 +170,92 @@ func registerAdminAPIRoutes(
 			writeJSON(w, http.StatusOK, adminVaultAddedResponse{Key: key, Vault: vault})
 		})
 
-		r.Delete("/api/admin/vault/{id}", func(w http.ResponseWriter, req *http.Request) {
-			vaultID := strings.TrimSpace(chi.URLParam(req, "id"))
-			if vaultID == "" {
-				writeJSONError(w, http.StatusBadRequest, "vault id required")
-				return
-			}
-			settings, err := store.load()
-			if err != nil {
-				writeJSONError(w, http.StatusInternalServerError, errLoadSettings)
-				return
-			}
-			updatedVaults := make([]config.VaultInstance, 0, len(settings.Vaults))
-			removed := false
-			for _, vault := range settings.Vaults {
-				if strings.TrimSpace(vault.ID) == vaultID {
-					removed = true
-					continue
-				}
-				updatedVaults = append(updatedVaults, vault)
-			}
-			if !removed {
-				writeJSONError(w, http.StatusNotFound, "vault not found")
-				return
-			}
-			settings.Vaults = updatedVaults
-			if saveErr := store.save(settings); saveErr != nil {
-				requestID := middleware.GetRequestID(req.Context())
-				logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, saveErr).
-					Str("request_id", requestID).
-					Msg("failed to save settings after vault removal")
-				writeJSONError(w, http.StatusInternalServerError, "failed to save settings")
-				return
-			}
-			refreshRegistry()
-			w.WriteHeader(http.StatusNoContent)
-		})
+		r.Delete("/api/admin/vault/{id}", adminVaultDelete(store, refreshRegistry))
 	})
+}
+
+// adminSettingsPut returns the handler for PUT /api/admin/settings: it merges
+// the incoming settings over the stored ones (preserving secrets) and saves.
+func adminSettingsPut(store *adminSettingsStore, vaultStatusClients map[string]vault.Client, refreshRegistry func()) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		var incoming config.SettingsFile
+		if err := json.NewDecoder(req.Body).Decode(&incoming); err != nil {
+			writeJSONError(w, http.StatusBadRequest, "invalid settings payload")
+			return
+		}
+		current, err := store.load()
+		if err != nil {
+			writeJSONError(w, http.StatusInternalServerError, errLoadSettings)
+			return
+		}
+		merged := mergeAdminSettings(current, incoming)
+		if saveErr := store.save(merged); saveErr != nil {
+			writeJSONError(w, validationErrorStatus(saveErr), saveErr.Error())
+			return
+		}
+		refreshRegistry()
+		updated, err := store.load()
+		if err != nil {
+			writeJSONError(w, http.StatusInternalServerError, "failed to reload settings")
+			return
+		}
+		statuses := computeVaultStatuses(req.Context(), updated.Vaults, vaultStatusClients)
+		writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskSecrets(updated), VaultStatuses: statuses})
+	}
+}
+
+// validationErrorStatus maps settings validation errors to 400 and everything
+// else to 500.
+func validationErrorStatus(saveErr error) int {
+	if errors.Is(saveErr, vcverrors.ErrInvalidAddress) ||
+		errors.Is(saveErr, vcverrors.ErrInvalidToken) ||
+		errors.Is(saveErr, vcverrors.ErrInvalidThreshold) ||
+		errors.Is(saveErr, vcverrors.ErrInvalidWebhookURL) ||
+		errors.Is(saveErr, vcverrors.ErrVaultIDEmpty) ||
+		errors.Is(saveErr, vcverrors.ErrDuplicateVaultID) {
+		return http.StatusBadRequest
+	}
+	return http.StatusInternalServerError
+}
+
+// adminVaultDelete returns the handler for DELETE /api/admin/vault/{id}.
+func adminVaultDelete(store *adminSettingsStore, refreshRegistry func()) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
+		vaultID := strings.TrimSpace(chi.URLParam(req, "id"))
+		if vaultID == "" {
+			writeJSONError(w, http.StatusBadRequest, "vault id required")
+			return
+		}
+		settings, err := store.load()
+		if err != nil {
+			writeJSONError(w, http.StatusInternalServerError, errLoadSettings)
+			return
+		}
+		updatedVaults := make([]config.VaultInstance, 0, len(settings.Vaults))
+		removed := false
+		for _, vault := range settings.Vaults {
+			if strings.TrimSpace(vault.ID) == vaultID {
+				removed = true
+				continue
+			}
+			updatedVaults = append(updatedVaults, vault)
+		}
+		if !removed {
+			writeJSONError(w, http.StatusNotFound, "vault not found")
+			return
+		}
+		settings.Vaults = updatedVaults
+		if saveErr := store.save(settings); saveErr != nil {
+			requestID := middleware.GetRequestID(req.Context())
+			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, saveErr).
+				Str("request_id", requestID).
+				Msg("failed to save settings after vault removal")
+			writeJSONError(w, http.StatusInternalServerError, "failed to save settings")
+			return
+		}
+		refreshRegistry()
+		w.WriteHeader(http.StatusNoContent)
+	}
 }
 
 func mergeAdminSettings(current, incoming config.SettingsFile) config.SettingsFile {
@@ -300,6 +316,31 @@ func isBlankOrMaskedSecret(token string) bool {
 	return false
 }
 
+// restoreVaultToken preserves the stored token when the incoming one is
+// blank or masked (vaults are keyed by OriginalID, falling back to ID).
+func restoreVaultToken(v *config.VaultInstance, tokens map[string]string) {
+	if !isBlankOrMaskedSecret(v.Token) {
+		return
+	}
+	lookupKey := v.OriginalID
+	if lookupKey == "" {
+		lookupKey = v.ID
+	}
+	if prior, ok := tokens[lookupKey]; ok {
+		v.Token = prior
+	}
+}
+
+// normalizePKIMounts keeps the PKIMount and PKIMounts fields consistent.
+func normalizePKIMounts(v *config.VaultInstance) {
+	if len(v.PKIMounts) == 0 && strings.TrimSpace(v.PKIMount) != "" {
+		v.PKIMounts = []string{strings.TrimSpace(v.PKIMount)}
+	}
+	if strings.TrimSpace(v.PKIMount) == "" && len(v.PKIMounts) > 0 {
+		v.PKIMount = v.PKIMounts[0]
+	}
+}
+
 func mergeVaultTokens(incoming, existing []config.VaultInstance) []config.VaultInstance {
 	tokens := make(map[string]string, len(existing))
 	for _, v := range existing {
@@ -307,22 +348,9 @@ func mergeVaultTokens(incoming, existing []config.VaultInstance) []config.VaultI
 	}
 	merged := make([]config.VaultInstance, 0, len(incoming))
 	for _, v := range incoming {
-		if isBlankOrMaskedSecret(v.Token) {
-			lookupKey := v.OriginalID
-			if lookupKey == "" {
-				lookupKey = v.ID
-			}
-			if prior, ok := tokens[lookupKey]; ok {
-				v.Token = prior
-			}
-		}
+		restoreVaultToken(&v, tokens)
 		v.OriginalID = ""
-		if len(v.PKIMounts) == 0 && strings.TrimSpace(v.PKIMount) != "" {
-			v.PKIMounts = []string{strings.TrimSpace(v.PKIMount)}
-		}
-		if strings.TrimSpace(v.PKIMount) == "" && len(v.PKIMounts) > 0 {
-			v.PKIMount = v.PKIMounts[0]
-		}
+		normalizePKIMounts(&v)
 		merged = append(merged, v)
 	}
 	return merged

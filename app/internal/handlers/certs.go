@@ -41,7 +41,14 @@ func listCertificatesWithErrors(ctx context.Context, client vault.Client) ([]cer
 }
 
 func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
-	r.Get("/api/certs", func(w http.ResponseWriter, req *http.Request) {
+	r.Get("/api/certs", listCertificatesHandler(vaultClient))
+	r.Get("/api/certs/{id}/details", certDetailsHandler(vaultClient))
+	r.Get("/api/certs/{id}/ca", certCAHandler(vaultClient))
+	r.Get("/api/certs/{id}/pem", certPEMHandler(vaultClient))
+}
+
+func listCertificatesHandler(vaultClient vault.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
 		// Parse mount filter from query parameters
 		selectedMounts := parseMountsQueryParam(req.URL.Query())
 		requestID := middleware.GetRequestID(req.Context())
@@ -83,9 +90,11 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			Int("vault_errors", len(vaultErrors)).
 			Strs("mounts", selectedMounts).
 			Msg("certificates listed successfully")
-	})
+	}
+}
 
-	r.Get("/api/certs/{id}/details", func(w http.ResponseWriter, req *http.Request) {
+func certDetailsHandler(vaultClient vault.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
 		certificateID, statusCode, decodeErr := decodeCertificateIDParam(req)
 		if statusCode != http.StatusOK {
 			requestID := middleware.GetRequestID(req.Context())
@@ -124,9 +133,11 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			Str("request_id", requestID).
 			Str("serial_number", certificateID).
 			Msg("fetched certificate details")
-	})
+	}
+}
 
-	r.Get("/api/certs/{id}/ca", func(w http.ResponseWriter, req *http.Request) {
+func certCAHandler(vaultClient vault.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
 		certificateID, statusCode, decodeErr := decodeCertificateIDParam(req)
 		if statusCode != http.StatusOK {
 			requestID := middleware.GetRequestID(req.Context())
@@ -161,9 +172,11 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			Str("request_id", requestID).
 			Str("mount", vaultMountKey).
 			Msg("served intermediate CA")
-	})
+	}
+}
 
-	r.Get("/api/certs/{id}/pem", func(w http.ResponseWriter, req *http.Request) {
+func certPEMHandler(vaultClient vault.Client) http.HandlerFunc {
+	return func(w http.ResponseWriter, req *http.Request) {
 		certificateID, statusCode, decodeErr := decodeCertificateIDParam(req)
 		if statusCode != http.StatusOK {
 			requestID := middleware.GetRequestID(req.Context())
@@ -199,8 +212,7 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 			Str("request_id", requestID).
 			Str("serial_number", certificateID).
 			Msg("served certificate PEM")
-	})
-
+	}
 }
 
 func decodeCertificateIDParam(req *http.Request) (string, int, error) {
