@@ -13,7 +13,7 @@ Usage:
     python3 tools/sonar-query.py file <project-key> <file-path>
 
 Credentials are read from .sonar/admin-password (created by make sonar-bootstrap).
-Override the URL with SONAR_URL env var (default http://localhost:9000).
+Override the URL with SONAR_URL env var (default http://localhost:9001).
 """
 import argparse
 import json
@@ -24,7 +24,7 @@ import urllib.parse
 import base64
 
 
-SONAR_URL = os.environ.get("SONAR_URL", "http://localhost:9000")
+SONAR_URL = os.environ.get("SONAR_URL", "http://localhost:9001")
 PASS_FILE = ".sonar/admin-password"
 ADMIN_USER = "admin"
 

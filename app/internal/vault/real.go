@@ -24,6 +24,10 @@ import (
 
 const cacheVersion = "v2"
 
+// errParseCertificate is the format used when a certificate PEM cannot be
+// parsed for a given serial and mount.
+const errParseCertificate = "failed to parse certificate %s in mount %s: %w"
+
 type realClient struct {
 	client   *api.Client
 	mounts   []string
@@ -356,7 +360,7 @@ func (c *realClient) readCertificateFromMount(ctx context.Context, mount, serial
 
 	x509Certificate, parseError := x509.ParseCertificate(block.Bytes)
 	if parseError != nil {
-		return certs.Certificate{}, fmt.Errorf("failed to parse certificate %s in mount %s: %w", serial, mount, parseError)
+		return certs.Certificate{}, fmt.Errorf(errParseCertificate, serial, mount, parseError)
 	}
 
 	subjectAlternativeNames := buildSANs(x509Certificate)
@@ -404,7 +408,7 @@ func (c *realClient) fetchCertificatePEM(ctx context.Context, mount string, seri
 		return "", fmt.Errorf("failed to decode PEM for certificate %s in mount %s", serial, mount)
 	}
 	if _, parseError := x509.ParseCertificate(block.Bytes); parseError != nil {
-		return "", fmt.Errorf("failed to parse certificate %s in mount %s: %w", serial, mount, parseError)
+		return "", fmt.Errorf(errParseCertificate, serial, mount, parseError)
 	}
 	return certificatePEM, nil
 }
@@ -463,7 +467,7 @@ func (c *realClient) GetCertificateDetails(ctx context.Context, serialNumber str
 	block, _ := pem.Decode([]byte(certificatePEM))
 	x509Certificate, parseError := x509.ParseCertificate(block.Bytes)
 	if parseError != nil {
-		return certs.DetailedCertificate{}, fmt.Errorf("failed to parse certificate %s in mount %s: %w", serial, mount, parseError)
+		return certs.DetailedCertificate{}, fmt.Errorf(errParseCertificate, serial, mount, parseError)
 	}
 
 	// Calculate fingerprints
