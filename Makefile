@@ -65,7 +65,7 @@ test-dev:
 	cd app && VAULT_ADDR=http://localhost:8200 VAULT_TOKEN=root go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out
 
 go-update:
-	cd app && go get -u all && go mod tidy -v && go clean -cache -v
+	cd app && go get -u ./... && go mod tidy -v && go clean -cache -v
 
 go-lint:
 	cd app && go fmt ./... && go vet ./...
