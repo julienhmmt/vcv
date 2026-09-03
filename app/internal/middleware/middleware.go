@@ -100,6 +100,30 @@ func DefaultCORSConfig() CORSConfig {
 	}
 }
 
+// originAllowed reports whether origin is allowed by config, and whether the
+// match was a wildcard.
+func originAllowed(allowedOrigins []string, origin string) (bool, bool) {
+	for _, o := range allowedOrigins {
+		if o == "*" {
+			return true, true
+		}
+		if o == origin {
+			return true, false
+		}
+	}
+	return false, false
+}
+
+// handlePreflight writes the CORS preflight response headers.
+func handlePreflight(w http.ResponseWriter, config CORSConfig) {
+	w.Header().Set("Access-Control-Allow-Methods", strings.Join(config.AllowedMethods, ", "))
+	w.Header().Set("Access-Control-Allow-Headers", strings.Join(config.AllowedHeaders, ", "))
+	if config.MaxAge > 0 {
+		w.Header().Set("Access-Control-Max-Age", strconv.Itoa(config.MaxAge))
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 // CORS returns a CORS middleware with the given configuration.
 func CORS(config CORSConfig) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
@@ -109,19 +133,7 @@ func CORS(config CORSConfig) func(http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
-			allowed := false
-			wildcard := false
-			for _, o := range config.AllowedOrigins {
-				if o == "*" {
-					allowed = true
-					wildcard = true
-					break
-				}
-				if o == origin {
-					allowed = true
-					break
-				}
-			}
+			allowed, wildcard := originAllowed(config.AllowedOrigins, origin)
 			if !allowed {
 				next.ServeHTTP(w, r)
 				return
@@ -134,12 +146,7 @@ func CORS(config CORSConfig) func(http.Handler) http.Handler {
 				w.Header().Set("Access-Control-Allow-Credentials", "true")
 			}
 			if r.Method == http.MethodOptions {
-				w.Header().Set("Access-Control-Allow-Methods", strings.Join(config.AllowedMethods, ", "))
-				w.Header().Set("Access-Control-Allow-Headers", strings.Join(config.AllowedHeaders, ", "))
-				if config.MaxAge > 0 {
-					w.Header().Set("Access-Control-Max-Age", strconv.Itoa(config.MaxAge))
-				}
-				w.WriteHeader(http.StatusNoContent)
+				handlePreflight(w, config)
 				return
 			}
 			next.ServeHTTP(w, r)
@@ -209,6 +216,46 @@ func CSRFProtection(next http.Handler) http.Handler {
 	return CSRFProtectionWithTrust(false)(next)
 }
 
+// verifyUnsafeOrigin validates Origin/Referer headers for unsafe methods and
+// writes a 403 when the request must be rejected. Returns true when the
+// request may proceed.
+func verifyUnsafeOrigin(w http.ResponseWriter, r *http.Request, trustProxy bool) bool {
+	fetchSite := strings.ToLower(strings.TrimSpace(r.Header.Get("Sec-Fetch-Site")))
+	// Only block cross-site requests; allow same-site and same-origin.
+	// This is necessary for reverse proxy deployments where the browser
+	// may categorize requests as same-site rather than same-origin.
+	if fetchSite == "cross-site" {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return false
+	}
+	if origin := strings.TrimSpace(r.Header.Get("Origin")); origin != "" {
+		if sameOrigin(origin, targetOrigin(r, trustProxy)) {
+			return true
+		}
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return false
+	}
+	referer := strings.TrimSpace(r.Header.Get("Referer"))
+	if referer != "" {
+		parsed, err := url.Parse(referer)
+		if err == nil {
+			refererOrigin := parsed.Scheme + "://" + parsed.Host
+			if sameOrigin(refererOrigin, targetOrigin(r, trustProxy)) {
+				return true
+			}
+		}
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return false
+	}
+	// Cookie-bearing unsafe methods without Origin/Referer are likely
+	// browser session CSRF; allow only cookieless non-browser clients.
+	if hasCookies(r) {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return false
+	}
+	return true
+}
+
 // CSRFProtectionWithTrust returns CSRF middleware. When trustProxy is true,
 // target origin prefers X-Forwarded-Host / X-Forwarded-Proto (for reverse proxies
 // that overwrite those headers). When false, only r.Host and TLS/http are used.
@@ -220,40 +267,7 @@ func CSRFProtectionWithTrust(trustProxy bool) func(http.Handler) http.Handler {
 				next.ServeHTTP(w, r)
 				return
 			}
-			fetchSite := strings.ToLower(strings.TrimSpace(r.Header.Get("Sec-Fetch-Site")))
-			// Only block cross-site requests; allow same-site and same-origin.
-			// This is necessary for reverse proxy deployments where the browser
-			// may categorize requests as same-site rather than same-origin.
-			if fetchSite == "cross-site" {
-				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-				return
-			}
-			origin := strings.TrimSpace(r.Header.Get("Origin"))
-			if origin != "" {
-				if sameOrigin(origin, targetOrigin(r, trustProxy)) {
-					next.ServeHTTP(w, r)
-					return
-				}
-				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-				return
-			}
-			referer := strings.TrimSpace(r.Header.Get("Referer"))
-			if referer != "" {
-				parsed, err := url.Parse(referer)
-				if err == nil {
-					refererOrigin := parsed.Scheme + "://" + parsed.Host
-					if sameOrigin(refererOrigin, targetOrigin(r, trustProxy)) {
-						next.ServeHTTP(w, r)
-						return
-					}
-				}
-				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
-				return
-			}
-			// Cookie-bearing unsafe methods without Origin/Referer are likely
-			// browser session CSRF; allow only cookieless non-browser clients.
-			if hasCookies(r) {
-				http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+			if !verifyUnsafeOrigin(w, r, trustProxy) {
 				return
 			}
 			next.ServeHTTP(w, r)

@@ -4,6 +4,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLoadDefaults(t *testing.T) {
@@ -106,49 +109,21 @@ func TestLoadFromSettingsFile(t *testing.T) {
 	}
 
 	cfg, err := Load()
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.NoError(t, err)
 
-	if cfg.Env != EnvProd {
-		t.Fatalf("expected prod env, got %s", cfg.Env)
-	}
-	if cfg.Port != "1234" {
-		t.Fatalf("expected port 1234, got %s", cfg.Port)
-	}
-	if cfg.LogLevel != "warn" {
-		t.Fatalf("expected log level warn, got %s", cfg.LogLevel)
-	}
-	if cfg.LogFormat != "json" {
-		t.Fatalf("expected log format json, got %s", cfg.LogFormat)
-	}
-	if len(cfg.CORS.AllowedOrigins) != 1 || cfg.CORS.AllowedOrigins[0] != "http://example.com" {
-		t.Fatalf("expected CORS origin http://example.com, got %v", cfg.CORS.AllowedOrigins)
-	}
-	if !cfg.CORS.AllowCredentials {
-		t.Fatalf("expected CORS allow credentials true, got %v", cfg.CORS.AllowCredentials)
-	}
-	if len(cfg.Vaults) != 1 {
-		t.Fatalf("expected 1 vault, got %d", len(cfg.Vaults))
-	}
-	if cfg.Vaults[0].ID != "test-vault" {
-		t.Fatalf("expected vault ID test-vault, got %s", cfg.Vaults[0].ID)
-	}
-	if cfg.ExpirationThresholds.Critical != 14 {
-		t.Fatalf("expected critical threshold 14, got %d", cfg.ExpirationThresholds.Critical)
-	}
-	if cfg.ExpirationThresholds.Warning != 60 {
-		t.Fatalf("expected warning threshold 60, got %d", cfg.ExpirationThresholds.Warning)
-	}
-	if !cfg.Metrics.PerCertificate {
-		t.Fatalf("expected per certificate metrics true, got %v", cfg.Metrics.PerCertificate)
-	}
-	if cfg.Metrics.EnhancedMetrics {
-		t.Fatalf("expected enhanced metrics false, got %v", cfg.Metrics.EnhancedMetrics)
-	}
-	if cfg.TrustProxy {
-		t.Fatalf("expected TrustProxy false when omitted, got true")
-	}
+	assert.Equal(t, EnvProd, cfg.Env)
+	assert.Equal(t, "1234", cfg.Port)
+	assert.Equal(t, "warn", cfg.LogLevel)
+	assert.Equal(t, "json", cfg.LogFormat)
+	assert.Equal(t, []string{"http://example.com"}, cfg.CORS.AllowedOrigins)
+	assert.True(t, cfg.CORS.AllowCredentials)
+	require.Len(t, cfg.Vaults, 1)
+	assert.Equal(t, "test-vault", cfg.Vaults[0].ID)
+	assert.Equal(t, 14, cfg.ExpirationThresholds.Critical)
+	assert.Equal(t, 60, cfg.ExpirationThresholds.Warning)
+	assert.True(t, cfg.Metrics.PerCertificate)
+	assert.False(t, cfg.Metrics.EnhancedMetrics)
+	assert.False(t, cfg.TrustProxy)
 }
 
 func TestLoad_TrustProxyTrue(t *testing.T) {

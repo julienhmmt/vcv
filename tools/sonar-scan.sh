@@ -11,7 +11,7 @@
 set -u
 
 TOKEN_FILE=".sonar/token"
-SONAR_URL="http://localhost:9000"
+SONAR_URL="http://localhost:9001"
 PROPERTIES_DIR="sonar-projects"
 
 # Map short names to properties files.

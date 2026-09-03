@@ -11,7 +11,7 @@
 
 set -u
 
-SONAR_URL="http://localhost:9000"
+SONAR_URL="http://localhost:9001"
 ADMIN_USER="admin"
 DEFAULT_PASS="admin"
 TOKEN_NAME="vcv-local"

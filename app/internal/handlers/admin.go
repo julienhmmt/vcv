@@ -302,6 +302,37 @@ func shouldFallbackToDirectWrite(err error) bool {
 	return false
 }
 
+// validateVaultInstance validates one vault entry and normalizes its PKI
+// mount fields. seen tracks duplicate IDs across the whole settings file.
+func validateVaultInstance(vault config.VaultInstance, seen map[string]struct{}) (config.VaultInstance, error) {
+	id := strings.TrimSpace(vault.ID)
+	address := strings.TrimSpace(vault.Address)
+	token := strings.TrimSpace(vault.Token)
+	if id == "" {
+		return vault, vcverrors.ErrVaultIDEmpty
+	}
+	if _, ok := seen[id]; ok {
+		return vault, vcverrors.ErrDuplicateVaultID
+	}
+	seen[id] = struct{}{}
+	if address == "" {
+		return vault, errors.New("vault address is empty")
+	}
+	if _, err := url.ParseRequestURI(address); err != nil {
+		return vault, vcverrors.ErrInvalidAddress
+	}
+	if token == "" {
+		return vault, vcverrors.ErrInvalidToken
+	}
+	if len(vault.PKIMounts) == 0 {
+		if strings.TrimSpace(vault.PKIMount) == "" {
+			vault.PKIMount = "pki"
+		}
+		vault.PKIMounts = []string{vault.PKIMount}
+	}
+	return vault, nil
+}
+
 func validateSettings(settings config.SettingsFile) error {
 	if webhookURL := strings.TrimSpace(settings.Notifications.WebhookURL); webhookURL != "" {
 		parsed, err := url.Parse(webhookURL)
@@ -314,31 +345,11 @@ func validateSettings(settings config.SettingsFile) error {
 	copy(normalizedVaults, settings.Vaults)
 	seen := make(map[string]struct{})
 	for i, vault := range normalizedVaults {
-		id := strings.TrimSpace(vault.ID)
-		address := strings.TrimSpace(vault.Address)
-		token := strings.TrimSpace(vault.Token)
-		if id == "" {
-			return vcverrors.ErrVaultIDEmpty
+		normalized, err := validateVaultInstance(vault, seen)
+		if err != nil {
+			return err
 		}
-		if _, ok := seen[id]; ok {
-			return vcverrors.ErrDuplicateVaultID
-		}
-		seen[id] = struct{}{}
-		if address == "" {
-			return errors.New("vault address is empty")
-		}
-		if _, err := url.ParseRequestURI(address); err != nil {
-			return vcverrors.ErrInvalidAddress
-		}
-		if token == "" {
-			return vcverrors.ErrInvalidToken
-		}
-		if len(vault.PKIMounts) == 0 {
-			if strings.TrimSpace(vault.PKIMount) == "" {
-				normalizedVaults[i].PKIMount = "pki"
-			}
-			normalizedVaults[i].PKIMounts = []string{normalizedVaults[i].PKIMount}
-		}
+		normalizedVaults[i] = normalized
 	}
 	return nil
 }

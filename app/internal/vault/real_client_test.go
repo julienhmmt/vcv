@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -31,6 +32,42 @@ import (
 
 type vaultTestServerState struct {
 	certificatePEM string
+}
+
+// writeVaultTestJSON writes a JSON response with the given status.
+func writeVaultTestJSON(w http.ResponseWriter, status int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(body)
+}
+
+// isVaultListRequest reports whether the request is a Vault LIST of path.
+func isVaultListRequest(r *http.Request, path string) bool {
+	if r.URL.Path != path {
+		return false
+	}
+	return r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")
+}
+
+// newVaultHTTPHandler returns a minimal Vault PKI handler serving the given
+// certificate PEM for the listed serials and a cert list with the given keys.
+func newVaultHTTPHandler(certificatePEM string, listKeys []string, serials []string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.URL.Path == "/v1/sys/health":
+			writeVaultTestJSON(w, http.StatusOK, map[string]any{"initialized": true, "sealed": false})
+		case r.URL.Path == "/v1/auth/token/lookup-self":
+			writeVaultTestJSON(w, http.StatusOK, map[string]any{"data": map[string]any{"id": "token"}})
+		case isVaultListRequest(r, "/v1/pki/certs"):
+			writeVaultTestJSON(w, http.StatusOK, map[string]any{"data": map[string]any{"keys": listKeys}})
+		case isVaultListRequest(r, "/v1/pki/certs/revoked"):
+			writeVaultTestJSON(w, http.StatusOK, map[string]any{"data": map[string]any{"keys": []string{"bb"}}})
+		case r.Method == http.MethodGet && slices.Contains(serials, strings.TrimPrefix(r.URL.Path, "/v1/pki/cert/")):
+			writeVaultTestJSON(w, http.StatusOK, map[string]any{"data": map[string]any{"certificate": certificatePEM}})
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}
 }
 
 func newVaultTestCertificatePEM(t *testing.T) string {
@@ -64,36 +101,7 @@ func newVaultTestCertificatePEM(t *testing.T) string {
 }
 
 func newVaultTestServer(state vaultTestServerState) *httptest.Server {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/v1/sys/health" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"initialized": true, "sealed": false})
-			return
-		}
-		if r.URL.Path == "/v1/auth/token/lookup-self" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"id": "token"}})
-			return
-		}
-		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"aa", "bb"}}})
-			return
-		}
-		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs/revoked" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"bb"}}})
-			return
-		}
-		if r.Method == http.MethodGet && (r.URL.Path == "/v1/pki/cert/aa" || r.URL.Path == "/v1/pki/cert/bb" || r.URL.Path == "/v1/pki/cert/ca") {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"certificate": state.certificatePEM}})
-			return
-		}
-		w.WriteHeader(http.StatusNotFound)
-	})
-	return httptest.NewServer(handler)
+	return httptest.NewServer(newVaultHTTPHandler(state.certificatePEM, []string{"aa", "bb"}, []string{"aa", "bb", "ca"}))
 }
 
 func newRealClientForTest(t *testing.T, serverURL string, mounts []string) *realClient {
@@ -105,6 +113,27 @@ func newRealClientForTest(t *testing.T, serverURL string, mounts []string) *real
 	}
 	apiClient.SetToken("token")
 	return &realClient{client: apiClient, mounts: mounts, addr: serverURL, cache: cache.New(5 * time.Minute), stopChan: make(chan struct{})}
+}
+
+// assertClientCreation runs NewClientFromConfig and asserts the expected outcome.
+func assertClientCreation(t *testing.T, cfg config.VaultConfig, expectError bool) {
+	t.Helper()
+	client, err := NewClientFromConfig(cfg)
+	if expectError {
+		if err == nil {
+			t.Fatalf("expected error")
+		}
+		if client != nil {
+			t.Fatalf("expected nil client")
+		}
+		return
+	}
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if client == nil {
+		t.Fatalf("expected client")
+	}
 }
 
 func TestNewClientFromConfig_Validation(t *testing.T) {
@@ -119,52 +148,14 @@ func TestNewClientFromConfig_Validation(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			client, err := NewClientFromConfig(tt.cfg)
-			if tt.expectError {
-				if err == nil {
-					t.Fatalf("expected error")
-				}
-				if client != nil {
-					t.Fatalf("expected nil client")
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-			if client == nil {
-				t.Fatalf("expected client")
-			}
+			assertClientCreation(t, tt.cfg, tt.expectError)
 		})
 	}
 }
 
 func TestNewClientFromConfig_TLSInsecure_AllowsTLSWithoutCA(t *testing.T) {
 	certificatePEM := newVaultTestCertificatePEM(t)
-	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/v1/sys/health" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"initialized": true, "sealed": false})
-			return
-		}
-		if r.URL.Path == "/v1/auth/token/lookup-self" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"id": "token"}})
-			return
-		}
-		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"aa", "bb"}}})
-			return
-		}
-		if r.Method == http.MethodGet && (r.URL.Path == "/v1/pki/cert/aa" || r.URL.Path == "/v1/pki/cert/bb") {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"certificate": certificatePEM}})
-			return
-		}
-		w.WriteHeader(http.StatusNotFound)
-	}))
+	server := httptest.NewTLSServer(newVaultHTTPHandler(certificatePEM, []string{"aa", "bb"}, []string{"aa", "bb"}))
 	defer server.Close()
 	c, err := NewClientFromConfig(config.VaultConfig{Addr: server.URL, ReadToken: "token", PKIMounts: []string{"pki"}, TLSInsecure: true})
 	if err != nil {
@@ -177,30 +168,7 @@ func TestNewClientFromConfig_TLSInsecure_AllowsTLSWithoutCA(t *testing.T) {
 
 func TestNewClientFromConfig_TLSCACert_AllowsTLSWithCA(t *testing.T) {
 	certificatePEM := newVaultTestCertificatePEM(t)
-	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/v1/sys/health" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"initialized": true, "sealed": false})
-			return
-		}
-		if r.URL.Path == "/v1/auth/token/lookup-self" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"id": "token"}})
-			return
-		}
-		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"aa"}}})
-			return
-		}
-		if r.Method == http.MethodGet && r.URL.Path == "/v1/pki/cert/aa" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"certificate": certificatePEM}})
-			return
-		}
-		w.WriteHeader(http.StatusNotFound)
-	}))
+	server := httptest.NewTLSServer(newVaultHTTPHandler(certificatePEM, []string{"aa"}, []string{"aa"}))
 	defer server.Close()
 	serverURL, parseErr := url.Parse(server.URL)
 	if parseErr != nil {
@@ -230,30 +198,7 @@ func TestNewClientFromConfig_TLSCACert_BadPathReturnsError(t *testing.T) {
 
 func TestNewClientFromConfig_TLSCACertBase64_AllowsTLSWithCA(t *testing.T) {
 	certificatePEM := newVaultTestCertificatePEM(t)
-	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		if r.URL.Path == "/v1/sys/health" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"initialized": true, "sealed": false})
-			return
-		}
-		if r.URL.Path == "/v1/auth/token/lookup-self" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"id": "token"}})
-			return
-		}
-		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"aa"}}})
-			return
-		}
-		if r.Method == http.MethodGet && r.URL.Path == "/v1/pki/cert/aa" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"certificate": certificatePEM}})
-			return
-		}
-		w.WriteHeader(http.StatusNotFound)
-	}))
+	server := httptest.NewTLSServer(newVaultHTTPHandler(certificatePEM, []string{"aa"}, []string{"aa"}))
 	defer server.Close()
 	serverURL, parseErr := url.Parse(server.URL)
 	if parseErr != nil {
@@ -278,6 +223,27 @@ func TestNewClientFromConfig_TLSCACertBase64_InvalidBase64ReturnsError(t *testin
 	}
 }
 
+// assertParseMountAndSerial asserts the parse outcome for one test case.
+func assertParseMountAndSerial(t *testing.T, client *realClient, value string, expectedMnt string, expectedSer string, expectErr bool) {
+	t.Helper()
+	mount, serial, err := client.parseMountAndSerial(value)
+	if expectErr {
+		if err == nil {
+			t.Fatalf("expected error")
+		}
+		return
+	}
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if mount != expectedMnt {
+		t.Fatalf("expected mount %q, got %q", expectedMnt, mount)
+	}
+	if serial != expectedSer {
+		t.Fatalf("expected serial %q, got %q", expectedSer, serial)
+	}
+}
+
 func TestParseMountAndSerial(t *testing.T) {
 	client := &realClient{mounts: []string{"pki", "pki_dev"}}
 	tests := []struct {
@@ -293,22 +259,7 @@ func TestParseMountAndSerial(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mount, serial, err := client.parseMountAndSerial(tt.value)
-			if tt.expectErr {
-				if err == nil {
-					t.Fatalf("expected error")
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if mount != tt.expectedMnt {
-				t.Fatalf("expected mount %q, got %q", tt.expectedMnt, mount)
-			}
-			if serial != tt.expectedSer {
-				t.Fatalf("expected serial %q, got %q", tt.expectedSer, serial)
-			}
+			assertParseMountAndSerial(t, client, tt.value, tt.expectedMnt, tt.expectedSer, tt.expectErr)
 		})
 	}
 	clientNoMounts := &realClient{mounts: []string{}}
@@ -377,23 +328,7 @@ func TestRealClient_ListCertificates_CacheHit(t *testing.T) {
 	var requestCount atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestCount.Add(1)
-		w.Header().Set("Content-Type", "application/json")
-		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"aa", "bb"}}})
-			return
-		}
-		if (r.Method == "LIST" || (r.Method == http.MethodGet && r.URL.Query().Get("list") == "true")) && r.URL.Path == "/v1/pki/certs/revoked" {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"keys": []string{"bb"}}})
-			return
-		}
-		if r.Method == http.MethodGet && (r.URL.Path == "/v1/pki/cert/aa" || r.URL.Path == "/v1/pki/cert/bb") {
-			w.WriteHeader(http.StatusOK)
-			_ = json.NewEncoder(w).Encode(map[string]any{"data": map[string]any{"certificate": certificatePEM}})
-			return
-		}
-		w.WriteHeader(http.StatusNotFound)
+		newVaultHTTPHandler(certificatePEM, []string{"aa", "bb"}, []string{"aa", "bb"}).ServeHTTP(w, r)
 	}))
 	defer server.Close()
 
@@ -612,6 +547,18 @@ func TestRealClient_CacheSize(t *testing.T) {
 	}
 }
 
+// assertLogContains asserts that the captured log output contains every
+// expected substring.
+func assertLogContains(t *testing.T, buf *bytes.Buffer, expected []string) {
+	t.Helper()
+	output := buf.String()
+	for _, want := range expected {
+		if !strings.Contains(output, want) {
+			t.Errorf("Expected %q in log, got: %s", want, output)
+		}
+	}
+}
+
 // TestRealClient_Logging tests that logging works correctly for vault operations
 func TestRealClient_Logging(t *testing.T) {
 	// Setup logger to capture output
@@ -622,37 +569,13 @@ func TestRealClient_Logging(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case "/v1/sys/health":
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(map[string]any{
-				"initialized": true,
-				"sealed":      false,
-				"version":     "1.12.0",
-			}); err != nil {
-				t.Fatalf("failed to encode health response: %v", err)
-			}
+			writeVaultTestJSON(w, http.StatusOK, map[string]any{"initialized": true, "sealed": false, "version": "1.12.0"})
 		case "/v1/auth/token/lookup-self":
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(map[string]any{
-				"data": map[string]any{"id": "token"},
-			}); err != nil {
-				t.Fatalf("failed to encode token response: %v", err)
-			}
+			writeVaultTestJSON(w, http.StatusOK, map[string]any{"data": map[string]any{"id": "token"}})
 		case "/v1/pki/certs":
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(map[string]any{
-				"data": map[string][]string{"keys": {"01"}},
-			}); err != nil {
-				t.Fatalf("failed to encode certs response: %v", err)
-			}
+			writeVaultTestJSON(w, http.StatusOK, map[string]any{"data": map[string][]string{"keys": {"01"}}})
 		case "/v1/pki/cert/01":
-			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(map[string]any{
-				"data": map[string]string{
-					"certificate": newVaultTestCertificatePEM(t),
-				},
-			}); err != nil {
-				t.Fatalf("failed to encode cert response: %v", err)
-			}
+			writeVaultTestJSON(w, http.StatusOK, map[string]any{"data": map[string]string{"certificate": newVaultTestCertificatePEM(t)}})
 		default:
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -667,14 +590,7 @@ func TestRealClient_Logging(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-
-	output := buf.String()
-	if !strings.Contains(output, "checking vault connection") {
-		t.Errorf("Expected connection check log, got: %s", output)
-	}
-	if !strings.Contains(output, "vault connection successful") {
-		t.Errorf("Expected successful connection log, got: %s", output)
-	}
+	assertLogContains(t, &buf, []string{"checking vault connection", "vault connection successful"})
 
 	// Test ListCertificates logging
 	buf.Reset()
@@ -682,20 +598,12 @@ func TestRealClient_Logging(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-
-	output = buf.String()
-	if !strings.Contains(output, "listing certificates from vault mounts") {
-		t.Errorf("Expected listing logs, got: %s", output)
-	}
-	if !strings.Contains(output, "listing certificates from mount") {
-		t.Errorf("Expected mount listing logs, got: %s", output)
-	}
-	if !strings.Contains(output, "successfully listed certificates from mount") {
-		t.Errorf("Expected success logs, got: %s", output)
-	}
-	if !strings.Contains(output, "completed certificate listing and cached result") {
-		t.Errorf("Expected completion logs, got: %s", output)
-	}
+	assertLogContains(t, &buf, []string{
+		"listing certificates from vault mounts",
+		"listing certificates from mount",
+		"successfully listed certificates from mount",
+		"completed certificate listing and cached result",
+	})
 
 	// Test GetCertificateDetails logging
 	buf.Reset()
@@ -703,26 +611,12 @@ func TestRealClient_Logging(t *testing.T) {
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-
-	output = buf.String()
-	if !strings.Contains(output, "getting certificate details") {
-		t.Errorf("Expected details log, got: %s", output)
-	}
-	if !strings.Contains(output, "successfully retrieved and cached certificate details") {
-		t.Errorf("Expected success details log, got: %s", output)
-	}
+	assertLogContains(t, &buf, []string{"getting certificate details", "successfully retrieved and cached certificate details"})
 
 	// Test InvalidateCache logging
 	buf.Reset()
 	client.InvalidateCache()
-
-	output = buf.String()
-	if !strings.Contains(output, "invalidating vault client cache") {
-		t.Errorf("Expected cache invalidation start log, got: %s", output)
-	}
-	if !strings.Contains(output, "cache invalidated successfully") {
-		t.Errorf("Expected cache invalidation success log, got: %s", output)
-	}
+	assertLogContains(t, &buf, []string{"invalidating vault client cache", "cache invalidated successfully"})
 }
 
 // TestRealClient_LoggingErrors tests that error logging works correctly
