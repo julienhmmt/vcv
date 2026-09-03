@@ -8,7 +8,7 @@ services:
     container_name: vcv-sonarqube
     restart: unless-stopped
     ports:
-      - "9000:9000"
+      - "9001:9000"
     environment:
       # Disable Elasticsearch bootstrap checks so the container starts locally
       # without tuning vm.max_map_count on Docker Desktop / OrbStack.

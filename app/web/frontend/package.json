@@ -21,7 +21,7 @@
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/svelte": "^5.4.2",
     "@tsconfig/svelte": "^5.0.8",
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.4.0",
     "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^10.9.1",
     "eslint-plugin-svelte": "^3.23.0",
