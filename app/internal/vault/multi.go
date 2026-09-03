@@ -176,66 +176,37 @@ func (c *multiClient) InvalidateCache() {
 	}
 }
 
-func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate, error) {
-	active := c.activeVaultIDs()
-	if len(active) == 0 {
-		logger.Get().Debug().Msg("no vault instances configured for certificate listing")
-		return []certs.Certificate{}, ErrVaultNotConfigured
-	}
+// certListResult carries the per-vault outcome of a certificate listing.
+type certListResult struct {
+	vaultID      string
+	certificates []certs.Certificate
+	err          error
+}
 
+// listFromVault fetches certificates from a single vault instance, logging
+// the outcome.
+func (c *multiClient) listFromVault(ctx context.Context, vaultID string, client Client) certListResult {
 	logger.Get().Debug().
-		Strs("vault_ids", active).
-		Int("vault_count", len(active)).
-		Msg("listing certificates from all vault instances")
-
-	type result struct {
-		vaultID      string
-		certificates []certs.Certificate
-		err          error
+		Str("vault_id", vaultID).
+		Msg("fetching certificates from vault instance")
+	certificates, err := client.ListCertificates(ctx)
+	if err != nil {
+		logger.Get().Error().
+			Str("vault_id", vaultID).
+			Err(err).
+			Msg("failed to fetch certificates from vault instance")
+		return certListResult{vaultID: vaultID, certificates: []certs.Certificate{}, err: err}
 	}
-	resultChan := make(chan result, len(active))
-	var wg sync.WaitGroup
+	logger.Get().Debug().
+		Str("vault_id", vaultID).
+		Int("certificate_count", len(certificates)).
+		Msg("successfully fetched certificates from vault instance")
+	return certListResult{vaultID: vaultID, certificates: certificates, err: nil}
+}
 
-	for _, vaultID := range active {
-		client := c.clientsByVault[vaultID]
-		if client == nil {
-			logger.Get().Error().
-				Str("vault_id", vaultID).
-				Msg("missing vault client for certificate listing")
-			resultChan <- result{vaultID: vaultID, certificates: []certs.Certificate{}, err: fmt.Errorf(errMissingVaultClient, vaultID)}
-			continue
-		}
-		wg.Add(1)
-		go func(id string, cl Client) {
-			defer wg.Done()
-			logger.Get().Debug().
-				Str("vault_id", id).
-				Msg("fetching certificates from vault instance")
-
-			var certificates []certs.Certificate
-			var err error
-			certificates, err = cl.ListCertificates(ctx)
-			if err != nil {
-				logger.Get().Error().
-					Str("vault_id", id).
-					Err(err).
-					Msg("failed to fetch certificates from vault instance")
-				resultChan <- result{vaultID: id, certificates: []certs.Certificate{}, err: err}
-				return
-			}
-
-			logger.Get().Debug().
-				Str("vault_id", id).
-				Int("certificate_count", len(certificates)).
-				Msg("successfully fetched certificates from vault instance")
-
-			resultChan <- result{vaultID: id, certificates: certificates, err: nil}
-		}(vaultID, client)
-	}
-	go func() {
-		wg.Wait()
-		close(resultChan)
-	}()
+// collectListResults drains the result channel, merging successful listings
+// (with vault-prefixed IDs) and tracking the last failure.
+func collectListResults(resultChan <-chan certListResult) ([]certs.Certificate, int, error) {
 	all := make([]certs.Certificate, 0)
 	successCount := 0
 	var lastError error
@@ -251,6 +222,44 @@ func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate
 			all = append(all, prefixed)
 		}
 	}
+	return all, successCount, lastError
+}
+
+func (c *multiClient) ListCertificates(ctx context.Context) ([]certs.Certificate, error) {
+	active := c.activeVaultIDs()
+	if len(active) == 0 {
+		logger.Get().Debug().Msg("no vault instances configured for certificate listing")
+		return []certs.Certificate{}, ErrVaultNotConfigured
+	}
+
+	logger.Get().Debug().
+		Strs("vault_ids", active).
+		Int("vault_count", len(active)).
+		Msg("listing certificates from all vault instances")
+
+	resultChan := make(chan certListResult, len(active))
+	var wg sync.WaitGroup
+
+	for _, vaultID := range active {
+		client := c.clientsByVault[vaultID]
+		if client == nil {
+			logger.Get().Error().
+				Str("vault_id", vaultID).
+				Msg("missing vault client for certificate listing")
+			resultChan <- certListResult{vaultID: vaultID, certificates: []certs.Certificate{}, err: fmt.Errorf(errMissingVaultClient, vaultID)}
+			continue
+		}
+		wg.Add(1)
+		go func(id string, cl Client) {
+			defer wg.Done()
+			resultChan <- c.listFromVault(ctx, id, cl)
+		}(vaultID, client)
+	}
+	go func() {
+		wg.Wait()
+		close(resultChan)
+	}()
+	all, successCount, lastError := collectListResults(resultChan)
 
 	logger.Get().Debug().
 		Int("total_certificates", len(all)).

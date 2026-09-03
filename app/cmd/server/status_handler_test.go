@@ -14,19 +14,6 @@ import (
 	"vcv/internal/vault"
 )
 
-type statusResponse struct {
-	Version         string `json:"version"`
-	VaultConnected  bool   `json:"vault_connected"`
-	VaultError      string `json:"vault_error,omitempty"`
-	AdminAPIEnabled bool   `json:"admin_api_enabled"`
-	Vaults          []struct {
-		ID          string `json:"id"`
-		DisplayName string `json:"display_name"`
-		Connected   bool   `json:"connected"`
-		Error       string `json:"error,omitempty"`
-	} `json:"vaults"`
-}
-
 func TestNewStatusHandler_PrimaryDisconnectedAndMissingClient(t *testing.T) {
 	cfg := config.Config{Vaults: []config.VaultInstance{{ID: "v1", DisplayName: "Vault 1"}}}
 	primary := &vault.MockClient{}

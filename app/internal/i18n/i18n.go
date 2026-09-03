@@ -1360,6 +1360,28 @@ func FromAcceptLanguage(headerValue string) Language {
 	return LanguageEnglish
 }
 
+// languageFromHXCurrentURL extracts a valid language from the legacy
+// hx-current-url header, if present.
+func languageFromHXCurrentURL(r *http.Request) (Language, bool) {
+	currentURL := r.Header.Get("hx-current-url")
+	if currentURL == "" {
+		return LanguageEnglish, false
+	}
+	parsed, err := url.Parse(currentURL)
+	if err != nil {
+		return LanguageEnglish, false
+	}
+	headerLanguage := parsed.Query().Get("lang")
+	if headerLanguage == "" {
+		return LanguageEnglish, false
+	}
+	if language, ok := GetLanguage(headerLanguage); ok {
+		logger.Get().Debug().Str("source", "hx_current_url").Str("lang", headerLanguage).Msg(msgLangResolved)
+		return language, true
+	}
+	return LanguageEnglish, false
+}
+
 // ResolveLanguage resolves the language from the request using query param, cookie, or Accept-Language header.
 func ResolveLanguage(r *http.Request) Language {
 	// 1. Check query parameter
@@ -1371,18 +1393,8 @@ func ResolveLanguage(r *http.Request) Language {
 	}
 
 	// 2. Check HX-Current-URL header
-	currentURL := r.Header.Get("hx-current-url")
-	if currentURL != "" {
-		parsed, err := url.Parse(currentURL)
-		if err == nil {
-			headerLanguage := parsed.Query().Get("lang")
-			if headerLanguage != "" {
-				if language, ok := GetLanguage(headerLanguage); ok {
-					logger.Get().Debug().Str("source", "hx_current_url").Str("lang", headerLanguage).Msg(msgLangResolved)
-					return language
-				}
-			}
-		}
+	if language, ok := languageFromHXCurrentURL(r); ok {
+		return language
 	}
 
 	// 3. Check cookie

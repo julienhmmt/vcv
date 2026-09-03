@@ -18,6 +18,35 @@ type Logger = zerolog.Logger
 // consoleTimeFormat is the timestamp layout used by the console (non-JSON) writer.
 const consoleTimeFormat = "2006-01-02 15:04:05"
 
+// newConsoleWriter returns a console writer for the given destination.
+func newConsoleWriter(out io.Writer) zerolog.ConsoleWriter {
+	return zerolog.ConsoleWriter{Out: out, TimeFormat: consoleTimeFormat}
+}
+
+// appendStdoutWriter appends the stdout writer (JSON or console) to writers.
+func appendStdoutWriter(writers []io.Writer, format string) []io.Writer {
+	if format == "json" {
+		return append(writers, os.Stdout)
+	}
+	return append(writers, newConsoleWriter(os.Stdout))
+}
+
+// appendFileWriter appends the log-file writer (JSON or console) to writers,
+// recording a deferred warning when the file cannot be used.
+func appendFileWriter(writers []io.Writer, deferredWarnings []string, logFilePath string, format string) ([]io.Writer, []string) {
+	if logFilePath == "" {
+		return writers, append(deferredWarnings, "LOG_OUTPUT requires a file but LOG_FILE_PATH is not set; disabling file logging")
+	}
+	file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return writers, append(deferredWarnings, fmt.Sprintf("Failed to open log file '%s', disabling file logging: %v", logFilePath, err))
+	}
+	if format == "json" {
+		return append(writers, file), deferredWarnings
+	}
+	return append(writers, newConsoleWriter(file)), deferredWarnings
+}
+
 // Init initializes the logger with the specified log level
 func Init(level string) {
 	// Set time format
@@ -44,46 +73,17 @@ func Init(level string) {
 
 	// Configure stdout writer
 	if stdoutEnabled {
-		if format == "json" {
-			writers = append(writers, os.Stdout)
-		} else {
-			consoleWriter := zerolog.ConsoleWriter{
-				Out:        os.Stdout,
-				TimeFormat: consoleTimeFormat,
-			}
-			writers = append(writers, consoleWriter)
-		}
+		writers = appendStdoutWriter(writers, format)
 	}
 
 	// Configure file writer if requested
 	if fileEnabled {
-		if logFilePath == "" {
-			deferredWarnings = append(deferredWarnings, "LOG_OUTPUT requires a file but LOG_FILE_PATH is not set; disabling file logging")
-		} else {
-			file, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-			if err != nil {
-				deferredWarnings = append(deferredWarnings, fmt.Sprintf("Failed to open log file '%s', disabling file logging: %v", logFilePath, err))
-			} else {
-				if format == "json" {
-					writers = append(writers, file)
-				} else {
-					consoleWriter := zerolog.ConsoleWriter{
-						Out:        file,
-						TimeFormat: consoleTimeFormat,
-					}
-					writers = append(writers, consoleWriter)
-				}
-			}
-		}
+		writers, deferredWarnings = appendFileWriter(writers, deferredWarnings, logFilePath, format)
 	}
 
 	// Fallback: if no writers configured, use stdout console
 	if len(writers) == 0 {
-		consoleWriter := zerolog.ConsoleWriter{
-			Out:        os.Stdout,
-			TimeFormat: consoleTimeFormat,
-		}
-		writers = append(writers, consoleWriter)
+		writers = append(writers, newConsoleWriter(os.Stdout))
 		deferredWarnings = append(deferredWarnings, "No valid log output configured, falling back to stdout console")
 		stdoutEnabled = true
 		fileEnabled = false
