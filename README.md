@@ -170,7 +170,7 @@ docker run -d \
   -v "$(pwd)/settings.json:/app/settings.json:rw" \
   -v "$(pwd)/logs:/var/log/app:rw" \
   --cap-drop=ALL --read-only --security-opt no-new-privileges:true \
-  -p 52000:52000 jhmmt/vcv:1.9
+  -p 52000:52000 jhmmt/vcv:1.9.1
 ```
 
 ## 🔐 Vault/OpenBao TLS configuration
