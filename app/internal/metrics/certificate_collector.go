@@ -553,19 +553,9 @@ func daysUntil(expiresAt time.Time, now time.Time) int {
 	return int(math.Ceil(diff.Hours() / 24))
 }
 
-func (collector *certificateCollector) emitEnhancedMetrics(ch chan<- prometheus.Metric, certificates []certs.Certificate, now time.Time) {
-	buckets := make(map[string]map[string]map[string]int)
-	for _, certificate := range certificates {
-		vaultID, pki := extractVaultIDAndPKI(certificate.ID)
-		if certificate.Revoked {
-			incCounter3(buckets, vaultID, pki, "revoked")
-			continue
-		}
-		if certificate.ExpiresAt.IsZero() {
-			continue
-		}
-		incCounter3(buckets, vaultID, pki, expiryBucketLabel(daysUntil(certificate.ExpiresAt.UTC(), now.UTC())))
-	}
+// emitExpiryBuckets emits per vault+PKI bucket metrics followed by the
+// aggregated all-vault totals.
+func emitExpiryBuckets(ch chan<- prometheus.Metric, buckets map[string]map[string]map[string]int) {
 	for _, vaultID := range sortedStringKeys(buckets) {
 		for _, pki := range sortedStringKeys(buckets[vaultID]) {
 			for _, bucket := range expiryBucketNames {
@@ -584,4 +574,20 @@ func (collector *certificateCollector) emitEnhancedMetrics(ch chan<- prometheus.
 	for _, bucket := range expiryBucketNames {
 		ch <- prometheus.MustNewConstMetric(expiryBucketDesc, prometheus.GaugeValue, float64(allBuckets[bucket]), allLabelValue, allLabelValue, bucket)
 	}
+}
+
+func (collector *certificateCollector) emitEnhancedMetrics(ch chan<- prometheus.Metric, certificates []certs.Certificate, now time.Time) {
+	buckets := make(map[string]map[string]map[string]int)
+	for _, certificate := range certificates {
+		vaultID, pki := extractVaultIDAndPKI(certificate.ID)
+		if certificate.Revoked {
+			incCounter3(buckets, vaultID, pki, "revoked")
+			continue
+		}
+		if certificate.ExpiresAt.IsZero() {
+			continue
+		}
+		incCounter3(buckets, vaultID, pki, expiryBucketLabel(daysUntil(certificate.ExpiresAt.UTC(), now.UTC())))
+	}
+	emitExpiryBuckets(ch, buckets)
 }
