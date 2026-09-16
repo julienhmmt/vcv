@@ -31,7 +31,8 @@
     "allow_credentials": true
   },
   "notifications": {
-    "webhook_url": ""
+    "webhook_url": "",
+    "webhooks": []
   },
   "vaults": [
     {

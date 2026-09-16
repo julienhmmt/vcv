@@ -407,6 +407,43 @@ func TestValidateSettings(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "webhook target with levels is valid",
+			settings: config.SettingsFile{
+				Notifications: config.NotificationSettings{Webhooks: []config.WebhookTarget{
+					{URL: "https://hooks.example.com/a", Levels: []string{"critical"}},
+					{URL: "https://hooks.example.com/b"},
+				}},
+			},
+			wantErr: false,
+		},
+		{
+			name: "webhook target with bad url is invalid",
+			settings: config.SettingsFile{
+				Notifications: config.NotificationSettings{Webhooks: []config.WebhookTarget{
+					{URL: "not-a-url"},
+				}},
+			},
+			wantErr: true,
+		},
+		{
+			name: "webhook target with unknown level is invalid",
+			settings: config.SettingsFile{
+				Notifications: config.NotificationSettings{Webhooks: []config.WebhookTarget{
+					{URL: "https://hooks.example.com/a", Levels: []string{"bogus"}},
+				}},
+			},
+			wantErr: true,
+		},
+		{
+			name: "webhook target with masked url is invalid",
+			settings: config.SettingsFile{
+				Notifications: config.NotificationSettings{Webhooks: []config.WebhookTarget{
+					{URL: "***"},
+				}},
+			},
+			wantErr: true,
+		},
 	}
 
 	for _, tt := range tests {

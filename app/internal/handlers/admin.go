@@ -333,11 +333,37 @@ func validateVaultInstance(vault config.VaultInstance, seen map[string]struct{})
 	return vault, nil
 }
 
+// validateWebhookTarget rejects malformed routed targets: bad URLs and
+// unknown severity levels. Empty URLs are dropped at load and never reach
+// validation; masked placeholders are rejected so they cannot be stored.
+func validateWebhookTarget(target config.WebhookTarget) error {
+	raw := strings.TrimSpace(target.URL)
+	if raw == "" || isBlankOrMaskedSecret(raw) {
+		return vcverrors.ErrInvalidWebhookTarget
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
+		return vcverrors.ErrInvalidWebhookTarget
+	}
+	for _, level := range target.Levels {
+		normalized := strings.ToLower(strings.TrimSpace(level))
+		if normalized != "warning" && normalized != "critical" {
+			return vcverrors.ErrInvalidWebhookTarget
+		}
+	}
+	return nil
+}
+
 func validateSettings(settings config.SettingsFile) error {
 	if webhookURL := strings.TrimSpace(settings.Notifications.WebhookURL); webhookURL != "" {
 		parsed, err := url.Parse(webhookURL)
 		if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
 			return vcverrors.ErrInvalidWebhookURL
+		}
+	}
+	for _, target := range settings.Notifications.Webhooks {
+		if err := validateWebhookTarget(target); err != nil {
+			return err
 		}
 	}
 

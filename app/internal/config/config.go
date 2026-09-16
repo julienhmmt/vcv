@@ -79,6 +79,20 @@ type NotificationsConfig struct {
 	// WebhookURL receives a JSON POST when a certificate crosses into the
 	// warning or critical expiration window. Empty disables webhook delivery.
 	WebhookURL string
+	// Webhooks adds routed targets alongside the legacy WebhookURL. Each
+	// target carries its own severity filter; all matching targets are
+	// fanned out to on escalation with per-target retry.
+	Webhooks []WebhookTarget
+}
+
+// WebhookTarget is one routable notification endpoint.
+type WebhookTarget struct {
+	// URL is the endpoint receiving the JSON POST. May embed an auth
+	// token in its path (Slack-style) and is treated as a secret.
+	URL string `json:"url"`
+	// Levels gates delivery to a subset of severity tiers
+	// ("warning", "critical"). Empty means all tiers.
+	Levels []string `json:"levels,omitempty"`
 }
 
 type SettingsFile struct {
@@ -122,7 +136,8 @@ type MetricsSettings struct {
 }
 
 type NotificationSettings struct {
-	WebhookURL string `json:"webhook_url"`
+	WebhookURL string          `json:"webhook_url"`
+	Webhooks   []WebhookTarget `json:"webhooks,omitempty"`
 }
 
 type AdminSettings struct {
@@ -233,6 +248,19 @@ func buildConfigFromSettings(settings SettingsFile) Config {
 	}
 	// Otherwise, keep defaults (PerCertificate: false, EnhancedMetrics: true)
 	notifications := NotificationsConfig{WebhookURL: strings.TrimSpace(settings.Notifications.WebhookURL)}
+	for _, target := range settings.Notifications.Webhooks {
+		targetURL := strings.TrimSpace(target.URL)
+		if targetURL == "" {
+			continue
+		}
+		levels := make([]string, 0, len(target.Levels))
+		for _, level := range target.Levels {
+			if normalized := strings.ToLower(strings.TrimSpace(level)); normalized != "" {
+				levels = append(levels, normalized)
+			}
+		}
+		notifications.Webhooks = append(notifications.Webhooks, WebhookTarget{URL: targetURL, Levels: levels})
+	}
 	return Config{
 		Env:                  env,
 		Port:                 port,

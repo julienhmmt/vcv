@@ -499,6 +499,45 @@ func TestMergeAdminSettings_WebhookURL(t *testing.T) {
 	assert.Equal(t, "https://hooks.example.com/new", updated.Notifications.WebhookURL)
 }
 
+func TestMergeWebhookTargets(t *testing.T) {
+	current := []config.WebhookTarget{
+		{URL: "https://hooks.example.com/stored", Levels: []string{"critical"}},
+	}
+
+	// Nil incoming (field absent) preserves the stored list.
+	assert.Equal(t, current, mergeWebhookTargets(current, nil))
+
+	// Explicitly empty list clears it.
+	assert.Empty(t, mergeWebhookTargets(current, []config.WebhookTarget{}))
+
+	// Blank/masked URL preserves the stored URL positionally; levels update.
+	merged := mergeWebhookTargets(current, []config.WebhookTarget{{URL: "", Levels: []string{"warning", "critical"}}})
+	require.Len(t, merged, 1)
+	assert.Equal(t, "https://hooks.example.com/stored", merged[0].URL)
+	assert.Equal(t, []string{"warning", "critical"}, merged[0].Levels)
+
+	// A real new URL replaces it.
+	replaced := mergeWebhookTargets(current, []config.WebhookTarget{{URL: "https://hooks.example.com/new"}})
+	require.Len(t, replaced, 1)
+	assert.Equal(t, "https://hooks.example.com/new", replaced[0].URL)
+}
+
+func TestMaskSecrets_BlanksWebhookTargets(t *testing.T) {
+	settings := config.SettingsFile{
+		Notifications: config.NotificationSettings{Webhooks: []config.WebhookTarget{
+			{URL: "https://hooks.example.com/services/SECRET", Levels: []string{"critical"}},
+		}},
+	}
+
+	masked := maskSecrets(settings)
+
+	require.Len(t, masked.Notifications.Webhooks, 1)
+	assert.Empty(t, masked.Notifications.Webhooks[0].URL)
+	assert.Equal(t, []string{"critical"}, masked.Notifications.Webhooks[0].Levels)
+	// The caller's slice must not be mutated through the shared backing array.
+	assert.Equal(t, "https://hooks.example.com/services/SECRET", settings.Notifications.Webhooks[0].URL)
+}
+
 func TestComputeVaultStatuses(t *testing.T) {
 	settings := config.SettingsFile{
 		Vaults: []config.VaultInstance{
