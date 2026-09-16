@@ -52,12 +52,6 @@ export interface StatusResponse {
   vaults: VaultStatusEntry[]
 }
 
-export interface VersionInfo {
-  version: string
-  commit?: string
-  buildDate?: string
-}
-
 export type CertStatus = 'valid' | 'expired' | 'revoked' | 'critical' | 'warning'
 
 export interface ExpirationThresholds {

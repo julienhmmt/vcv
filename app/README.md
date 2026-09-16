@@ -125,6 +125,8 @@ vcv is designed for **private networks**. Do not expose the listen port to the p
 
 `/api/status` includes `admin_api_enabled` (bool): whether the admin API was registered at process start (valid bcrypt `admin.password`). When false, inventory APIs still run; `/api/ready` stays green (policy B — do not fail readiness solely because admin is off). Startup logs still explain why admin was skipped.
 
+`/api/status` already embeds the build `version`, so new clients should prefer it over the standalone `/api/version` endpoint (kept for probes and back-compat; served with `Cache-Control: no-store`).
+
 ### What PEMs are
 
 `GET /api/certs/{id}/pem` returns **public** X.509 certificates as stored in Vault PKI. Private keys are never retrieved. Certificate inventories are still sensitive in many organizations.

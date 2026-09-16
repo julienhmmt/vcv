@@ -125,6 +125,7 @@ func TestBuildRouter_BasicEndpoints(t *testing.T) {
 		router.ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusOK, rec.Code)
 		assert.Contains(t, rec.Header().Get("Content-Type"), "application/json")
+		assert.Equal(t, "no-store", rec.Header().Get("Cache-Control"))
 	})
 
 	t.Run("metrics", func(t *testing.T) {
