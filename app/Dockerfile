@@ -42,6 +42,7 @@ RUN mkdir -p /app/config
 
 FROM gcr.io/distroless/static-debian13:nonroot
 WORKDIR /app
+USER nonroot:nonroot
 
 COPY --from=builder --chown=nonroot:nonroot /vcv-backend /app/vcv-backend
 COPY --from=builder --chown=nonroot:nonroot /app/config /app/config
