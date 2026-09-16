@@ -168,6 +168,7 @@ func buildRouter(deps routerDeps) (*chi.Mux, error) {
 		_ = json.NewEncoder(w).Encode(version.Info())
 	})
 	r.Get("/api/config", handlers.GetConfig(cfg, deps.vaultRegistry))
+	r.Get("/api/openapi.json", handlers.OpenAPISpec)
 	r.Get("/metrics", promhttp.HandlerFor(deps.promRegistry, promhttp.HandlerOpts{}).ServeHTTP)
 	handlers.RegisterI18nRoutes(r)
 	handlers.RegisterCertRoutes(r, deps.multiVault)
