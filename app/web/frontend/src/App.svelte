@@ -25,10 +25,10 @@
   import { createThemeStore } from '$lib/stores/theme.svelte'
   import { createI18nStore, setI18nContext, LANGUAGES } from '$lib/stores/i18n.svelte'
   import { parseCertID } from '$lib/utils/cert-status'
+  import type { CertsQuery } from '$lib/api'
   import {
     matchesFilters,
     sortCerts,
-    paginate,
     dashboardCounts,
     type CertTypeFilter,
     type SortDirection,
@@ -101,27 +101,26 @@
   /** Last expiry tier we toasted, so auto-refresh does not spam identical alerts. */
   let lastNotifiedTier = $state<ExpiryTier>('none')
 
-  const filtered = $derived(
-    certs.certificates.filter((cert) =>
-      matchesFilters(
-        cert,
-        {
-          search: searchForFilter,
-          statuses: statusFilters,
-          certType: certTypeFilter,
-          mounts: mountFilter,
-        },
-        thresholds,
-      ),
-    ),
-  )
-  const sorted = $derived(sortCerts(filtered, sortKey, sortDir))
-  const pageSizeNum = $derived(pageSize === 'all' ? sorted.length || 1 : pageSize)
-  const totalPages = $derived(Math.max(1, Math.ceil(sorted.length / pageSizeNum)))
-  const safePage = $derived(Math.min(pageIndex, totalPages - 1))
-  const paged = $derived(paginate(sorted, safePage, pageSize))
+  const totalPages = $derived(certs.totalPages)
+  const safePage = $derived(Math.min(pageIndex, Math.max(0, totalPages - 1)))
+  /** Table page query: 1-based page for the server; mounts omitted when null (= all). */
+  function tableQuery(page: number): CertsQuery {
+    return {
+      ...(mountFilter ? { mounts: mountFilter } : {}),
+      ...(searchForFilter ? { search: searchForFilter } : {}),
+      ...(statusFilters.length > 0 ? { statuses: statusFilters } : {}),
+      certType: certTypeFilter,
+      sort: sortKey,
+      order: sortDir,
+      page: page + 1,
+      pageSize,
+    }
+  }
+  /** Serialized table/inventory queries already fetched; effects skip re-fetching them. */
+  let lastTableKey = $state('')
+  let lastInventoryKey = $state('')
   function currentCounts() {
-    return dashboardCounts(certs.certificates, thresholds)
+    return dashboardCounts(certs.inventory, thresholds)
   }
   const counts = $derived(currentCounts())
   const hasActiveFilters = $derived(
@@ -131,7 +130,7 @@
   const allMounts = $derived.by(() => {
     // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local to this derivation, rebuilt on each run
     const set = new Set<string>()
-    for (const cert of certs.certificates) {
+    for (const cert of certs.inventory) {
       set.add(parseCertID(cert.id).mountKey)
     }
     return Array.from(set).sort()
@@ -198,6 +197,32 @@
     return () => clearInterval(id)
   })
 
+  // Server-driven table: refetch the page when any table input changes.
+  // The serialized-query guard keeps the initial load() fetch from doubling.
+  $effect(() => {
+    const query = tableQuery(safePage)
+    if (initialLoad) return
+    const key = JSON.stringify(query)
+    if (key === lastTableKey) return
+    lastTableKey = key
+    void certs.refreshTable(query).catch(() => {
+      // Hard table failure: ErrorBanner shows certs.error.
+    })
+  })
+
+  // Full inventory backing dashboard, timeline, palette, export, and mounts.
+  // Refetches only when the mount scope changes; search/sort/page stay table-only.
+  $effect(() => {
+    const mounts = mountFilter
+    if (initialLoad) return
+    const key = JSON.stringify(mounts)
+    if (key === lastInventoryKey) return
+    lastInventoryKey = key
+    void certs.refreshInventory(mounts).catch(() => {
+      // Hard inventory failure: ErrorBanner shows certs.error.
+    })
+  })
+
   // Sync view state to the URL once initial state is restored, so links are shareable.
   // Debounced so rapid typing collapses into one replaceState call.
   $effect(() => {
@@ -220,7 +245,15 @@
 
   async function load(initial = false): Promise<void> {
     // Always reload public config so admin threshold edits land without a full page reload.
-    const promises: Promise<void>[] = [certs.refresh(), status.refresh(), config.refresh()]
+    const tableQ = tableQuery(safePage)
+    lastTableKey = JSON.stringify(tableQ)
+    lastInventoryKey = JSON.stringify(mountFilter)
+    const promises: Promise<void>[] = [
+      certs.refreshTable(tableQ),
+      certs.refreshInventory(mountFilter),
+      status.refresh(),
+      config.refresh(),
+    ]
     if (initial) {
       try {
         await Promise.all(promises)
@@ -277,12 +310,30 @@
   }
 
   function exportCerts(format: ExportFormat): void {
-    if (sorted.length === 0) {
+    // Same filter/sort pipeline the table used client-side, applied to the
+    // full inventory so exports keep covering every match, not just the page.
+    const scoped = sortCerts(
+      certs.inventory.filter((cert) =>
+        matchesFilters(
+          cert,
+          {
+            search: searchForFilter,
+            statuses: statusFilters,
+            certType: certTypeFilter,
+            mounts: mountFilter,
+          },
+          thresholds,
+        ),
+      ),
+      sortKey,
+      sortDir,
+    )
+    if (scoped.length === 0) {
       toast.error(i18n.t('exportEmpty', 'Nothing to export'))
       return
     }
-    downloadExport(sorted, format, thresholds)
-    toast.success(i18n.t('exportSuccess', 'Exported {count} certificate(s)', { count: sorted.length }))
+    downloadExport(scoped, format, thresholds)
+    toast.success(i18n.t('exportSuccess', 'Exported {count} certificate(s)', { count: scoped.length }))
   }
 
   // Bumped after each export so the Select remounts and the same format can be picked again.
@@ -301,7 +352,7 @@
   ])
   const sortKeyLabel = $derived(SORT_OPTIONS.find((o) => o.key === sortKey)?.label ?? sortKey)
   const resultCountText = $derived(
-    i18n.t('dashboardResultCount', '{count} certificates', { count: sorted.length }),
+    i18n.t('dashboardResultCount', '{count} certificates', { count: certs.total }),
   )
 
   function setSortKey(key: SortKey): void {
@@ -349,11 +400,11 @@
   }
 
   function pageInfoText(): string {
-    if (sorted.length === 0) return i18n.t('paginationResults', '{count} results', { count: 0 })
-    if (pageSize === 'all') return i18n.t('paginationResults', '{count} results', { count: sorted.length })
+    if (certs.total === 0) return i18n.t('paginationResults', '{count} results', { count: 0 })
+    if (pageSize === 'all') return i18n.t('paginationResults', '{count} results', { count: certs.total })
     const start = safePage * (pageSize as number) + 1
-    const end = Math.min(start + (pageSize as number) - 1, sorted.length)
-    return i18n.t('paginationRange', '{start}–{end} of {total}', { start, end, total: sorted.length })
+    const end = Math.min(start + (pageSize as number) - 1, certs.total)
+    return i18n.t('paginationRange', '{start}–{end} of {total}', { start, end, total: certs.total })
   }
 
   function autoRefreshOptionLabel(seconds: number): string {
@@ -552,7 +603,7 @@
       onSelect={toggleStatus}
     />
 
-    <ExpiryTimeline certs={certs.certificates} {thresholds} />
+    <ExpiryTimeline certs={certs.inventory} {thresholds} />
 
     <div class="vcv-results-bar">
       <span class="vcv-results-count" aria-live="polite">{resultCountText}</span>
@@ -589,7 +640,7 @@
             <Select.Trigger
               class="vcv-select vcv-export-select h-9"
               aria-label={i18n.t('buttonExport', 'Export')}
-              disabled={sorted.length === 0}
+              disabled={certs.total === 0}
             >
               {i18n.t('buttonExport', 'Export')}
             </Select.Trigger>
@@ -603,10 +654,10 @@
     </div>
 
     <CertTable
-      certs={paged}
+      certs={certs.certificates}
       loading={certs.loading}
       {initialLoad}
-      hasInventory={certs.certificates.length > 0}
+      hasInventory={certs.inventory.length > 0}
       {hasActiveFilters}
       {showVaultMount}
       {statusMeta}
@@ -619,10 +670,10 @@
     />
 
     <CertMobileList
-      certs={paged}
+      certs={certs.certificates}
       loading={certs.loading}
       {initialLoad}
-      hasInventory={certs.certificates.length > 0}
+      hasInventory={certs.inventory.length > 0}
       {hasActiveFilters}
       {showVaultMount}
       {statusMeta}
@@ -671,7 +722,7 @@
 <CommandPalette
   open={commandOpen}
   onOpenChange={(value) => (commandOpen = value)}
-  certs={certs.certificates}
+  certs={certs.inventory}
   theme={theme.theme}
   onSelectCert={selectCert}
   onToggleStatus={toggleStatus}

@@ -67,10 +67,31 @@ async function requestVoid(path: string, init?: RequestInit): Promise<void> {
   }
 }
 
+/** Server-side list query mirroring GET /api/certs params. Page is 1-based. */
+export interface CertsQuery {
+  mounts?: string[]
+  search?: string
+  statuses?: string[]
+  certType?: string
+  sort?: string
+  order?: 'asc' | 'desc'
+  page?: number
+  pageSize?: number | 'all'
+}
+
 export const api = {
-  listCertificates(mounts?: string[]): Promise<CertificatesEnvelope> {
-    const qs = mounts === undefined ? '' : `?mounts=${encodeURIComponent(mounts.join(','))}`
-    return request<CertificatesEnvelope>(`/api/certs${qs}`)
+  listCertificates(query: CertsQuery = {}): Promise<CertificatesEnvelope> {
+    const params = new URLSearchParams()
+    if (query.mounts !== undefined) params.set('mounts', query.mounts.join(','))
+    if (query.search) params.set('search', query.search)
+    if (query.statuses && query.statuses.length > 0) params.set('status', query.statuses.join(','))
+    if (query.certType && query.certType !== 'all') params.set('cert_type', query.certType)
+    if (query.sort) params.set('sort', query.sort)
+    if (query.order) params.set('order', query.order)
+    if (query.page !== undefined) params.set('page', String(query.page))
+    if (query.pageSize !== undefined) params.set('page_size', String(query.pageSize))
+    const qs = params.toString()
+    return request<CertificatesEnvelope>(`/api/certs${qs ? `?${qs}` : ''}`)
   },
   getCertificateDetails(id: string): Promise<DetailedCertificate> {
     return request<DetailedCertificate>(`/api/certs/${encodeURIComponent(id)}/details`)

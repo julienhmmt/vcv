@@ -41,6 +41,18 @@ function sampleCert(id: string): Certificate {
   }
 }
 
+function envelopeFor(ids: string[]): CertificatesEnvelope {
+  return {
+    certificates: ids.map(sampleCert),
+    errors: [],
+    total: ids.length,
+    page: 1,
+    page_size: ids.length,
+    total_pages: 1,
+    counts: { valid: ids.length, warning: 0, critical: 0, expired: 0, revoked: 0, total: ids.length },
+  }
+}
+
 function deferred<T>(): {
   promise: Promise<T>
   resolve: (value: T) => void
@@ -60,58 +72,66 @@ beforeEach(() => {
 })
 
 describe('createCertsStore', () => {
-  it('loads certificates on refresh', async () => {
-    const envelope: CertificatesEnvelope = {
-      certificates: [sampleCert('a')],
-      errors: [],
-    }
+  it('loads the table page and total on refreshTable', async () => {
+    const envelope = envelopeFor(['a'])
     listCertificates.mockResolvedValueOnce(envelope)
     const store = createCertsStore(i18n)
-    await store.refresh()
+    await store.refreshTable({ page: 1, pageSize: 25 })
+    expect(listCertificates).toHaveBeenCalledWith({ page: 1, pageSize: 25 })
     expect(store.certificates).toEqual(envelope.certificates)
+    expect(store.total).toBe(1)
+    expect(store.totalPages).toBe(1)
     expect(store.error).toBeNull()
     expect(store.loading).toBe(false)
   })
 
-  it('ignores a stale slower response after a newer refresh wins', async () => {
+  it('loads the full inventory on refreshInventory', async () => {
+    const envelope = envelopeFor(['a', 'b'])
+    listCertificates.mockResolvedValueOnce(envelope)
+    const store = createCertsStore(i18n)
+    await store.refreshInventory(null)
+    expect(listCertificates).toHaveBeenCalledWith({ pageSize: 'all' })
+    expect(store.inventory).toEqual(envelope.certificates)
+    expect(store.loading).toBe(false)
+  })
+
+  it('passes mount scope through to refreshInventory', async () => {
+    listCertificates.mockResolvedValueOnce(envelopeFor(['a']))
+    const store = createCertsStore(i18n)
+    await store.refreshInventory(['vault-a|pki'])
+    expect(listCertificates).toHaveBeenCalledWith({ mounts: ['vault-a|pki'], pageSize: 'all' })
+  })
+
+  it('ignores a stale slower response after a newer refreshTable wins', async () => {
     const first = deferred<CertificatesEnvelope>()
     const second = deferred<CertificatesEnvelope>()
     listCertificates.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
 
     const store = createCertsStore(i18n)
-    const p1 = store.refresh()
-    const p2 = store.refresh()
+    const p1 = store.refreshTable({})
+    const p2 = store.refreshTable({})
 
-    second.resolve({
-      certificates: [sampleCert('newer')],
-      errors: [],
-    })
+    second.resolve(envelopeFor(['newer']))
     await p2
     expect(store.certificates.map((c) => c.id)).toEqual(['newer'])
     expect(store.loading).toBe(false)
 
-    first.resolve({
-      certificates: [sampleCert('stale')],
-      errors: [],
-    })
+    first.resolve(envelopeFor(['stale']))
     await p1
     expect(store.certificates.map((c) => c.id)).toEqual(['newer'])
     expect(store.loading).toBe(false)
   })
 
-  it('does not apply a stale error after a successful newer refresh', async () => {
+  it('does not apply a stale error after a successful newer refreshTable', async () => {
     const first = deferred<CertificatesEnvelope>()
     const second = deferred<CertificatesEnvelope>()
     listCertificates.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
 
     const store = createCertsStore(i18n)
-    const p1 = store.refresh()
-    const p2 = store.refresh()
+    const p1 = store.refreshTable({})
+    const p2 = store.refreshTable({})
 
-    second.resolve({
-      certificates: [sampleCert('ok')],
-      errors: [],
-    })
+    second.resolve(envelopeFor(['ok']))
     await p2
     expect(store.certificates.map((c) => c.id)).toEqual(['ok'])
     expect(store.error).toBeNull()
@@ -123,21 +143,21 @@ describe('createCertsStore', () => {
     expect(store.loading).toBe(false)
   })
 
-  it('keeps loading true until the latest in-flight refresh finishes', async () => {
+  it('keeps loading true until the latest in-flight refreshTable finishes', async () => {
     const first = deferred<CertificatesEnvelope>()
     const second = deferred<CertificatesEnvelope>()
     listCertificates.mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise)
 
     const store = createCertsStore(i18n)
-    const p1 = store.refresh()
-    const p2 = store.refresh()
+    const p1 = store.refreshTable({})
+    const p2 = store.refreshTable({})
     expect(store.loading).toBe(true)
 
-    first.resolve({ certificates: [sampleCert('stale')], errors: [] })
+    first.resolve(envelopeFor(['stale']))
     await p1
     expect(store.loading).toBe(true)
 
-    second.resolve({ certificates: [sampleCert('latest')], errors: [] })
+    second.resolve(envelopeFor(['latest']))
     await p2
     expect(store.loading).toBe(false)
     expect(store.certificates.map((c) => c.id)).toEqual(['latest'])
