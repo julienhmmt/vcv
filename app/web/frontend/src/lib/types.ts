@@ -28,9 +28,23 @@ export interface VaultListError {
   message: string
 }
 
+export interface CertStatusCounts {
+  valid: number
+  warning: number
+  critical: number
+  expired: number
+  revoked: number
+  total: number
+}
+
 export interface CertificatesEnvelope {
   certificates: Certificate[]
   errors: VaultListError[]
+  total: number
+  page: number
+  page_size: number
+  total_pages: number
+  counts: CertStatusCounts
 }
 
 export interface PemResponse {
