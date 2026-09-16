@@ -5,6 +5,7 @@
   "app": {
     "env": "prod",
     "trust_proxy": false,
+    "trusted_auth_header": "",
     "logging": {
       "level": "info",
       "format": "json",

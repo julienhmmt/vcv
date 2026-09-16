@@ -20,6 +20,10 @@ import (
 )
 
 func auditTestRouter(t *testing.T, password string) (*chi.Mux, string) {
+	return auditTestRouterWithProxy(t, password, handlers.ProxyConfig{})
+}
+
+func auditTestRouterWithProxy(t *testing.T, password string, proxy handlers.ProxyConfig) (*chi.Mux, string) {
 	t.Helper()
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	require.NoError(t, err)
@@ -34,7 +38,7 @@ func auditTestRouter(t *testing.T, password string) (*chi.Mux, string) {
 	require.NoError(t, os.WriteFile(settingsPath, data, 0644))
 
 	r := chi.NewRouter()
-	handlers.RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil, false)
+	handlers.RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil, proxy)
 	return r, settingsPath
 }
 
@@ -86,6 +90,31 @@ func TestAdminAudit_LoginFailure(t *testing.T) {
 	assert.Contains(t, output, "admin")
 	containsSuccess(t, output, false)
 	assert.NotContains(t, output, "wrong-password")
+}
+
+func TestAdminAudit_ProxyUserTrustedOnly(t *testing.T) {
+	trusted, _ := auditTestRouterWithProxy(t, "correct-horse",
+		handlers.ProxyConfig{TrustProxy: true, TrustedAuthHeader: "X-Forwarded-User"})
+	buf := captureLogs(t)
+
+	body, _ := json.Marshal(map[string]string{"username": "admin", "password": "correct-horse"})
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", bytes.NewReader(body))
+	req.Header.Set("X-Forwarded-User", "proxy-alice")
+	w := httptest.NewRecorder()
+	trusted.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, buf.String(), "proxy_user")
+	assert.Contains(t, buf.String(), "proxy-alice")
+
+	untrusted, _ := auditTestRouterWithProxy(t, "correct-horse",
+		handlers.ProxyConfig{TrustProxy: false, TrustedAuthHeader: "X-Forwarded-User"})
+	buf.Reset()
+	req = httptest.NewRequest(http.MethodPost, "/api/admin/login", bytes.NewReader(body))
+	req.Header.Set("X-Forwarded-User", "proxy Mallory")
+	w = httptest.NewRecorder()
+	untrusted.ServeHTTP(w, req)
+	require.Equal(t, http.StatusOK, w.Code)
+	assert.NotContains(t, buf.String(), "proxy_user")
 }
 
 func TestAdminAudit_LoginSuccessLogoutAndSettingsPut(t *testing.T) {
