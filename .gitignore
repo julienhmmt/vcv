@@ -5,6 +5,7 @@
 /vcv
 # App logs
 vcv.log
+/logs/
 
 plans/
 
