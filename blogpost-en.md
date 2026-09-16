@@ -1,5 +1,7 @@
 # VCV
 
+> Article snapshot — also published on the author's website. Canonical product docs live in `README.md`.
+
 Keeping track of TLS certificates spread across multiple Vault PKI engines can quickly become tedious: expirations are missed, renewals become reactive, and teams lose visibility.
 
 **VCV (VaultCertificatesViewer)** is a small, self-hosted web application that gives you a clear, fast overview of your Vault-issued certificates—so you can act before incidents happen.

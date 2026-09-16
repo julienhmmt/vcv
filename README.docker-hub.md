@@ -1,5 +1,7 @@
 # VaultCertsViewer 🔐
 
+> Canonical docs: `README.md` (EN) + `README.fr.md` (FR) in this repo. This Docker Hub copy is a deployment-focused mirror — if they diverge, the repo READMEs win.
+
 VaultCertsViewer (vcv) is a lightweight web UI that lists and inspects certificates stored in one or more HashiCorp Vault or OpenBao PKI mounts, especially their expiration dates and SANs.
 
 OpenBao compatible: VCV works seamlessly with both HashiCorp Vault and OpenBao, as they share the same PKI API. Tested with OpenBao 2.4+ and Vault 1.20+ (as of 02/2026).

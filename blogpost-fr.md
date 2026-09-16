@@ -1,5 +1,7 @@
 # VCV
 
+> Snapshot d'article — également publié sur le site de l'auteur. La documentation produit de référence est dans `README.md`.
+
 Suivre des certificats TLS répartis sur plusieurs moteurs PKI Vault devient vite pénible : expirations oubliées, renouvellements en urgence, manque de visibilité.
 
 **VCV (VaultCertificatesViewer)** est une petite application web auto-hébergée qui offre une vue claire et rapide de vos certificats émis par Vault — pour agir avant que les incidents n’arrivent.
