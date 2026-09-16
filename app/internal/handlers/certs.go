@@ -8,10 +8,12 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
 	"vcv/internal/certs"
+	"vcv/internal/config"
 	"vcv/internal/logger"
 	"vcv/internal/middleware"
 	"vcv/internal/vault"
@@ -25,10 +27,18 @@ const certsListCacheControl = "private, max-age=0, must-revalidate"
 
 // certsEnvelope is the response shape for GET /api/certs. Errors carries
 // per-vault failures so the UI can surface partial-success state instead of
-// blanking out when one of several vaults is unreachable.
+// blanking out when one of several vaults is unreachable. Total/Page/
+// PageSize/TotalPages describe the filtered set for server-side pagination;
+// Counts breaks the scoped set (mounts, search, type — ignoring the status
+// filter) down by status tier for dashboard and facet rendering.
 type certsEnvelope struct {
 	Certificates []certs.Certificate `json:"certificates"`
 	Errors       []vault.VaultError  `json:"errors"`
+	Total        int                 `json:"total"`
+	Page         int                 `json:"page"`
+	PageSize     int                 `json:"page_size"`
+	TotalPages   int                 `json:"total_pages"`
+	Counts       certsStatusCounts   `json:"counts"`
 }
 
 // listCertificatesWithErrors prefers the envelope-aware API when the client
@@ -46,8 +56,8 @@ func listCertificatesWithErrors(ctx context.Context, client vault.Client) ([]cer
 	return certificates, []vault.VaultError{}, nil
 }
 
-func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
-	r.Get("/api/certs", listCertificatesHandler(vaultClient))
+func RegisterCertRoutes(r chi.Router, vaultClient vault.Client, thresholds config.ExpirationThresholds) {
+	r.Get("/api/certs", listCertificatesHandler(vaultClient, thresholds))
 	r.Get("/api/certs/{id}/details", certDetailsHandler(vaultClient))
 	r.Get("/api/certs/{id}/ca", certCAHandler(vaultClient))
 	r.Get("/api/certs/{id}/pem", certPEMHandler(vaultClient))
@@ -74,7 +84,8 @@ func matchETag(headerValue, etag string) bool {
 	return false
 }
 
-func listCertificatesHandler(vaultClient vault.Client) http.HandlerFunc {
+func listCertificatesHandler(vaultClient vault.Client, thresholds config.ExpirationThresholds) http.HandlerFunc {
+	criticalDays, warningDays := resolveCertThresholds(thresholds)
 	return func(w http.ResponseWriter, req *http.Request) {
 		// Parse mount filter from query parameters
 		selectedMounts := parseMountsQueryParam(req.URL.Query())
@@ -101,7 +112,29 @@ func listCertificatesHandler(vaultClient vault.Client) http.HandlerFunc {
 			Msg("retrieved certificates from vault")
 
 		filteredCertificates := filterCertificatesByMounts(certificates, selectedMounts)
-		envelope := certsEnvelope{Certificates: filteredCertificates, Errors: vaultErrors}
+
+		listQuery, queryErr := parseCertsQuery(req.URL.Query())
+		if queryErr != nil {
+			logger.HTTPError(req.Method, req.URL.Path, http.StatusBadRequest, queryErr).
+				Str("request_id", requestID).
+				Msg("invalid certificates query")
+			writeJSONError(w, http.StatusBadRequest, queryErr.Error())
+			return
+		}
+		pageItems, total, totalPages, counts := applyCertsQuery(filteredCertificates, listQuery, criticalDays, warningDays, time.Now())
+		effectivePageSize := listQuery.pageSize
+		if effectivePageSize <= 0 {
+			effectivePageSize = total
+		}
+		envelope := certsEnvelope{
+			Certificates: pageItems,
+			Errors:       vaultErrors,
+			Total:        total,
+			Page:         listQuery.page,
+			PageSize:     effectivePageSize,
+			TotalPages:   totalPages,
+			Counts:       counts,
+		}
 
 		payload, err := json.Marshal(envelope)
 		if err != nil {
@@ -117,7 +150,8 @@ func listCertificatesHandler(vaultClient vault.Client) http.HandlerFunc {
 		if clientETag := req.Header.Get("If-None-Match"); matchETag(clientETag, etag) {
 			logger.HTTPEvent(req.Method, req.URL.Path, http.StatusNotModified, 0).
 				Str("request_id", requestID).
-				Int("count", len(filteredCertificates)).
+				Int("count", len(pageItems)).
+				Int("total", total).
 				Msg("certificates not modified")
 			w.WriteHeader(http.StatusNotModified)
 			return
@@ -133,7 +167,9 @@ func listCertificatesHandler(vaultClient vault.Client) http.HandlerFunc {
 		}
 		logger.HTTPEvent(req.Method, req.URL.Path, http.StatusOK, 0).
 			Str("request_id", requestID).
-			Int("count", len(filteredCertificates)).
+			Int("count", len(pageItems)).
+			Int("total", total).
+			Int("page", listQuery.page).
 			Int("vault_errors", len(vaultErrors)).
 			Strs("mounts", selectedMounts).
 			Msg("certificates listed successfully")

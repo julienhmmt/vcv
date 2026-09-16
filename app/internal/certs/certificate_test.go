@@ -540,6 +540,101 @@ func TestCertificate_GetStatus(t *testing.T) {
 	}
 }
 
+func TestStatusAt(t *testing.T) {
+	now := time.Date(2026, 9, 16, 12, 0, 0, 0, time.UTC)
+	tests := []struct {
+		name         string
+		cert         Certificate
+		criticalDays int
+		warningDays  int
+		expected     string
+	}{
+		{
+			name:         "revoked certificate",
+			cert:         Certificate{Revoked: true, ExpiresAt: now.Add(24 * time.Hour)},
+			criticalDays: 7,
+			warningDays:  30,
+			expected:     StatusRevoked,
+		},
+		{
+			name:         "revoked beats expired",
+			cert:         Certificate{Revoked: true, ExpiresAt: now.Add(-24 * time.Hour)},
+			criticalDays: 7,
+			warningDays:  30,
+			expected:     StatusRevoked,
+		},
+		{
+			name:         "zero expiry is expired",
+			cert:         Certificate{},
+			criticalDays: 7,
+			warningDays:  30,
+			expected:     StatusExpired,
+		},
+		{
+			name:         "past expiry is expired",
+			cert:         Certificate{ExpiresAt: now.Add(-1 * time.Hour)},
+			criticalDays: 7,
+			warningDays:  30,
+			expected:     StatusExpired,
+		},
+		{
+			name:         "inside critical window",
+			cert:         Certificate{ExpiresAt: now.Add(72 * time.Hour)},
+			criticalDays: 7,
+			warningDays:  30,
+			expected:     StatusCritical,
+		},
+		{
+			name:         "critical boundary is inclusive",
+			cert:         Certificate{ExpiresAt: now.Add(7 * 24 * time.Hour)},
+			criticalDays: 7,
+			warningDays:  30,
+			expected:     StatusCritical,
+		},
+		{
+			name:         "just outside critical is warning",
+			cert:         Certificate{ExpiresAt: now.Add(8 * 24 * time.Hour)},
+			criticalDays: 7,
+			warningDays:  30,
+			expected:     StatusWarning,
+		},
+		{
+			name:         "warning boundary is inclusive",
+			cert:         Certificate{ExpiresAt: now.Add(30 * 24 * time.Hour)},
+			criticalDays: 7,
+			warningDays:  30,
+			expected:     StatusWarning,
+		},
+		{
+			name:         "beyond warning is valid",
+			cert:         Certificate{ExpiresAt: now.Add(60 * 24 * time.Hour)},
+			criticalDays: 7,
+			warningDays:  30,
+			expected:     StatusValid,
+		},
+		{
+			name:         "disabled thresholds leave future cert valid",
+			cert:         Certificate{ExpiresAt: now.Add(24 * time.Hour)},
+			criticalDays: 0,
+			warningDays:  0,
+			expected:     StatusValid,
+		},
+		{
+			name:         "disabled critical still warns",
+			cert:         Certificate{ExpiresAt: now.Add(24 * time.Hour)},
+			criticalDays: 0,
+			warningDays:  30,
+			expected:     StatusWarning,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, StatusAt(tt.cert, tt.criticalDays, tt.warningDays, now))
+		})
+	}
+}
+
 func TestInferCertType(t *testing.T) {
 	tests := []struct {
 		name     string

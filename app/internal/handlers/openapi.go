@@ -43,11 +43,18 @@ func openAPIPaths() map[string]any {
 		"/api/certs": map[string]any{
 			"get": map[string]any{
 				"summary":     "List certificates",
-				"description": "Partial-success envelope: certificates plus per-vault errors. Optional ?mounts=a,b filter.",
+				"description": "Partial-success envelope: certificates plus per-vault errors. Supports search/filter/sort/pagination; without query params returns the full list. Response adds total, page, page_size, total_pages, and status counts.",
 				"parameters": []any{
-					map[string]any{"name": "mounts", "in": "query", "schema": map[string]any{"type": "string"}},
+					map[string]any{"name": "mounts", "in": "query", "schema": map[string]any{"type": "string"}, "description": "Comma-separated PKI mounts to include."},
+					map[string]any{"name": "search", "in": "query", "schema": map[string]any{"type": "string"}, "description": "Case-insensitive substring over common name, serial, and SANs."},
+					map[string]any{"name": "status", "in": "query", "schema": map[string]any{"type": "string"}, "description": "Comma-separated tiers: valid,warning,critical,expired,revoked."},
+					map[string]any{"name": "cert_type", "in": "query", "schema": map[string]any{"type": "string"}, "description": "One of all,machine,user,both,unknown."},
+					map[string]any{"name": "sort", "in": "query", "schema": map[string]any{"type": "string"}, "description": "One of commonName,expiresAt,vault,pki."},
+					map[string]any{"name": "order", "in": "query", "schema": map[string]any{"type": "string"}, "description": "asc or desc (default asc)."},
+					map[string]any{"name": "page", "in": "query", "schema": map[string]any{"type": "integer"}, "description": "1-based page number."},
+					map[string]any{"name": "page_size", "in": "query", "schema": map[string]any{"type": "string"}, "description": "Items per page (numeric, capped at 1000) or all."},
 				},
-				"responses": map[string]any{"200": map[string]any{"description": "OK"}},
+				"responses": map[string]any{"200": map[string]any{"description": "OK"}, "304": map[string]any{"description": "Not Modified (ETag match)"}, "400": map[string]any{"description": "Invalid query parameter"}},
 			},
 		},
 		"/api/certs/{id}/details": get("Certificate details", "Detailed view for one certificate. The id path segment must be URL-encoded."),
