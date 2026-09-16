@@ -762,3 +762,31 @@ func TestRegisterAdminRoutes_NoCacheClient(t *testing.T) {
 
 	assert.Equal(t, http.StatusServiceUnavailable, w.Code)
 }
+
+func TestMultiReplicaLikely(t *testing.T) {
+	tests := []struct {
+		name string
+		env  map[string]string
+		want bool
+	}{
+		{name: "no signals", env: map[string]string{}, want: false},
+		{name: "kubernetes", env: map[string]string{"KUBERNETES_SERVICE_HOST": "10.0.0.1"}, want: true},
+		{name: "nomad", env: map[string]string{"NOMAD_ALLOC_ID": "abc"}, want: true},
+		{name: "fly", env: map[string]string{"FLY_APP_NAME": "vcv"}, want: true},
+		{name: "knative", env: map[string]string{"K_SERVICE": "vcv"}, want: true},
+		{name: "explicit replicas", env: map[string]string{"VCV_REPLICAS": "3"}, want: true},
+		{name: "single replica", env: map[string]string{"VCV_REPLICAS": "1"}, want: false},
+		{name: "zero replicas", env: map[string]string{"REPLICA_COUNT": "0"}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, key := range []string{"KUBERNETES_SERVICE_HOST", "NOMAD_ALLOC_ID", "FLY_APP_NAME", "K_SERVICE", "VCV_REPLICAS", "REPLICA_COUNT", "REPLICAS"} {
+				t.Setenv(key, "")
+			}
+			for k, v := range tt.env {
+				t.Setenv(k, v)
+			}
+			assert.Equal(t, tt.want, multiReplicaLikely())
+		})
+	}
+}

@@ -420,5 +420,32 @@ func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Envi
 		})
 	})
 	logger.Get().Info().Msg("admin API enabled")
+	if multiReplicaLikely() {
+		logger.Get().Warn().Msg("admin sessions are held in process memory; with more than one replica, use sticky sessions (or a single admin replica) or logins will flap")
+	}
 	return true
+}
+
+// multiReplicaLikely reports whether the process probably runs alongside
+// other replicas that do not share memory. Admin sessions live in the
+// process, so a second replica without sticky sessions drops logins.
+func multiReplicaLikely() bool {
+	if os.Getenv("KUBERNETES_SERVICE_HOST") != "" {
+		return true
+	}
+	if os.Getenv("NOMAD_ALLOC_ID") != "" {
+		return true
+	}
+	if os.Getenv("FLY_APP_NAME") != "" {
+		return true
+	}
+	if os.Getenv("K_SERVICE") != "" {
+		return true
+	}
+	for _, key := range []string{"VCV_REPLICAS", "REPLICA_COUNT", "REPLICAS"} {
+		if n := strings.TrimSpace(os.Getenv(key)); n != "" && n != "0" && n != "1" {
+			return true
+		}
+	}
+	return false
 }
