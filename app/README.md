@@ -38,6 +38,7 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 | `/api/certs/{id}/pem`     | GET     | PEM content (JSON)                                       |
 | `/api/certs/{id}/ca`      | GET     | Signing authority (intermediate/root)                    |
 | `/api/config`             | GET     | Public application configuration (thresholds, mounts)    |
+| `/api/openapi.json`       | GET     | OpenAPI 3.0 spec for this API (versioned with the build) |
 | `/api/health`             | GET     | Liveness probe                                           |
 | `/api/i18n`               | GET     | UI translations (`?lang=`)                               |
 | `/api/ready`              | GET     | Readiness probe                                          |
