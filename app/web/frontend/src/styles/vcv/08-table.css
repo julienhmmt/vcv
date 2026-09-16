@@ -286,6 +286,12 @@ col.vcv-col-status {
   background: transparent;
 }
 
+/* Virtualization spacer rows: pure height placeholders, no cell chrome. */
+.vcv-table tbody tr.vcv-spacer td {
+  padding: 0;
+  border: 0;
+}
+
 /* Clickable rows */
 .vcv-row-clickable {
   cursor: pointer;
