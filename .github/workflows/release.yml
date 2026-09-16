@@ -8,6 +8,8 @@ on:
 
 permissions:
   contents: write
+  # Keyless cosign signing via Fulcio/Rekor needs an OIDC token.
+  id-token: write
 
 jobs:
   goreleaser:
@@ -17,6 +19,9 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
+
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v4
 
       - name: Set up Go
         uses: actions/setup-go@v7
