@@ -134,10 +134,11 @@ func TestLoad_TrustProxyTrue(t *testing.T) {
 			"env": "dev",
 			"port": 52000,
 			"trust_proxy": true,
+			"trusted_auth_header": "  X-Forwarded-User  ",
 			"logging": {"level": "debug", "format": "console", "output": "stdout"}
 		},
 		"vaults": []
-	}`
+}`
 	if err := os.WriteFile(settingsFile, []byte(settingsContent), 0644); err != nil {
 		t.Fatalf("failed to create test settings file: %v", err)
 	}
@@ -155,6 +156,9 @@ func TestLoad_TrustProxyTrue(t *testing.T) {
 	}
 	if !cfg.TrustProxy {
 		t.Fatalf("expected TrustProxy true when set, got false")
+	}
+	if cfg.TrustedAuthHeader != "X-Forwarded-User" {
+		t.Fatalf("expected TrustedAuthHeader trimmed, got %q", cfg.TrustedAuthHeader)
 	}
 }
 

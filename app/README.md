@@ -177,6 +177,13 @@ Rate limiting keys and CSRF target-origin construction honor `X-Forwarded-For`, 
 
 Set `app.trust_proxy: true` **only** when a reverse proxy (nginx, Traefik, etc.) sits in front of vcv and **overwrites** client-supplied `X-Forwarded-*` headers with trusted values. If clients can reach vcv directly while this flag is true, they can spoof per-IP rate-limit buckets and skew CSRF origin checks.
 
+`app.trusted_auth_header` (default `""`, e.g. `"X-Forwarded-User"`) names the
+request header carrying the reverse-proxy authenticated identity
+(OAuth2-Proxy style) for the admin audit log. It is honored **only** when
+`app.trust_proxy` is `true`; otherwise it is ignored with a startup warning,
+since the header would be spoofable. This is a file-only operator setting
+(not editable from the admin panel), like `trust_proxy` itself.
+
 Lab `docker-compose` without a stripping proxy should leave `trust_proxy` false.
 
 ## Logging

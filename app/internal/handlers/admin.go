@@ -370,9 +370,10 @@ func isBcryptHash(s string) bool {
 // RegisterAdminRoutes wires the JSON admin API. HTMX routes have been removed
 // in favor of the Svelte admin panel that talks to /api/admin/*.
 // Admin remains optional: missing/invalid password skips registration with a clear log.
-// trustProxy should match app.trust_proxy (same as global RateLimit / CSRF).
+// proxy carries app.trust_proxy / app.trusted_auth_header (same trust as
+// global RateLimit / CSRF).
 // Returns true when admin routes were registered (bcrypt password present and valid).
-func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Environment, vaultRegistry *vault.Registry, vaultStatusClients map[string]vault.Client, cacheClient vault.Client, trustProxy bool) bool {
+func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Environment, vaultRegistry *vault.Registry, vaultStatusClients map[string]vault.Client, cacheClient vault.Client, proxy ProxyConfig) bool {
 	settingsStore := newAdminSettingsStore(settingsPath, env)
 	settings, err := settingsStore.load()
 	if err != nil {
@@ -391,7 +392,7 @@ func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Envi
 	}
 
 	secureCookies := env == config.EnvProd
-	sessions := newAdminSessionStore(password, secureCookies, trustProxy)
+	sessions := newAdminSessionStore(password, secureCookies, proxy.TrustProxy)
 	store := settingsStore
 	refreshRegistry := func() {
 		if vaultRegistry == nil {
@@ -402,11 +403,11 @@ func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Envi
 		}
 	}
 
-	registerAdminAPIRoutes(router, sessions, store, vaultStatusClients, refreshRegistry, adminAuditor{trustProxy: trustProxy})
+	registerAdminAPIRoutes(router, sessions, store, vaultStatusClients, refreshRegistry, adminAuditor{proxy: proxy})
 
 	router.Group(func(r chi.Router) {
 		r.Use(sessions.requireAuth)
-		auditor := adminAuditor{trustProxy: trustProxy}
+		auditor := adminAuditor{proxy: proxy}
 		r.Post("/api/cache/invalidate", func(w http.ResponseWriter, r *http.Request) {
 			if cacheClient == nil {
 				auditor.log(r, "admin.cache_invalidate", false, map[string]string{"reason": "no cache client"})
@@ -423,6 +424,9 @@ func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Envi
 		})
 	})
 	logger.Get().Info().Msg("admin API enabled")
+	if proxy.TrustedAuthHeader != "" && !proxy.TrustProxy {
+		logger.Get().Warn().Msg("admin trusted_auth_header is set but trust_proxy is false: proxy identity ignored (header would be spoofable)")
+	}
 	if multiReplicaLikely() {
 		logger.Get().Warn().Msg("admin sessions are held in process memory; with more than one replica, use sticky sessions (or a single admin replica) or logins will flap")
 	}

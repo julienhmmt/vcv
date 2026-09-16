@@ -618,7 +618,7 @@ func TestRegisterAdminRoutes(t *testing.T) {
 	vaultStatusClients := make(map[string]vault.Client)
 	cacheClient := &vault.MockClient{}
 
-	RegisterAdminRoutes(r, tmpFile, config.EnvDev, vaultRegistry, vaultStatusClients, cacheClient, false)
+	RegisterAdminRoutes(r, tmpFile, config.EnvDev, vaultRegistry, vaultStatusClients, cacheClient, ProxyConfig{})
 
 	// Verify routes are registered
 	assert.NotNil(t, r)
@@ -645,7 +645,7 @@ func TestRegisterAdminRoutes_EmptyPassword_LoginNotFound(t *testing.T) {
 	require.NoError(t, os.WriteFile(settingsPath, data, 0644))
 
 	r := chi.NewRouter()
-	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil, false)
+	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil, ProxyConfig{})
 
 	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", strings.NewReader(`{}`))
 	w := httptest.NewRecorder()
@@ -665,7 +665,7 @@ func TestRegisterAdminRoutes_InvalidHash_LoginNotFound(t *testing.T) {
 	require.NoError(t, os.WriteFile(settingsPath, data, 0644))
 
 	r := chi.NewRouter()
-	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil, false)
+	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil, ProxyConfig{})
 
 	req := httptest.NewRequest(http.MethodPost, "/api/admin/login", strings.NewReader(`{}`))
 	w := httptest.NewRecorder()
@@ -691,7 +691,7 @@ func TestRegisterAdminRoutes_CacheInvalidate(t *testing.T) {
 	cacheClient := &vault.MockClient{}
 	cacheClient.On("InvalidateCache").Return()
 
-	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, cacheClient, false)
+	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, cacheClient, ProxyConfig{})
 
 	// Login to get session
 	loginBody, _ := json.Marshal(map[string]string{"username": "admin", "password": "testpassword"})
@@ -735,7 +735,7 @@ func TestRegisterAdminRoutes_NoCacheClient(t *testing.T) {
 	require.NoError(t, os.WriteFile(settingsPath, data, 0644))
 
 	r := chi.NewRouter()
-	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil, false)
+	RegisterAdminRoutes(r, settingsPath, config.EnvDev, nil, nil, nil, ProxyConfig{})
 
 	// Login to get session
 	loginBody, _ := json.Marshal(map[string]string{"username": "admin", "password": "testpassword"})

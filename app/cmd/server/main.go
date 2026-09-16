@@ -161,7 +161,7 @@ func buildRouter(deps routerDeps) (*chi.Mux, error) {
 	r.Get("/api/health", handlers.HealthCheck)
 	r.Get("/api/ready", handlers.ReadinessCheck)
 	// Admin is optional; process stays up. Surface enablement on /api/status (not fail-ready).
-	adminAPIEnabled := handlers.RegisterAdminRoutes(r, deps.settingsPath, cfg.Env, deps.vaultRegistry, deps.statusClients, deps.multiVault, cfg.TrustProxy)
+	adminAPIEnabled := handlers.RegisterAdminRoutes(r, deps.settingsPath, cfg.Env, deps.vaultRegistry, deps.statusClients, deps.multiVault, handlers.ProxyConfig{TrustProxy: cfg.TrustProxy, TrustedAuthHeader: cfg.TrustedAuthHeader})
 	r.Get("/api/status", newStatusHandler(cfg, deps.primaryVault, deps.statusClients, adminAPIEnabled))
 	r.Get("/api/version", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

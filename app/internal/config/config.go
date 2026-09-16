@@ -30,7 +30,11 @@ type Config struct {
 	// for client IP (rate limits) and CSRF target origin. Enable only behind a reverse
 	// proxy that overwrites those headers; default false (fail-closed).
 	TrustProxy bool
-	CORS       CORSConfig
+	// TrustedAuthHeader names the request header carrying the reverse-proxy
+	// authenticated identity (e.g. X-Forwarded-User from OAuth2-Proxy) for
+	// audit logging. Honored only when TrustProxy is true; empty disables.
+	TrustedAuthHeader string
+	CORS              CORSConfig
 	// Vault is deprecated; prefer Vaults / AllVaults. Kept for legacy logging and helpers.
 	Vault                VaultConfig
 	Vaults               []VaultInstance
@@ -88,10 +92,11 @@ type SettingsFile struct {
 }
 
 type AppSettings struct {
-	Env        string          `json:"env"`
-	Logging    LoggingSettings `json:"logging"`
-	Port       int             `json:"port"`
-	TrustProxy bool            `json:"trust_proxy"`
+	Env               string          `json:"env"`
+	Logging           LoggingSettings `json:"logging"`
+	Port              int             `json:"port"`
+	TrustProxy        bool            `json:"trust_proxy"`
+	TrustedAuthHeader string          `json:"trusted_auth_header"`
 }
 
 type LoggingSettings struct {
@@ -236,6 +241,7 @@ func buildConfigFromSettings(settings SettingsFile) Config {
 		LogOutput:            logOutput,
 		LogFilePath:          logFilePath,
 		TrustProxy:           settings.App.TrustProxy,
+		TrustedAuthHeader:    strings.TrimSpace(settings.App.TrustedAuthHeader),
 		CORS:                 cors,
 		Vault:                VaultConfig{},
 		Vaults:               []VaultInstance{},
