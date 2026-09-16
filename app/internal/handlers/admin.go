@@ -402,12 +402,14 @@ func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Envi
 		}
 	}
 
-	registerAdminAPIRoutes(router, sessions, store, vaultStatusClients, refreshRegistry)
+	registerAdminAPIRoutes(router, sessions, store, vaultStatusClients, refreshRegistry, adminAuditor{trustProxy: trustProxy})
 
 	router.Group(func(r chi.Router) {
 		r.Use(sessions.requireAuth)
+		auditor := adminAuditor{trustProxy: trustProxy}
 		r.Post("/api/cache/invalidate", func(w http.ResponseWriter, r *http.Request) {
 			if cacheClient == nil {
+				auditor.log(r, "admin.cache_invalidate", false, map[string]string{"reason": "no cache client"})
 				http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 				return
 			}
@@ -417,6 +419,7 @@ func RegisterAdminRoutes(router chi.Router, settingsPath string, env config.Envi
 			logger.HTTPEvent(r.Method, r.URL.Path, http.StatusNoContent, 0).
 				Str("request_id", requestID).
 				Msg("invalidated cache")
+			auditor.log(r, "admin.cache_invalidate", true, nil)
 		})
 	})
 	logger.Get().Info().Msg("admin API enabled")

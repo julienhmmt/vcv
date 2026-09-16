@@ -165,6 +165,8 @@ provider-issued webhook URLs commonly embed an auth token in the path.
 ### App-layer controls already present
 
 - Global rate limiting (always on; health/ready/metrics and `/assets/` exempt).
+- Admin sign-in additionally limited to 5 attempts per 3 minutes per client IP.
+- Admin audit log (`event_category=audit`): sign-in success/failure, sign-out, settings saves, vault removals, cache invalidations — each with client IP and outcome; passwords and tokens never logged.
 - CSRF: unsafe methods with cookies require same-origin Origin/Referer (cookieless clients still allowed for automation).
 - Security headers, body size limits, request IDs.
 - Public `/api/status` error strings are sanitized (no raw Vault internals).

@@ -108,6 +108,7 @@ func registerAdminAPIRoutes(
 	store *adminSettingsStore,
 	vaultStatusClients map[string]vault.Client,
 	refreshRegistry func(),
+	auditor adminAuditor,
 ) {
 	router.Get("/api/admin/session", func(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, http.StatusOK, adminSessionResponse{Authenticated: sessions.isAuthed(r)})
@@ -116,19 +117,27 @@ func registerAdminAPIRoutes(
 	router.Post("/api/admin/login", func(w http.ResponseWriter, r *http.Request) {
 		var body adminLoginRequest
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			auditor.log(r, "admin.login", false, map[string]string{"reason": "invalid request body"})
 			writeJSONError(w, http.StatusBadRequest, "invalid request body")
 			return
 		}
 		ok, message := sessions.loginFromJSON(w, r, body)
 		if !ok {
+			auditor.log(r, "admin.login", false, map[string]string{"username": strings.TrimSpace(body.Username), "reason": message})
 			writeJSONError(w, http.StatusUnauthorized, message)
 			return
 		}
+		auditor.log(r, "admin.login", true, map[string]string{"username": strings.TrimSpace(body.Username)})
 		writeJSON(w, http.StatusOK, adminSessionResponse{Authenticated: true})
 	})
 
 	router.Post("/api/admin/logout", func(w http.ResponseWriter, r *http.Request) {
+		session := "none"
+		if sessions.isAuthed(r) {
+			session = "active"
+		}
 		sessions.logout(w, r)
+		auditor.log(r, "admin.logout", true, map[string]string{"session": session})
 		w.WriteHeader(http.StatusNoContent)
 	})
 
@@ -149,7 +158,7 @@ func registerAdminAPIRoutes(
 			writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskSecrets(settings), VaultStatuses: statuses})
 		})
 
-		r.Put("/api/admin/settings", adminSettingsPut(store, vaultStatusClients, refreshRegistry))
+		r.Put("/api/admin/settings", adminSettingsPut(store, vaultStatusClients, refreshRegistry, auditor))
 
 		r.Post("/api/admin/vault", func(w http.ResponseWriter, req *http.Request) {
 			key, err := newVaultKey()
@@ -170,35 +179,40 @@ func registerAdminAPIRoutes(
 			writeJSON(w, http.StatusOK, adminVaultAddedResponse{Key: key, Vault: vault})
 		})
 
-		r.Delete("/api/admin/vault/{id}", adminVaultDelete(store, refreshRegistry))
+		r.Delete("/api/admin/vault/{id}", adminVaultDelete(store, refreshRegistry, auditor))
 	})
 }
 
 // adminSettingsPut returns the handler for PUT /api/admin/settings: it merges
 // the incoming settings over the stored ones (preserving secrets) and saves.
-func adminSettingsPut(store *adminSettingsStore, vaultStatusClients map[string]vault.Client, refreshRegistry func()) http.HandlerFunc {
+func adminSettingsPut(store *adminSettingsStore, vaultStatusClients map[string]vault.Client, refreshRegistry func(), auditor adminAuditor) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		var incoming config.SettingsFile
 		if err := json.NewDecoder(req.Body).Decode(&incoming); err != nil {
+			auditor.log(req, "admin.settings_put", false, map[string]string{"reason": "invalid settings payload"})
 			writeJSONError(w, http.StatusBadRequest, "invalid settings payload")
 			return
 		}
 		current, err := store.load()
 		if err != nil {
+			auditor.log(req, "admin.settings_put", false, map[string]string{"reason": errLoadSettings})
 			writeJSONError(w, http.StatusInternalServerError, errLoadSettings)
 			return
 		}
 		merged := mergeAdminSettings(current, incoming)
 		if saveErr := store.save(merged); saveErr != nil {
+			auditor.log(req, "admin.settings_put", false, map[string]string{"reason": saveErr.Error()})
 			writeJSONError(w, validationErrorStatus(saveErr), saveErr.Error())
 			return
 		}
 		refreshRegistry()
 		updated, err := store.load()
 		if err != nil {
+			auditor.log(req, "admin.settings_put", false, map[string]string{"reason": "failed to reload settings"})
 			writeJSONError(w, http.StatusInternalServerError, "failed to reload settings")
 			return
 		}
+		auditor.log(req, "admin.settings_put", true, nil)
 		statuses := computeVaultStatuses(req.Context(), updated.Vaults, vaultStatusClients)
 		writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskSecrets(updated), VaultStatuses: statuses})
 	}
@@ -219,7 +233,7 @@ func validationErrorStatus(saveErr error) int {
 }
 
 // adminVaultDelete returns the handler for DELETE /api/admin/vault/{id}.
-func adminVaultDelete(store *adminSettingsStore, refreshRegistry func()) http.HandlerFunc {
+func adminVaultDelete(store *adminSettingsStore, refreshRegistry func(), auditor adminAuditor) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		vaultID := strings.TrimSpace(chi.URLParam(req, "id"))
 		if vaultID == "" {
@@ -250,10 +264,12 @@ func adminVaultDelete(store *adminSettingsStore, refreshRegistry func()) http.Ha
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, saveErr).
 				Str("request_id", requestID).
 				Msg("failed to save settings after vault removal")
+			auditor.log(req, "admin.vault_delete", false, map[string]string{"vault_id": vaultID, "reason": "failed to save settings"})
 			writeJSONError(w, http.StatusInternalServerError, "failed to save settings")
 			return
 		}
 		refreshRegistry()
+		auditor.log(req, "admin.vault_delete", true, map[string]string{"vault_id": vaultID})
 		w.WriteHeader(http.StatusNoContent)
 	}
 }

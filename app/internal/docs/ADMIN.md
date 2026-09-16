@@ -24,6 +24,11 @@ Sign in with username **`admin`** and the password matching that hash.
 
 > Sessions last 12 hours in dev and 4 hours in prod. Sign-in is rate limited
 > to 5 attempts per 3 minutes per client IP.
+>
+> Security events are audit-logged (`event_category=audit`): sign-in
+> success/failure (with username, never passwords), sign-out, settings
+> saves, vault removals, and cache invalidations — each with client IP
+> and outcome.
 
 ## Expiration thresholds
 
