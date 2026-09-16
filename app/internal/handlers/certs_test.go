@@ -84,6 +84,51 @@ func TestListCertificates_Envelope_PartialSuccess(t *testing.T) {
 	assert.Equal(t, "vault-b", got.Errors[0].VaultID)
 }
 
+func TestListCertificates_ETagNotModified(t *testing.T) {
+	mockVault := new(vault.MockClient)
+	certsList := []certs.Certificate{
+		{ID: "1", SerialNumber: "1", CommonName: "a", ExpiresAt: time.Now()},
+	}
+	mockVault.On("ListCertificates", mock.Anything).Return(certsList, nil)
+	router := setupRouter(mockVault)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/certs", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	assert.Equal(t, http.StatusOK, rec.Code)
+	etag := rec.Header().Get("ETag")
+	assert.NotEmpty(t, etag)
+	assert.Equal(t, "private, max-age=0, must-revalidate", rec.Header().Get("Cache-Control"))
+
+	conditional := httptest.NewRequest(http.MethodGet, "/api/certs", nil)
+	conditional.Header.Set("If-None-Match", etag)
+	condRec := httptest.NewRecorder()
+	router.ServeHTTP(condRec, conditional)
+
+	assert.Equal(t, http.StatusNotModified, condRec.Code)
+	assert.Empty(t, condRec.Body.String())
+	assert.Equal(t, etag, condRec.Header().Get("ETag"))
+
+	wildcard := httptest.NewRequest(http.MethodGet, "/api/certs", nil)
+	wildcard.Header.Set("If-None-Match", "*")
+	wildRec := httptest.NewRecorder()
+	router.ServeHTTP(wildRec, wildcard)
+	assert.Equal(t, http.StatusNotModified, wildRec.Code)
+
+	stale := httptest.NewRequest(http.MethodGet, "/api/certs", nil)
+	stale.Header.Set("If-None-Match", `"stale"`)
+	staleRec := httptest.NewRecorder()
+	router.ServeHTTP(staleRec, stale)
+
+	assert.Equal(t, http.StatusOK, staleRec.Code)
+	assert.Equal(t, etag, staleRec.Header().Get("ETag"))
+	var got certsEnvelopeResponse
+	assert.NoError(t, json.Unmarshal(staleRec.Body.Bytes(), &got))
+	assert.Len(t, got.Certificates, 1)
+	mockVault.AssertExpectations(t)
+}
+
 func TestListCertificates_Error(t *testing.T) {
 	mockVault := new(vault.MockClient)
 	mockVault.On("ListCertificates", mock.Anything).Return([]certs.Certificate{}, errors.New("boom"))
