@@ -5,6 +5,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rsa"
 	"crypto/x509"
+	"math"
 	"strconv"
 	"strings"
 	"time"
@@ -82,6 +83,39 @@ func (c *Certificate) GetStatus() string {
 		return "expired"
 	}
 	return "valid"
+}
+
+// Status values returned by StatusAt, matching the web UI tiers.
+const (
+	StatusValid    = "valid"
+	StatusWarning  = "warning"
+	StatusCritical = "critical"
+	StatusExpired  = "expired"
+	StatusRevoked  = "revoked"
+)
+
+// StatusAt classifies a certificate into the same tiers the web UI shows
+// (valid / warning / critical / expired / revoked). Days-until-expiry uses
+// floor semantics like the UI; a zero expiry is treated as expired.
+// Non-positive thresholds disable that tier.
+func StatusAt(c Certificate, criticalDays, warningDays int, now time.Time) string {
+	if c.Revoked {
+		return StatusRevoked
+	}
+	if c.ExpiresAt.IsZero() {
+		return StatusExpired
+	}
+	days := int(math.Floor(c.ExpiresAt.Sub(now).Hours() / 24))
+	if days < 0 {
+		return StatusExpired
+	}
+	if criticalDays > 0 && days <= criticalDays {
+		return StatusCritical
+	}
+	if warningDays > 0 && days <= warningDays {
+		return StatusWarning
+	}
+	return StatusValid
 }
 
 func InferCertType(cert *x509.Certificate) string {

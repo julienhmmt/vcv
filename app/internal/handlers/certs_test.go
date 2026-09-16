@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"vcv/internal/certs"
+	"vcv/internal/config"
 	"vcv/internal/handlers"
 	"vcv/internal/middleware"
 	"vcv/internal/vault"
@@ -22,7 +23,7 @@ import (
 func setupRouter(mockVault *vault.MockClient) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
-	handlers.RegisterCertRoutes(r, mockVault)
+	handlers.RegisterCertRoutes(r, mockVault, config.ExpirationThresholds{Critical: 7, Warning: 30})
 	return r
 }
 
@@ -70,7 +71,7 @@ func TestListCertificates_Envelope_PartialSuccess(t *testing.T) {
 	}
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
-	handlers.RegisterCertRoutes(r, envClient)
+	handlers.RegisterCertRoutes(r, envClient, config.ExpirationThresholds{Critical: 7, Warning: 30})
 
 	req := httptest.NewRequest(http.MethodGet, "/api/certs", nil)
 	rec := httptest.NewRecorder()

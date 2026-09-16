@@ -172,7 +172,7 @@ func buildRouter(deps routerDeps) (*chi.Mux, error) {
 	r.Get("/api/openapi.json", handlers.OpenAPISpec)
 	r.Get("/metrics", promhttp.HandlerFor(deps.promRegistry, promhttp.HandlerOpts{}).ServeHTTP)
 	handlers.RegisterI18nRoutes(r)
-	handlers.RegisterCertRoutes(r, deps.multiVault)
+	handlers.RegisterCertRoutes(r, deps.multiVault, cfg.ExpirationThresholds)
 
 	return r, nil
 }

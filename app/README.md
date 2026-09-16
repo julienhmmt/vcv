@@ -29,11 +29,11 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 ## API surface
 
 | Endpoint                  | Method  | Description                                              |
-| ------------------------- | ------- | -------------------------------------------------------- |
+|---------------------------|---------|----------------------------------------------------------|
 | `/`                       | GET     | SPA shell (`index.html`)                                 |
 | `/admin`                  | GET     | Admin SPA shell (`admin.html`)                           |
 | `/assets/*`               | GET     | Hashed static assets                                     |
-| `/api/certs`              | GET     | List certificates (partial-success envelope)             |
+| `/api/certs`              | GET     | List certificates (search/filter/sort/page; ETag/304)    |
 | `/api/certs/{id}/details` | GET     | Detailed certificate view                                |
 | `/api/certs/{id}/pem`     | GET     | PEM content (JSON)                                       |
 | `/api/certs/{id}/ca`      | GET     | Signing authority (intermediate/root)                    |
