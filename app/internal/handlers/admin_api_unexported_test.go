@@ -609,7 +609,7 @@ func setupAdminAPIRouter(t *testing.T) (*chi.Mux, *adminSessionStore, *adminSett
 	mockClient.On("CheckConnection", mock.Anything).Return(nil)
 	statusClients := map[string]vault.Client{"v1": mockClient}
 
-	registerAdminAPIRoutes(r, sessions, store, statusClients, refreshRegistry)
+	registerAdminAPIRoutes(r, sessions, store, statusClients, refreshRegistry, adminAuditor{})
 
 	return r, sessions, store, settingsPath
 }
@@ -993,7 +993,7 @@ func TestRegisterAdminAPIRoutes_VaultDelete_SaveError(t *testing.T) {
 	sessions := newAdminSessionStore(string(hashedPassword), false, false)
 
 	r := chi.NewRouter()
-	registerAdminAPIRoutes(r, sessions, store, map[string]vault.Client{}, func() {})
+	registerAdminAPIRoutes(r, sessions, store, map[string]vault.Client{}, func() {}, adminAuditor{})
 
 	cookie := loginAdmin(t, r)
 
