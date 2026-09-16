@@ -8,7 +8,7 @@ VaultCertsViewer (vcv) peut surveiller simultanément plusieurs moteurs PKI via 
 
 **Compatible avec OpenBao** : VCV fonctionne avec HashiCorp Vault et OpenBao, car ils partagent la même API PKI. Testé avec OpenBao 2.4+ et Vault 1.20+ (au 02/2026).
 
-![Mode clair](img/VaultCertsViewer-1.9-light.png)
+![Mode clair](img/VaultCertsViewer-1.9.1-light.png)
 
 ## ✨ Quelles sont les fonctionnalités ?
 
@@ -38,7 +38,7 @@ VaultCertsViewer permet aux équipes plateforme et sécurité d'avoir une vue ra
 
 Page principale :
 
-![Page principale](img/VaultCertsViewer-1.9-light.png)
+![Page principale](img/VaultCertsViewer-1.9.1-light.png)
 
 Connexion admin :
 
@@ -52,21 +52,21 @@ Page d'administration :
 
 Page principale :
 
-![Page principale](img/VaultCertsViewer-1.9-dark.png)
+![Page principale](img/VaultCertsViewer-1.9.1-dark.png)
 
 ## Modal de détail d'un certificat
 
-![Détail du certificat](img/VaultCertsViewer-1.9-certs-details.png)
+![Détail du certificat](img/VaultCertsViewer-1.9.1-detail-cert.png)
 
 Autorité de signature (CA intermédiaire ou racine), en un clic :
 
-![Vue de l'autorité de signature](img/VaultCertsViewer-1.9-ca-details.png)
+![Vue de l'autorité de signature](img/VaultCertsViewer-1.9.1-detail-cert-ca.png)
 
 ## Sélecteur de sources de certificats
 
 Choisissez les instances Vault/OpenBao et les montages PKI à afficher :
 
-![Sélecteur de sources de certificats](img/VaultCertsViewer-1.9-certs-sources.png)
+![Sélecteur de sources de certificats](img/VaultCertsViewer-1.9.1-sources.png)
 
 ## 🚀 Comment le déployer et l'utiliser pour Hashicorp Vault ?
 
