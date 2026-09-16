@@ -79,24 +79,72 @@ type Notifier struct {
 	settings SettingsLoader
 	client   *http.Client
 	now      func() time.Time
+	sleep    func(time.Duration)
 
-	mu       sync.Mutex
-	lastTier tier
+	mu        sync.Mutex
+	lastTiers map[string]tier
 }
+
+// deliveryAttempts bounds immediate retries per target per check; a target
+// still failing afterwards is retried on the next check via per-target
+// tier state.
+const deliveryAttempts = 3
+
+// deliveryBackoff waits between immediate retries (indexed by attempt-1).
+var deliveryBackoff = []time.Duration{time.Second, 2 * time.Second}
 
 // New builds a Notifier. certLister and settingsLoader are read on every
 // Check call so admin edits (webhook URL, thresholds) apply live.
 func New(certLister CertLister, settingsLoader SettingsLoader) *Notifier {
 	return &Notifier{
-		certs:    certLister,
-		settings: settingsLoader,
-		client:   &http.Client{Timeout: httpTimeout},
-		now:      time.Now,
+		certs:     certLister,
+		settings:  settingsLoader,
+		client:    &http.Client{Timeout: httpTimeout},
+		now:       time.Now,
+		sleep:     time.Sleep,
+		lastTiers: make(map[string]tier),
 	}
 }
 
+// resolveTargets merges the legacy webhook URL (all tiers) with routed
+// targets; the first occurrence of a URL wins so legacy configuration
+// cannot double-deliver.
+func resolveTargets(settings config.Config) []config.WebhookTarget {
+	seen := make(map[string]struct{})
+	var targets []config.WebhookTarget
+	if legacy := strings.TrimSpace(settings.Notifications.WebhookURL); legacy != "" {
+		seen[legacy] = struct{}{}
+		targets = append(targets, config.WebhookTarget{URL: legacy})
+	}
+	for _, target := range settings.Notifications.Webhooks {
+		if target.URL == "" {
+			continue
+		}
+		if _, ok := seen[target.URL]; ok {
+			continue
+		}
+		seen[target.URL] = struct{}{}
+		targets = append(targets, target)
+	}
+	return targets
+}
+
+// wantsTier reports whether the target subscribes to the current tier.
+// Empty levels mean all tiers; unknown level names never match.
+func wantsTier(target config.WebhookTarget, current tier) bool {
+	if len(target.Levels) == 0 {
+		return true
+	}
+	for _, level := range target.Levels {
+		if level == current.String() {
+			return true
+		}
+	}
+	return false
+}
+
 // Check lists certificates, computes the expiry tier, and delivers a
-// webhook when the tier has increased since the last check. All failures
+// webhook to every subscribed target whose tier has increased. All failures
 // (settings load, cert list, delivery) are logged and swallowed - a broken
 // webhook must never affect the rest of the app.
 func (n *Notifier) Check(ctx context.Context) {
@@ -105,8 +153,8 @@ func (n *Notifier) Check(ctx context.Context) {
 		logger.Get().Warn().Err(err).Msg("notify: failed to load settings")
 		return
 	}
-	webhookURL := strings.TrimSpace(settings.Notifications.WebhookURL)
-	if webhookURL == "" {
+	targets := resolveTargets(settings)
+	if len(targets) == 0 {
 		return
 	}
 
@@ -124,18 +172,38 @@ func (n *Notifier) Check(ctx context.Context) {
 	defer n.mu.Unlock()
 
 	if current == tierNone {
-		n.lastTier = tierNone
+		n.lastTiers = make(map[string]tier)
 		return
 	}
-	if current <= n.lastTier {
-		return
+	for _, target := range targets {
+		if !wantsTier(target, current) {
+			continue
+		}
+		if current <= n.lastTiers[target.URL] {
+			continue
+		}
+		if deliverErr := n.deliverWithRetry(ctx, target.URL, current, warning, critical, thresholds); deliverErr != nil {
+			logger.Get().Warn().Err(deliverErr).Str("tier", current.String()).Msg("notify: webhook delivery failed, will retry next check")
+			continue
+		}
+		n.lastTiers[target.URL] = current
 	}
+}
 
-	if deliverErr := n.deliver(ctx, webhookURL, current, warning, critical, thresholds); deliverErr != nil {
-		logger.Get().Warn().Err(deliverErr).Str("tier", current.String()).Msg("notify: webhook delivery failed, will retry next check")
-		return
+// deliverWithRetry attempts delivery up to deliveryAttempts times with
+// backoff. The returned error never contains the webhook URL (see
+// errWebhookDeliveryFailed).
+func (n *Notifier) deliverWithRetry(ctx context.Context, webhookURL string, current tier, warning, critical int, thresholds config.ExpirationThresholds) error {
+	var err error
+	for attempt := 0; attempt < deliveryAttempts; attempt++ {
+		if attempt > 0 {
+			n.sleep(deliveryBackoff[attempt-1])
+		}
+		if err = n.deliver(ctx, webhookURL, current, warning, critical, thresholds); err == nil {
+			return nil
+		}
 	}
-	n.lastTier = current
+	return err
 }
 
 type webhookPayload struct {

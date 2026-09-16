@@ -36,6 +36,16 @@ func settingsWithWebhook(url string) config.Config {
 	}
 }
 
+func settingsWithTargets(targets ...config.WebhookTarget) config.Config {
+	return config.Config{
+		Notifications:        config.NotificationsConfig{Webhooks: targets},
+		ExpirationThresholds: config.ExpirationThresholds{Warning: 30, Critical: 7},
+	}
+}
+
+// noSleep stubs retry backoff so failure-path tests stay fast.
+func noSleep(_ time.Duration) {}
+
 func TestNotifier_NoWebhookConfigured_NeverCallsOut(t *testing.T) {
 	var callCount atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -138,7 +148,7 @@ func TestNotifier_DeliveryFailure_RetriesOnNextCheck(t *testing.T) {
 	var callCount atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		n := callCount.Add(1)
-		if n == 1 {
+		if int(n) <= deliveryAttempts {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -149,11 +159,12 @@ func TestNotifier_DeliveryFailure_RetriesOnNextCheck(t *testing.T) {
 	lister := fakeCertLister{certificates: []certs.Certificate{certExpiringIn("a", 20)}}
 	settings := func() (config.Config, error) { return settingsWithWebhook(server.URL), nil }
 	n := New(lister, settings)
+	n.sleep = noSleep
 
-	n.Check(context.Background()) // fails (500), lastTier stays none
+	n.Check(context.Background()) // fails (500) on all attempts, tier stays none
 	n.Check(context.Background()) // retries, succeeds
 
-	assert.Equal(t, int32(2), callCount.Load())
+	assert.Equal(t, int32(deliveryAttempts+1), callCount.Load())
 }
 
 func TestNotifier_SettingsLoadError_NoOp(t *testing.T) {
@@ -195,4 +206,124 @@ type mutableCertLister struct {
 
 func (m *mutableCertLister) ListCertificates(_ context.Context) ([]certs.Certificate, error) {
 	return m.certificates, nil
+}
+
+func countingServer(t *testing.T, failFirst int) (*httptest.Server, *atomic.Int32) {
+	t.Helper()
+	var callCount atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if int(callCount.Add(1)) <= failFirst {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(server.Close)
+	return server, &callCount
+}
+
+func TestNotifier_FansOutToMultipleTargets(t *testing.T) {
+	serverA, callsA := countingServer(t, 0)
+	serverB, callsB := countingServer(t, 0)
+
+	lister := fakeCertLister{certificates: []certs.Certificate{certExpiringIn("a", 20)}}
+	settings := func() (config.Config, error) {
+		return settingsWithTargets(
+			config.WebhookTarget{URL: serverA.URL},
+			config.WebhookTarget{URL: serverB.URL, Levels: []string{"warning"}},
+		), nil
+	}
+	n := New(lister, settings)
+	n.sleep = noSleep
+
+	n.Check(context.Background())
+
+	assert.Equal(t, int32(1), callsA.Load())
+	assert.Equal(t, int32(1), callsB.Load())
+}
+
+func TestNotifier_LevelsGateDelivery(t *testing.T) {
+	server, calls := countingServer(t, 0)
+
+	lister := &mutableCertLister{certificates: []certs.Certificate{certExpiringIn("a", 20)}}
+	settings := func() (config.Config, error) {
+		return settingsWithTargets(config.WebhookTarget{URL: server.URL, Levels: []string{"critical"}}), nil
+	}
+	n := New(lister, settings)
+	n.sleep = noSleep
+
+	n.Check(context.Background()) // warning tier: critical-only target stays silent
+	assert.Equal(t, int32(0), calls.Load())
+
+	lister.certificates = []certs.Certificate{certExpiringIn("a", 3)}
+	n.Check(context.Background()) // critical tier: delivers
+	assert.Equal(t, int32(1), calls.Load())
+}
+
+func TestNotifier_FailedTargetRetriesAlone(t *testing.T) {
+	serverA, callsA := countingServer(t, 0)
+	serverB, callsB := countingServer(t, deliveryAttempts)
+
+	lister := fakeCertLister{certificates: []certs.Certificate{certExpiringIn("a", 20)}}
+	settings := func() (config.Config, error) {
+		return settingsWithTargets(
+			config.WebhookTarget{URL: serverA.URL},
+			config.WebhookTarget{URL: serverB.URL},
+		), nil
+	}
+	n := New(lister, settings)
+	n.sleep = noSleep
+
+	n.Check(context.Background()) // A delivers; B exhausts immediate retries
+	assert.Equal(t, int32(1), callsA.Load())
+	assert.Equal(t, int32(deliveryAttempts), callsB.Load())
+
+	n.Check(context.Background()) // only B is retried
+	assert.Equal(t, int32(1), callsA.Load())
+	assert.Equal(t, int32(deliveryAttempts+1), callsB.Load())
+}
+
+func TestNotifier_ImmediateRetryWithinCheck(t *testing.T) {
+	server, calls := countingServer(t, 1)
+
+	lister := fakeCertLister{certificates: []certs.Certificate{certExpiringIn("a", 20)}}
+	settings := func() (config.Config, error) { return settingsWithWebhook(server.URL), nil }
+	n := New(lister, settings)
+	n.sleep = noSleep
+
+	n.Check(context.Background())
+
+	assert.Equal(t, int32(2), calls.Load())
+}
+
+func TestNotifier_LegacyURLDeduped(t *testing.T) {
+	server, calls := countingServer(t, 0)
+
+	lister := fakeCertLister{certificates: []certs.Certificate{certExpiringIn("a", 20)}}
+	settings := func() (config.Config, error) {
+		cfg := settingsWithTargets(config.WebhookTarget{URL: server.URL})
+		cfg.Notifications.WebhookURL = server.URL
+		return cfg, nil
+	}
+	n := New(lister, settings)
+	n.sleep = noSleep
+
+	n.Check(context.Background())
+
+	assert.Equal(t, int32(1), calls.Load())
+}
+
+func TestNotifier_UnknownLevelsDropped(t *testing.T) {
+	server, calls := countingServer(t, 0)
+
+	lister := fakeCertLister{certificates: []certs.Certificate{certExpiringIn("a", 20)}}
+	settings := func() (config.Config, error) {
+		return settingsWithTargets(config.WebhookTarget{URL: server.URL, Levels: []string{"bogus"}}), nil
+	}
+	n := New(lister, settings)
+	n.sleep = noSleep
+
+	n.Check(context.Background())
+
+	assert.Equal(t, int32(0), calls.Load())
 }

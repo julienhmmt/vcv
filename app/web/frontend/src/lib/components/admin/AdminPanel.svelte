@@ -17,7 +17,7 @@
   import ToggleSwitch from './ToggleSwitch.svelte'
   import ErrorBanner from '$lib/components/ErrorBanner.svelte'
   import { getI18n } from '$lib/stores/i18n.svelte'
-  import type { AdminVaultStatus, SettingsFile, VaultInstance } from '$lib/types'
+  import type { AdminVaultStatus, SettingsFile, VaultInstance, WebhookTarget } from '$lib/types'
 
   interface Props {
     settings: SettingsFile
@@ -52,12 +52,36 @@
   // The server always returns a masked (empty) webhook URL, same as vault tokens.
   // Track the input separately so a successful save doesn't leave a stale value.
   let webhookInput = $state(untrack(() => settings.notifications?.webhook_url ?? ''))
+  // Routed webhooks, one editable row each. Server-masked URLs arrive blank;
+  // a blank URL on save preserves the stored one positionally (backend).
+  interface WebhookRow {
+    url: string
+    warning: boolean
+    critical: boolean
+  }
+  function toRow(target: WebhookTarget): WebhookRow {
+    const levels = target.levels ?? []
+    return {
+      url: target.url ?? '',
+      warning: levels.length === 0 || levels.includes('warning'),
+      critical: levels.length === 0 || levels.includes('critical'),
+    }
+  }
+  function toTarget(row: WebhookRow): WebhookTarget {
+    const levels: string[] = []
+    if (row.warning) levels.push('warning')
+    if (row.critical) levels.push('critical')
+    // Both on or both off means all tiers (server treats empty as all).
+    return { url: row.url, ...(levels.length === 2 || levels.length === 0 ? {} : { levels }) }
+  }
+  let webhookRows = $state<WebhookRow[]>(untrack(() => (settings.notifications?.webhooks ?? []).map(toRow)))
 
   $effect(() => {
     if (settings !== lastSyncedRef) {
       lastSyncedRef = settings
       working = $state.snapshot(settings)
       webhookInput = settings.notifications?.webhook_url ?? ''
+      webhookRows = (settings.notifications?.webhooks ?? []).map(toRow)
     }
   })
 
@@ -88,6 +112,23 @@
   function updateWebhookURL(value: string): void {
     webhookInput = value
     working = { ...working, notifications: { ...working.notifications, webhook_url: value } }
+  }
+
+  function syncWebhookRows(rows: WebhookRow[]): void {
+    webhookRows = rows
+    working = { ...working, notifications: { ...working.notifications, webhooks: rows.map(toTarget) } }
+  }
+
+  function addWebhookRow(): void {
+    syncWebhookRows([...webhookRows, { url: '', warning: true, critical: true }])
+  }
+
+  function updateWebhookRow(index: number, patch: Partial<WebhookRow>): void {
+    syncWebhookRows(webhookRows.map((row, i) => (i === index ? { ...row, ...patch } : row)))
+  }
+
+  function removeWebhookRow(index: number): void {
+    syncWebhookRows(webhookRows.filter((_, i) => i !== index))
   }
 
   function updateCors(value: string): void {
@@ -285,6 +326,42 @@
             placeholder={i18n.t('adminWebhookURLPlaceholder', 'Enter a new webhook URL to replace the stored one')}
             oninput={(event) => updateWebhookURL((event.target as HTMLInputElement).value)}
           />
+        </div>
+        <div class="adm-subsection">
+          <h3 class="adm-subsection-title">{i18n.t('adminRoutedWebhooks', 'Routed webhooks')}</h3>
+          <p class="adm-section-hint">{i18n.t('adminRoutedWebhooksHint', 'Extra endpoints, each with its own warning/critical filter. URLs stay masked like the main one; blank keeps the stored URL.')}</p>
+          {#each webhookRows as row, index (index)}
+            <div class="adm-webhook-row">
+              <Input
+                value={row.url}
+                placeholder={i18n.t('adminRoutedWebhookURLPlaceholder', 'https://hooks.example.com/...')}
+                aria-label={i18n.t('adminRoutedWebhooks', 'Routed webhooks')}
+                oninput={(event) => updateWebhookRow(index, { url: (event.target as HTMLInputElement).value })}
+              />
+              <label class="adm-check">
+                <input
+                  type="checkbox"
+                  checked={row.warning}
+                  onchange={(event) => updateWebhookRow(index, { warning: (event.target as HTMLInputElement).checked })}
+                />
+                {i18n.t('statusLabelWarning', 'Warning')}
+              </label>
+              <label class="adm-check">
+                <input
+                  type="checkbox"
+                  checked={row.critical}
+                  onchange={(event) => updateWebhookRow(index, { critical: (event.target as HTMLInputElement).checked })}
+                />
+                {i18n.t('statusLabelCritical', 'Critical')}
+              </label>
+              <Button type="button" variant="ghost" size="sm" onclick={() => removeWebhookRow(index)}>
+                {i18n.t('adminRemoveWebhook', 'Remove')}
+              </Button>
+            </div>
+          {/each}
+          <Button type="button" variant="outline" size="sm" onclick={addWebhookRow}>
+            {i18n.t('adminAddWebhook', '+ Add webhook')}
+          </Button>
         </div>
       </section>
 
@@ -489,6 +566,43 @@
     display: flex;
     flex-direction: column;
     gap: 0.375rem;
+  }
+
+  /* Routed webhooks */
+  .adm-subsection {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .adm-subsection-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--vcv-color-text-strong);
+    margin: 0;
+  }
+
+  .adm-webhook-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto auto;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  @media (max-width: 640px) {
+    .adm-webhook-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .adm-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
+    cursor: pointer;
   }
 
   :global(.adm-label) {

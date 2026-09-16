@@ -104,8 +104,14 @@ export interface CORSSettings {
   allow_credentials?: boolean
 }
 
+export interface WebhookTarget {
+  url: string
+  levels?: string[]
+}
+
 export interface NotificationSettings {
   webhook_url?: string
+  webhooks?: WebhookTarget[]
 }
 
 export interface AppSettings {

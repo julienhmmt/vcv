@@ -59,6 +59,12 @@ crosses the warning or critical expiration threshold — no browser tab needs
 to stay open. Checked once at startup, then every 15 minutes; one alert per
 threshold crossed, not a repeat every check. Leave blank to disable.
 
+Need more than one endpoint, or only critical pages? Add **routed webhooks**
+(`notifications.webhooks` in settings): each entry takes a `url` and an
+optional `levels` list (`["warning"]`, `["critical"]`, or empty for both).
+Delivery, escalation tracking, and retries are per endpoint. Routed URLs get
+the same secret treatment (masked on read; blank keeps the stored URL).
+
 The URL is treated as a secret (many providers embed an auth token in the
 path) and handled the same way as a vault token: it's never sent back to
 the browser, and leaving the field blank when editing keeps the existing

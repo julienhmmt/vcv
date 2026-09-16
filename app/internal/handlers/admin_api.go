@@ -225,6 +225,7 @@ func validationErrorStatus(saveErr error) int {
 		errors.Is(saveErr, vcverrors.ErrInvalidToken) ||
 		errors.Is(saveErr, vcverrors.ErrInvalidThreshold) ||
 		errors.Is(saveErr, vcverrors.ErrInvalidWebhookURL) ||
+		errors.Is(saveErr, vcverrors.ErrInvalidWebhookTarget) ||
 		errors.Is(saveErr, vcverrors.ErrVaultIDEmpty) ||
 		errors.Is(saveErr, vcverrors.ErrDuplicateVaultID) {
 		return http.StatusBadRequest
@@ -282,6 +283,7 @@ func mergeAdminSettings(current, incoming config.SettingsFile) config.SettingsFi
 	merged.Metrics.PinnedCertificates = incoming.Metrics.PinnedCertificates
 	merged.CORS.AllowedOrigins = incoming.CORS.AllowedOrigins
 	merged.Notifications.WebhookURL = mergeSecret(incoming.Notifications.WebhookURL, current.Notifications.WebhookURL)
+	merged.Notifications.Webhooks = mergeWebhookTargets(current.Notifications.Webhooks, incoming.Notifications.Webhooks)
 	merged.Vaults = mergeVaultTokens(incoming.Vaults, current.Vaults)
 	return merged
 }
@@ -298,6 +300,26 @@ func mergeSecret(incoming, existing string) string {
 	return incoming
 }
 
+// mergeWebhookTargets merges the routed webhook list positionally: URLs are
+// secret-like (they may embed auth tokens), so a blank or masked incoming
+// URL preserves the stored one at the same position while levels are taken
+// as-is. A nil incoming list means the field was absent and preserves the
+// stored list; an explicitly empty list clears it.
+func mergeWebhookTargets(current, incoming []config.WebhookTarget) []config.WebhookTarget {
+	if incoming == nil {
+		return current
+	}
+	merged := make([]config.WebhookTarget, 0, len(incoming))
+	for i, target := range incoming {
+		url := strings.TrimSpace(target.URL)
+		if isBlankOrMaskedSecret(url) && i < len(current) {
+			url = current[i].URL
+		}
+		merged = append(merged, config.WebhookTarget{URL: url, Levels: target.Levels})
+	}
+	return merged
+}
+
 // maskSecrets returns a copy of settings with every vault's Token and the
 // webhook URL blanked, so cleartext secrets never reach the browser. Stored
 // values are preserved on save by mergeVaultTokens/mergeSecret when the
@@ -311,6 +333,12 @@ func maskSecrets(s config.SettingsFile) config.SettingsFile {
 		out.Vaults[i] = v
 	}
 	out.Notifications.WebhookURL = ""
+	masked := make([]config.WebhookTarget, len(s.Notifications.Webhooks))
+	for i, target := range s.Notifications.Webhooks {
+		target.URL = ""
+		masked[i] = target
+	}
+	out.Notifications.Webhooks = masked
 	return out
 }
 

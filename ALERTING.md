@@ -30,11 +30,37 @@ there for anything else (n8n, a custom script, a second Slack block).
   repeat every 15 minutes at the same tier. Once expiry clears back below the
   warning threshold, the next crossing alerts again from the top.
 - **Failure handling**: a failed delivery (timeout, non-2xx, DNS failure) is
-  logged and retried on the next check; it never affects the rest of the app.
+  retried immediately (3 attempts with backoff), then logged and retried on
+  the next check; it never affects the rest of the app.
 - **Treat the URL as a secret**: many providers (Slack, Discord) embed an
   auth token in the webhook path. The admin API masks it the same way it
   masks Vault tokens — blank on every read, and a blank/masked value on save
   preserves the stored URL rather than clearing it.
+
+## Routed webhooks (multiple endpoints, severity filter)
+
+`notifications.webhooks` adds routed targets alongside the legacy
+`notifications.webhook_url` (which behaves as an all-tiers target; a URL
+listed in both places delivers once):
+
+```json
+"notifications": {
+  "webhook_url": "",
+  "webhooks": [
+    { "url": "https://hooks.example.com/critical-only", "levels": ["critical"] },
+    { "url": "https://hooks.example.com/all-tiers" }
+  ]
+}
+```
+
+- `levels` gates delivery to `"warning"` and/or `"critical"`; empty means
+  all tiers. Unknown levels are rejected at save time.
+- Escalate-only tracking and immediate retries are per target: one failing
+  endpoint does not delay or suppress the others, and only the failed one
+  is retried on the next check.
+- Routed URLs get the same secret treatment as the legacy URL (masked on
+  read, blank/masked on save preserves the stored URL positionally; send an
+  explicitly empty list to clear all routed targets).
 
 ## Prometheus and Alertmanager
 
