@@ -89,4 +89,23 @@ describe('CertTable', () => {
     expect(commonNameHead).toHaveAttribute('aria-sort', 'descending')
     expect(commonNameHead.querySelector('.vcv-th-sort-icon')?.textContent).toBe('↓')
   })
+
+  it('virtualizes large lists: renders a window, not every row', () => {
+    const many = Array.from({ length: 150 }, (_, i) => ({
+      ...cert,
+      id: `vault1|pki:cert-${i}`,
+      serialNumber: `cert-${i}`,
+      commonName: `host-${i}.example.com`,
+    }))
+    const { container } = render(CertTable, { props: { ...baseProps, certs: many } })
+
+    // First rows are present; the tail stays out of the DOM.
+    expect(screen.getByText('host-0.example.com')).toBeInTheDocument()
+    expect(screen.queryByText('host-149.example.com')).not.toBeInTheDocument()
+    const rows = container.querySelectorAll('tbody tr.vcv-row-clickable')
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.length).toBeLessThan(many.length)
+    // The table still advertises the full row count to assistive tech.
+    expect(screen.getByRole('table')).toHaveAttribute('aria-rowcount', String(many.length + 1))
+  })
 })
