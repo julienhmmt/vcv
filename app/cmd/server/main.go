@@ -165,6 +165,7 @@ func buildRouter(deps routerDeps) (*chi.Mux, error) {
 	r.Get("/api/status", newStatusHandler(cfg, deps.primaryVault, deps.statusClients, adminAPIEnabled))
 	r.Get("/api/version", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "no-store")
 		_ = json.NewEncoder(w).Encode(version.Info())
 	})
 	r.Get("/api/config", handlers.GetConfig(cfg, deps.vaultRegistry))

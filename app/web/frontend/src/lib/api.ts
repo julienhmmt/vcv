@@ -10,7 +10,6 @@ import type {
   PublicConfigResponse,
   SettingsFile,
   StatusResponse,
-  VersionInfo,
 } from './types'
 
 export class ApiError extends Error {
@@ -84,9 +83,6 @@ export const api = {
   },
   config(): Promise<PublicConfigResponse> {
     return request<PublicConfigResponse>('/api/config')
-  },
-  version(): Promise<VersionInfo> {
-    return request<VersionInfo>('/api/version')
   },
   i18n(lang?: string): Promise<I18nResponse> {
     const qs = lang ? `?lang=${encodeURIComponent(lang)}` : ''
