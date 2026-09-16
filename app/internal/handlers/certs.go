@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -16,6 +18,10 @@ import (
 )
 
 const mountsAllSentinel = "__all__"
+
+// certsListCacheControl lets browsers revalidate the inventory on every
+// fetch while serving repeat views from cache when nothing changed.
+const certsListCacheControl = "private, max-age=0, must-revalidate"
 
 // certsEnvelope is the response shape for GET /api/certs. Errors carries
 // per-vault failures so the UI can surface partial-success state instead of
@@ -47,6 +53,27 @@ func RegisterCertRoutes(r chi.Router, vaultClient vault.Client) {
 	r.Get("/api/certs/{id}/pem", certPEMHandler(vaultClient))
 }
 
+// etagForPayload returns a strong validator for a certificates payload.
+func etagForPayload(payload []byte) string {
+	sum := sha256.Sum256(payload)
+	return hex.EncodeToString(sum[:])
+}
+
+// matchETag reports whether an If-None-Match header value matches the
+// current entity tag, supporting "*" and comma-separated lists.
+func matchETag(headerValue, etag string) bool {
+	if headerValue == "" {
+		return false
+	}
+	for _, candidate := range strings.Split(headerValue, ",") {
+		candidate = strings.TrimSpace(candidate)
+		if candidate == "*" || candidate == etag {
+			return true
+		}
+	}
+	return false
+}
+
 func listCertificatesHandler(vaultClient vault.Client) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		// Parse mount filter from query parameters
@@ -76,8 +103,28 @@ func listCertificatesHandler(vaultClient vault.Client) http.HandlerFunc {
 		filteredCertificates := filterCertificatesByMounts(certificates, selectedMounts)
 		envelope := certsEnvelope{Certificates: filteredCertificates, Errors: vaultErrors}
 
+		payload, err := json.Marshal(envelope)
+		if err != nil {
+			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
+				Str("request_id", requestID).
+				Msg("failed to encode certificates response")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+		etag := `"` + etagForPayload(payload) + `"`
+		w.Header().Set("ETag", etag)
+		w.Header().Set("Cache-Control", certsListCacheControl)
+		if clientETag := req.Header.Get("If-None-Match"); matchETag(clientETag, etag) {
+			logger.HTTPEvent(req.Method, req.URL.Path, http.StatusNotModified, 0).
+				Str("request_id", requestID).
+				Int("count", len(filteredCertificates)).
+				Msg("certificates not modified")
+			w.WriteHeader(http.StatusNotModified)
+			return
+		}
+
 		w.Header().Set(contentTypeHeader, contentTypeJSON)
-		if encodeErr := json.NewEncoder(w).Encode(envelope); encodeErr != nil {
+		if _, encodeErr := w.Write(payload); encodeErr != nil {
 			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, encodeErr).
 				Str("request_id", requestID).
 				Msg("failed to encode certificates response")
