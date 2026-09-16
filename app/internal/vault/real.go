@@ -12,6 +12,7 @@ import (
 	"slices"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"vcv/internal/cache"
@@ -23,6 +24,13 @@ import (
 )
 
 const cacheVersion = "v2"
+
+// certFetchConcurrency bounds how many in-flight Vault reads a single
+// certificate listing may hold. Vault LIST only returns serials, so each
+// certificate costs one READ; without a bound a large mount fans out
+// unbounded, with sequential reads a 1k-cert mount takes minutes.
+// The hashicorp api.Client is safe for concurrent use.
+const certFetchConcurrency = 10
 
 // errParseCertificate is the format used when a certificate PEM cannot be
 // parsed for a given serial and mount.
@@ -289,20 +297,35 @@ func (c *realClient) listCertificatesFromMount(ctx context.Context, mount string
 	}
 
 	result := make([]certs.Certificate, 0, len(rawKeys))
+	var mu sync.Mutex
+	var wg sync.WaitGroup
+	sem := make(chan struct{}, certFetchConcurrency)
 	for _, value := range rawKeys {
 		serial, ok := value.(string)
 		if !ok {
 			continue
 		}
-		certificate, err := c.readCertificateFromMount(ctx, mount, serial)
-		if err != nil {
-			continue
+		if ctx.Err() != nil {
+			break
 		}
-		if revokedSet[serial] {
-			certificate.Revoked = true
-		}
-		result = append(result, certificate)
+		wg.Add(1)
+		go func(s string) {
+			defer wg.Done()
+			sem <- struct{}{}
+			defer func() { <-sem }()
+			certificate, err := c.readCertificateFromMount(ctx, mount, s)
+			if err != nil {
+				return
+			}
+			if revokedSet[s] {
+				certificate.Revoked = true
+			}
+			mu.Lock()
+			result = append(result, certificate)
+			mu.Unlock()
+		}(serial)
 	}
+	wg.Wait()
 
 	return result, revokedSet, nil
 }

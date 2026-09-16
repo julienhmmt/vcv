@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -663,5 +664,51 @@ func TestRealClient_LoggingErrors(t *testing.T) {
 	output = buf.String()
 	if !strings.Contains(output, "failed to list certificates from mount") {
 		t.Errorf("Expected mount listing error log, got: %s", output)
+	}
+}
+
+func TestListCertificatesFromMount_FetchesConcurrentlyWithinBound(t *testing.T) {
+	certificatePEM := newVaultTestCertificatePEM(t)
+	const serialCount = 20
+	keys := make([]any, 0, serialCount)
+	for i := 0; i < serialCount; i++ {
+		keys = append(keys, fmt.Sprintf("serial-%02d", i))
+	}
+	var inFlight atomic.Int32
+	var maxInFlight atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case isVaultListRequest(r, "/v1/pki/certs"):
+			writeVaultTestJSON(w, http.StatusOK, map[string]any{"data": map[string]any{"keys": keys}})
+		case isVaultListRequest(r, "/v1/pki/certs/revoked"):
+			writeVaultTestJSON(w, http.StatusOK, map[string]any{"data": map[string]any{"keys": []string{}}})
+		case r.Method == http.MethodGet && strings.HasPrefix(r.URL.Path, "/v1/pki/cert/"):
+			current := inFlight.Add(1)
+			for {
+				observed := maxInFlight.Load()
+				if current <= observed || maxInFlight.CompareAndSwap(observed, current) {
+					break
+				}
+			}
+			time.Sleep(50 * time.Millisecond)
+			inFlight.Add(-1)
+			writeVaultTestJSON(w, http.StatusOK, map[string]any{"data": map[string]any{"certificate": certificatePEM}})
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+	certificates, _, err := client.listCertificatesFromMount(context.Background(), "pki")
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if len(certificates) != serialCount {
+		t.Fatalf("expected %d certificates, got %d", serialCount, len(certificates))
+	}
+	if max := maxInFlight.Load(); max < 2 {
+		t.Fatalf("expected concurrent certificate fetches, max in-flight was %d", max)
+	} else if max > certFetchConcurrency {
+		t.Fatalf("expected at most %d concurrent fetches, got %d", certFetchConcurrency, max)
 	}
 }
