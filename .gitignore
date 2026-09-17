@@ -22,6 +22,10 @@ build
 # vitest coverage output
 app/web/frontend/coverage/
 
+# Playwright e2e output
+app/web/frontend/playwright-report/
+app/web/frontend/test-results/
+
 # Vite output (kept directory + .gitkeep for go:embed)
 app/web/dist/*
 !app/web/dist/.gitkeep

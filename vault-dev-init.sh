@@ -54,11 +54,13 @@ for mount in ${MOUNTS}; do
   printf "[%s] configuring mount %s\n" "${INSTANCE_ID}" "${mount}"
 
   vault secrets enable -path="${mount}" pki 2>/dev/null || true
-  vault secrets tune -max-lease-ttl=8760h "${mount}" 2>/dev/null || true
+  # Mount/CA lifetime is 10y so 8760h leaf issues never race the CA expiry
+  # (a leaf issued minutes after CA creation would otherwise exceed it).
+  vault secrets tune -max-lease-ttl=87600h "${mount}" 2>/dev/null || true
 
   vault write -force "${mount}/root/generate/internal" \
     common_name="${INSTANCE_ID}-${mount}.local" \
-    ttl="8760h" >/dev/null 2>&1 || true
+    ttl="87600h" >/dev/null 2>&1 || true
 
   vault write "${mount}/config/urls" \
     issuing_certificates="${VAULT_ADDR_INTERNAL}/v1/${mount}/ca" \

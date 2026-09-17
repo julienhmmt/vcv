@@ -1,0 +1,59 @@
+name: E2E
+
+on:
+  push:
+    branches: ["*"]
+  pull_request:
+    branches: ["*"]
+
+# Cancel superseded runs on the same ref to save CI minutes.
+concurrency:
+  group: e2e-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  playwright:
+    name: Playwright smoke (e2e stack)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          version: 10
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: app/web/frontend/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        run: cd app/web/frontend && pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: cd app/web/frontend && pnpm exec playwright install chromium --with-deps
+
+      - name: Start e2e stack
+        run: docker compose -f docker-compose.e2e.yml -p vcv-e2e up -d --build
+
+      - name: Wait for seeded PKI data
+        run: chmod +x tools/e2e-wait.sh && tools/e2e-wait.sh http://localhost:52001
+
+      - name: Run Playwright smoke tests
+        run: cd app/web/frontend && pnpm test:e2e
+
+      - name: Dump stack logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.e2e.yml -p vcv-e2e logs vault openbao-dev-1 app | tail -n 200
+
+      - name: Stop e2e stack
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml -p vcv-e2e down
