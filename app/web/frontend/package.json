@@ -36,7 +36,7 @@
     "vitest": "^5.0.0"
   },
   "dependencies": {
-    "@lucide/svelte": "1.41.0",
+    "@lucide/svelte": "1.45.0",
     "@tanstack/svelte-virtual": "3.13.39",
     "bits-ui": "^2.19.2",
     "clsx": "^2.1.1",
