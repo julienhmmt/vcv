@@ -56,11 +56,13 @@ for mount in ${MOUNTS}; do
   printf "[%s] configuring mount %s\n" "${INSTANCE_ID}" "${mount}"
 
   bao secrets enable -path="${mount}" pki 2>/dev/null || true
-  bao secrets tune -max-lease-ttl=8760h "${mount}" 2>/dev/null || true
+  # Mount/CA lifetime is 10y so 8760h leaf issues never race the CA expiry
+  # (a leaf issued minutes after CA creation would otherwise exceed it).
+  bao secrets tune -max-lease-ttl=87600h "${mount}" 2>/dev/null || true
 
   bao write -force "${mount}/root/generate/internal" \
     common_name="${INSTANCE_ID}-${mount}.local" \
-    ttl="8760h" >/dev/null 2>&1 || true
+    ttl="87600h" >/dev/null 2>&1 || true
 
   bao write "${mount}/config/urls" \
     issuing_certificates="${BAO_ADDR_INTERNAL}/v1/${mount}/ca" \

@@ -1,0 +1,51 @@
+{
+  "_comment": "E2E-ONLY settings. Test credentials (e2e-admin-password); never use in production.",
+  "app": {
+    "env": "dev",
+    "logging": {
+      "level": "info",
+      "format": "json",
+      "output": "stdout"
+    },
+    "port": 52000
+  },
+  "admin": {
+    "password": "$2a$10$Ok.BAITAjBzJjxCiZMtZyev9NfcjfSEdzeftdH1j6RFDsnt72JLja"
+  },
+  "certificates": {
+    "expiration_thresholds": {
+      "critical": 2,
+      "warning": 10
+    }
+  },
+  "metrics": {
+    "per_certificate": false,
+    "enhanced_metrics": false
+  },
+  "cors": {
+    "allowed_origins": [],
+    "allow_credentials": false
+  },
+  "vaults": [
+    {
+      "id": "vault-main",
+      "address": "http://vault:8200",
+      "token": "root",
+      "pki_mount": "pki",
+      "pki_mounts": ["pki", "pki_dev", "pki_stage", "pki_production"],
+      "display_name": "Vault",
+      "tls_insecure": true,
+      "enabled": true
+    },
+    {
+      "id": "openbao-dev-1",
+      "address": "http://openbao-dev-1:1337",
+      "token": "root",
+      "pki_mount": "pki_openbao",
+      "pki_mounts": ["pki_openbao", "pki_openbao_dev"],
+      "display_name": "OpenBao dev-1",
+      "tls_insecure": true,
+      "enabled": true
+    }
+  ]
+}

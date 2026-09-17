@@ -3,7 +3,7 @@
 VCV_VERSION ?= dev-$(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 VCV_TAG ?= latest
 
-.PHONY: help web-install web-dev web-build web-check web-test web-test-coverage dev docker-build test-offline test-dev go-update go-lint go-lint-full go-coverage
+.PHONY: help web-install web-dev web-build web-check web-test web-test-coverage e2e-install e2e-up e2e-run e2e-down e2e dev docker-build test-offline test-dev go-update go-lint go-lint-full go-coverage
 
 help:
 	@printf '%s\n' \
@@ -14,6 +14,11 @@ help:
 		'  web-check          Run svelte-check and tsc on the frontend' \
 		'  web-test           Run frontend unit tests (Vitest)' \
 		'  web-test-coverage  Run frontend unit tests with coverage' \
+		'  e2e-install        Install Playwright browsers for e2e tests' \
+		'  e2e-up             Start the lean e2e stack (Vault + OpenBao + app)' \
+		'  e2e-run            Run Playwright smoke tests against the e2e stack' \
+		'  e2e-down           Stop the e2e stack' \
+		'  e2e                Full e2e cycle: up, run, down' \
 		'  dev                Build the Go binary and start the development Docker stack' \
 		'  docker-build       Build and push multi-architecture Docker images' \
 		'  test-offline       Run Go unit tests offline with coverage' \
@@ -45,6 +50,23 @@ web-test:
 
 web-test-coverage:
 	cd app/web/frontend && pnpm test:coverage
+
+e2e-install:
+	cd app/web/frontend && pnpm exec playwright install chromium
+
+e2e-up:
+	docker compose -f docker-compose.e2e.yml -p vcv-e2e up -d --build
+
+e2e-run:
+	cd app/web/frontend && pnpm test:e2e
+
+e2e-down:
+	docker compose -f docker-compose.e2e.yml -p vcv-e2e down
+
+e2e: e2e-install e2e-up
+	@trap '$(MAKE) e2e-down' EXIT INT TERM; \
+	chmod +x tools/e2e-wait.sh && tools/e2e-wait.sh; \
+	$(MAKE) e2e-run
 
 dev: web-build
 	go clean -cache && go build -C app -ldflags="-X vcv/internal/version.Version=$(VCV_VERSION)" -o ../vcv ./cmd/server

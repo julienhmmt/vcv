@@ -95,6 +95,13 @@ make web-check           # svelte-check + tsc
 make web-test            # vitest run
 make web-test-coverage   # vitest + coverage
 
+# Playwright e2e against the lean seeded stack (docker-compose.e2e.yml, app on :52001)
+make e2e-install         # playwright install chromium
+make e2e-up              # docker compose -f docker-compose.e2e.yml -p vcv-e2e up -d --build
+make e2e-run             # playwright test (specs: app/web/frontend/e2e/)
+make e2e-down            # stop the e2e stack
+make e2e                 # install + up + wait-for-seeds + run + down
+
 # SonarQube (local container, 2 projects: vcv-server, vcv-web)
 make sonar              # Full pipeline: start, token, coverage, lint, scan both
 make sonar-up           # Start the server on http://localhost:9000
