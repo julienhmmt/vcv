@@ -133,7 +133,7 @@ VaultCertsViewer can monitor multiple PKI engines simultaneously through a singl
 - **Flexible configuration**: Specify mounts using comma-separated values in `settings.json` (e.g., `pki,pki2,pki-prod`) or via the admin interface.
 - **Multi-Vault support**: Connect to multiple Vault/OpenBao instances simultaneously via `settings.json`
 - **Dashboard**: All selected mounts are aggregated in the same table, dashboard, and metrics
-- **Real-time search**: Instant filtering as you type in the search box with 300ms debouncing
+- **Real-time search**: Instant filtering as you type in the search box with 150ms debouncing
 - **Status filtering**: Quick filters for valid/expired/revoked certificates
 - **Partitioning**: Visualize certificate partitioning by expiration date
 - **Pagination**: Configurable page size (25/50/100/all) with navigation controls
@@ -205,6 +205,8 @@ The following settings can be configured in the administration panel:
 - Certificate expiration thresholds
 - CORS
 - Vault/OpenBao instances (address, port, token, TLS, PKI mounts)
+- Metrics options (`per_certificate`, `enhanced_metrics`, pinned certificates)
+- Notifications (webhook URL and routed `webhooks[]` with severity levels)
 
 The `admin.password` field must contain a **bcrypt hash** (prefix `$2a$`, `$2b$`, or `$2y$`).
 
@@ -261,6 +263,10 @@ Metrics are exposed at `/metrics` endpoint. Expiration thresholds are configurab
 - vcv_certificate_expiry_timestamp_seconds{certificate_id, common_name, status, vault_id, pki}
 - vcv_certificate_days_until_expiry{certificate_id, common_name, status, vault_id, pki}
 
+**Enhanced metrics** (default on, `metrics.enhanced_metrics`): certificate counts by issuer, by key type and size, weak-key count, SAN counts and buckets, age buckets, and issuance in the last 24h/7d/30d. Full reference: [PROMETHEUS_METRICS.md](PROMETHEUS_METRICS.md).
+
+**Pinned certificate metrics**: set `metrics.pinned_certificates` to track specific certificate ids explicitly.
+
 **Configuration:**
 
 Enhanced metrics can be configured via `settings.json` file or the admin panel:
@@ -296,8 +302,8 @@ See [ALERTING.md](ALERTING.md) for alerting configuration.
 
 ### Security Features
 
-- **Rate limiting**: Enabled in production mode (300 requests/minute, exempting health/ready/metrics endpoints)
-- **CSRF protection**: All state-changing requests require CSRF tokens
+- **Rate limiting**: Always on (300 requests/minute, exempting `/api/health`, `/api/ready`, `/metrics` and `/assets/*`)
+- **CSRF protection**: Unsafe methods carrying cookies require a same-origin `Origin` or `Referer` (no tokens; cookieless clients such as automation are still allowed)
 - **Security headers**: Includes HSTS, X-Frame-Options, X-Content-Type-Options, CSP
 - **Request ID tracking**: All requests include unique IDs for log correlation
 - **Body size limits**: 1MB maximum request body size

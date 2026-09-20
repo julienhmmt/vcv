@@ -50,6 +50,9 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 | `/api/admin/logout`       | POST    | Admin logout (JSON)                                      |
 | `/api/admin/settings`     | GET/PUT | Admin settings (JSON, requires auth)                     |
 | `/api/admin/docs`         | GET     | Admin documentation HTML (requires auth)                 |
+| `/api/admin/vault`        | POST    | Add a Vault instance template (requires auth)            |
+| `/api/admin/vault/{id}`   | DELETE  | Remove a Vault instance (requires auth)                  |
+| `/api/cache/invalidate`   | POST    | Invalidate the certificate cache (requires auth)         |
 
 ## Configuration (settings.json)
 
