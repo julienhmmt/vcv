@@ -15,6 +15,7 @@ Claude Code auto-discovers these: each skill is `<name>/SKILL.md` with `name` + 
 | `vcv-high-coverage-tests` | adding Go coverage or fixing a Go test |
 | `vcv-security-check` | before shipping anything touching handlers/middleware/config |
 | `vcv-debug-investigate` | investigating a bug, regression, or flaky test |
+| `obsidian-vault` | building or refreshing the external Obsidian brain for vcv |
 
 ## Writing a skill
 
