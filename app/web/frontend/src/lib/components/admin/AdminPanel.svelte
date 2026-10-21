@@ -53,11 +53,12 @@
   // Track the input separately so a successful save doesn't leave a stale value.
   let webhookInput = $state(untrack(() => settings.notifications?.webhook_url ?? ''))
   // Routed webhooks, one editable row each. Server-masked URLs arrive blank;
-  // a blank URL on save preserves the stored one positionally (backend).
+  // a blank URL on save preserves the stored one at original_index (backend).
   interface WebhookRow {
     url: string
     warning: boolean
     critical: boolean
+    originalIndex?: number
   }
   function toRow(target: WebhookTarget): WebhookRow {
     const levels = target.levels ?? []
@@ -65,6 +66,7 @@
       url: target.url ?? '',
       warning: levels.length === 0 || levels.includes('warning'),
       critical: levels.length === 0 || levels.includes('critical'),
+      originalIndex: target.original_index,
     }
   }
   function toTarget(row: WebhookRow): WebhookTarget {
@@ -72,7 +74,11 @@
     if (row.warning) levels.push('warning')
     if (row.critical) levels.push('critical')
     // Both on or both off means all tiers (server treats empty as all).
-    return { url: row.url, ...(levels.length === 2 || levels.length === 0 ? {} : { levels }) }
+    return {
+      url: row.url,
+      ...(levels.length === 2 || levels.length === 0 ? {} : { levels }),
+      ...(row.originalIndex === undefined ? {} : { original_index: row.originalIndex }),
+    }
   }
   let webhookRows = $state<WebhookRow[]>(untrack(() => (settings.notifications?.webhooks ?? []).map(toRow)))
 
