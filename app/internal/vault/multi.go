@@ -327,7 +327,11 @@ func (c *multiClient) ListCertificatesEnvelope(ctx context.Context) ([]certs.Cer
 	errs := make([]VaultError, 0)
 	for res := range resultChan {
 		if res.err != nil {
-			errs = append(errs, VaultError{VaultID: res.vaultID, Message: res.err.Error()})
+			logger.Get().Error().
+				Str("vault_id", res.vaultID).
+				Err(res.err).
+				Msg("failed to fetch certificates from vault instance")
+			errs = append(errs, VaultError{VaultID: res.vaultID, Message: PublicErrorMessage(res.err)})
 			continue
 		}
 		for _, certificate := range res.certificates {
