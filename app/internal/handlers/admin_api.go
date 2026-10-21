@@ -300,20 +300,25 @@ func mergeSecret(incoming, existing string) string {
 	return incoming
 }
 
-// mergeWebhookTargets merges the routed webhook list positionally: URLs are
-// secret-like (they may embed auth tokens), so a blank or masked incoming
-// URL preserves the stored one at the same position while levels are taken
-// as-is. A nil incoming list means the field was absent and preserves the
-// stored list; an explicitly empty list clears it.
+// mergeWebhookTargets merges the routed webhook list: URLs are secret-like
+// (they may embed auth tokens), so a blank or masked incoming URL restores
+// the stored URL at the target's OriginalIndex (stamped by maskSecrets), so
+// deleting or reordering rows keeps each URL with its own row. Levels are
+// taken as-is. A blank URL without a valid OriginalIndex stays blank and is
+// rejected by validation. A nil incoming list means the field was absent and
+// preserves the stored list; an explicitly empty list clears it.
 func mergeWebhookTargets(current, incoming []config.WebhookTarget) []config.WebhookTarget {
 	if incoming == nil {
 		return current
 	}
 	merged := make([]config.WebhookTarget, 0, len(incoming))
-	for i, target := range incoming {
+	for _, target := range incoming {
 		url := strings.TrimSpace(target.URL)
-		if isBlankOrMaskedSecret(url) && i < len(current) {
-			url = current[i].URL
+		if isBlankOrMaskedSecret(url) {
+			url = ""
+			if idx := target.OriginalIndex; idx != nil && *idx >= 0 && *idx < len(current) {
+				url = current[*idx].URL
+			}
 		}
 		merged = append(merged, config.WebhookTarget{URL: url, Levels: target.Levels})
 	}
@@ -336,6 +341,7 @@ func maskSecrets(s config.SettingsFile) config.SettingsFile {
 	masked := make([]config.WebhookTarget, len(s.Notifications.Webhooks))
 	for i, target := range s.Notifications.Webhooks {
 		target.URL = ""
+		target.OriginalIndex = &i
 		masked[i] = target
 	}
 	out.Notifications.Webhooks = masked

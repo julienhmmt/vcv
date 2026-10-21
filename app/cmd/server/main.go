@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -35,18 +34,6 @@ const routerRateLimitMaxRequests int = 300
 const notifyCheckInterval time.Duration = 15 * time.Minute
 const routerRateLimitWindow time.Duration = 1 * time.Minute
 
-// publicVaultStatusError maps internal vault connection errors to stable,
-// non-sensitive strings for the public /api/status response.
-func publicVaultStatusError(err error) string {
-	if err == nil {
-		return ""
-	}
-	if errors.Is(err, vault.ErrVaultNotConfigured) {
-		return "vault not configured"
-	}
-	return "vault unavailable"
-}
-
 // vaultStatusEntry is the per-vault section of the /api/status response.
 type vaultStatusEntry struct {
 	ID          string `json:"id"`
@@ -75,7 +62,7 @@ func checkPrimaryVault(ctx context.Context, client vault.Client) (bool, string) 
 		}
 		primaryErr = results[0].Error
 	}
-	return false, publicVaultStatusError(primaryErr)
+	return false, vault.PublicErrorMessage(primaryErr)
 }
 
 // appendVaultStatuses checks each configured vault and appends status entries.
@@ -96,7 +83,7 @@ func appendVaultStatuses(ctx context.Context, response *statusResponse, instance
 			entry.Connected = false
 			entry.Error = "missing vault status client"
 		} else if !item.Connected {
-			entry.Error = publicVaultStatusError(item.Error)
+			entry.Error = vault.PublicErrorMessage(item.Error)
 		}
 		response.Vaults = append(response.Vaults, entry)
 	}

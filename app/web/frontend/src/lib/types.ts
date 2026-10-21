@@ -107,6 +107,8 @@ export interface CORSSettings {
 export interface WebhookTarget {
   url: string
   levels?: string[]
+  /** Stored position stamped by the server on GET; lets a blank (masked) URL keep its own stored value on PUT. */
+  original_index?: number
 }
 
 export interface NotificationSettings {
