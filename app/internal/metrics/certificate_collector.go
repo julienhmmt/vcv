@@ -87,6 +87,15 @@ func expiryBucketLabel(daysRemaining int) string {
 	}
 }
 
+// scrapeListTimeout bounds the certificate listing of one scrape. It is
+// generous so a cold inventory can still complete and warm the client cache
+// even when Prometheus gives up on the scrape first.
+const scrapeListTimeout = 60 * time.Second
+
+// scrapeCheckTimeout bounds the Vault connection checks of one scrape (same
+// budget as /api/status).
+const scrapeCheckTimeout = 5 * time.Second
+
 // perCertificateCardinalityWarnThreshold logs an extra warn when inventory size exceeds this while per_certificate is on.
 const perCertificateCardinalityWarnThreshold = 500
 
@@ -134,6 +143,8 @@ type certificateCollector struct {
 	pinnedCertificates []string
 	configuredVaults   []config.VaultInstance
 	now                func() time.Time
+	listTimeout        time.Duration
+	checkTimeout       time.Duration
 }
 
 // NewCertificateCollector returns a Prometheus collector exposing certificate inventory and expiry status.
@@ -160,6 +171,8 @@ func NewCertificateCollector(vaultClient vault.Client, statusClients map[string]
 		pinnedCertificates: metricsConfig.PinnedCertificates,
 		configuredVaults:   []config.VaultInstance{},
 		now:                time.Now,
+		listTimeout:        scrapeListTimeout,
+		checkTimeout:       scrapeCheckTimeout,
 	}
 }
 
@@ -208,7 +221,9 @@ func (collector *certificateCollector) Describe(ch chan<- *prometheus.Desc) {
 
 func (collector *certificateCollector) Collect(ch chan<- prometheus.Metric) {
 	scrapeStart := time.Now()
-	certificates, listResults, err := collector.listCertificatesWithVaultResults()
+	listCtx, cancelList := context.WithTimeout(context.Background(), collector.listTimeout)
+	defer cancelList()
+	certificates, listResults, err := collector.listCertificatesWithVaultResults(listCtx)
 	scrapeDuration := time.Since(scrapeStart).Seconds()
 	ch <- prometheus.MustNewConstMetric(lastScrapeDurationDesc, prometheus.GaugeValue, scrapeDuration)
 	if err != nil {
@@ -257,13 +272,9 @@ func (collector *certificateCollector) Collect(ch chan<- prometheus.Metric) {
 	collector.emitPinnedCertificateMetrics(ch, certificates, now)
 }
 
-func (collector *certificateCollector) listCertificates() ([]certs.Certificate, error) {
-	return collector.vaultClient.ListCertificates(context.Background())
-}
-
-func (collector *certificateCollector) listCertificatesWithVaultResults() ([]certs.Certificate, []vault.ListCertificatesByVaultResult, error) {
+func (collector *certificateCollector) listCertificatesWithVaultResults(ctx context.Context) ([]certs.Certificate, []vault.ListCertificatesByVaultResult, error) {
 	if lister, ok := collector.vaultClient.(vault.CertificatesByVaultLister); ok {
-		results := lister.ListCertificatesByVault(context.Background())
+		results := lister.ListCertificatesByVault(ctx)
 		combined := make([]certs.Certificate, 0)
 		anySuccess := false
 		for _, result := range results {
@@ -278,19 +289,15 @@ func (collector *certificateCollector) listCertificatesWithVaultResults() ([]cer
 		}
 		return combined, results, nil
 	}
-	certificates, err := collector.listCertificates()
+	certificates, err := collector.vaultClient.ListCertificates(ctx)
 	return certificates, nil, err
 }
 
+// emitVaultConnectionMetrics runs the overall and per-vault connection checks
+// concurrently under one deadline, so a hung Vault cannot stall the scrape.
 func (collector *certificateCollector) emitVaultConnectionMetrics(ch chan<- prometheus.Metric) {
-	connectedOverall := 1.0
-	if err := collector.vaultClient.CheckConnection(context.Background()); err != nil {
-		connectedOverall = 0.0
-	}
-	ch <- prometheus.MustNewConstMetric(vaultConnectedDesc, prometheus.GaugeValue, connectedOverall, allLabelValue)
-	if len(collector.statusClients) == 0 {
-		return
-	}
+	ctx, cancel := context.WithTimeout(context.Background(), collector.checkTimeout)
+	defer cancel()
 	vaultIDs := make([]string, 0, len(collector.statusClients))
 	for vaultID := range collector.statusClients {
 		trimmed := strings.TrimSpace(vaultID)
@@ -300,17 +307,21 @@ func (collector *certificateCollector) emitVaultConnectionMetrics(ch chan<- prom
 		vaultIDs = append(vaultIDs, trimmed)
 	}
 	sort.Strings(vaultIDs)
-	for _, vaultID := range vaultIDs {
-		client := collector.statusClients[vaultID]
-		if client == nil {
-			ch <- prometheus.MustNewConstMetric(vaultConnectedDesc, prometheus.GaugeValue, 0, vaultID)
-			continue
+	overallErr := make(chan error, 1)
+	go func() { overallErr <- collector.vaultClient.CheckConnection(ctx) }()
+	statuses := vault.CheckInstances(ctx, vaultIDs, collector.statusClients, 0)
+
+	connectedOverall := 1.0
+	if err := <-overallErr; err != nil {
+		connectedOverall = 0.0
+	}
+	ch <- prometheus.MustNewConstMetric(vaultConnectedDesc, prometheus.GaugeValue, connectedOverall, allLabelValue)
+	for _, status := range statuses {
+		connected := 0.0
+		if status.Connected {
+			connected = 1.0
 		}
-		connected := 1.0
-		if err := client.CheckConnection(context.Background()); err != nil {
-			connected = 0.0
-		}
-		ch <- prometheus.MustNewConstMetric(vaultConnectedDesc, prometheus.GaugeValue, connected, vaultID)
+		ch <- prometheus.MustNewConstMetric(vaultConnectedDesc, prometheus.GaugeValue, connected, status.ID)
 	}
 }
 
