@@ -94,7 +94,7 @@ go-lint:
 
 # Pinned to the same version as .github/workflows/go.yml; bump both together.
 go-lint-full:
-	cd app && go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2 run --timeout=3m
+	cd app && go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 run --timeout=3m
 
 go-coverage:
 	cd app && go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out

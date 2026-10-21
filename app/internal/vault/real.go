@@ -222,6 +222,7 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 	}
 	var allCertificates []certs.Certificate
 	listedMounts := 0
+	skippedCertificates := 0
 	var lastError error
 
 	// Collect certificates from all mounts
@@ -231,7 +232,7 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 			Str("mount", mount).
 			Msg("listing certificates from mount")
 
-		mountCerts, mountRevoked, err := c.listCertificatesFromMount(ctx, mount)
+		mountCerts, mountSkipped, err := c.listCertificatesFromMount(ctx, mount)
 		if err != nil {
 			logger.Get().Error().
 				Str("vault_addr", c.addr).
@@ -247,10 +248,11 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 			Str("vault_addr", c.addr).
 			Str("mount", mount).
 			Int("certificate_count", len(mountCerts)).
-			Int("revoked_count", len(mountRevoked)).
+			Int("skipped_count", mountSkipped).
 			Msg("successfully listed certificates from mount")
 
 		listedMounts += 1
+		skippedCertificates += mountSkipped
 		allCertificates = append(allCertificates, mountCerts...)
 	}
 	if listedMounts == 0 {
@@ -264,7 +266,18 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 		return allCertificates[leftIndex].CommonName < allCertificates[rightIndex].CommonName
 	})
 
-	// Cache the result
+	// Only a complete inventory is cached: a partial one would hide certificates
+	// (and their expiry alerts) for the whole TTL. Partial results are still
+	// returned so the caller sees what was reachable.
+	if listedMounts < len(c.mounts) || skippedCertificates > 0 {
+		logger.Get().Warn().
+			Str("vault_addr", c.addr).
+			Int("successful_mounts", listedMounts).
+			Int("total_mounts", len(c.mounts)).
+			Int("skipped_certificates", skippedCertificates).
+			Msg("certificate listing incomplete, result not cached")
+		return allCertificates, nil
+	}
 	c.cache.Set(cacheVersion+":certificates", allCertificates)
 
 	logger.Get().Debug().
@@ -276,27 +289,30 @@ func (c *realClient) ListCertificates(ctx context.Context) ([]certs.Certificate,
 	return allCertificates, nil
 }
 
-func (c *realClient) listCertificatesFromMount(ctx context.Context, mount string) ([]certs.Certificate, map[string]bool, error) {
+// listCertificatesFromMount returns the readable certificates of a mount and
+// how many listed serials could not be read.
+func (c *realClient) listCertificatesFromMount(ctx context.Context, mount string) ([]certs.Certificate, int, error) {
 	listPath := fmt.Sprintf("%s/certs", mount)
 	secret, err := c.client.Logical().ListWithContext(ctx, listPath)
 	if err != nil {
-		return nil, nil, fmt.Errorf("failed to list certificates from mount %s: %w", mount, err)
+		return nil, 0, fmt.Errorf("failed to list certificates from mount %s: %w", mount, err)
 	}
 	if secret == nil || secret.Data == nil {
-		return []certs.Certificate{}, make(map[string]bool), nil
+		return []certs.Certificate{}, 0, nil
 	}
 
 	rawKeys, ok := secret.Data["keys"].([]any)
 	if !ok {
-		return nil, nil, fmt.Errorf("unexpected list response from Vault for mount %s: missing keys array", mount)
+		return nil, 0, fmt.Errorf("unexpected list response from Vault for mount %s: missing keys array", mount)
 	}
 
 	revokedSet, err := c.fetchRevokedSerialsFromMount(ctx, mount)
 	if err != nil {
-		return nil, nil, err
+		return nil, 0, err
 	}
 
 	result := make([]certs.Certificate, 0, len(rawKeys))
+	skipped := 0
 	var mu sync.Mutex
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, certFetchConcurrency)
@@ -315,6 +331,15 @@ func (c *realClient) listCertificatesFromMount(ctx context.Context, mount string
 			defer func() { <-sem }()
 			certificate, err := c.readCertificateFromMount(ctx, mount, s)
 			if err != nil {
+				logger.Get().Warn().
+					Str("vault_addr", c.addr).
+					Str("mount", mount).
+					Str("serial", s).
+					Err(err).
+					Msg("failed to read certificate, skipping")
+				mu.Lock()
+				skipped++
+				mu.Unlock()
 				return
 			}
 			if revokedSet[s] {
@@ -326,8 +351,11 @@ func (c *realClient) listCertificatesFromMount(ctx context.Context, mount string
 		}(serial)
 	}
 	wg.Wait()
+	if ctxErr := ctx.Err(); ctxErr != nil {
+		return nil, 0, fmt.Errorf("listing certificates from mount %s interrupted: %w", mount, ctxErr)
+	}
 
-	return result, revokedSet, nil
+	return result, skipped, nil
 }
 
 func (c *realClient) fetchRevokedSerialsFromMount(ctx context.Context, mount string) (map[string]bool, error) {
