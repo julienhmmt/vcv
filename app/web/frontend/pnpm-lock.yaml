@@ -15,8 +15,8 @@ importers:
         specifier: 3.13.39
         version: 3.13.39(svelte@5.57.1(@typescript-eslint/types@8.70.0))
       bits-ui:
-        specifier: ^2.19.2
-        version: 2.19.2(@internationalized/date@3.12.2)(svelte@5.57.1(@typescript-eslint/types@8.70.0))
+        specifier: ^2.19.5
+        version: 2.19.5(@internationalized/date@3.12.2)(svelte@5.57.1(@typescript-eslint/types@8.70.0))
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -720,8 +720,8 @@ packages:
   bidi-js@1.0.3:
     resolution: {integrity: sha512-RKshQI1R3YQ+n9YJz2QQ147P66ELpa1FQEg20Dk8oW9t2KgLbpDLLp9aGZ7y8WHSshDknG0bknqGw5/tyCs5tw==}
 
-  bits-ui@2.19.2:
-    resolution: {integrity: sha512-W9upilTmLTIWjuVAD6Ta7XoS6gxRflmCQnXamj+WN1eYxZecghqGENpuSMAKQmVENMLXhh85BZb04LCrBd2+Ng==}
+  bits-ui@2.19.5:
+    resolution: {integrity: sha512-TEwkLSYElE5SE0fIdcItiFPfyg9vrR67N1Mt6VvZCqZo24dwTA1MpGVV3WeyIg7rfVAaZ0So8a0/dcnPngCoew==}
     engines: {node: '>=20'}
     peerDependencies:
       '@internationalized/date': ^3.8.1
@@ -2234,7 +2234,7 @@ snapshots:
     dependencies:
       require-from-string: 2.0.2
 
-  bits-ui@2.19.2(@internationalized/date@3.12.2)(svelte@5.57.1(@typescript-eslint/types@8.70.0)):
+  bits-ui@2.19.5(@internationalized/date@3.12.2)(svelte@5.57.1(@typescript-eslint/types@8.70.0)):
     dependencies:
       '@floating-ui/core': 1.8.0
       '@floating-ui/dom': 1.8.0
