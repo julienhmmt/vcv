@@ -349,31 +349,44 @@ func (c *multiClient) ListCertificatesEnvelope(ctx context.Context) ([]certs.Cer
 	return all, errs
 }
 
+// ListCertificatesByVault lists every active vault in parallel (one slow
+// vault must not serialize a metrics scrape) and returns results in vault order.
 func (c *multiClient) ListCertificatesByVault(ctx context.Context) []ListCertificatesByVaultResult {
 	active := c.activeVaultIDs()
-	results := make([]ListCertificatesByVaultResult, 0, len(active))
-	for _, vaultID := range active {
+	results := make([]ListCertificatesByVaultResult, len(active))
+	var wg sync.WaitGroup
+	for i, vaultID := range active {
 		client := c.clientsByVault[vaultID]
 		if client == nil {
-			results = append(results, ListCertificatesByVaultResult{VaultID: vaultID, Certificates: []certs.Certificate{}, Duration: 0, ListError: fmt.Errorf(errMissingVaultClient, vaultID)})
+			results[i] = ListCertificatesByVaultResult{VaultID: vaultID, Certificates: []certs.Certificate{}, Duration: 0, ListError: fmt.Errorf(errMissingVaultClient, vaultID)}
 			continue
 		}
-		start := time.Now()
-		certificates, err := client.ListCertificates(ctx)
-		duration := time.Since(start)
-		if err != nil {
-			results = append(results, ListCertificatesByVaultResult{VaultID: vaultID, Certificates: []certs.Certificate{}, Duration: duration, ListError: err})
-			continue
-		}
-		prefixed := make([]certs.Certificate, 0, len(certificates))
-		for _, certificate := range certificates {
-			value := certificate
-			value.ID = fmt.Sprintf("%s|%s", vaultID, certificate.ID)
-			prefixed = append(prefixed, value)
-		}
-		results = append(results, ListCertificatesByVaultResult{VaultID: vaultID, Certificates: prefixed, Duration: duration, ListError: nil})
+		wg.Add(1)
+		go func(idx int, id string, cl Client) {
+			defer wg.Done()
+			results[idx] = listVaultWithDuration(ctx, id, cl)
+		}(i, vaultID, client)
 	}
+	wg.Wait()
 	return results
+}
+
+// listVaultWithDuration lists one vault, timing the call and prefixing IDs
+// with the vault ID.
+func listVaultWithDuration(ctx context.Context, vaultID string, client Client) ListCertificatesByVaultResult {
+	start := time.Now()
+	certificates, err := client.ListCertificates(ctx)
+	duration := time.Since(start)
+	if err != nil {
+		return ListCertificatesByVaultResult{VaultID: vaultID, Certificates: []certs.Certificate{}, Duration: duration, ListError: err}
+	}
+	prefixed := make([]certs.Certificate, 0, len(certificates))
+	for _, certificate := range certificates {
+		value := certificate
+		value.ID = fmt.Sprintf("%s|%s", vaultID, certificate.ID)
+		prefixed = append(prefixed, value)
+	}
+	return ListCertificatesByVaultResult{VaultID: vaultID, Certificates: prefixed, Duration: duration, ListError: nil}
 }
 
 func (c *multiClient) CacheSize() int {

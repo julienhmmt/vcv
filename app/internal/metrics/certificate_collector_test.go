@@ -2,6 +2,7 @@ package metrics
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 	"testing"
@@ -348,4 +349,42 @@ func matchLabelsInLine(line string, labels map[string]string) bool {
 		}
 	}
 	return true
+}
+
+// hungClient never answers a connection check until its context ends.
+type hungClient struct {
+	vault.MockClient
+}
+
+func (h *hungClient) CheckConnection(ctx context.Context) error {
+	<-ctx.Done()
+	return ctx.Err()
+}
+
+// Regression: connection checks used context.Background(), so one hung
+// Vault stalled every /metrics scrape forever.
+func TestCollector_HungVaultDoesNotStallScrape(t *testing.T) {
+	mockVault := new(vault.MockClient)
+	mockVault.On("ListCertificates", mock.Anything).Return([]certs.Certificate{}, nil)
+	mockVault.On("CheckConnection", mock.Anything).Return(nil)
+	collector := NewCertificateCollectorWithVaults(mockVault, map[string]vault.Client{"hung": &hungClient{}}, config.ExpirationThresholds{}, config.MetricsConfig{}, nil)
+	typed, ok := collector.(*certificateCollector)
+	require.True(t, ok)
+	typed.checkTimeout = 50 * time.Millisecond
+	registry := prometheus.NewRegistry()
+	require.NoError(t, registry.Register(collector))
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		_, _ = registry.Gather()
+	}()
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("scrape stalled on a hung vault connection check")
+	}
+	value, err := gatherGauge(registry, "vcv_vault_connected", map[string]string{"vault_id": "hung"})
+	require.NoError(t, err)
+	assert.Equal(t, 0.0, value)
 }
