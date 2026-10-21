@@ -93,6 +93,10 @@ type WebhookTarget struct {
 	// Levels gates delivery to a subset of severity tiers
 	// ("warning", "critical"). Empty means all tiers.
 	Levels []string `json:"levels,omitempty"`
+	// OriginalIndex is the stored position this target was masked from on
+	// admin GET; a blank URL on PUT restores the URL at that index. Never
+	// persisted (merge rebuilds targets without it).
+	OriginalIndex *int `json:"original_index,omitempty"`
 }
 
 type SettingsFile struct {
