@@ -40,7 +40,7 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           # Pin for reproducible CI; bump deliberately.
-          version: v2.12.2
+          version: v2.15.0
           working-directory: app
           args: --timeout=3m
 
