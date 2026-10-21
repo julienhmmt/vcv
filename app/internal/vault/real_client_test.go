@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"io"
 	"math/big"
 	"net/http"
 	"net/http/httptest"
@@ -710,5 +711,60 @@ func TestListCertificatesFromMount_FetchesConcurrentlyWithinBound(t *testing.T) 
 		t.Fatalf("expected concurrent certificate fetches, max in-flight was %d", max)
 	} else if max > certFetchConcurrency {
 		t.Fatalf("expected at most %d concurrent fetches, got %d", certFetchConcurrency, max)
+	}
+}
+
+func TestRealClient_ListCertificates_PartialResultNotCached(t *testing.T) {
+	// Concurrent skip warnings: earlier tests leave a non thread-safe buffer as output.
+	logger.SetOutput(io.Discard)
+	certificatePEM := newVaultTestCertificatePEM(t)
+	var listCount atomic.Int32
+	// "bb" is listed but unreadable, so the inventory is incomplete.
+	handler := newVaultHTTPHandler(certificatePEM, []string{"aa", "bb"}, []string{"aa"})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if isVaultListRequest(r, "/v1/pki/certs") {
+			listCount.Add(1)
+		}
+		handler.ServeHTTP(w, r)
+	}))
+	defer server.Close()
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+
+	for i := 0; i < 2; i++ {
+		certificates, err := client.ListCertificates(context.Background())
+		if err != nil {
+			t.Fatalf("call %d: expected no error, got %v", i, err)
+		}
+		if len(certificates) != 1 {
+			t.Fatalf("call %d: expected 1 readable certificate, got %d", i, len(certificates))
+		}
+	}
+	if got := listCount.Load(); got != 2 {
+		t.Fatalf("expected partial result to bypass cache (2 vault listings), got %d", got)
+	}
+}
+
+func TestRealClient_ListCertificates_CancelledListingNotCached(t *testing.T) {
+	// Concurrent skip warnings: earlier tests leave a non thread-safe buffer as output.
+	logger.SetOutput(io.Discard)
+	certificatePEM := newVaultTestCertificatePEM(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	handler := newVaultHTTPHandler(certificatePEM, []string{"aa", "bb"}, []string{"aa", "bb"})
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Simulate the client going away while certificates are being read.
+		if strings.HasPrefix(r.URL.Path, "/v1/pki/cert/") {
+			cancel()
+		}
+		handler.ServeHTTP(w, r)
+	}))
+	defer server.Close()
+	client := newRealClientForTest(t, server.URL, []string{"pki"})
+
+	if _, err := client.ListCertificates(ctx); err == nil {
+		t.Fatalf("expected error for interrupted listing")
+	}
+	if size := client.CacheSize(); size != 0 {
+		t.Fatalf("expected nothing cached after interrupted listing, cache size %d", size)
 	}
 }
