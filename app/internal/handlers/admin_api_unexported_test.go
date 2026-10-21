@@ -510,8 +510,9 @@ func TestMergeWebhookTargets(t *testing.T) {
 	// Explicitly empty list clears it.
 	assert.Empty(t, mergeWebhookTargets(current, []config.WebhookTarget{}))
 
-	// Blank/masked URL preserves the stored URL positionally; levels update.
-	merged := mergeWebhookTargets(current, []config.WebhookTarget{{URL: "", Levels: []string{"warning", "critical"}}})
+	// Blank/masked URL preserves the stored URL at its original index; levels update.
+	zero := 0
+	merged := mergeWebhookTargets(current, []config.WebhookTarget{{URL: "", Levels: []string{"warning", "critical"}, OriginalIndex: &zero}})
 	require.Len(t, merged, 1)
 	assert.Equal(t, "https://hooks.example.com/stored", merged[0].URL)
 	assert.Equal(t, []string{"warning", "critical"}, merged[0].Levels)
@@ -520,6 +521,29 @@ func TestMergeWebhookTargets(t *testing.T) {
 	replaced := mergeWebhookTargets(current, []config.WebhookTarget{{URL: "https://hooks.example.com/new"}})
 	require.Len(t, replaced, 1)
 	assert.Equal(t, "https://hooks.example.com/new", replaced[0].URL)
+
+	// Blank URL without an original index is not guessed from its position.
+	unknown := mergeWebhookTargets(current, []config.WebhookTarget{{URL: ""}})
+	require.Len(t, unknown, 1)
+	assert.Empty(t, unknown[0].URL)
+}
+
+// Regression: deleting the first of two masked rows used to restore the
+// deleted row's URL (positional merge) and drop the kept one.
+func TestMergeWebhookTargets_DeleteFirstMaskedRowKeepsSecondURL(t *testing.T) {
+	current := []config.WebhookTarget{
+		{URL: "https://hooks.example.com/a", Levels: []string{"warning"}},
+		{URL: "https://hooks.example.com/b", Levels: []string{"critical"}},
+	}
+	masked := maskSecrets(config.SettingsFile{Notifications: config.NotificationSettings{Webhooks: current}})
+
+	// The UI deletes row 0 and sends the remaining masked row back unchanged.
+	merged := mergeWebhookTargets(current, masked.Notifications.Webhooks[1:])
+
+	require.Len(t, merged, 1)
+	assert.Equal(t, "https://hooks.example.com/b", merged[0].URL)
+	assert.Equal(t, []string{"critical"}, merged[0].Levels)
+	assert.Nil(t, merged[0].OriginalIndex, "original_index must not be persisted")
 }
 
 func TestMaskSecrets_BlanksWebhookTargets(t *testing.T) {
