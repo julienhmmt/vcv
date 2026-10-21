@@ -580,7 +580,8 @@ func TestMultiClient_ListCertificatesEnvelope(t *testing.T) {
 	t.Run("partial failure", func(t *testing.T) {
 		c1 := &MockClient{}
 		c2 := &MockClient{}
-		errBoom := errors.New("boom")
+		// Raw Vault errors embed internal URLs; they must not reach the public envelope.
+		errBoom := errors.New("Error making API request.\n\nURL: LIST https://vault.internal:8200/v1/pki/certs\nCode: 403")
 		c1.On("ListCertificates", mock.Anything).Return([]certs.Certificate{{ID: "pki:a", CommonName: "alpha"}}, nil)
 		c2.On("ListCertificates", mock.Anything).Return([]certs.Certificate{}, errBoom)
 
@@ -593,6 +594,7 @@ func TestMultiClient_ListCertificatesEnvelope(t *testing.T) {
 		assert.Len(t, resultCerts, 1)
 		assert.Len(t, resultErrs, 1)
 		assert.Equal(t, "v2", resultErrs[0].VaultID)
+		assert.Equal(t, "vault unavailable", resultErrs[0].Message)
 		c1.AssertExpectations(t)
 		c2.AssertExpectations(t)
 	})

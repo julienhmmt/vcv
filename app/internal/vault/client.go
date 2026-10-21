@@ -2,6 +2,7 @@ package vault
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"vcv/internal/certs"
@@ -33,7 +34,21 @@ type CertificatesByVaultLister interface {
 	ListCertificatesByVault(ctx context.Context) []ListCertificatesByVaultResult
 }
 
+// PublicErrorMessage maps a vault error to a stable, non-sensitive string for
+// unauthenticated API responses: raw errors carry Vault URLs, paths and API
+// messages, which belong in server logs only.
+func PublicErrorMessage(err error) string {
+	if err == nil {
+		return ""
+	}
+	if errors.Is(err, ErrVaultNotConfigured) {
+		return "vault not configured"
+	}
+	return "vault unavailable"
+}
+
 // VaultError reports a per-vault failure during a partial-success listing.
+// Message is sanitized (see PublicErrorMessage).
 type VaultError struct {
 	VaultID string `json:"vaultId"`
 	Message string `json:"message"`
