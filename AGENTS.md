@@ -102,18 +102,15 @@ make e2e-run             # playwright test (specs: app/web/frontend/e2e/)
 make e2e-down            # stop the e2e stack
 make e2e                 # install + up + wait-for-seeds + run + down
 
-# SonarQube (local container, 2 projects: vcv-server, vcv-web)
-make sonar              # Full pipeline: start, token, coverage, lint, scan both
-make sonar-up           # Start the server on http://localhost:9000
-make sonar-bootstrap    # Provision both projects + rotate the analysis token
+# SonarQube (shared server in ~/git/gh/sonarqube, 2 projects: vcv-server, vcv-web)
+make sonar              # Coverage + lint + scan both (starts the server if needed)
+make sonar-up           # Start the shared server on http://localhost:9000
 make sonar-coverage     # Generate the Go coverage report for app/
 make sonar-lint         # ESLint on app/web/frontend (incl. .svelte) → SonarQube
-make sonar-scan         # Scan both projects + print a summary table
 make sonar-scan-server  # Scan server (Go) only
 make sonar-scan-web     # Scan web (Svelte + ESLint import) only
 make sonar-query CMD="summary"   # Also: projects, issues <key>, metrics <key>, gate <key>
-make sonar-down         # Stop the server
-make sonar-clean        # Stop and remove all SonarQube data
+make sonar-down         # Stop the shared server
 
 # Multi-arch docker images push
 VCV_TAG=1.9 make docker-build

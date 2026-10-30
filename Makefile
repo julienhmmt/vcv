@@ -99,25 +99,18 @@ go-lint-full:
 go-coverage:
 	cd app && go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out
 
-# --- SonarQube (local container, 2 projects: vcv-server, vcv-web) -------------
-COMPOSE_SONAR := docker compose -f docker-compose.sonarqube.yml
+# --- SonarQube (shared local server, see $(SONAR_HOME)/README.md) ------------
+SONAR_HOME ?= $(HOME)/git/gh/sonarqube
 
-.PHONY: sonar-up sonar-down sonar-logs sonar-status sonar-bootstrap sonar-coverage sonar-lint sonar-scan sonar-scan-server sonar-scan-web sonar sonar-query sonar-clean
+.PHONY: sonar sonar-up sonar-down sonar-coverage sonar-lint sonar-scan sonar-scan-server sonar-scan-web sonar-query
+
+sonar: sonar-scan
 
 sonar-up:
-	$(COMPOSE_SONAR) up -d sonarqube
+	@$(MAKE) -C $(SONAR_HOME) up
 
 sonar-down:
-	$(COMPOSE_SONAR) down
-
-sonar-logs:
-	$(COMPOSE_SONAR) logs -f sonarqube
-
-sonar-status:
-	@docker ps --filter "name=vcv-sonarqube" --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-
-sonar-bootstrap:
-	@chmod +x tools/sonar-bootstrap.sh && tools/sonar-bootstrap.sh && echo "SonarQube token ready in .sonar/token"
+	@$(MAKE) -C $(SONAR_HOME) down
 
 sonar-coverage:
 	@chmod +x tools/sonar-coverage.sh && GO_TEST_FLAGS="$(GO_TEST_FLAGS)" SERVER_DIR="$(SERVER_DIR)" tools/sonar-coverage.sh && echo "Coverage reports ready in .sonar/"
@@ -126,19 +119,13 @@ sonar-lint:
 	@chmod +x tools/sonar-frontend-lint.sh && tools/sonar-frontend-lint.sh && echo "ESLint reports ready in .sonar/"
 
 sonar-scan: sonar-coverage sonar-lint
-	@chmod +x tools/sonar-scan.sh && tools/sonar-scan.sh
+	@$(SONAR_HOME)/scan.sh
 
-sonar-scan-server:
-	@chmod +x tools/sonar-scan.sh && tools/sonar-scan.sh server
+sonar-scan-server: sonar-coverage
+	@$(SONAR_HOME)/scan.sh server
 
 sonar-scan-web: sonar-lint
-	@chmod +x tools/sonar-scan.sh && tools/sonar-scan.sh web
-
-sonar: sonar-up sonar-bootstrap sonar-scan
-	@echo "SonarQube analysis complete. See http://localhost:9000/projects"
+	@$(SONAR_HOME)/scan.sh web
 
 sonar-query:
-	python3 tools/sonar-query.py $(CMD)
-
-sonar-clean: sonar-down
-	rm -rf .sonar
+	@python3 $(SONAR_HOME)/query.py $(CMD)
