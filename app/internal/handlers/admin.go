@@ -326,6 +326,11 @@ func fallbackWriteSettings(path string, payload []byte, originalErr error) error
 	if writeErr := os.WriteFile(path, payload, 0o600); writeErr != nil {
 		return originalErr
 	}
+	// WriteFile keeps the mode of an existing file, so enforce 0600 explicitly:
+	// the settings file holds vault tokens.
+	if chmodErr := os.Chmod(path, 0o600); chmodErr != nil {
+		return chmodErr
+	}
 	logger.Get().Warn().Msg("settings written in place (non-atomic)")
 	return nil
 }

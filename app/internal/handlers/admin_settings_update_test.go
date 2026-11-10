@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"sync"
 	"testing"
@@ -96,4 +97,30 @@ func TestMergeAdminSettings_ExplicitEmptyClears(t *testing.T) {
 	assert.Empty(t, merged.Metrics.PinnedCertificates, "explicit empty pinned list must clear")
 	assert.Empty(t, merged.CORS.AllowedOrigins, "explicit empty origins list must clear")
 	assert.Equal(t, current.Certificates, merged.Certificates, "absent thresholds keep current")
+}
+
+func TestAdminSettingsStore_SaveEnforcesOwnerOnlyMode(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	require.NoError(t, os.WriteFile(path, []byte("{}"), 0o644))
+	store := newAdminSettingsStore(path, config.EnvDev)
+
+	require.NoError(t, store.save(fullyPopulatedSettings()))
+
+	info, err := os.Stat(path)
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0o600), info.Mode().Perm())
+}
+
+func TestFallbackWriteSettings_EnforcesOwnerOnlyMode(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "settings.json")
+	require.NoError(t, os.WriteFile(path, []byte("{}"), 0o644))
+
+	require.NoError(t, fallbackWriteSettings(path, []byte(`{"app":{}}`), os.ErrPermission))
+
+	info, err := os.Stat(path)
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0o600), info.Mode().Perm())
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{"app":{}}`, string(data))
 }
