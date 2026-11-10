@@ -186,6 +186,27 @@ func TestListCertsQuery_Pagination(t *testing.T) {
 	assert.Contains(t, string(raw), `"certificates":[]`)
 }
 
+func TestListCertsQuery_HugePage(t *testing.T) {
+	// (page-1)*page_size overflows int here; must return an empty page, not panic.
+	code, got, raw := serveCertsQuery(t, "/api/certs?page=4611686018427387904&page_size=4")
+
+	assert.Equal(t, http.StatusOK, code)
+	assert.Empty(t, got.Certificates)
+	assert.NotNil(t, got.Certificates)
+	assert.Equal(t, 5, got.Total)
+	assert.Equal(t, 2, got.TotalPages)
+	assert.Contains(t, string(raw), `"certificates":[]`)
+}
+
+func TestListCertsQuery_PageSizeClamped(t *testing.T) {
+	code, got, _ := serveCertsQuery(t, "/api/certs?page=1&page_size=5000")
+
+	assert.Equal(t, http.StatusOK, code)
+	assert.Equal(t, 1000, got.PageSize)
+	assert.Len(t, got.Certificates, 5)
+	assert.Equal(t, 1, got.TotalPages)
+}
+
 func TestListCertsQuery_PageSizeAll(t *testing.T) {
 	code, got, _ := serveCertsQuery(t, "/api/certs?page=1&page_size=all")
 
