@@ -1,10 +1,13 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent, within } from '@testing-library/svelte'
-import type { SettingsFile } from '$lib/types'
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/svelte'
+import type { SettingsFile, VaultInstance } from '$lib/types'
 
 vi.mock('$lib/stores/i18n.svelte', () => ({
-  getI18n: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
+  getI18n: () => ({
+    t: (_key: string, fallback?: string, params?: Record<string, string>) =>
+      (fallback ?? _key).replace(/\{(\w+)\}/g, (match, name: string) => params?.[name] ?? match),
+  }),
 }))
 
 import AdminPanel from '$lib/components/admin/AdminPanel.svelte'
@@ -29,8 +32,7 @@ function baseProps(settingsOverrides: Partial<SettingsFile> = {}) {
     error: null,
     successMessage: null,
     onSave: vi.fn(),
-    onAddVault: vi.fn(),
-    onRemoveVault: vi.fn(),
+    onAddVault: vi.fn(async () => null),
     onInvalidateCache: vi.fn(),
     onLogout: vi.fn(),
   }
@@ -149,5 +151,52 @@ describe('AdminPanel masked round-trip', () => {
     await rerender({ ...baseProps(), settings: settings({ notifications: { webhook_url: '' } }) })
 
     expect((screen.getByPlaceholderText('Enter a new webhook URL to replace the stored one') as HTMLInputElement).value).toBe('')
+  })
+})
+
+function vault(id: string, displayName: string): VaultInstance {
+  return { id, display_name: displayName, address: `https://${id}.example`, pki_mounts: ['pki'], pki_mount: 'pki', enabled: true }
+}
+
+describe('AdminPanel unsaved edits survive vault add and remove', () => {
+  it('adding a vault keeps an unsaved threshold edit and lists the new vault', async () => {
+    const onAddVault = vi.fn(async () => vault('', 'Staging'))
+    render(AdminPanel, { props: { ...baseProps(), onAddVault } })
+
+    await fireEvent.input(screen.getByDisplayValue('30'), { target: { value: '14' } })
+    await fireEvent.click(screen.getByRole('button', { name: '+ Add vault' }))
+
+    expect(onAddVault).toHaveBeenCalledTimes(1)
+    expect(await screen.findByText('Staging')).toBeInTheDocument()
+    expect(screen.getByDisplayValue('14')).toBeInTheDocument()
+  })
+
+  it('Cancel in the remove confirmation keeps the vault', async () => {
+    render(AdminPanel, { props: baseProps({ vaults: [vault('prod', 'Prod')] }) })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Remove vault: Prod' }))
+    const dialog = await screen.findByRole('dialog')
+    expect(within(dialog).getByText('Remove vault Prod? It is deleted when you save.')).toBeInTheDocument()
+    await fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))
+
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument())
+    expect(screen.getByText('Prod')).toBeInTheDocument()
+  })
+
+  it('Remove after confirm drops the vault from the form and Save sends the reduced list', async () => {
+    const onSave = vi.fn()
+    render(AdminPanel, { props: { ...baseProps({ vaults: [vault('prod', 'Prod'), vault('edge', 'Edge')] }), onSave } })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Remove vault: Prod' }))
+    const dialog = await screen.findByRole('dialog')
+    await fireEvent.click(within(dialog).getByRole('button', { name: 'Remove' }))
+
+    await waitFor(() => expect(screen.queryByText('Prod')).not.toBeInTheDocument())
+    expect(screen.getByText('Edge')).toBeInTheDocument()
+
+    const form = screen.getByPlaceholderText('Enter a new webhook URL to replace the stored one').closest('form')
+    await fireEvent.submit(form as HTMLFormElement)
+    const saved = onSave.mock.calls[0][0] as SettingsFile
+    expect(saved.vaults.map((v) => v.id)).toEqual(['edge'])
   })
 })

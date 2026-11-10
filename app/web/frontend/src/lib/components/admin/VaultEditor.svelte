@@ -3,6 +3,8 @@
   import ChevronDown from '@lucide/svelte/icons/chevron-down'
   import { untrack } from 'svelte'
   import { getI18n } from '$lib/stores/i18n.svelte'
+  import * as Dialog from '$lib/components/ui/dialog'
+  import { Button } from '$lib/components/ui/button'
   import ToggleSwitch from './ToggleSwitch.svelte'
   import type { AdminVaultStatus, VaultInstance } from '$lib/types'
 
@@ -108,6 +110,14 @@
 
   const kind = $derived(statusKind())
   const vaultLabel = $derived(vault.display_name || vault.id || i18n.t('adminVaultNew', 'new vault'))
+
+  // Removal is a local edit until Save; ask first so a misclick costs nothing.
+  let confirmOpen = $state(false)
+
+  function confirmRemove(): void {
+    confirmOpen = false
+    onRemove()
+  }
 </script>
 
 <div class="ve-card" class:ve-card--collapsed={!expanded}>
@@ -148,7 +158,7 @@
           />
           <span>{i18n.t('adminVaultEnabled', 'Enabled')}</span>
         </label>
-        <button type="button" class="ve-remove-btn" aria-label="{i18n.t('adminVaultRemove', 'Remove vault')}: {vaultLabel}" onclick={onRemove}>
+        <button type="button" class="ve-remove-btn" aria-label="{i18n.t('adminVaultRemove', 'Remove vault')}: {vaultLabel}" onclick={() => (confirmOpen = true)}>
           {i18n.t('adminVaultRemove', 'Remove vault')}
         </button>
       </div>
@@ -287,6 +297,25 @@
       </details>
     </div>
   {/if}
+
+  <Dialog.Root open={confirmOpen} onOpenChange={(open) => (confirmOpen = open)}>
+    <Dialog.Content class="max-w-md">
+      <Dialog.Header>
+        <Dialog.Title>{i18n.t('adminVaultRemove', 'Remove vault')}</Dialog.Title>
+        <Dialog.Description>
+          {i18n.t('adminRemoveVaultConfirm', 'Remove vault {name}? It is deleted when you save.', { name: vaultLabel })}
+        </Dialog.Description>
+      </Dialog.Header>
+      <Dialog.Footer>
+        <Button type="button" variant="outline" onclick={() => (confirmOpen = false)}>
+          {i18n.t('adminCancel', 'Cancel')}
+        </Button>
+        <Button type="button" variant="destructive" onclick={confirmRemove}>
+          {i18n.t('adminVaultRemoveConfirm', 'Remove')}
+        </Button>
+      </Dialog.Footer>
+    </Dialog.Content>
+  </Dialog.Root>
 </div>
 
 <style>

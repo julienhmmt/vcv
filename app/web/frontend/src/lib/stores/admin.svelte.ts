@@ -26,8 +26,7 @@ export interface AdminStore {
   logout(): Promise<void>
   loadSettings(): Promise<void>
   saveSettings(settings: SettingsFile): Promise<boolean>
-  addVault(): Promise<void>
-  removeVault(id: string): Promise<void>
+  addVault(): Promise<VaultInstance | null>
   invalidateCache(): Promise<void>
   clearMessages(): void
 }
@@ -64,7 +63,7 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
       return authenticated
     } catch (err: unknown) {
       authenticated = false
-      applyError(err, 'Login failed')
+      applyError(err, i18n.t('adminErrLogin', 'Login failed'))
       return false
     } finally {
       loading = false
@@ -98,7 +97,7 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
       vaultStatuses = response.vault_statuses
       restartRequired = false
     } catch (err: unknown) {
-      applyError(err, 'Failed to load settings')
+      applyError(err, i18n.t('adminErrLoadSettings', 'Failed to load settings'))
     } finally {
       loading = false
     }
@@ -126,32 +125,23 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
       successMessage = i18n.t('adminSettingsSaved', 'Settings saved')
       return true
     } catch (err: unknown) {
-      applyError(err, 'Failed to save settings')
+      applyError(err, i18n.t('adminErrSaveSettings', 'Failed to save settings'))
       return false
     } finally {
       loading = false
     }
   }
 
-  async function addVault(): Promise<void> {
-    if (!settings) return
+  // Returns a blank vault for the caller to add to its unsaved working copy.
+  // Never touches `settings`, so pending admin edits survive. Nothing is
+  // persisted until the admin saves.
+  async function addVault(): Promise<VaultInstance | null> {
     try {
       const response = await api.adminAddVault()
-      settings = {
-        ...settings,
-        vaults: [...settings.vaults, response.vault],
-      }
+      return response.vault
     } catch (err: unknown) {
-      applyError(err, 'Failed to add vault')
-    }
-  }
-
-  async function removeVault(id: string): Promise<void> {
-    try {
-      await api.adminDeleteVault(id)
-      await loadSettings()
-    } catch (err: unknown) {
-      applyError(err, 'Failed to remove vault')
+      applyError(err, i18n.t('adminErrAddVault', 'Failed to add vault'))
+      return null
     }
   }
 
@@ -197,7 +187,6 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
     loadSettings,
     saveSettings,
     addVault,
-    removeVault,
     invalidateCache,
     clearMessages,
   }
