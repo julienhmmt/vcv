@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { MediaQuery } from 'svelte/reactivity'
   import { toast } from 'svelte-sonner'
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import Moon from '@lucide/svelte/icons/moon'
@@ -38,6 +39,9 @@
   import { downloadExport, type ExportFormat } from '$lib/utils/export'
   import { expiryTier, shouldNotifyExpiry, type ExpiryTier } from '$lib/utils/expiry-notify'
   import type { Certificate, CertStatus } from '$lib/types'
+
+  // Same breakpoint as the mobile card CSS (≤768px); only one certificate list is mounted.
+  const isMobile = new MediaQuery('max-width: 768px')
 
   const i18n = setI18nContext(createI18nStore())
   const certs = createCertsStore(i18n)
@@ -127,9 +131,11 @@
     !!search || statusFilters.length > 0 || certTypeFilter !== 'all' || mountFilter !== null,
   )
 
+  // Configured mounts come from /api/config so the selector lists every mount even
+  // while the inventory is scoped to a subset; inventory keys cover legacy setups.
   const allMounts = $derived.by(() => {
     // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local to this derivation, rebuilt on each run
-    const set = new Set<string>()
+    const set = new Set<string>(config.mountKeys)
     for (const cert of certs.inventory) {
       set.add(parseCertID(cert.id).mountKey)
     }
@@ -301,11 +307,10 @@
   }
 
   async function manualRefresh(): Promise<void> {
+    // No error option: a failure dismisses the loading toast and the error effect toasts once.
     toast.promise(load(), {
       loading: i18n.t('toastRefreshing', 'Refreshing…'),
       success: () => i18n.t('loadSuccess', 'Certificates loaded'),
-      error: (err) =>
-        err instanceof Error ? err.message : i18n.t('toastRefreshFailed', 'Refresh failed'),
     })
   }
 
@@ -432,10 +437,17 @@
     }
   }
 
+  /** Message last toasted; plain (not $state) so writing it does not re-run the effect. */
+  let lastToastedError: string | null = null
   $effect(() => {
-    if (certs.error && certs.error !== dismissedFetchError) {
-      toast.error(certs.error)
+    const message = certs.error
+    if (!message) {
+      lastToastedError = null
+      return
     }
+    if (message === dismissedFetchError || message === lastToastedError) return
+    lastToastedError = message
+    toast.error(message)
   })
 
   // Toast vault connectivity transitions detected by the status poll.
@@ -653,34 +665,36 @@
       </div>
     </div>
 
-    <CertTable
-      certs={certs.certificates}
-      loading={certs.loading}
-      {initialLoad}
-      hasInventory={certs.inventory.length > 0}
-      {hasActiveFilters}
-      {showVaultMount}
-      {statusMeta}
-      {thresholds}
-      {sortKey}
-      {sortDir}
-      onSort={onHeaderSort}
-      onSelect={selectCert}
-      onClearFilters={clearAllFilters}
-    />
-
-    <CertMobileList
-      certs={certs.certificates}
-      loading={certs.loading}
-      {initialLoad}
-      hasInventory={certs.inventory.length > 0}
-      {hasActiveFilters}
-      {showVaultMount}
-      {statusMeta}
-      {thresholds}
-      onSelect={selectCert}
-      onClearFilters={clearAllFilters}
-    />
+    {#if isMobile.current}
+      <CertMobileList
+        certs={certs.certificates}
+        loading={certs.loading}
+        {initialLoad}
+        hasInventory={certs.inventory.length > 0}
+        {hasActiveFilters}
+        {showVaultMount}
+        {statusMeta}
+        {thresholds}
+        onSelect={selectCert}
+        onClearFilters={clearAllFilters}
+      />
+    {:else}
+      <CertTable
+        certs={certs.certificates}
+        loading={certs.loading}
+        {initialLoad}
+        hasInventory={certs.inventory.length > 0}
+        {hasActiveFilters}
+        {showVaultMount}
+        {statusMeta}
+        {thresholds}
+        {sortKey}
+        {sortDir}
+        onSort={onHeaderSort}
+        onSelect={selectCert}
+        onClearFilters={clearAllFilters}
+      />
+    {/if}
 
     <PaginationBar
       {pageSize}

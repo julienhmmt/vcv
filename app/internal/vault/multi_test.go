@@ -654,3 +654,60 @@ func TestMultiClient_ListCertificatesByVault_ListsInParallel(t *testing.T) {
 		assert.NoError(t, results[i].ListError)
 	}
 }
+
+func TestMultiClient_PerCertificateGetters_DisabledVault(t *testing.T) {
+	instances := []config.VaultInstance{{ID: "v1"}, {ID: "v2"}}
+	registry := NewRegistry([]config.VaultInstance{
+		{ID: "v1", Enabled: boolPtr(true)},
+		{ID: "v2", Enabled: boolPtr(false)},
+	})
+	ctx := context.Background()
+
+	t.Run("GetCertificateDetails", func(t *testing.T) {
+		c1 := &MockClient{}
+		c2 := &MockClient{}
+		c1.On("GetCertificateDetails", mock.Anything, "pki:aa").Return(certs.DetailedCertificate{}, nil)
+		c2.On("GetCertificateDetails", mock.Anything, "pki:aa").Return(certs.DetailedCertificate{}, nil)
+		m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2}, registry)
+
+		_, err := m.GetCertificateDetails(ctx, "v2|pki:aa")
+		assert.Error(t, err)
+		c2.AssertNotCalled(t, "GetCertificateDetails", mock.Anything, "pki:aa")
+
+		_, err = m.GetCertificateDetails(ctx, "v1|pki:aa")
+		assert.NoError(t, err)
+		c1.AssertExpectations(t)
+	})
+
+	t.Run("GetCertificatePEM", func(t *testing.T) {
+		c1 := &MockClient{}
+		c2 := &MockClient{}
+		c1.On("GetCertificatePEM", mock.Anything, "pki:aa").Return(certs.PEMResponse{SerialNumber: "aa"}, nil)
+		c2.On("GetCertificatePEM", mock.Anything, "pki:aa").Return(certs.PEMResponse{SerialNumber: "aa"}, nil)
+		m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2}, registry)
+
+		_, err := m.GetCertificatePEM(ctx, "v2|pki:aa")
+		assert.Error(t, err)
+		c2.AssertNotCalled(t, "GetCertificatePEM", mock.Anything, "pki:aa")
+
+		_, err = m.GetCertificatePEM(ctx, "v1|pki:aa")
+		assert.NoError(t, err)
+		c1.AssertExpectations(t)
+	})
+
+	t.Run("GetIntermediateCA", func(t *testing.T) {
+		c1 := &MockClient{}
+		c2 := &MockClient{}
+		c1.On("GetIntermediateCA", mock.Anything, "pki").Return(certs.DetailedCertificate{}, nil)
+		c2.On("GetIntermediateCA", mock.Anything, "pki").Return(certs.DetailedCertificate{}, nil)
+		m := NewMultiClient(instances, map[string]Client{"v1": c1, "v2": c2}, registry)
+
+		_, err := m.GetIntermediateCA(ctx, "v2|pki")
+		assert.Error(t, err)
+		c2.AssertNotCalled(t, "GetIntermediateCA", mock.Anything, "pki")
+
+		_, err = m.GetIntermediateCA(ctx, "v1|pki")
+		assert.NoError(t, err)
+		c1.AssertExpectations(t)
+	})
+}
