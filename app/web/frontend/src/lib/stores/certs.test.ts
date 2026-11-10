@@ -162,4 +162,37 @@ describe('createCertsStore', () => {
     expect(store.loading).toBe(false)
     expect(store.certificates.map((c) => c.id)).toEqual(['latest'])
   })
+
+  it('keeps an inventory error when a later table refresh succeeds', async () => {
+    listCertificates.mockRejectedValueOnce(new ApiError(500, 'inventory down'))
+    const store = createCertsStore(i18n)
+    await store.refreshInventory(null)
+    expect(store.error).toBe('inventory down')
+
+    listCertificates.mockResolvedValueOnce(envelopeFor(['a']))
+    await store.refreshTable({})
+    expect(store.error).toBe('inventory down')
+  })
+
+  it('clears the inventory error on a successful inventory refresh', async () => {
+    listCertificates.mockRejectedValueOnce(new ApiError(500, 'inventory down'))
+    const store = createCertsStore(i18n)
+    await store.refreshInventory(null)
+    expect(store.error).toBe('inventory down')
+
+    listCertificates.mockResolvedValueOnce(envelopeFor(['a']))
+    await store.refreshInventory(null)
+    expect(store.error).toBeNull()
+  })
+
+  it('keeps the table error unchanged when the table fails again with the same message', async () => {
+    listCertificates.mockRejectedValue(new ApiError(503, 'table down'))
+    const store = createCertsStore(i18n)
+    await store.refreshTable({})
+    expect(store.error).toBe('table down')
+
+    await store.refreshTable({ page: 2 })
+    expect(store.error).toBe('table down')
+    listCertificates.mockReset()
+  })
 })

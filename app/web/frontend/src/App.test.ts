@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/svelte'
+import { toast } from 'svelte-sonner'
 import type {
   Certificate,
   CertificatesEnvelope,
@@ -94,6 +95,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers()
+  vi.restoreAllMocks()
 })
 
 describe('App', () => {
@@ -167,4 +169,46 @@ describe('App', () => {
 
     expect(window.location.search).toContain('q=web')
   })
+
+  it('shows one error toast and no leftover loading toast after a failed manual refresh', async () => {
+    mockOk([cert({ id: 'a', commonName: 'web.example.com' })])
+    render(App)
+    await screen.findAllByText('web.example.com')
+
+    const errorSpy = vi.spyOn(toast, 'error')
+    mockDown()
+    await fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+
+    await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledTimes(1))
+    await vi.waitFor(() => {
+      const toasts = document.querySelectorAll('[data-sonner-toast]')
+      expect(toasts).toHaveLength(1)
+      expect(toasts[0]).toHaveAttribute('data-type', 'error')
+    })
+  })
+
+  it('toasts a repeated identical table error only once', async () => {
+    mockOk([cert({ id: 'a', commonName: 'web.example.com' })])
+    render(App)
+    await screen.findAllByText('web.example.com')
+
+    const errorSpy = vi.spyOn(toast, 'error')
+    mockDown()
+    await fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+    await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledTimes(1))
+
+    // A second failing table fetch (search change) with the same message must not re-toast.
+    const searchInput = screen.getByLabelText('Search certificates') as HTMLInputElement
+    await fireEvent.input(searchInput, { target: { value: 'again' } })
+    await vi.waitFor(() =>
+      expect(listCertificates).toHaveBeenCalledWith(expect.objectContaining({ search: 'again' })),
+    )
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(errorSpy).toHaveBeenCalledTimes(1)
+  })
 })
+
+function mockDown(): void {
+  listCertificates.mockImplementation(() => Promise.reject(new Error('backend down')))
+}
