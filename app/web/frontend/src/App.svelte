@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
+  import { MediaQuery } from 'svelte/reactivity'
   import { toast } from 'svelte-sonner'
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import Moon from '@lucide/svelte/icons/moon'
@@ -38,6 +39,9 @@
   import { downloadExport, type ExportFormat } from '$lib/utils/export'
   import { expiryTier, shouldNotifyExpiry, type ExpiryTier } from '$lib/utils/expiry-notify'
   import type { Certificate, CertStatus } from '$lib/types'
+
+  // Same breakpoint as the mobile card CSS (≤768px); only one certificate list is mounted.
+  const isMobile = new MediaQuery('max-width: 768px')
 
   const i18n = setI18nContext(createI18nStore())
   const certs = createCertsStore(i18n)
@@ -661,34 +665,36 @@
       </div>
     </div>
 
-    <CertTable
-      certs={certs.certificates}
-      loading={certs.loading}
-      {initialLoad}
-      hasInventory={certs.inventory.length > 0}
-      {hasActiveFilters}
-      {showVaultMount}
-      {statusMeta}
-      {thresholds}
-      {sortKey}
-      {sortDir}
-      onSort={onHeaderSort}
-      onSelect={selectCert}
-      onClearFilters={clearAllFilters}
-    />
-
-    <CertMobileList
-      certs={certs.certificates}
-      loading={certs.loading}
-      {initialLoad}
-      hasInventory={certs.inventory.length > 0}
-      {hasActiveFilters}
-      {showVaultMount}
-      {statusMeta}
-      {thresholds}
-      onSelect={selectCert}
-      onClearFilters={clearAllFilters}
-    />
+    {#if isMobile.current}
+      <CertMobileList
+        certs={certs.certificates}
+        loading={certs.loading}
+        {initialLoad}
+        hasInventory={certs.inventory.length > 0}
+        {hasActiveFilters}
+        {showVaultMount}
+        {statusMeta}
+        {thresholds}
+        onSelect={selectCert}
+        onClearFilters={clearAllFilters}
+      />
+    {:else}
+      <CertTable
+        certs={certs.certificates}
+        loading={certs.loading}
+        {initialLoad}
+        hasInventory={certs.inventory.length > 0}
+        {hasActiveFilters}
+        {showVaultMount}
+        {statusMeta}
+        {thresholds}
+        {sortKey}
+        {sortDir}
+        onSort={onHeaderSort}
+        onSelect={selectCert}
+        onClearFilters={clearAllFilters}
+      />
+    {/if}
 
     <PaginationBar
       {pageSize}
