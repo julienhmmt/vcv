@@ -19,8 +19,44 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"vcv/internal/config"
+	vcverrors "vcv/internal/errors"
 	"vcv/internal/vault"
 )
+
+func TestValidateSettings_Thresholds(t *testing.T) {
+	tests := []struct {
+		name     string
+		critical int
+		warning  int
+		wantErr  bool
+	}{
+		{name: "valid explicit values", critical: 7, warning: 30},
+		{name: "zero critical means default 7", critical: 0, warning: 30},
+		{name: "zero warning means default 30", critical: 7, warning: 0},
+		{name: "both zero means both defaults", critical: 0, warning: 0},
+		{name: "negative critical is invalid", critical: -1, warning: 30, wantErr: true},
+		{name: "negative warning is invalid", critical: 7, warning: -1, wantErr: true},
+		{name: "equal thresholds are invalid", critical: 30, warning: 30, wantErr: true},
+		{name: "inverted thresholds are invalid", critical: 30, warning: 7, wantErr: true},
+		{name: "zero critical with warning below default 7 is invalid", critical: 0, warning: 3, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			settings := config.SettingsFile{
+				Certificates: config.CertificateSettings{
+					ExpirationThresholds: config.ExpirationThresholds{Critical: tt.critical, Warning: tt.warning},
+				},
+			}
+			err := validateSettings(settings)
+			if tt.wantErr {
+				assert.ErrorIs(t, err, vcverrors.ErrInvalidThreshold)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
 
 func TestAdminSessionStore_NewAdminSessionStore(t *testing.T) {
 	password := "$2a$10$testhashedpassword"
@@ -257,6 +293,36 @@ func TestAdminLoginLimiter_Allow_WindowReset(t *testing.T) {
 	// After window passes, should allow again
 	later := now.Add(2 * time.Hour)
 	assert.True(t, limiter.allow(later, key))
+}
+
+func TestAdminLoginLimiter_PrunesExpiredOnInsert(t *testing.T) {
+	window := 3 * time.Minute
+	limiter := newAdminLoginLimiter(5, window)
+	t0 := time.Now()
+	for _, key := range []string{"a", "b", "c"} {
+		assert.True(t, limiter.allow(t0, key))
+	}
+
+	assert.True(t, limiter.allow(t0.Add(window+time.Second), "new"))
+	assert.Len(t, limiter.entries, 1)
+	assert.Contains(t, limiter.entries, "new")
+}
+
+func TestAdminLoginLimiter_EvictsLeastRecentWhenFull(t *testing.T) {
+	window := time.Hour
+	limiter := newAdminLoginLimiter(5, window)
+	t0 := time.Now()
+	for i := range adminLoginLimiterMaxEntries {
+		assert.True(t, limiter.allow(t0.Add(time.Duration(i)*time.Millisecond), fmt.Sprintf("k%d", i)))
+	}
+	assert.Len(t, limiter.entries, adminLoginLimiterMaxEntries)
+
+	// Map is full and nothing expired: the oldest key (k0) is evicted, the new client is still allowed.
+	assert.True(t, limiter.allow(t0.Add(time.Duration(adminLoginLimiterMaxEntries)*time.Millisecond), "new"))
+	assert.Len(t, limiter.entries, adminLoginLimiterMaxEntries)
+	assert.NotContains(t, limiter.entries, "k0")
+	assert.Contains(t, limiter.entries, "k1")
+	assert.Contains(t, limiter.entries, "new")
 }
 
 func TestAdminSettingsStore_Load(t *testing.T) {

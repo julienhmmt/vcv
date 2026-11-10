@@ -987,6 +987,24 @@ func TestRegisterAdminAPIRoutes_SettingsPut_ValidationError(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
+func TestRegisterAdminAPIRoutes_SettingsPut_InvertedThresholds(t *testing.T) {
+	r, _, _, _ := setupAdminAPIRouter(t)
+	cookie := loginAdmin(t, r)
+
+	updated := config.SettingsFile{
+		Certificates: config.CertificateSettings{
+			ExpirationThresholds: config.ExpirationThresholds{Critical: 30, Warning: 7},
+		},
+	}
+	body, _ := json.Marshal(updated)
+	req := httptest.NewRequest(http.MethodPut, "/api/admin/settings", bytes.NewReader(body))
+	req.AddCookie(cookie)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
 func TestRegisterAdminAPIRoutes_VaultPost(t *testing.T) {
 	r, _, _, _ := setupAdminAPIRouter(t)
 

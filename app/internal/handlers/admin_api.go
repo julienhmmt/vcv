@@ -194,30 +194,29 @@ func adminSettingsPut(store *adminSettingsStore, vaultStatusClients map[string]v
 			writeJSONError(w, http.StatusBadRequest, "invalid settings payload")
 			return
 		}
-		current, err := store.load()
+		updated, err := store.update(func(current *config.SettingsFile) error {
+			merged, mergeErr := mergeAdminSettings(*current, incoming)
+			if mergeErr != nil {
+				return mergeErr
+			}
+			*current = merged
+			return nil
+		})
 		if err != nil {
-			auditor.log(req, "admin.settings_put", false, map[string]string{"reason": errLoadSettings})
-			writeJSONError(w, http.StatusInternalServerError, errLoadSettings)
-			return
-		}
-		merged, mergeErr := mergeAdminSettings(current, incoming)
-		if mergeErr != nil {
-			auditor.log(req, "admin.settings_put", false, map[string]string{"reason": mergeErr.Error()})
-			writeJSONError(w, validationErrorStatus(mergeErr), mergeErr.Error())
-			return
-		}
-		if saveErr := store.save(merged); saveErr != nil {
-			auditor.log(req, "admin.settings_put", false, map[string]string{"reason": saveErr.Error()})
-			writeJSONError(w, validationErrorStatus(saveErr), saveErr.Error())
+			reason := err.Error()
+			auditor.log(req, "admin.settings_put", false, map[string]string{"reason": reason})
+			status := validationErrorStatus(err)
+			if status == http.StatusInternalServerError {
+				logger.HTTPError(req.Method, req.URL.Path, status, err).
+					Str("request_id", middleware.GetRequestID(req.Context())).
+					Msg("failed to save settings")
+				writeJSONError(w, status, "failed to save settings")
+				return
+			}
+			writeJSONError(w, status, reason)
 			return
 		}
 		refreshRegistry()
-		updated, err := store.load()
-		if err != nil {
-			auditor.log(req, "admin.settings_put", false, map[string]string{"reason": "failed to reload settings"})
-			writeJSONError(w, http.StatusInternalServerError, "failed to reload settings")
-			return
-		}
 		auditor.log(req, "admin.settings_put", true, nil)
 		statuses := computeVaultStatuses(req.Context(), updated.Vaults, vaultStatusClients)
 		writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskSecrets(updated), VaultStatuses: statuses})
@@ -247,28 +246,29 @@ func adminVaultDelete(store *adminSettingsStore, refreshRegistry func(), auditor
 			writeJSONError(w, http.StatusBadRequest, "vault id required")
 			return
 		}
-		settings, err := store.load()
-		if err != nil {
-			writeJSONError(w, http.StatusInternalServerError, errLoadSettings)
-			return
-		}
-		updatedVaults := make([]config.VaultInstance, 0, len(settings.Vaults))
-		removed := false
-		for _, vault := range settings.Vaults {
-			if strings.TrimSpace(vault.ID) == vaultID {
-				removed = true
-				continue
+		_, err := store.update(func(settings *config.SettingsFile) error {
+			updatedVaults := make([]config.VaultInstance, 0, len(settings.Vaults))
+			removed := false
+			for _, vault := range settings.Vaults {
+				if strings.TrimSpace(vault.ID) == vaultID {
+					removed = true
+					continue
+				}
+				updatedVaults = append(updatedVaults, vault)
 			}
-			updatedVaults = append(updatedVaults, vault)
-		}
-		if !removed {
+			if !removed {
+				return errVaultNotFound
+			}
+			settings.Vaults = updatedVaults
+			return nil
+		})
+		if errors.Is(err, errVaultNotFound) {
 			writeJSONError(w, http.StatusNotFound, "vault not found")
 			return
 		}
-		settings.Vaults = updatedVaults
-		if saveErr := store.save(settings); saveErr != nil {
+		if err != nil {
 			requestID := middleware.GetRequestID(req.Context())
-			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, saveErr).
+			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
 				Str("request_id", requestID).
 				Msg("failed to save settings after vault removal")
 			auditor.log(req, "admin.vault_delete", false, map[string]string{"vault_id": vaultID, "reason": "failed to save settings"})
@@ -281,20 +281,39 @@ func adminVaultDelete(store *adminSettingsStore, refreshRegistry func(), auditor
 	}
 }
 
+// errVaultNotFound is returned from a settings update when the vault to remove is absent.
+var errVaultNotFound = errors.New("vault not found")
+
+// mergeAdminSettings overlays incoming onto current. Absent-vs-empty rules:
+// a nil slice, a nil *bool, or zero thresholds in incoming mean "absent" and
+// keep current; an explicit empty slice clears the list. Every new settings
+// field must decide these semantics here.
 func mergeAdminSettings(current, incoming config.SettingsFile) (config.SettingsFile, error) {
 	merged := current
-	merged.Certificates.ExpirationThresholds = incoming.Certificates.ExpirationThresholds
-	merged.Metrics.PerCertificate = incoming.Metrics.PerCertificate
-	merged.Metrics.EnhancedMetrics = incoming.Metrics.EnhancedMetrics
-	merged.Metrics.PinnedCertificates = incoming.Metrics.PinnedCertificates
-	merged.CORS.AllowedOrigins = incoming.CORS.AllowedOrigins
+	if incoming.Certificates.ExpirationThresholds.Critical != 0 || incoming.Certificates.ExpirationThresholds.Warning != 0 {
+		merged.Certificates.ExpirationThresholds = incoming.Certificates.ExpirationThresholds
+	}
+	if incoming.Metrics.PerCertificate != nil {
+		merged.Metrics.PerCertificate = incoming.Metrics.PerCertificate
+	}
+	if incoming.Metrics.EnhancedMetrics != nil {
+		merged.Metrics.EnhancedMetrics = incoming.Metrics.EnhancedMetrics
+	}
+	if incoming.Metrics.PinnedCertificates != nil {
+		merged.Metrics.PinnedCertificates = incoming.Metrics.PinnedCertificates
+	}
+	if incoming.CORS.AllowedOrigins != nil {
+		merged.CORS.AllowedOrigins = incoming.CORS.AllowedOrigins
+	}
 	merged.Notifications.WebhookURL = mergeSecret(incoming.Notifications.WebhookURL, current.Notifications.WebhookURL)
 	merged.Notifications.Webhooks = mergeWebhookTargets(current.Notifications.Webhooks, incoming.Notifications.Webhooks)
-	vaults, err := mergeVaultTokens(incoming.Vaults, current.Vaults)
-	if err != nil {
-		return merged, err
+	if incoming.Vaults != nil {
+		vaults, err := mergeVaultTokens(incoming.Vaults, current.Vaults)
+		if err != nil {
+			return merged, err
+		}
+		merged.Vaults = vaults
 	}
-	merged.Vaults = vaults
 	return merged, nil
 }
 
