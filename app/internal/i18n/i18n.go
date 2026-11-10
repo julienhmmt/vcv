@@ -234,6 +234,13 @@ type Messages struct {
 	AdminRoutedWebhookURLPlaceholder string `json:"adminRoutedWebhookURLPlaceholder"`
 	AdminAddWebhook                  string `json:"adminAddWebhook"`
 	AdminRemoveWebhook               string `json:"adminRemoveWebhook"`
+	AdminRemoveVaultConfirm          string `json:"adminRemoveVaultConfirm"`
+	AdminCancel                      string `json:"adminCancel"`
+	AdminVaultRemoveConfirm          string `json:"adminVaultRemoveConfirm"`
+	AdminErrLogin                    string `json:"adminErrLogin"`
+	AdminErrLoadSettings             string `json:"adminErrLoadSettings"`
+	AdminErrSaveSettings             string `json:"adminErrSaveSettings"`
+	AdminErrAddVault                 string `json:"adminErrAddVault"`
 }
 
 // Response is the payload returned by the /api/i18n endpoint.
@@ -471,6 +478,13 @@ var englishMessages = Messages{
 	AdminRoutedWebhookURLPlaceholder: "https://hooks.example.com/...",
 	AdminAddWebhook:                  "+ Add webhook",
 	AdminRemoveWebhook:               "Remove",
+	AdminRemoveVaultConfirm:          "Remove vault {name}? It is deleted when you save.",
+	AdminCancel:                      "Cancel",
+	AdminVaultRemoveConfirm:          "Remove",
+	AdminErrLogin:                    "Login failed",
+	AdminErrLoadSettings:             "Failed to load settings",
+	AdminErrSaveSettings:             "Failed to save settings",
+	AdminErrAddVault:                 "Failed to add vault",
 }
 
 var frenchMessages = Messages{
@@ -684,6 +698,13 @@ var frenchMessages = Messages{
 	AdminRoutedWebhookURLPlaceholder: "https://hooks.example.com/...",
 	AdminAddWebhook:                  "+ Ajouter un webhook",
 	AdminRemoveWebhook:               "Supprimer",
+	AdminRemoveVaultConfirm:          "Supprimer le coffre {name} ? Il sera supprimé lors de l'enregistrement.",
+	AdminCancel:                      "Annuler",
+	AdminVaultRemoveConfirm:          "Supprimer",
+	AdminErrLogin:                    "Échec de la connexion",
+	AdminErrLoadSettings:             "Échec du chargement des paramètres",
+	AdminErrSaveSettings:             "Échec de l'enregistrement des paramètres",
+	AdminErrAddVault:                 "Échec de l'ajout du coffre",
 }
 
 var spanishMessages = Messages{
@@ -897,6 +918,13 @@ var spanishMessages = Messages{
 	AdminRoutedWebhookURLPlaceholder: "https://hooks.example.com/...",
 	AdminAddWebhook:                  "+ Añadir webhook",
 	AdminRemoveWebhook:               "Eliminar",
+	AdminRemoveVaultConfirm:          "¿Eliminar el vault {name}? Se borrará al guardar.",
+	AdminCancel:                      "Cancelar",
+	AdminVaultRemoveConfirm:          "Eliminar",
+	AdminErrLogin:                    "Error al iniciar sesión",
+	AdminErrLoadSettings:             "Error al cargar la configuración",
+	AdminErrSaveSettings:             "Error al guardar la configuración",
+	AdminErrAddVault:                 "Error al añadir el vault",
 }
 
 var germanMessages = Messages{
@@ -1110,6 +1138,13 @@ var germanMessages = Messages{
 	AdminRoutedWebhookURLPlaceholder: "https://hooks.example.com/...",
 	AdminAddWebhook:                  "+ Webhook hinzufügen",
 	AdminRemoveWebhook:               "Entfernen",
+	AdminRemoveVaultConfirm:          "Vault {name} entfernen? Er wird beim Speichern gelöscht.",
+	AdminCancel:                      "Abbrechen",
+	AdminVaultRemoveConfirm:          "Entfernen",
+	AdminErrLogin:                    "Anmeldung fehlgeschlagen",
+	AdminErrLoadSettings:             "Einstellungen konnten nicht geladen werden",
+	AdminErrSaveSettings:             "Einstellungen konnten nicht gespeichert werden",
+	AdminErrAddVault:                 "Vault konnte nicht hinzugefügt werden",
 }
 
 var italianMessages = Messages{
@@ -1323,6 +1358,13 @@ var italianMessages = Messages{
 	AdminRoutedWebhookURLPlaceholder: "https://hooks.example.com/...",
 	AdminAddWebhook:                  "+ Aggiungi webhook",
 	AdminRemoveWebhook:               "Rimuovi",
+	AdminRemoveVaultConfirm:          "Rimuovere il vault {name}? Verrà eliminato al salvataggio.",
+	AdminCancel:                      "Annulla",
+	AdminVaultRemoveConfirm:          "Rimuovi",
+	AdminErrLogin:                    "Accesso non riuscito",
+	AdminErrLoadSettings:             "Impossibile caricare le impostazioni",
+	AdminErrSaveSettings:             "Impossibile salvare le impostazioni",
+	AdminErrAddVault:                 "Impossibile aggiungere il vault",
 }
 
 // MessagesForLanguage returns the translations for a given language code.
