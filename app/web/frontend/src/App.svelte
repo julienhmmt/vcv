@@ -127,9 +127,11 @@
     !!search || statusFilters.length > 0 || certTypeFilter !== 'all' || mountFilter !== null,
   )
 
+  // Configured mounts come from /api/config so the selector lists every mount even
+  // while the inventory is scoped to a subset; inventory keys cover legacy setups.
   const allMounts = $derived.by(() => {
     // eslint-disable-next-line svelte/prefer-svelte-reactivity -- local to this derivation, rebuilt on each run
-    const set = new Set<string>()
+    const set = new Set<string>(config.mountKeys)
     for (const cert of certs.inventory) {
       set.add(parseCertID(cert.id).mountKey)
     }
