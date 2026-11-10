@@ -303,11 +303,10 @@
   }
 
   async function manualRefresh(): Promise<void> {
+    // No error option: a failure dismisses the loading toast and the error effect toasts once.
     toast.promise(load(), {
       loading: i18n.t('toastRefreshing', 'Refreshing…'),
       success: () => i18n.t('loadSuccess', 'Certificates loaded'),
-      error: (err) =>
-        err instanceof Error ? err.message : i18n.t('toastRefreshFailed', 'Refresh failed'),
     })
   }
 
@@ -434,10 +433,17 @@
     }
   }
 
+  /** Message last toasted; plain (not $state) so writing it does not re-run the effect. */
+  let lastToastedError: string | null = null
   $effect(() => {
-    if (certs.error && certs.error !== dismissedFetchError) {
-      toast.error(certs.error)
+    const message = certs.error
+    if (!message) {
+      lastToastedError = null
+      return
     }
+    if (message === dismissedFetchError || message === lastToastedError) return
+    lastToastedError = message
+    toast.error(message)
   })
 
   // Toast vault connectivity transitions detected by the status poll.
