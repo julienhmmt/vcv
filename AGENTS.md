@@ -68,6 +68,9 @@ Read-only inventory UI; cert and metrics APIs are intentionally unauthenticated 
 All project commands run via Make. Run `make help` for targets.
 
 ```bash
+# Everything CI runs (golangci-lint, race tests, frontend check/lint/test) - run before pushing
+make check
+
 # Development: build frontend + Go binary + docker image, start dev stack
 make dev
 
@@ -92,6 +95,7 @@ make web-install         # pnpm install
 make web-dev             # pnpm dev (proxies /api to :52000)
 make web-build           # pnpm build → app/web/dist (required before go build / docker)
 make web-check           # svelte-check + tsc
+make web-lint            # eslint --max-warnings=0
 make web-test            # vitest run
 make web-test-coverage   # vitest + coverage
 

@@ -673,7 +673,7 @@ func TestListCertificatesFromMount_FetchesConcurrentlyWithinBound(t *testing.T) 
 	const serialCount = 20
 	keys := make([]any, 0, serialCount)
 	for i := 0; i < serialCount; i++ {
-		keys = append(keys, fmt.Sprintf("serial-%02d", i))
+		keys = append(keys, fmt.Sprintf("%02x", i))
 	}
 	var inFlight atomic.Int32
 	var maxInFlight atomic.Int32

@@ -70,12 +70,18 @@ func newAdminLoginLimiter(maxAttempts int, window time.Duration) *adminLoginLimi
 	return &adminLoginLimiter{maxAttempts: maxAttempts, window: window, entries: make(map[string]adminLoginLimiterEntry)}
 }
 
+// adminLoginLimiterMaxEntries caps the limiter map so spoofed or rotating keys cannot grow it forever.
+const adminLoginLimiterMaxEntries = 10000
+
 func (l *adminLoginLimiter) allow(now time.Time, key string) bool {
 	if key == "" {
 		key = "unknown"
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if _, known := l.entries[key]; !known {
+		l.makeRoom(now)
+	}
 	entry := l.entries[key]
 	if entry.resetAt.IsZero() || now.After(entry.resetAt) {
 		entry = adminLoginLimiterEntry{count: 0, resetAt: now.Add(l.window)}
@@ -83,6 +89,28 @@ func (l *adminLoginLimiter) allow(now time.Time, key string) bool {
 	entry.count++
 	l.entries[key] = entry
 	return entry.count <= l.maxAttempts
+}
+
+// makeRoom drops expired entries and, if still at the cap, evicts the least-recent one.
+// Caller must hold l.mu.
+// shortcut: linear scan for the oldest entry on each insert while full, fine at the 10k cap; upgrade to an LRU list if the cap grows.
+func (l *adminLoginLimiter) makeRoom(now time.Time) {
+	for key, entry := range l.entries {
+		if now.After(entry.resetAt) {
+			delete(l.entries, key)
+		}
+	}
+	if len(l.entries) < adminLoginLimiterMaxEntries {
+		return
+	}
+	var oldestKey string
+	var oldest time.Time
+	for key, entry := range l.entries {
+		if oldestKey == "" || entry.resetAt.Before(oldest) {
+			oldestKey, oldest = key, entry.resetAt
+		}
+	}
+	delete(l.entries, oldestKey)
 }
 
 func (s *adminSessionStore) allowLoginAttempt(r *http.Request) bool {
@@ -224,6 +252,33 @@ func newAdminSettingsStore(path string, env config.Environment) *adminSettingsSt
 func (s *adminSettingsStore) load() (config.SettingsFile, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.loadLocked()
+}
+
+// update runs fn against the stored settings under a single lock, so
+// concurrent read-modify-write callers cannot drop each other's changes.
+// On success it returns the settings as saved; if fn or validation fails,
+// nothing is written.
+func (s *adminSettingsStore) update(fn func(*config.SettingsFile) error) (config.SettingsFile, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	settings, err := s.loadLocked()
+	if err != nil {
+		return config.SettingsFile{}, err
+	}
+	if fnErr := fn(&settings); fnErr != nil {
+		return config.SettingsFile{}, fnErr
+	}
+	if validateErr := validateSettings(settings); validateErr != nil {
+		return config.SettingsFile{}, validateErr
+	}
+	if saveErr := s.saveLocked(settings); saveErr != nil {
+		return config.SettingsFile{}, saveErr
+	}
+	return settings, nil
+}
+
+func (s *adminSettingsStore) loadLocked() (config.SettingsFile, error) {
 	data, err := os.ReadFile(s.path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -250,6 +305,10 @@ func (s *adminSettingsStore) save(settings config.SettingsFile) error {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.saveLocked(settings)
+}
+
+func (s *adminSettingsStore) saveLocked(settings config.SettingsFile) error {
 	payload, err := json.MarshalIndent(settings, "", "  ")
 	if err != nil {
 		return err
@@ -263,12 +322,8 @@ func (s *adminSettingsStore) save(settings config.SettingsFile) error {
 		return fallbackWriteSettings(s.path, payload, err)
 	}
 	tmpPath := tmp.Name()
-	closeErr := tmp.Close()
-	if closeErr != nil {
-		_ = os.Remove(tmpPath)
-		return fallbackWriteSettings(s.path, payload, closeErr)
-	}
-	if writeErr := os.WriteFile(tmpPath, payload, 0o600); writeErr != nil {
+	// fsync before rename: without it a crash can leave an empty settings file.
+	if writeErr := writeSyncClose(tmp, payload); writeErr != nil {
 		_ = os.Remove(tmpPath)
 		return fallbackWriteSettings(s.path, payload, writeErr)
 	}
@@ -279,6 +334,19 @@ func (s *adminSettingsStore) save(settings config.SettingsFile) error {
 	return nil
 }
 
+// writeSyncClose writes payload to f, flushes it to disk and closes f.
+func writeSyncClose(f *os.File, payload []byte) error {
+	if _, err := f.Write(payload); err != nil {
+		_ = f.Close()
+		return err
+	}
+	if err := f.Sync(); err != nil {
+		_ = f.Close()
+		return err
+	}
+	return f.Close()
+}
+
 func fallbackWriteSettings(path string, payload []byte, originalErr error) error {
 	if !shouldFallbackToDirectWrite(originalErr) {
 		return originalErr
@@ -286,6 +354,12 @@ func fallbackWriteSettings(path string, payload []byte, originalErr error) error
 	if writeErr := os.WriteFile(path, payload, 0o600); writeErr != nil {
 		return originalErr
 	}
+	// WriteFile keeps the mode of an existing file, so enforce 0600 explicitly:
+	// the settings file holds vault tokens.
+	if chmodErr := os.Chmod(path, 0o600); chmodErr != nil {
+		return chmodErr
+	}
+	logger.Get().Warn().Msg("settings written in place (non-atomic)")
 	return nil
 }
 
@@ -354,7 +428,29 @@ func validateWebhookTarget(target config.WebhookTarget) error {
 	return nil
 }
 
+// validateThresholds accepts 0 (unset, falls back to defaults as config.Load does)
+// and rejects negatives or a critical threshold that is not below the warning one.
+func validateThresholds(t config.ExpirationThresholds) error {
+	if t.Critical < 0 || t.Warning < 0 {
+		return vcverrors.ErrInvalidThreshold
+	}
+	critical, warning := t.Critical, t.Warning
+	if critical == 0 {
+		critical = 7
+	}
+	if warning == 0 {
+		warning = 30
+	}
+	if critical >= warning {
+		return vcverrors.ErrInvalidThreshold
+	}
+	return nil
+}
+
 func validateSettings(settings config.SettingsFile) error {
+	if err := validateThresholds(settings.Certificates.ExpirationThresholds); err != nil {
+		return err
+	}
 	if webhookURL := strings.TrimSpace(settings.Notifications.WebhookURL); webhookURL != "" {
 		parsed, err := url.Parse(webhookURL)
 		if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {

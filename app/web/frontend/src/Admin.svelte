@@ -34,9 +34,9 @@
     loading={admin.loading}
     error={admin.error}
     successMessage={admin.successMessage}
+    restartRequired={admin.restartRequired}
     onSave={(next) => void admin.saveSettings(next)}
-    onAddVault={() => void admin.addVault()}
-    onRemoveVault={(id) => void admin.removeVault(id)}
+    onAddVault={() => admin.addVault()}
     onInvalidateCache={() => void admin.invalidateCache()}
     onLogout={() => void admin.logout()}
   />
