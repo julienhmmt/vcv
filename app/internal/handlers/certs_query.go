@@ -261,6 +261,11 @@ func paginateCerts(list []certs.Certificate, page, pageSize int) ([]certs.Certif
 	if totalPages < 1 {
 		totalPages = 1
 	}
+	// Compare before multiplying: page > totalPages means past the end, and
+	// (page-1)*pageSize could overflow int for huge page values.
+	if page > totalPages {
+		return []certs.Certificate{}, totalPages
+	}
 	start := (page - 1) * pageSize
 	if start >= len(list) {
 		return []certs.Certificate{}, totalPages

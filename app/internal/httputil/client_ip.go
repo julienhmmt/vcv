@@ -8,17 +8,12 @@ import (
 
 // ClientIP extracts the client IP address from the request.
 // When trustProxy is true, X-Forwarded-For and X-Real-IP headers are checked first.
+// X-Forwarded-For uses the right-most entry, the one a trusted proxy appended. This
+// assumes exactly one trusted reverse proxy that appends to X-Forwarded-For.
 func ClientIP(r *http.Request, trustProxy bool) string {
 	if trustProxy {
-		forwarded := strings.TrimSpace(r.Header.Get("X-Forwarded-For"))
-		if forwarded != "" {
-			parts := strings.Split(forwarded, ",")
-			if len(parts) > 0 {
-				value := strings.TrimSpace(parts[0])
-				if value != "" && net.ParseIP(value) != nil {
-					return value
-				}
-			}
+		if value := lastForwardedFor(r); value != "" && net.ParseIP(value) != nil {
+			return value
 		}
 		realIP := strings.TrimSpace(r.Header.Get("X-Real-IP"))
 		if realIP != "" && net.ParseIP(realIP) != nil {
@@ -30,4 +25,15 @@ func ClientIP(r *http.Request, trustProxy bool) string {
 		return host
 	}
 	return strings.TrimSpace(r.RemoteAddr)
+}
+
+// lastForwardedFor returns the right-most non-empty X-Forwarded-For entry across all header lines.
+func lastForwardedFor(r *http.Request) string {
+	parts := strings.Split(strings.Join(r.Header.Values("X-Forwarded-For"), ","), ",")
+	for i := len(parts) - 1; i >= 0; i-- {
+		if value := strings.TrimSpace(parts[i]); value != "" {
+			return value
+		}
+	}
+	return ""
 }
