@@ -126,6 +126,22 @@ describe('App', () => {
     expect(screen.getByText('1 certificates')).toBeInTheDocument()
   })
 
+  it('keeps the Sources chip visible when the inventory only holds the selected mount', async () => {
+    window.history.replaceState(null, '', `/?mounts=${encodeURIComponent('a|pki')}`)
+    mockOk([cert({ id: 'a|pki:aa', commonName: 'web.example.com' })])
+    config.mockResolvedValue({
+      expirationThresholds: { critical: 7, warning: 30 },
+      vaults: [
+        { id: 'a', displayName: 'A', pkiMounts: ['pki'] },
+        { id: 'b', displayName: 'B', pkiMounts: ['pki'] },
+      ],
+    } satisfies PublicConfigResponse)
+
+    render(App)
+
+    expect(await screen.findByText('1 / 2')).toBeInTheDocument()
+  })
+
   it('restores filter/sort/page state from the URL on mount', async () => {
     window.history.replaceState(null, '', '/?q=web&status=critical&sort=commonName&dir=desc')
     mockOk([cert({ id: 'a', commonName: 'web.example.com' })])
