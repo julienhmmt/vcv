@@ -3,15 +3,17 @@
 VCV_VERSION ?= dev-$(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 VCV_TAG ?= latest
 
-.PHONY: help web-install web-dev web-build web-check web-test web-test-coverage e2e-install e2e-up e2e-run e2e-down e2e dev docker-build test-offline test-dev go-update go-lint go-lint-full go-coverage
+.PHONY: help web-install web-dev web-build web-check web-lint web-test web-test-coverage e2e-install e2e-up e2e-run e2e-down e2e dev docker-build test-offline test-dev go-update go-lint go-lint-full go-coverage check
 
 help:
 	@printf '%s\n' \
 		'Available targets:' \
+		'  check              Run everything CI runs, locally (go-lint-full, test-offline, web-check, web-lint, web-test)' \
 		'  web-install        Install frontend dependencies (pnpm)' \
 		'  web-dev            Run Vite dev server (proxies /api + /i18n to Go on :52000)' \
 		'  web-build          Build Svelte frontend to app/web/dist' \
 		'  web-check          Run svelte-check and tsc on the frontend' \
+		'  web-lint           Run ESLint on the frontend (zero warnings allowed)' \
 		'  web-test           Run frontend unit tests (Vitest)' \
 		'  web-test-coverage  Run frontend unit tests with coverage' \
 		'  e2e-install        Install Playwright browsers for e2e tests' \
@@ -44,6 +46,9 @@ web-build:
 
 web-check:
 	cd app/web/frontend && pnpm check
+
+web-lint:
+	cd app/web/frontend && pnpm exec eslint . --max-warnings=0
 
 web-test:
 	cd app/web/frontend && pnpm test
@@ -81,7 +86,7 @@ docker-build:
 	docker buildx build --platform linux/amd64,linux/arm64 --build-arg VERSION=$(VCV_TAG) -t jhmmt/vcv:$(VCV_TAG) -t jhmmt/vcv:latest -t ghcr.io/julienhmmt/vcv:$(VCV_TAG) -t ghcr.io/julienhmmt/vcv:latest --push ./app
 
 test-offline:
-	cd app && go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out
+	cd app && go test -race ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out
 
 test-dev:
 	cd app && VAULT_ADDR=http://localhost:8200 VAULT_TOKEN=root go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out
@@ -96,8 +101,9 @@ go-lint:
 go-lint-full:
 	cd app && go run github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0 run --timeout=3m
 
-go-coverage:
-	cd app && go test ./... -count=1 -coverprofile=coverage.out -covermode=atomic 2>&1 && go tool cover -func=coverage.out
+go-coverage: test-offline
+
+check: go-lint-full test-offline web-check web-lint web-test
 
 # --- SonarQube (shared local server, see $(SONAR_HOME)/README.md) ------------
 SONAR_HOME ?= $(HOME)/git/gh/sonarqube

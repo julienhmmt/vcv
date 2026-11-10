@@ -354,7 +354,29 @@ func validateWebhookTarget(target config.WebhookTarget) error {
 	return nil
 }
 
+// validateThresholds accepts 0 (unset, falls back to defaults as config.Load does)
+// and rejects negatives or a critical threshold that is not below the warning one.
+func validateThresholds(t config.ExpirationThresholds) error {
+	if t.Critical < 0 || t.Warning < 0 {
+		return vcverrors.ErrInvalidThreshold
+	}
+	critical, warning := t.Critical, t.Warning
+	if critical == 0 {
+		critical = 7
+	}
+	if warning == 0 {
+		warning = 30
+	}
+	if critical >= warning {
+		return vcverrors.ErrInvalidThreshold
+	}
+	return nil
+}
+
 func validateSettings(settings config.SettingsFile) error {
+	if err := validateThresholds(settings.Certificates.ExpirationThresholds); err != nil {
+		return err
+	}
 	if webhookURL := strings.TrimSpace(settings.Notifications.WebhookURL); webhookURL != "" {
 		parsed, err := url.Parse(webhookURL)
 		if err != nil || parsed.Host == "" || (parsed.Scheme != "http" && parsed.Scheme != "https") {
