@@ -18,6 +18,7 @@ import (
 	"vcv/internal/certs"
 	"vcv/internal/config"
 	"vcv/internal/logger"
+	"vcv/internal/vault"
 )
 
 // CertLister lists all certificates the notifier should evaluate. Satisfied
@@ -158,10 +159,13 @@ func (n *Notifier) Check(ctx context.Context) {
 		return
 	}
 
-	certificates, err := n.certs.ListCertificates(ctx)
+	certificates, failedVaults, err := n.listCertificates(ctx)
 	if err != nil {
 		logger.Get().Warn().Err(err).Msg("notify: failed to list certificates")
 		return
+	}
+	if failedVaults > 0 {
+		logger.Get().Warn().Int("failed_vaults", failedVaults).Msg("notify: partial certificate listing")
 	}
 
 	thresholds := settings.ExpirationThresholds
@@ -172,7 +176,11 @@ func (n *Notifier) Check(ctx context.Context) {
 	defer n.mu.Unlock()
 
 	if current == tierNone {
-		n.lastTiers = make(map[string]tier)
+		// On a partial listing a missing certificate may just be unreadable this
+		// round, so keep the dedup state instead of forgetting it.
+		if failedVaults == 0 {
+			n.lastTiers = make(map[string]tier)
+		}
 		return
 	}
 	for _, target := range targets {
@@ -188,6 +196,17 @@ func (n *Notifier) Check(ctx context.Context) {
 		}
 		n.lastTiers[target.URL] = current
 	}
+}
+
+// listCertificates returns the certificates to evaluate and how many vaults
+// failed to answer. Listers without per-vault errors report zero failures.
+func (n *Notifier) listCertificates(ctx context.Context) ([]certs.Certificate, int, error) {
+	if lister, ok := n.certs.(vault.CertificatesEnvelopeLister); ok {
+		certificates, vaultErrs := lister.ListCertificatesEnvelope(ctx)
+		return certificates, len(vaultErrs), nil
+	}
+	certificates, err := n.certs.ListCertificates(ctx)
+	return certificates, 0, err
 }
 
 // deliverWithRetry attempts delivery up to deliveryAttempts times with

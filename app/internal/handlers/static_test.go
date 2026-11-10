@@ -186,3 +186,41 @@ func TestStaticRoutes_ConcurrentAccess(t *testing.T) {
 		}
 	}
 }
+
+func TestStaticRoutes_ContentTypes(t *testing.T) {
+	r := chi.NewRouter()
+
+	testFS := fstest.MapFS{
+		"index.html":        &fstest.MapFile{Data: []byte("<!doctype html>")},
+		"favicon.svg":       &fstest.MapFile{Data: []byte("<svg></svg>")},
+		"favicon-32x32.png": &fstest.MapFile{Data: []byte("\x89PNG")},
+		"favicon.ico":       &fstest.MapFile{Data: []byte("\x00\x00")},
+		"site.webmanifest":  &fstest.MapFile{Data: []byte("{}")},
+	}
+
+	RegisterStaticRoutes(r, testFS)
+
+	tests := []struct {
+		path        string
+		contentType string
+	}{
+		{path: "/", contentType: "text/html"},
+		{path: "/favicon.svg", contentType: "image/svg+xml"},
+		{path: "/favicon-32x32.png", contentType: "image/png"},
+		{path: "/site.webmanifest", contentType: "application/manifest+json"},
+		{path: "/favicon.ico", contentType: "icon"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodGet, tt.path, nil)
+			w := httptest.NewRecorder()
+
+			r.ServeHTTP(w, req)
+
+			assert.Equal(t, http.StatusOK, w.Code)
+			assert.Contains(t, w.Header().Get("Content-Type"), tt.contentType)
+			assert.Equal(t, "no-cache", w.Header().Get("Cache-Control"))
+		})
+	}
+}
