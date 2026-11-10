@@ -210,10 +210,20 @@ func shutdownVaultClients(allClients map[string]vault.Client) {
 }
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	runErr := run(ctx)
+	stop()
+	if runErr != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", runErr)
+		os.Exit(1)
+	}
+}
+
+// run starts the server and blocks until ctx is cancelled, then shuts down.
+func run(ctx context.Context) error {
 	cfg, cfgErr := config.Load()
 	if cfgErr != nil {
-		fmt.Fprintf(os.Stderr, "Failed to load configuration: %v\n", cfgErr)
-		os.Exit(1)
+		return fmt.Errorf("failed to load configuration: %w", cfgErr)
 	}
 
 	// Initialize structured logger from config
@@ -307,9 +317,7 @@ func main() {
 		}
 	}()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	<-ctx.Done()
 
 	log.Info().Msg("Shutting down server...")
 	notifyCancel()
@@ -323,4 +331,5 @@ func main() {
 	shutdownVaultClients(allClients)
 
 	log.Info().Msg("Server stopped")
+	return nil
 }

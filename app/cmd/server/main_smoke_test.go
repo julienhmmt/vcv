@@ -1,14 +1,17 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
+	"net/http"
 	"os"
 	"path/filepath"
-	"syscall"
 	"testing"
 	"time"
 )
+
+const smokeStartupTimeout = 5 * time.Second
 
 func freePort(t *testing.T) int {
 	t.Helper()
@@ -21,7 +24,26 @@ func freePort(t *testing.T) int {
 	return port
 }
 
-func TestMain_ShutsDownOnSignal(t *testing.T) {
+// waitForHealth polls /api/health until it answers 200 or the timeout elapses.
+func waitForHealth(t *testing.T, port int, timeout time.Duration) {
+	t.Helper()
+	client := &http.Client{Timeout: 500 * time.Millisecond}
+	url := fmt.Sprintf("http://127.0.0.1:%d/api/health", port)
+	deadline := time.Now().Add(timeout)
+	for time.Now().Before(deadline) {
+		resp, err := client.Get(url)
+		if err == nil {
+			_ = resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				return
+			}
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("server did not become healthy within %s", timeout)
+}
+
+func TestRun_ShutsDownOnContextCancel(t *testing.T) {
 	port := freePort(t)
 	tmpDir := t.TempDir()
 	settingsFile := filepath.Join(tmpDir, "settings.json")
@@ -53,23 +75,22 @@ func TestMain_ShutsDownOnSignal(t *testing.T) {
 		t.Fatalf("failed to change directory: %v", err)
 	}
 
-	done := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
 	go func() {
-		main()
-		close(done)
+		done <- run(ctx)
 	}()
-	time.Sleep(100 * time.Millisecond)
-	proc, err := os.FindProcess(os.Getpid())
-	if err != nil {
-		t.Fatalf("failed to find process: %v", err)
-	}
-	if signalErr := proc.Signal(syscall.SIGTERM); signalErr != nil {
-		t.Fatalf("failed to send SIGTERM: %v", signalErr)
-	}
+
+	waitForHealth(t, port, smokeStartupTimeout)
+	cancel()
+
 	select {
-	case <-done:
-		return
-	case <-time.After(2 * time.Second):
-		t.Fatalf("main did not shut down in time")
+	case runErr := <-done:
+		if runErr != nil {
+			t.Fatalf("run returned error: %v", runErr)
+		}
+	case <-time.After(smokeStartupTimeout):
+		t.Fatalf("run did not shut down in time")
 	}
 }
