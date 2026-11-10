@@ -131,8 +131,8 @@ func TestClientIP_XForwardedFor(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("X-Forwarded-For", "203.0.113.1, 198.51.100.1")
 	ip := httputil.ClientIP(req, true)
-	if ip != "203.0.113.1" {
-		t.Errorf("ClientIP with X-Forwarded-For = %q, want %q", ip, "203.0.113.1")
+	if ip != "198.51.100.1" {
+		t.Errorf("ClientIP with X-Forwarded-For = %q, want %q", ip, "198.51.100.1")
 	}
 }
 

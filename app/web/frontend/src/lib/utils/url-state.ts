@@ -19,6 +19,15 @@ const VALID_SORT_KEY: ReadonlySet<SortKey> = new Set(['commonName', 'expiresAt',
 const VALID_SORT_DIR: ReadonlySet<SortDirection> = new Set(['asc', 'desc'])
 const VALID_PAGE_SIZE: ReadonlySet<number> = new Set([25, 50, 100])
 
+/** Decode a URI component, returning the input unchanged when it is malformed (e.g. a lone `%`). */
+function safeDecode(s: string): string {
+  try {
+    return decodeURIComponent(s)
+  } catch {
+    return s
+  }
+}
+
 /** Read view state from the current URL, falling back to `defaults` for absent/invalid params. */
 export function parseUrlState(defaults: UrlState, searchString = globalThis.location.search): UrlState {
   const params = new URLSearchParams(searchString)
@@ -33,7 +42,7 @@ export function parseUrlState(defaults: UrlState, searchString = globalThis.loca
 
   const mountsRaw = params.get('mounts')
   const mountFilter =
-    mountsRaw === null ? defaults.mountFilter : mountsRaw.split(',').map(decodeURIComponent).filter(Boolean)
+    mountsRaw === null ? defaults.mountFilter : mountsRaw.split(',').map(safeDecode).filter(Boolean)
 
   const sortKey = params.get('sort')
   const sortDir = params.get('dir')

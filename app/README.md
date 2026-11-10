@@ -147,6 +147,8 @@ vcv is designed for **private networks**. Do not expose the listen port to the p
     path "sys/health"  { capabilities = ["read"] }
     ```
 
+    Recommended scope: read/list on `<mount>/certs`, `<mount>/certs/revoked`, `<mount>/cert/*`, and `<mount>/cert/ca` only. Certificate IDs are validated as hex serials before any Vault read, so a crafted ID cannot make the token read other paths.
+
 5. Admin panel: set `admin.password` to a bcrypt hash to enable; omit the field
    (or use an invalid hash) to disable. Sessions are in-process memory (sticky
    sessions or external store needed for horizontal scale). At startup with
@@ -179,6 +181,8 @@ provider-issued webhook URLs commonly embed an auth token in the path.
 Rate limiting keys and CSRF target-origin construction honor `X-Forwarded-For`, `X-Forwarded-Host`, and `X-Forwarded-Proto` **only** when `app.trust_proxy` is `true` (default **`false`**).
 
 Set `app.trust_proxy: true` **only** when a reverse proxy (nginx, Traefik, etc.) sits in front of vcv and **overwrites** client-supplied `X-Forwarded-*` headers with trusted values. If clients can reach vcv directly while this flag is true, they can spoof per-IP rate-limit buckets and skew CSRF origin checks.
+
+Enable `trust_proxy` only behind exactly one reverse proxy that appends to `X-Forwarded-For`. vcv uses the right-most `X-Forwarded-For` entry, the one that proxy appended; the left-most entries are client-controlled. Multi-hop chains (CDN → load balancer → ingress) are not supported by this setting.
 
 `app.trusted_auth_header` (default `""`, e.g. `"X-Forwarded-User"`) names the
 request header carrying the reverse-proxy authenticated identity

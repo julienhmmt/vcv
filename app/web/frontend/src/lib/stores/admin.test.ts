@@ -158,6 +158,22 @@ describe('createAdminStore', () => {
     expect(store.successMessage).toBe('Settings saved')
   })
 
+  it('saveSettings exposes restart_required and loadSettings clears it', async () => {
+    const store = createAdminStore(i18n)
+    const next = sampleSettings([sampleVault({ id: 'a' })])
+    adminPutSettings.mockResolvedValueOnce({
+      settings: next,
+      vault_statuses: [],
+      restart_required: true,
+    })
+    await store.saveSettings(next)
+    expect(store.restartRequired).toBe(true)
+
+    adminGetSettings.mockResolvedValueOnce({ settings: next, vault_statuses: [] })
+    await store.loadSettings()
+    expect(store.restartRequired).toBe(false)
+  })
+
   it('logout clears authenticated state and settings', async () => {
     const store = createAdminStore(i18n)
     adminLogin.mockResolvedValueOnce({ authenticated: true })

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -18,6 +19,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"vcv/internal/config"
+	vcverrors "vcv/internal/errors"
 	"vcv/internal/vault"
 )
 
@@ -326,7 +328,8 @@ func TestMergeAdminSettings(t *testing.T) {
 		},
 	}
 
-	result := mergeAdminSettings(existing, updates)
+	result, err := mergeAdminSettings(existing, updates)
+	require.NoError(t, err)
 
 	// App settings are NOT merged (only certificates, metrics, CORS, and vaults)
 	assert.Equal(t, "dev", result.App.Env) // Should preserve existing
@@ -371,7 +374,8 @@ func TestMergeVaultTokens(t *testing.T) {
 		},
 	}
 
-	result := mergeVaultTokens(updates, existing)
+	result, err := mergeVaultTokens(updates, existing)
+	require.NoError(t, err)
 
 	// mergeVaultTokens only returns the incoming vaults (with preserved tokens)
 	assert.Len(t, result, 2)
@@ -426,7 +430,8 @@ func TestMergeVaultTokens_PreservesEmptyTokens(t *testing.T) {
 		},
 	}
 
-	result := mergeVaultTokens(updates, existing)
+	result, err := mergeVaultTokens(updates, existing)
+	require.NoError(t, err)
 
 	assert.Len(t, result, 1)
 	assert.Equal(t, "vault1", result[0].ID)
@@ -453,16 +458,18 @@ func TestMergeVaultTokens_PreservesMaskedPlaceholders(t *testing.T) {
 		{ID: "vault1", Address: "http://localhost:8200", Token: "existing-token"},
 	}
 	for _, masked := range []string{"***", "********", "__MASKED__", "[masked]", "••••••••"} {
-		result := mergeVaultTokens([]config.VaultInstance{
+		result, err := mergeVaultTokens([]config.VaultInstance{
 			{ID: "vault1", Address: "http://localhost:8200", Token: masked},
 		}, existing)
+		require.NoError(t, err)
 		require.Len(t, result, 1)
 		assert.Equal(t, "existing-token", result[0].Token, "mask %q must preserve stored token", masked)
 	}
 	// Real replacement still applies.
-	result := mergeVaultTokens([]config.VaultInstance{
+	result, err := mergeVaultTokens([]config.VaultInstance{
 		{ID: "vault1", Address: "http://localhost:8200", Token: "brand-new-token"},
 	}, existing)
+	require.NoError(t, err)
 	require.Len(t, result, 1)
 	assert.Equal(t, "brand-new-token", result[0].Token)
 }
@@ -491,11 +498,13 @@ func TestMergeAdminSettings_WebhookURL(t *testing.T) {
 	current := config.SettingsFile{Notifications: config.NotificationSettings{WebhookURL: "https://hooks.example.com/existing"}}
 
 	// Blank incoming (masked GET response round-tripped unchanged) preserves the stored URL.
-	unchanged := mergeAdminSettings(current, config.SettingsFile{})
+	unchanged, err := mergeAdminSettings(current, config.SettingsFile{})
+	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.example.com/existing", unchanged.Notifications.WebhookURL)
 
 	// A real new URL replaces it.
-	updated := mergeAdminSettings(current, config.SettingsFile{Notifications: config.NotificationSettings{WebhookURL: "https://hooks.example.com/new"}})
+	updated, err := mergeAdminSettings(current, config.SettingsFile{Notifications: config.NotificationSettings{WebhookURL: "https://hooks.example.com/new"}})
+	require.NoError(t, err)
 	assert.Equal(t, "https://hooks.example.com/new", updated.Notifications.WebhookURL)
 }
 
@@ -978,6 +987,24 @@ func TestRegisterAdminAPIRoutes_SettingsPut_ValidationError(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
+func TestRegisterAdminAPIRoutes_SettingsPut_InvertedThresholds(t *testing.T) {
+	r, _, _, _ := setupAdminAPIRouter(t)
+	cookie := loginAdmin(t, r)
+
+	updated := config.SettingsFile{
+		Certificates: config.CertificateSettings{
+			ExpirationThresholds: config.ExpirationThresholds{Critical: 30, Warning: 7},
+		},
+	}
+	body, _ := json.Marshal(updated)
+	req := httptest.NewRequest(http.MethodPut, "/api/admin/settings", bytes.NewReader(body))
+	req.AddCookie(cookie)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+}
+
 func TestRegisterAdminAPIRoutes_VaultPost(t *testing.T) {
 	r, _, _, _ := setupAdminAPIRouter(t)
 
@@ -1068,4 +1095,140 @@ func TestRegisterAdminAPIRoutes_VaultDelete_SaveError(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	assert.Equal(t, http.StatusNoContent, w.Code)
+}
+
+func TestMergeVaultTokens_AddressBinding(t *testing.T) {
+	existing := []config.VaultInstance{
+		{ID: "vault1", Address: "https://vault.internal:8200", Token: "stored-token"},
+	}
+	tests := []struct {
+		name      string
+		incoming  config.VaultInstance
+		existing  []config.VaultInstance
+		wantToken string
+		wantErr   bool
+	}{
+		{
+			name:      "same address masked token restores stored token",
+			incoming:  config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "***"},
+			existing:  existing,
+			wantToken: "stored-token",
+		},
+		{
+			name:      "trailing slash and case difference still restores",
+			incoming:  config.VaultInstance{ID: "vault1", Address: " HTTPS://Vault.Internal:8200/ ", Token: ""},
+			existing:  existing,
+			wantToken: "stored-token",
+		},
+		{
+			name:     "different address with masked token is rejected",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://attacker.example:8200", Token: "***"},
+			existing: existing,
+			wantErr:  true,
+		},
+		{
+			name:      "different address with new token keeps new token",
+			incoming:  config.VaultInstance{ID: "vault1", Address: "https://attacker.example:8200", Token: "new-token"},
+			existing:  existing,
+			wantToken: "new-token",
+		},
+		{
+			name:      "renamed vault with same address restores stored token",
+			incoming:  config.VaultInstance{ID: "vault2", OriginalID: "vault1", Address: "https://vault.internal:8200", Token: ""},
+			existing:  existing,
+			wantToken: "stored-token",
+		},
+		{
+			name:     "different address with no stored token is allowed",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://new-host:8200", Token: ""},
+			existing: []config.VaultInstance{{ID: "vault1", Address: "https://old-host:8200", Token: ""}},
+		},
+		{
+			name:     "TLS insecure flipped with masked token is rejected",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "***", TLSInsecure: true},
+			existing: existing,
+			wantErr:  true,
+		},
+		{
+			name:     "TLS CA cert changed with masked token is rejected",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "***", TLSCACert: "-----BEGIN CERTIFICATE-----"},
+			existing: existing,
+			wantErr:  true,
+		},
+		{
+			name:     "TLS CA base64 changed with masked token is rejected",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "", TLSCACertBase64: "Zm9v"},
+			existing: existing,
+			wantErr:  true,
+		},
+		{
+			name:     "TLS CA path changed with masked token is rejected",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "***", TLSCAPath: "/tmp/other-ca"},
+			existing: existing,
+			wantErr:  true,
+		},
+		{
+			name:     "TLS server name changed with masked token is rejected",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "***", TLSServerName: "evil.example"},
+			existing: existing,
+			wantErr:  true,
+		},
+		{
+			name:     "TLS settings changed with no stored token is allowed",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "", TLSInsecure: true},
+			existing: []config.VaultInstance{{ID: "vault1", Address: "https://vault.internal:8200", Token: ""}},
+		},
+		{
+			name:      "TLS settings changed with new token keeps new token",
+			incoming:  config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "new-token", TLSInsecure: true},
+			existing:  existing,
+			wantToken: "new-token",
+		},
+		{
+			name:     "brand-new vault with blank token is allowed",
+			incoming: config.VaultInstance{ID: "vault9", Address: "https://new-host:8200", Token: ""},
+			existing: existing,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := mergeVaultTokens([]config.VaultInstance{tt.incoming}, tt.existing)
+			if tt.wantErr {
+				require.Error(t, err)
+				assert.True(t, errors.Is(err, vcverrors.ErrInvalidToken))
+				assert.Nil(t, result)
+				return
+			}
+			require.NoError(t, err)
+			require.Len(t, result, 1)
+			assert.Equal(t, tt.wantToken, result[0].Token)
+		})
+	}
+}
+
+func TestRegisterAdminAPIRoutes_Settings_AddressChangeWithMaskedTokenRejected(t *testing.T) {
+	r, _, store, _ := setupAdminAPIRouter(t)
+	cookie := loginAdmin(t, r)
+
+	before, err := store.load()
+	require.NoError(t, err)
+
+	updated := config.SettingsFile{
+		Certificates: config.CertificateSettings{
+			ExpirationThresholds: config.ExpirationThresholds{Critical: 7, Warning: 30},
+		},
+		Vaults: []config.VaultInstance{
+			{ID: "v1", Address: "http://attacker.example:8200", Token: "***", PKIMounts: []string{"pki"}},
+		},
+	}
+	body, _ := json.Marshal(updated)
+	req := httptest.NewRequest(http.MethodPut, "/api/admin/settings", bytes.NewReader(body))
+	req.AddCookie(cookie)
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+
+	after, err := store.load()
+	require.NoError(t, err)
+	assert.Equal(t, before, after, "rejected PUT must leave the stored settings unchanged")
 }

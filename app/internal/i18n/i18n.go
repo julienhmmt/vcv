@@ -144,6 +144,7 @@ type Messages struct {
 	AdminAddVault               string `json:"adminAddVault"`
 	AdminSaveSettings           string `json:"adminSaveSettings"`
 	AdminRestartNote            string `json:"adminRestartNote"`
+	AdminRestartRequired        string `json:"adminRestartRequired"`
 	AdminVaultID                string `json:"adminVaultID"`
 	AdminVaultDisplayName       string `json:"adminVaultDisplayName"`
 	AdminVaultAddress           string `json:"adminVaultAddress"`
@@ -166,6 +167,7 @@ type Messages struct {
 	AdminVaultsEmpty            string `json:"adminVaultsEmpty"`
 	AdminCORSOriginsHint        string `json:"adminCORSOriginsHint"`
 	AdminVaultTokenHint         string `json:"adminVaultTokenHint"`
+	AdminVaultTokenAddrChange   string `json:"adminTokenRequiredOnAddressChange"`
 	AdminThresholdsHint         string `json:"adminThresholdsHint"`
 	AdminMetrics                string `json:"adminMetrics"`
 	AdminMetricsHint            string `json:"adminMetricsHint"`
@@ -392,6 +394,7 @@ var englishMessages = Messages{
 	AdminAddVault:                  "Add vault",
 	AdminSaveSettings:              "Save settings.json",
 	AdminRestartNote:               "Changes are persisted to the settings file. A server restart may be required for all changes to take effect.",
+	AdminRestartRequired:           "Restart vcv to apply these changes",
 	AdminVaultID:                   "ID",
 	AdminVaultDisplayName:          "Display name",
 	AdminVaultAddress:              "Address",
@@ -414,6 +417,7 @@ var englishMessages = Messages{
 	AdminVaultsEmpty:               "No Vault instances configured yet. Click \"Add vault\" to get started.",
 	AdminCORSOriginsHint:           "e.g. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:            "Vault access token. This value is stored in the settings file.",
+	AdminVaultTokenAddrChange:      "Enter the token again when you change the address or TLS settings.",
 	AdminThresholdsHint:            "Certificates expiring within these thresholds are flagged in the dashboard.",
 	AdminMetrics:                   "Metrics",
 	AdminMetricsHint:               "Configure Prometheus metrics collection behavior.",
@@ -612,6 +616,7 @@ var frenchMessages = Messages{
 	AdminAddVault:                  "Ajouter un vault",
 	AdminSaveSettings:              "Enregistrer settings.json",
 	AdminRestartNote:               "Les modifications sont enregistrées dans le fichier de paramètres. Un redémarrage du serveur peut être nécessaire pour que tous les changements prennent effet.",
+	AdminRestartRequired:           "Redémarrez vcv pour appliquer ces modifications",
 	AdminVaultID:                   "ID",
 	AdminVaultDisplayName:          "Nom d'affichage",
 	AdminVaultAddress:              "Adresse",
@@ -634,6 +639,7 @@ var frenchMessages = Messages{
 	AdminVaultsEmpty:               "Aucune instance Vault configurée. Cliquez sur « Ajouter un vault » pour commencer.",
 	AdminCORSOriginsHint:           "ex. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:            "Jeton d'accès Vault. Cette valeur est stockée dans le fichier de paramètres.",
+	AdminVaultTokenAddrChange:      "Saisissez à nouveau le jeton si vous modifiez l'adresse ou les paramètres TLS.",
 	AdminThresholdsHint:            "Les certificats expirant dans ces seuils sont signalés dans le tableau de bord.",
 	AdminMetrics:                   "Métriques",
 	AdminMetricsHint:               "Configurer le comportement de collecte des métriques Prometheus.",
@@ -832,6 +838,7 @@ var spanishMessages = Messages{
 	AdminAddVault:                  "Agregar vault",
 	AdminSaveSettings:              "Guardar settings.json",
 	AdminRestartNote:               "Los cambios se guardan en el archivo de configuración. Es posible que se requiera reiniciar el servidor para que todos los cambios surtan efecto.",
+	AdminRestartRequired:           "Reinicia vcv para aplicar estos cambios",
 	AdminVaultConnected:            "Conectado",
 	AdminVaultDisconnected:         "Desconectado",
 	AdminVaultDisabled:             "Deshabilitado",
@@ -854,6 +861,7 @@ var spanishMessages = Messages{
 	AdminVaultsEmpty:               "No hay instancias de Vault configuradas. Haga clic en \"Agregar vault\" para comenzar.",
 	AdminCORSOriginsHint:           "ej. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:            "Token de acceso de Vault. Este valor se almacena en el archivo de configuración.",
+	AdminVaultTokenAddrChange:      "Introduzca el token de nuevo si cambia la dirección o la configuración TLS.",
 	AdminThresholdsHint:            "Los certificados que expiran dentro de estos umbrales se señalan en el panel.",
 	AdminMetrics:                   "Métricas",
 	AdminMetricsHint:               "Configurar el comportamiento de recolección de métricas de Prometheus.",
@@ -1052,6 +1060,7 @@ var germanMessages = Messages{
 	AdminAddVault:                  "Vault hinzufügen",
 	AdminSaveSettings:              "settings.json speichern",
 	AdminRestartNote:               "Änderungen werden in der Einstellungsdatei gespeichert. Ein Neustart des Servers kann erforderlich sein, damit alle Änderungen wirksam werden.",
+	AdminRestartRequired:           "vcv neu starten, um diese Änderungen anzuwenden",
 	AdminVaultConnected:            "Verbindung hergestellt",
 	AdminVaultDisconnected:         "Verbindung unterbrochen",
 	AdminVaultDisabled:             "Deaktiviert",
@@ -1074,6 +1083,7 @@ var germanMessages = Messages{
 	AdminVaultsEmpty:               "Noch keine Vault-Instanzen konfiguriert. Klicken Sie auf \"Vault hinzufügen\", um zu beginnen.",
 	AdminCORSOriginsHint:           "z.B. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:            "Vault-Zugriffstoken. Dieser Wert wird in der Einstellungsdatei gespeichert.",
+	AdminVaultTokenAddrChange:      "Geben Sie das Token erneut ein, wenn Sie die Adresse oder die TLS-Einstellungen ändern.",
 	AdminThresholdsHint:            "Zertifikate, die innerhalb dieser Schwellenwerte ablaufen, werden im Dashboard markiert.",
 	AdminMetrics:                   "Metriken",
 	AdminMetricsHint:               "Prometheus-Metrikensammelverhalten konfigurieren.",
@@ -1272,6 +1282,7 @@ var italianMessages = Messages{
 	AdminAddVault:                  "Aggiungi vault",
 	AdminSaveSettings:              "Salva settings.json",
 	AdminRestartNote:               "Le modifiche vengono salvate nel file delle impostazioni. Potrebbe essere necessario riavviare il server affinché tutte le modifiche abbiano effetto.",
+	AdminRestartRequired:           "Riavvia vcv per applicare queste modifiche",
 	AdminVaultConnected:            "Connesso",
 	AdminVaultDisconnected:         "Disconnesso",
 	AdminVaultDisabled:             "Disabilitato",
@@ -1294,6 +1305,7 @@ var italianMessages = Messages{
 	AdminVaultsEmpty:               "Nessuna istanza Vault configurata. Fai clic su \"Aggiungi vault\" per iniziare.",
 	AdminCORSOriginsHint:           "es. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:            "Token di accesso Vault. Questo valore viene memorizzato nel file delle impostazioni.",
+	AdminVaultTokenAddrChange:      "Inserisci di nuovo il token se modifichi l'indirizzo o le impostazioni TLS.",
 	AdminThresholdsHint:            "I certificati in scadenza entro queste soglie vengono segnalati nella dashboard.",
 	AdminMetrics:                   "Metriche",
 	AdminMetricsHint:               "Configura il comportamento di raccolta delle metriche di Prometheus.",

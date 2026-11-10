@@ -20,6 +20,7 @@ export interface AdminStore {
   readonly loading: boolean
   readonly error: string | null
   readonly successMessage: string | null
+  readonly restartRequired: boolean
   checkSession(): Promise<void>
   login(username: string, password: string): Promise<boolean>
   logout(): Promise<void>
@@ -37,6 +38,8 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
   let loading = $state(false)
   let error = $state<string | null>(null)
   let successMessage = $state<string | null>(null)
+  // Set by a settings save that changed startup-only config; cleared on the next load.
+  let restartRequired = $state(false)
 
   function applyError(err: unknown, fallback: string): void {
     error = err instanceof ApiError ? err.message : fallback
@@ -73,6 +76,7 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
       authenticated = false
       settings = null
       vaultStatuses = []
+      restartRequired = false
       error = null
     } catch (err: unknown) {
       // Keep local session until server logout succeeds so a failed CSRF/network
@@ -91,6 +95,7 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
         vaults: response.settings.vaults.map((v) => ({ ...v, original_id: v.id })),
       }
       vaultStatuses = response.vault_statuses
+      restartRequired = false
     } catch (err: unknown) {
       applyError(err, i18n.t('adminErrLoadSettings', 'Failed to load settings'))
     } finally {
@@ -116,6 +121,7 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
         vaults: response.settings.vaults.map((v) => ({ ...v, original_id: v.id })),
       }
       vaultStatuses = response.vault_statuses
+      restartRequired = response.restart_required === true
       successMessage = i18n.t('adminSettingsSaved', 'Settings saved')
       return true
     } catch (err: unknown) {
@@ -171,6 +177,9 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
     },
     get successMessage() {
       return successMessage
+    },
+    get restartRequired() {
+      return restartRequired
     },
     checkSession,
     login,

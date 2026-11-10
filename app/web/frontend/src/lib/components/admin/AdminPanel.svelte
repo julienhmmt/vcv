@@ -25,6 +25,7 @@
     loading: boolean
     error: string | null
     successMessage: string | null
+    restartRequired?: boolean
     onSave: (next: SettingsFile) => void
     onAddVault: () => Promise<VaultInstance | null>
     onInvalidateCache: () => void
@@ -37,6 +38,7 @@
     loading,
     error,
     successMessage,
+    restartRequired = false,
     onSave,
     onAddVault,
     onInvalidateCache,
@@ -218,6 +220,9 @@
   {/if}
   {#if successMessage}
     <ErrorBanner message={successMessage} variant="success" />
+  {/if}
+  {#if restartRequired}
+    <ErrorBanner message={i18n.t('adminRestartRequired', 'Restart vcv to apply these changes')} variant="warning" />
   {/if}
 
   <!-- Body: nav + content -->

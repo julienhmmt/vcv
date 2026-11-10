@@ -53,6 +53,16 @@ describe('parseUrlState', () => {
     expect(parseUrlState(defaults, '?page=0').pageIndex).toBe(0)
     expect(parseUrlState(defaults, '?page=-2').pageIndex).toBe(0)
   })
+
+  it('parses a mounts value with percent-encoded separators', () => {
+    expect(parseUrlState(defaults, '?mounts=a%257Cpki,b%257Cpki').mountFilter).toEqual(['a|pki', 'b|pki'])
+  })
+
+  it('does not throw on a mounts value containing a lone percent sign', () => {
+    const query = new URLSearchParams({ mounts: '50%off' }).toString()
+    expect(() => parseUrlState(defaults, `?${query}`)).not.toThrow()
+    expect(parseUrlState(defaults, `?${query}`).mountFilter).toEqual(['50%off'])
+  })
 })
 
 describe('serializeUrlState', () => {
@@ -87,5 +97,11 @@ describe('serializeUrlState', () => {
     }
     const query = serializeUrlState(state, defaults)
     expect(parseUrlState(defaults, `?${query}`)).toEqual(state)
+  })
+
+  it('round-trips mount names containing |, : and %', () => {
+    const mountFilter = ['pki|prod', 'kv:v2', '50%off']
+    const query = serializeUrlState({ ...defaults, mountFilter }, defaults)
+    expect(parseUrlState(defaults, `?${query}`).mountFilter).toEqual(mountFilter)
   })
 })

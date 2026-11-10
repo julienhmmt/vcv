@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.9
-FROM node:24-alpine AS web-builder
+FROM node:24-alpine@sha256:a34ab6d7f6f4813f4d0c5469d74685604b962fbdbf5793a7bc7b4998ecb867c8 AS web-builder
 
 WORKDIR /web/frontend
 ENV CI=true
@@ -16,7 +16,7 @@ COPY web/frontend/ ./
 # Build to /web/dist (vite.config.ts outputs to ../dist)
 RUN pnpm build
 
-FROM golang:1.27.3-alpine AS builder
+FROM golang:1.27.3-alpine@sha256:fa3d596898d9f126af7c01d14ee7597bab3f39cccf392ef36b69fe77cd681f18 AS builder
 
 ARG VERSION=${VERSION}
 
@@ -40,7 +40,7 @@ RUN CGO_ENABLED=0 GOOS=linux go build -trimpath \
 # Create config directory in builder stage (has shell)
 RUN mkdir -p /app/config
 
-FROM gcr.io/distroless/static-debian13:nonroot
+FROM gcr.io/distroless/static-debian13:nonroot@sha256:25ac8f0c3b2334a9eb05452266bd4697864a8c8ef0ef71e5e6480d7f92868329
 WORKDIR /app
 USER nonroot:nonroot
 
