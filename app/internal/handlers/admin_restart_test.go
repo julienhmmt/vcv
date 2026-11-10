@@ -101,7 +101,7 @@ func TestRegisterAdminAPIRoutes_SettingsPut_RestartRequired(t *testing.T) {
 
 	addressChanged := toggled
 	addressChanged.Vaults = []config.VaultInstance{
-		{ID: "v1", Address: "http://localhost:9999", Token: "", PKIMounts: []string{"pki"}, Enabled: &disabled},
+		{ID: "v1", Address: "http://localhost:9999", Token: "s.new-token", PKIMounts: []string{"pki"}, Enabled: &disabled},
 	}
 	assert.True(t, putSettings(t, r, cookie, addressChanged).RestartRequired, "address change must require restart")
 }
