@@ -1,7 +1,43 @@
 # Changelog
 
+<!-- markdownlint-configure-file {"MD024": {"siblings_only": true}} -->
+
 All notable changes to VaultCertsViewer (vcv) are documented here.
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+
+- Routed webhook targets with severity filter and per-target retry (#157).
+- Admin audit log for security events: sign-in, sign-out, settings saves, vault removals, cache invalidations (#154). Trusted reverse-proxy identity header recorded in the audit log (`app.trusted_auth_header`, #155).
+- Server-side search, filter, sort and pagination for `/api/certs` (#150), used by the certificate table (#151), which is virtualized beyond 100 rows (#153).
+- Curated OpenAPI spec served at `/api/openapi.json` (#146).
+- Warning when admin sessions may flap across replicas (#145).
+- Playwright e2e smoke suite on a seeded Vault stack in CI (#164).
+
+### Changed
+
+- `/api/certs` supports conditional GET via ETag (#149).
+- Certificates within a mount are fetched concurrently (#148).
+- Go requirement raised to 1.27.3 (#187).
+- Documentation aligned with the code (#144, #165).
+
+### Fixed
+
+- Partial certificate inventories are never cached (#183).
+- Masked webhook URLs are restored by original index on save (#184).
+- `/metrics` scrape time is bounded against slow or hung Vaults (#186).
+
+### Security
+
+- Per-vault errors are sanitized in the public `/api/certs` envelope (#185).
+- `/api/version` hardened; unused frontend version client removed (#147).
+- Supply-chain hardening for releases and dependency scanning, including Trivy in CI (#156).
+
+### Dependencies
+
+- Dependencies updated (Dependabot bumps across Go and the web frontend).
 
 ## [1.9.1] - 2026-09-03
 

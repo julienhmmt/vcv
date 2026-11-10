@@ -1,7 +1,10 @@
 <script lang="ts">
   import Server from '@lucide/svelte/icons/server'
   import ChevronDown from '@lucide/svelte/icons/chevron-down'
+  import { untrack } from 'svelte'
   import { getI18n } from '$lib/stores/i18n.svelte'
+  import * as Dialog from '$lib/components/ui/dialog'
+  import { Button } from '$lib/components/ui/button'
   import ToggleSwitch from './ToggleSwitch.svelte'
   import type { AdminVaultStatus, VaultInstance } from '$lib/types'
 
@@ -26,6 +29,24 @@
   $effect(() => {
     if (!vault.token) tokenInput = ''
   })
+
+  // The connection settings as loaded; changing any of them needs the token entered again.
+  const loaded = untrack(() => ({
+    address: vault.address.trim(),
+    tlsInsecure: vault.tls_insecure,
+    tlsServerName: (vault.tls_server_name ?? '').trim(),
+    tlsCACert: (vault.tls_ca_cert ?? '').trim(),
+    tlsCACertBase64: (vault.tls_ca_cert_base64 ?? '').trim(),
+    tlsCAPath: (vault.tls_ca_path ?? '').trim(),
+  }))
+  const connectionChanged = $derived(
+    vault.address.trim() !== loaded.address ||
+      Boolean(vault.tls_insecure) !== Boolean(loaded.tlsInsecure) ||
+      (vault.tls_server_name ?? '').trim() !== loaded.tlsServerName ||
+      (vault.tls_ca_cert ?? '').trim() !== loaded.tlsCACert ||
+      (vault.tls_ca_cert_base64 ?? '').trim() !== loaded.tlsCACertBase64 ||
+      (vault.tls_ca_path ?? '').trim() !== loaded.tlsCAPath,
+  )
 
   function toggleExpanded(): void {
     expanded = !expanded
@@ -89,6 +110,14 @@
 
   const kind = $derived(statusKind())
   const vaultLabel = $derived(vault.display_name || vault.id || i18n.t('adminVaultNew', 'new vault'))
+
+  // Removal is a local edit until Save; ask first so a misclick costs nothing.
+  let confirmOpen = $state(false)
+
+  function confirmRemove(): void {
+    confirmOpen = false
+    onRemove()
+  }
 </script>
 
 <div class="ve-card" class:ve-card--collapsed={!expanded}>
@@ -129,7 +158,7 @@
           />
           <span>{i18n.t('adminVaultEnabled', 'Enabled')}</span>
         </label>
-        <button type="button" class="ve-remove-btn" aria-label="{i18n.t('adminVaultRemove', 'Remove vault')}: {vaultLabel}" onclick={onRemove}>
+        <button type="button" class="ve-remove-btn" aria-label="{i18n.t('adminVaultRemove', 'Remove vault')}: {vaultLabel}" onclick={() => (confirmOpen = true)}>
           {i18n.t('adminVaultRemove', 'Remove vault')}
         </button>
       </div>
@@ -187,6 +216,9 @@
           }}
         />
         <p class="ve-hint">{i18n.t('adminVaultTokenHint', 'Leave blank to keep the existing token.')}</p>
+        {#if connectionChanged && !tokenInput}
+          <p class="ve-hint ve-hint--warn">{i18n.t('adminTokenRequiredOnAddressChange', 'Enter the token again when you change the address or TLS settings')}</p>
+        {/if}
       </div>
 
       <!-- PKI Mounts -->
@@ -265,6 +297,25 @@
       </details>
     </div>
   {/if}
+
+  <Dialog.Root open={confirmOpen} onOpenChange={(open) => (confirmOpen = open)}>
+    <Dialog.Content class="max-w-md">
+      <Dialog.Header>
+        <Dialog.Title>{i18n.t('adminVaultRemove', 'Remove vault')}</Dialog.Title>
+        <Dialog.Description>
+          {i18n.t('adminRemoveVaultConfirm', 'Remove vault {name}? It is deleted when you save.', { name: vaultLabel })}
+        </Dialog.Description>
+      </Dialog.Header>
+      <Dialog.Footer>
+        <Button type="button" variant="outline" onclick={() => (confirmOpen = false)}>
+          {i18n.t('adminCancel', 'Cancel')}
+        </Button>
+        <Button type="button" variant="destructive" onclick={confirmRemove}>
+          {i18n.t('adminVaultRemoveConfirm', 'Remove')}
+        </Button>
+      </Dialog.Footer>
+    </Dialog.Content>
+  </Dialog.Root>
 </div>
 
 <style>

@@ -203,6 +203,7 @@ Les fonctionnalités du panneau d'administration sont les suivantes :
 - Configuration des seuils d'expiration des certificats
 - Configuration des CORS
 - Configuration des instances Vault/OpenBao (adresse, port, token, TLS, montages PKI à surveiller)
+- Configuration des notifications (URL de webhook et `webhooks[]` routés avec niveaux de sévérité)
 
 Le champ `admin.password` doit contenir une valeur **hash bcrypt** (préfixe `$2a$`, `$2b$` ou `$2y$`).
 
@@ -225,6 +226,13 @@ Ces valeurs contrôlent :
 
 - Le code couleur dans le tableau des certificats (rouge pour critique, jaune pour avertissement)
 - Le nombre de certificats « expirant bientôt » dans le tableau de bord
+
+## 🔔 Notifications par webhook
+
+Lorsque `notifications.webhook_url` est configuré, VaultCertsViewer envoie une alerte JSON à cette URL dès qu'un certificat franchit le seuil d'avertissement ou critique, même si personne n'a le tableau de bord ouvert.
+Vous pouvez aussi définir des cibles routées dans `notifications.webhooks[]`, avec des niveaux de sévérité.
+Comme un token Vault, l'URL de webhook est masquée dans l'API d'administration, car les URL fournies par les services contiennent souvent un jeton dans le chemin.
+Voir [ALERTING.md](ALERTING.md) pour le détail.
 
 ## 🌍 Multilingue
 
@@ -294,8 +302,8 @@ Voir [ALERTING.md](ALERTING.md) pour la configuration des alertes.
 
 ### Fonctionnalités de sécurité
 
-- **Limitation de débit** : Activée en mode production (300 requêtes/minute, exemptant les endpoints health/ready/metrics)
-- **Protection CSRF** : Toutes les requêtes modifiant l'état nécessitent des tokens CSRF
+- **Limitation de débit** : Toujours active (300 requêtes/minute, exemptant `/api/health`, `/api/ready`, `/metrics` et `/assets/*`)
+- **Protection CSRF** : Les requêtes modifiant l'état et transportant des cookies doivent provenir de la même origine (contrôle de `Sec-Fetch-Site`, `Origin` ou `Referer`) ; aucun token n'est utilisé. Les clients sans cookie, comme l'automatisation, restent autorisés
 - **En-têtes de sécurité** : Inclut HSTS, X-Frame-Options, X-Content-Type-Options, CSP
 - **Suivi des requêtes** : Toutes les requêtes incluent des ID uniques pour la corrélation des logs
 - **Limites de taille** : Taille maximale de corps de requête de 1 Mo
