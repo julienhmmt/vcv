@@ -519,6 +519,7 @@ func TestCSRFProtection_RefererFallbackWithoutOrigin(t *testing.T) {
 				w.WriteHeader(http.StatusNoContent)
 			}))
 			req := httptest.NewRequest(http.MethodPost, "http://example.com/admin/settings", strings.NewReader(""))
+			req.Header.Set("Cookie", "vcv_admin_session=abc")
 			req.Header.Set("Referer", tt.referer)
 			if tt.forwarded {
 				req.Host = "backend.internal"
