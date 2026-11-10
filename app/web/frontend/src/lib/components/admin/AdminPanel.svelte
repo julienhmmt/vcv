@@ -25,9 +25,9 @@
     loading: boolean
     error: string | null
     successMessage: string | null
+    restartRequired?: boolean
     onSave: (next: SettingsFile) => void
-    onAddVault: () => void
-    onRemoveVault: (id: string) => void
+    onAddVault: () => Promise<VaultInstance | null>
     onInvalidateCache: () => void
     onLogout: () => void
   }
@@ -38,9 +38,9 @@
     loading,
     error,
     successMessage,
+    restartRequired = false,
     onSave,
     onAddVault,
-    onRemoveVault,
     onInvalidateCache,
     onLogout,
   }: Props = $props()
@@ -104,13 +104,14 @@
     working = { ...working, vaults }
   }
 
+  // Add and remove edit only the unsaved working copy; Save persists the list.
+  async function addVault(): Promise<void> {
+    const vault = await onAddVault()
+    if (vault) working = { ...working, vaults: [...working.vaults, vault] }
+  }
+
   function removeVault(index: number): void {
-    const target = working.vaults[index]
-    const vaults = working.vaults.filter((_, i) => i !== index)
-    working = { ...working, vaults }
-    if (target.id && statusById.has(target.id)) {
-      onRemoveVault(target.id)
-    }
+    working = { ...working, vaults: working.vaults.filter((_, i) => i !== index) }
   }
 
   const corsText = $derived((working.cors.allowed_origins ?? []).join(', '))
@@ -219,6 +220,9 @@
   {/if}
   {#if successMessage}
     <ErrorBanner message={successMessage} variant="success" />
+  {/if}
+  {#if restartRequired}
+    <ErrorBanner message={i18n.t('adminRestartRequired', 'Restart vcv to apply these changes')} variant="warning" />
   {/if}
 
   <!-- Body: nav + content -->
@@ -381,7 +385,7 @@
               <h2 class="adm-section-title"><Server class="h-3.5 w-3.5" aria-hidden="true" />{i18n.t('adminVaults', 'Vaults')}</h2>
               <p class="adm-section-hint">{i18n.t('adminVaultsHint', 'Vault and OpenBao instances to read from.')}</p>
             </div>
-            <Button type="button" variant="outline" size="sm" onclick={onAddVault}>
+            <Button type="button" variant="outline" size="sm" onclick={addVault}>
               {i18n.t('adminAddVault', '+ Add vault')}
             </Button>
           </div>

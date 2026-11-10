@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/svelte'
+import { toast } from 'svelte-sonner'
 import type {
   Certificate,
   CertificatesEnvelope,
@@ -84,7 +85,24 @@ function mockOk(certificates: Certificate[]): void {
   i18n.mockResolvedValue({ language: 'en', messages: {} } satisfies I18nResponse)
 }
 
+const originalMatchMedia = window.matchMedia
+
+/** Fakes the viewport: `mobile` true makes `(max-width: 768px)` match. */
+function setMobileViewport(mobile: boolean): void {
+  window.matchMedia = vi.fn((query: string) => ({
+    matches: mobile && query === '(max-width: 768px)',
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia
+}
+
 beforeEach(() => {
+  setMobileViewport(false)
   listCertificates.mockReset()
   config.mockReset()
   status.mockReset()
@@ -94,18 +112,34 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers()
+  vi.restoreAllMocks()
+  window.matchMedia = originalMatchMedia
 })
 
 describe('App', () => {
-  it('loads certificates on mount and renders them (desktop table + mobile list both mount in jsdom)', async () => {
+  it('loads certificates on mount and renders them in the desktop table only', async () => {
     mockOk([cert({ id: 'a', commonName: 'web.example.com' }), cert({ id: 'b', commonName: 'api.example.com' })])
 
-    render(App)
+    const { container } = render(App)
 
-    expect(await screen.findAllByText('web.example.com')).toHaveLength(2)
-    expect(screen.getAllByText('api.example.com')).toHaveLength(2)
+    expect(await screen.findAllByText('web.example.com')).toHaveLength(1)
+    expect(screen.getAllByText('api.example.com')).toHaveLength(1)
+    expect(container.querySelector('table.vcv-table')).not.toBeNull()
+    expect(container.querySelector('.vcv-cert-card')).toBeNull()
+    expect(window.matchMedia).toHaveBeenCalledWith('(max-width: 768px)')
     // Initial load fetches the table page plus the full inventory.
     expect(listCertificates).toHaveBeenCalledTimes(2)
+  })
+
+  it('mounts only the mobile card list at the 768px breakpoint', async () => {
+    setMobileViewport(true)
+    mockOk([cert({ id: 'a', commonName: 'web.example.com' }), cert({ id: 'b', commonName: 'api.example.com' })])
+
+    const { container } = render(App)
+
+    expect(await screen.findAllByText('web.example.com')).toHaveLength(1)
+    expect(container.querySelectorAll('.vcv-cert-card')).toHaveLength(2)
+    expect(container.querySelector('table.vcv-table')).toBeNull()
   })
 
   it('debounces search and updates the result count only after the timer fires', async () => {
@@ -124,6 +158,22 @@ describe('App', () => {
     await vi.advanceTimersByTimeAsync(200)
 
     expect(screen.getByText('1 certificates')).toBeInTheDocument()
+  })
+
+  it('keeps the Sources chip visible when the inventory only holds the selected mount', async () => {
+    window.history.replaceState(null, '', `/?mounts=${encodeURIComponent('a|pki')}`)
+    mockOk([cert({ id: 'a|pki:aa', commonName: 'web.example.com' })])
+    config.mockResolvedValue({
+      expirationThresholds: { critical: 7, warning: 30 },
+      vaults: [
+        { id: 'a', displayName: 'A', pkiMounts: ['pki'] },
+        { id: 'b', displayName: 'B', pkiMounts: ['pki'] },
+      ],
+    } satisfies PublicConfigResponse)
+
+    render(App)
+
+    expect(await screen.findByText('1 / 2')).toBeInTheDocument()
   })
 
   it('restores filter/sort/page state from the URL on mount', async () => {
@@ -151,4 +201,46 @@ describe('App', () => {
 
     expect(window.location.search).toContain('q=web')
   })
+
+  it('shows one error toast and no leftover loading toast after a failed manual refresh', async () => {
+    mockOk([cert({ id: 'a', commonName: 'web.example.com' })])
+    render(App)
+    await screen.findAllByText('web.example.com')
+
+    const errorSpy = vi.spyOn(toast, 'error')
+    mockDown()
+    await fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+
+    await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledTimes(1))
+    await vi.waitFor(() => {
+      const toasts = document.querySelectorAll('[data-sonner-toast]')
+      expect(toasts).toHaveLength(1)
+      expect(toasts[0]).toHaveAttribute('data-type', 'error')
+    })
+  })
+
+  it('toasts a repeated identical table error only once', async () => {
+    mockOk([cert({ id: 'a', commonName: 'web.example.com' })])
+    render(App)
+    await screen.findAllByText('web.example.com')
+
+    const errorSpy = vi.spyOn(toast, 'error')
+    mockDown()
+    await fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
+    await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledTimes(1))
+
+    // A second failing table fetch (search change) with the same message must not re-toast.
+    const searchInput = screen.getByLabelText('Search certificates') as HTMLInputElement
+    await fireEvent.input(searchInput, { target: { value: 'again' } })
+    await vi.waitFor(() =>
+      expect(listCertificates).toHaveBeenCalledWith(expect.objectContaining({ search: 'again' })),
+    )
+    await new Promise((resolve) => setTimeout(resolve, 20))
+
+    expect(errorSpy).toHaveBeenCalledTimes(1)
+  })
 })
+
+function mockDown(): void {
+  listCertificates.mockImplementation(() => Promise.reject(new Error('backend down')))
+}
