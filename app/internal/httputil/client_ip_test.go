@@ -10,14 +10,19 @@ import (
 
 func TestClientIP(t *testing.T) {
 	tests := []struct {
-		name       string
-		forwarded  string
-		realIP     string
-		remoteAddr string
-		trustProxy bool
-		expected   string
+		name           string
+		forwarded      string
+		forwardedLines []string
+		realIP         string
+		remoteAddr     string
+		trustProxy     bool
+		expected       string
 	}{
-		{name: "XForwardedFor_trusted", forwarded: "10.0.0.1, 10.0.0.2", trustProxy: true, remoteAddr: "192.168.1.1:9999", expected: "10.0.0.1"},
+		{name: "XForwardedFor_trusted", forwarded: "10.0.0.1, 10.0.0.2", trustProxy: true, remoteAddr: "192.168.1.1:9999", expected: "10.0.0.2"},
+		{name: "XForwardedFor_spoofed_leftmost_ignored", forwarded: "1.1.1.1, 2.2.2.2, 10.0.0.9", trustProxy: true, remoteAddr: "192.168.1.1:9999", expected: "10.0.0.9"},
+		{name: "XForwardedFor_multiple_lines", forwardedLines: []string{"1.1.1.1", "10.0.0.9"}, trustProxy: true, remoteAddr: "192.168.1.1:9999", expected: "10.0.0.9"},
+		{name: "XForwardedFor_last_not_ip_falls_through", forwarded: "10.0.0.1, garbage", realIP: "10.0.0.3", trustProxy: true, remoteAddr: "192.168.1.1:9999", expected: "10.0.0.3"},
+		{name: "XForwardedFor_last_not_ip_no_realip_uses_remoteaddr", forwarded: "10.0.0.1, garbage", trustProxy: true, remoteAddr: "192.168.1.1:9999", expected: "192.168.1.1"},
 		{name: "XForwardedFor_untrusted", forwarded: "10.0.0.1", trustProxy: false, remoteAddr: "192.168.1.1:9999", expected: "192.168.1.1"},
 		{name: "XRealIP_trusted", realIP: "10.0.0.3", trustProxy: true, remoteAddr: "192.168.1.1:9999", expected: "10.0.0.3"},
 		{name: "XRealIP_untrusted", realIP: "10.0.0.3", trustProxy: false, remoteAddr: "192.168.1.1:9999", expected: "192.168.1.1"},
@@ -31,6 +36,9 @@ func TestClientIP(t *testing.T) {
 			req.RemoteAddr = tt.remoteAddr
 			if tt.forwarded != "" {
 				req.Header.Set("X-Forwarded-For", tt.forwarded)
+			}
+			for _, line := range tt.forwardedLines {
+				req.Header.Add("X-Forwarded-For", line)
 			}
 			if tt.realIP != "" {
 				req.Header.Set("X-Real-IP", tt.realIP)
