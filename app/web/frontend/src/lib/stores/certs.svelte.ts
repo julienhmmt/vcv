@@ -16,7 +16,6 @@ export interface CertsStore {
   readonly vaultErrors: VaultListError[]
   readonly loading: boolean
   readonly error: string | null
-  readonly lastFetched: Date | null
   refreshTable(query: CertsQuery): Promise<void>
   refreshInventory(mounts?: string[] | null): Promise<void>
 }
@@ -39,7 +38,6 @@ export function createCertsStore(i18n: I18nStore): CertsStore {
   /** Separate per-pipeline errors so a table success never hides an inventory failure. */
   let tableError = $state<string | null>(null)
   let inventoryError = $state<string | null>(null)
-  let lastFetched = $state<Date | null>(null)
   /** Ignores out-of-order responses within each pipeline independently. */
   let tableGen = 0
   let inventoryGen = 0
@@ -56,7 +54,6 @@ export function createCertsStore(i18n: I18nStore): CertsStore {
       totalPages = Math.max(1, envelope.total_pages ?? 1)
       counts = envelope.counts ?? null
       vaultErrors = envelope.errors ?? []
-      lastFetched = new Date()
     } catch (err: unknown) {
       if (gen !== tableGen) return
       tableError = loadError(err, i18n)
@@ -115,9 +112,6 @@ export function createCertsStore(i18n: I18nStore): CertsStore {
     },
     get error() {
       return tableError ?? inventoryError
-    },
-    get lastFetched() {
-      return lastFetched
     },
     refreshTable,
     refreshInventory,

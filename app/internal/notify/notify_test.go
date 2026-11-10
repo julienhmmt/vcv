@@ -14,6 +14,7 @@ import (
 
 	"vcv/internal/certs"
 	"vcv/internal/config"
+	"vcv/internal/vault"
 )
 
 type fakeCertLister struct {
@@ -206,6 +207,67 @@ type mutableCertLister struct {
 
 func (m *mutableCertLister) ListCertificates(_ context.Context) ([]certs.Certificate, error) {
 	return m.certificates, nil
+}
+
+// fakeEnvelopeLister simulates a multi-vault listing where some vaults may
+// have errored: it satisfies both CertLister and vault.CertificatesEnvelopeLister.
+type fakeEnvelopeLister struct {
+	certificates []certs.Certificate
+	vaultErrs    []vault.VaultError
+}
+
+func (f *fakeEnvelopeLister) ListCertificates(_ context.Context) ([]certs.Certificate, error) {
+	return f.certificates, nil
+}
+
+func (f *fakeEnvelopeLister) ListCertificatesEnvelope(_ context.Context) ([]certs.Certificate, []vault.VaultError) {
+	return f.certificates, f.vaultErrs
+}
+
+func TestNotifier_PartialListing_StillDeliversForPresentCerts(t *testing.T) {
+	var received webhookPayload
+	var callCount atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount.Add(1)
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&received))
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	lister := &fakeEnvelopeLister{
+		certificates: []certs.Certificate{certExpiringIn("present", 3)},
+		vaultErrs:    []vault.VaultError{{VaultID: "down", Message: "unreachable"}},
+	}
+	settings := func() (config.Config, error) { return settingsWithWebhook(server.URL), nil }
+	n := New(lister, settings)
+
+	n.Check(context.Background())
+
+	assert.Equal(t, int32(1), callCount.Load())
+	assert.Equal(t, "critical", received.Tier)
+}
+
+func TestNotifier_PartialListing_MissingCertDoesNotResetState(t *testing.T) {
+	var callCount atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount.Add(1)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	lister := &fakeEnvelopeLister{certificates: []certs.Certificate{certExpiringIn("a", 3)}}
+	settings := func() (config.Config, error) { return settingsWithWebhook(server.URL), nil }
+	n := New(lister, settings)
+
+	n.Check(context.Background()) // full listing, critical: delivers (1)
+	lister.certificates = nil
+	lister.vaultErrs = []vault.VaultError{{VaultID: "down", Message: "unreachable"}}
+	n.Check(context.Background()) // partial listing, cert "a" missing: no reset
+	lister.certificates = []certs.Certificate{certExpiringIn("a", 3)}
+	lister.vaultErrs = nil
+	n.Check(context.Background()) // full listing, still critical: deduped
+
+	assert.Equal(t, int32(1), callCount.Load())
 }
 
 func countingServer(t *testing.T, failFirst int) (*httptest.Server, *atomic.Int32) {
