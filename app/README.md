@@ -16,11 +16,13 @@ This document describes the technical structure of VaultCertsViewer (vcv), a sin
 - `internal/cache/` — simple in-memory TTL cache (used by Vault client).
 - `internal/config/` — settings-file configuration loading with expiration threshold support.
 - `internal/errors/` — custom error types and helpers.
-- `internal/handlers/` — HTTP handlers (`certs`, `i18n`, `health`, `ready`, `admin`, `config`).
+- `internal/handlers/` — HTTP handlers (`certs`, `i18n`, `health`, `ready`, `admin`, `admin_audit`, `config`, `static`, `openapi`).
 - `internal/httputil/` — HTTP utility functions for client IP extraction (rate limiting).
 - `internal/i18n/` — Internationalization message bundles.
 - `internal/logger/` — zerolog initialization and structured helpers.
 - `internal/metrics/` — Prometheus collectors.
+- `internal/notify/` — expiry webhook notifier (routed targets, escalate-only dedupe).
+- `internal/docs/` — embedded admin docs (`ADMIN.md`), rendered to HTML.
 - `internal/middleware/` — request ID, HTTP logging, panic recovery, CORS, security headers, rate limiting, CSRF, body limit.
 - `internal/vault/` — Vault client implementations with multi-vault registry.
 - `internal/version/` — build version info (injected via ldflags).
