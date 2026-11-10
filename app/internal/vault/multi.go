@@ -117,14 +117,23 @@ func (c *multiClient) CheckConnection(ctx context.Context) error {
 	return nil
 }
 
+// enabledClient returns the client for vaultID, refusing vaults the registry has disabled.
+func (c *multiClient) enabledClient(vaultID string) (Client, error) {
+	client := c.clientsByVault[vaultID]
+	if client == nil || (c.registry != nil && !c.registry.IsEnabled(vaultID)) {
+		return nil, fmt.Errorf(errMissingVaultClient, vaultID)
+	}
+	return client, nil
+}
+
 func (c *multiClient) GetCertificateDetails(ctx context.Context, serialNumber string) (certs.DetailedCertificate, error) {
 	vaultID, mountSerial, err := parseCompositeCertificateID(c.orderedVaultIDs, serialNumber)
 	if err != nil {
 		return certs.DetailedCertificate{}, err
 	}
-	client := c.clientsByVault[vaultID]
-	if client == nil {
-		return certs.DetailedCertificate{}, fmt.Errorf(errMissingVaultClient, vaultID)
+	client, err := c.enabledClient(vaultID)
+	if err != nil {
+		return certs.DetailedCertificate{}, err
 	}
 	details, err := client.GetCertificateDetails(ctx, mountSerial)
 	if err != nil {
@@ -139,9 +148,9 @@ func (c *multiClient) GetCertificatePEM(ctx context.Context, serialNumber string
 	if err != nil {
 		return certs.PEMResponse{}, err
 	}
-	client := c.clientsByVault[vaultID]
-	if client == nil {
-		return certs.PEMResponse{}, fmt.Errorf(errMissingVaultClient, vaultID)
+	client, err := c.enabledClient(vaultID)
+	if err != nil {
+		return certs.PEMResponse{}, err
 	}
 	return client.GetCertificatePEM(ctx, mountSerial)
 }
@@ -151,9 +160,9 @@ func (c *multiClient) GetIntermediateCA(ctx context.Context, mount string) (cert
 	if err != nil {
 		return certs.DetailedCertificate{}, err
 	}
-	client := c.clientsByVault[vaultID]
-	if client == nil {
-		return certs.DetailedCertificate{}, fmt.Errorf(errMissingVaultClient, vaultID)
+	client, err := c.enabledClient(vaultID)
+	if err != nil {
+		return certs.DetailedCertificate{}, err
 	}
 	details, err := client.GetIntermediateCA(ctx, pureMount)
 	if err != nil {

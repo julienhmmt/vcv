@@ -28,7 +28,7 @@ func TestSecurityHeaders(t *testing.T) {
 		{"X-Content-Type-Options", "nosniff"},
 		{"X-Frame-Options", "DENY"},
 		{"Referrer-Policy", "strict-origin-when-cross-origin"},
-		{"Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"},
+		{"Content-Security-Policy", "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; form-action 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"},
 	}
 
 	for _, tt := range tests {
@@ -43,6 +43,14 @@ func TestSecurityHeaders(t *testing.T) {
 	permissionsPolicy := rec.Header().Get("Permissions-Policy")
 	if permissionsPolicy == "" {
 		t.Error("expected Permissions-Policy header to be set")
+	}
+
+	csp := rec.Header().Get("Content-Security-Policy")
+	if !strings.Contains(csp, "script-src 'self';") {
+		t.Errorf("expected CSP script-src 'self' only, got %q", csp)
+	}
+	if strings.Contains(csp, "script-src 'self' 'unsafe-inline'") {
+		t.Errorf("CSP must not allow inline scripts, got %q", csp)
 	}
 }
 
