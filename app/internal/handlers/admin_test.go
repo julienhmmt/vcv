@@ -19,8 +19,44 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"vcv/internal/config"
+	vcverrors "vcv/internal/errors"
 	"vcv/internal/vault"
 )
+
+func TestValidateSettings_Thresholds(t *testing.T) {
+	tests := []struct {
+		name     string
+		critical int
+		warning  int
+		wantErr  bool
+	}{
+		{name: "valid explicit values", critical: 7, warning: 30},
+		{name: "zero critical means default 7", critical: 0, warning: 30},
+		{name: "zero warning means default 30", critical: 7, warning: 0},
+		{name: "both zero means both defaults", critical: 0, warning: 0},
+		{name: "negative critical is invalid", critical: -1, warning: 30, wantErr: true},
+		{name: "negative warning is invalid", critical: 7, warning: -1, wantErr: true},
+		{name: "equal thresholds are invalid", critical: 30, warning: 30, wantErr: true},
+		{name: "inverted thresholds are invalid", critical: 30, warning: 7, wantErr: true},
+		{name: "zero critical with warning below default 7 is invalid", critical: 0, warning: 3, wantErr: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			settings := config.SettingsFile{
+				Certificates: config.CertificateSettings{
+					ExpirationThresholds: config.ExpirationThresholds{Critical: tt.critical, Warning: tt.warning},
+				},
+			}
+			err := validateSettings(settings)
+			if tt.wantErr {
+				assert.ErrorIs(t, err, vcverrors.ErrInvalidThreshold)
+			} else {
+				assert.NoError(t, err)
+			}
+		})
+	}
+}
 
 func TestAdminSessionStore_NewAdminSessionStore(t *testing.T) {
 	password := "$2a$10$testhashedpassword"
