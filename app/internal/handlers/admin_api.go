@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -39,8 +40,9 @@ type adminVaultStatus struct {
 }
 
 type adminSettingsResponse struct {
-	Settings      config.SettingsFile `json:"settings"`
-	VaultStatuses []adminVaultStatus  `json:"vault_statuses"`
+	Settings        config.SettingsFile `json:"settings"`
+	VaultStatuses   []adminVaultStatus  `json:"vault_statuses"`
+	RestartRequired bool                `json:"restart_required"`
 }
 
 type adminVaultAddedResponse struct {
@@ -194,7 +196,9 @@ func adminSettingsPut(store *adminSettingsStore, vaultStatusClients map[string]v
 			writeJSONError(w, http.StatusBadRequest, "invalid settings payload")
 			return
 		}
+		var before config.SettingsFile
 		updated, err := store.update(func(current *config.SettingsFile) error {
+			before = *current
 			merged, mergeErr := mergeAdminSettings(*current, incoming)
 			if mergeErr != nil {
 				return mergeErr
@@ -219,8 +223,56 @@ func adminSettingsPut(store *adminSettingsStore, vaultStatusClients map[string]v
 		refreshRegistry()
 		auditor.log(req, "admin.settings_put", true, nil)
 		statuses := computeVaultStatuses(req.Context(), updated.Vaults, vaultStatusClients)
-		writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskSecrets(updated), VaultStatuses: statuses})
+		writeJSON(w, http.StatusOK, adminSettingsResponse{
+			Settings:        maskSecrets(updated),
+			VaultStatuses:   statuses,
+			RestartRequired: restartRequired(before, updated),
+		})
 	}
+}
+
+// restartRequired reports whether a saved change only takes effect after a
+// restart. Vault clients, their TLS/PKI setup and the expiration thresholds
+// are captured at startup. Enabled toggles are applied live by the registry,
+// so they never require a restart.
+func restartRequired(before, after config.SettingsFile) bool {
+	if before.Certificates.ExpirationThresholds != after.Certificates.ExpirationThresholds {
+		return true
+	}
+	beforeVaults := vaultsByID(before.Vaults)
+	afterVaults := vaultsByID(after.Vaults)
+	if len(beforeVaults) != len(afterVaults) {
+		return true
+	}
+	for id, prior := range beforeVaults {
+		current, ok := afterVaults[id]
+		if !ok || vaultClientConfigChanged(prior, current) {
+			return true
+		}
+	}
+	return false
+}
+
+// vaultsByID indexes vaults by their trimmed ID, matching vault removal.
+func vaultsByID(vaults []config.VaultInstance) map[string]config.VaultInstance {
+	byID := make(map[string]config.VaultInstance, len(vaults))
+	for _, v := range vaults {
+		byID[strings.TrimSpace(v.ID)] = v
+	}
+	return byID
+}
+
+// vaultClientConfigChanged reports whether a vault's client-building fields
+// differ. Tokens compare raw stored values, not the masked API form.
+func vaultClientConfigChanged(a, b config.VaultInstance) bool {
+	return a.Address != b.Address ||
+		a.Token != b.Token ||
+		!slices.Equal(config.VaultPKIMounts(a), config.VaultPKIMounts(b)) ||
+		a.TLSInsecure != b.TLSInsecure ||
+		a.TLSCACertBase64 != b.TLSCACertBase64 ||
+		a.TLSCACert != b.TLSCACert ||
+		a.TLSCAPath != b.TLSCAPath ||
+		a.TLSServerName != b.TLSServerName
 }
 
 // validationErrorStatus maps settings validation errors to 400 and everything
