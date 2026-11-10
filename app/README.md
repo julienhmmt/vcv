@@ -147,6 +147,8 @@ vcv is designed for **private networks**. Do not expose the listen port to the p
     path "sys/health"  { capabilities = ["read"] }
     ```
 
+    Recommended scope: read/list on `<mount>/certs`, `<mount>/certs/revoked`, `<mount>/cert/*`, and `<mount>/cert/ca` only. Certificate IDs are validated as hex serials before any Vault read, so a crafted ID cannot make the token read other paths.
+
 5. Admin panel: set `admin.password` to a bcrypt hash to enable; omit the field
    (or use an invalid hash) to disable. Sessions are in-process memory (sticky
    sessions or external store needed for horizontal scale). At startup with
