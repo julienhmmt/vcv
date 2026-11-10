@@ -85,7 +85,24 @@ function mockOk(certificates: Certificate[]): void {
   i18n.mockResolvedValue({ language: 'en', messages: {} } satisfies I18nResponse)
 }
 
+const originalMatchMedia = window.matchMedia
+
+/** Fakes the viewport: `mobile` true makes `(max-width: 768px)` match. */
+function setMobileViewport(mobile: boolean): void {
+  window.matchMedia = vi.fn((query: string) => ({
+    matches: mobile && query === '(max-width: 768px)',
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia
+}
+
 beforeEach(() => {
+  setMobileViewport(false)
   listCertificates.mockReset()
   config.mockReset()
   status.mockReset()
@@ -96,18 +113,33 @@ beforeEach(() => {
 afterEach(() => {
   vi.useRealTimers()
   vi.restoreAllMocks()
+  window.matchMedia = originalMatchMedia
 })
 
 describe('App', () => {
-  it('loads certificates on mount and renders them (desktop table + mobile list both mount in jsdom)', async () => {
+  it('loads certificates on mount and renders them in the desktop table only', async () => {
     mockOk([cert({ id: 'a', commonName: 'web.example.com' }), cert({ id: 'b', commonName: 'api.example.com' })])
 
-    render(App)
+    const { container } = render(App)
 
-    expect(await screen.findAllByText('web.example.com')).toHaveLength(2)
-    expect(screen.getAllByText('api.example.com')).toHaveLength(2)
+    expect(await screen.findAllByText('web.example.com')).toHaveLength(1)
+    expect(screen.getAllByText('api.example.com')).toHaveLength(1)
+    expect(container.querySelector('table.vcv-table')).not.toBeNull()
+    expect(container.querySelector('.vcv-cert-card')).toBeNull()
+    expect(window.matchMedia).toHaveBeenCalledWith('(max-width: 768px)')
     // Initial load fetches the table page plus the full inventory.
     expect(listCertificates).toHaveBeenCalledTimes(2)
+  })
+
+  it('mounts only the mobile card list at the 768px breakpoint', async () => {
+    setMobileViewport(true)
+    mockOk([cert({ id: 'a', commonName: 'web.example.com' }), cert({ id: 'b', commonName: 'api.example.com' })])
+
+    const { container } = render(App)
+
+    expect(await screen.findAllByText('web.example.com')).toHaveLength(1)
+    expect(container.querySelectorAll('.vcv-cert-card')).toHaveLength(2)
+    expect(container.querySelector('table.vcv-table')).toBeNull()
   })
 
   it('debounces search and updates the result count only after the timer fires', async () => {
