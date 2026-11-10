@@ -8,7 +8,9 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/pem"
+	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"sort"
 	"strings"
@@ -24,6 +26,23 @@ import (
 )
 
 const cacheVersion = "v2"
+
+// validSerial matches Vault PKI serials: hex runs of up to 64 digits, optionally
+// joined by ':' or '-'. Only hex and separators are allowed, so no path segment
+// can be injected. Length is bounded by the request URL limit.
+var validSerial = regexp.MustCompile(`^[0-9A-Fa-f]{1,64}(?:[:-][0-9A-Fa-f]{1,64})*$`)
+
+// ErrInvalidSerial is returned for a serial that must never reach a Vault path.
+var ErrInvalidSerial = errors.New("invalid certificate serial")
+
+// certReadPath is the only place a serial is joined into a Vault path. Vault's
+// client collapses ".." segments, so the check lives here to cover every caller.
+func certReadPath(mount, serial string) (string, error) {
+	if !validSerial.MatchString(serial) {
+		return "", ErrInvalidSerial
+	}
+	return fmt.Sprintf("%s/cert/%s", mount, serial), nil
+}
 
 // certFetchConcurrency bounds how many in-flight Vault reads a single
 // certificate listing may hold. Vault LIST only returns serials, so each
@@ -390,7 +409,10 @@ func (c *realClient) readCertificateFromMount(ctx context.Context, mount, serial
 		return certs.Certificate{}, fmt.Errorf("serial number cannot be empty")
 	}
 
-	path := fmt.Sprintf("%s/cert/%s", mount, serial)
+	path, err := certReadPath(mount, serial)
+	if err != nil {
+		return certs.Certificate{}, err
+	}
 	secret, err := c.client.Logical().ReadWithContext(ctx, path)
 	if err != nil {
 		return certs.Certificate{}, fmt.Errorf("failed to read certificate %s from mount %s: %w", serial, mount, err)
@@ -436,7 +458,10 @@ func (c *realClient) readCertificateFromMount(ctx context.Context, mount, serial
 // fetchCertificatePEM reads the certificate field for a serial from Vault
 // and returns the PEM payload.
 func (c *realClient) fetchCertificatePEM(ctx context.Context, mount string, serial string) (string, error) {
-	path := fmt.Sprintf("%s/cert/%s", mount, serial)
+	path, err := certReadPath(mount, serial)
+	if err != nil {
+		return "", err
+	}
 	secret, err := c.client.Logical().ReadWithContext(ctx, path)
 	if err != nil {
 		logger.Get().Error().
