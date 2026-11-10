@@ -378,8 +378,9 @@ func isBlankOrMaskedSecret(token string) bool {
 
 // restoreVaultToken preserves the stored token when the incoming one is
 // blank or masked (vaults are keyed by OriginalID, falling back to ID). A
-// stored token is only reused while the address is unchanged: otherwise the
-// masked value would send the real secret to a new host.
+// stored token is only reused while the connection (address and TLS settings)
+// is unchanged: otherwise the masked value would be sent to a new host or a
+// man-in-the-middle.
 func restoreVaultToken(v *config.VaultInstance, stored map[string]config.VaultInstance) error {
 	if !isBlankOrMaskedSecret(v.Token) {
 		return nil
@@ -392,11 +393,22 @@ func restoreVaultToken(v *config.VaultInstance, stored map[string]config.VaultIn
 	if !ok {
 		return nil
 	}
-	if prior.Token != "" && normalizeAddr(v.Address) != normalizeAddr(prior.Address) {
-		return fmt.Errorf("vault %q: %w: enter the token again when the address changes", v.ID, vcverrors.ErrInvalidToken)
+	if prior.Token != "" && vaultConnectionChanged(*v, prior) {
+		return fmt.Errorf("vault %q: %w: enter the token again when the address or TLS settings change", v.ID, vcverrors.ErrInvalidToken)
 	}
 	v.Token = prior.Token
 	return nil
+}
+
+// vaultConnectionChanged reports whether the address or any TLS setting that
+// decides where and how the token is sent differs between incoming and stored.
+func vaultConnectionChanged(incoming, stored config.VaultInstance) bool {
+	return normalizeAddr(incoming.Address) != normalizeAddr(stored.Address) ||
+		incoming.TLSInsecure != stored.TLSInsecure ||
+		strings.TrimSpace(incoming.TLSServerName) != strings.TrimSpace(stored.TLSServerName) ||
+		strings.TrimSpace(incoming.TLSCACert) != strings.TrimSpace(stored.TLSCACert) ||
+		strings.TrimSpace(incoming.TLSCACertBase64) != strings.TrimSpace(stored.TLSCACertBase64) ||
+		strings.TrimSpace(incoming.TLSCAPath) != strings.TrimSpace(stored.TLSCAPath)
 }
 
 // normalizeAddr makes vault addresses comparable regardless of case,

@@ -1126,6 +1126,47 @@ func TestMergeVaultTokens_AddressBinding(t *testing.T) {
 			existing: []config.VaultInstance{{ID: "vault1", Address: "https://old-host:8200", Token: ""}},
 		},
 		{
+			name:     "TLS insecure flipped with masked token is rejected",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "***", TLSInsecure: true},
+			existing: existing,
+			wantErr:  true,
+		},
+		{
+			name:     "TLS CA cert changed with masked token is rejected",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "***", TLSCACert: "-----BEGIN CERTIFICATE-----"},
+			existing: existing,
+			wantErr:  true,
+		},
+		{
+			name:     "TLS CA base64 changed with masked token is rejected",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "", TLSCACertBase64: "Zm9v"},
+			existing: existing,
+			wantErr:  true,
+		},
+		{
+			name:     "TLS CA path changed with masked token is rejected",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "***", TLSCAPath: "/tmp/other-ca"},
+			existing: existing,
+			wantErr:  true,
+		},
+		{
+			name:     "TLS server name changed with masked token is rejected",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "***", TLSServerName: "evil.example"},
+			existing: existing,
+			wantErr:  true,
+		},
+		{
+			name:     "TLS settings changed with no stored token is allowed",
+			incoming: config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "", TLSInsecure: true},
+			existing: []config.VaultInstance{{ID: "vault1", Address: "https://vault.internal:8200", Token: ""}},
+		},
+		{
+			name:      "TLS settings changed with new token keeps new token",
+			incoming:  config.VaultInstance{ID: "vault1", Address: "https://vault.internal:8200", Token: "new-token", TLSInsecure: true},
+			existing:  existing,
+			wantToken: "new-token",
+		},
+		{
 			name:     "brand-new vault with blank token is allowed",
 			incoming: config.VaultInstance{ID: "vault9", Address: "https://new-host:8200", Token: ""},
 			existing: existing,

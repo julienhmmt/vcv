@@ -28,9 +28,23 @@
     if (!vault.token) tokenInput = ''
   })
 
-  // The address as loaded; a changed address needs the token entered again.
-  const loadedAddress = untrack(() => vault.address)
-  const addressChanged = $derived(vault.address.trim() !== loadedAddress.trim())
+  // The connection settings as loaded; changing any of them needs the token entered again.
+  const loaded = untrack(() => ({
+    address: vault.address.trim(),
+    tlsInsecure: vault.tls_insecure,
+    tlsServerName: (vault.tls_server_name ?? '').trim(),
+    tlsCACert: (vault.tls_ca_cert ?? '').trim(),
+    tlsCACertBase64: (vault.tls_ca_cert_base64 ?? '').trim(),
+    tlsCAPath: (vault.tls_ca_path ?? '').trim(),
+  }))
+  const connectionChanged = $derived(
+    vault.address.trim() !== loaded.address ||
+      Boolean(vault.tls_insecure) !== Boolean(loaded.tlsInsecure) ||
+      (vault.tls_server_name ?? '').trim() !== loaded.tlsServerName ||
+      (vault.tls_ca_cert ?? '').trim() !== loaded.tlsCACert ||
+      (vault.tls_ca_cert_base64 ?? '').trim() !== loaded.tlsCACertBase64 ||
+      (vault.tls_ca_path ?? '').trim() !== loaded.tlsCAPath,
+  )
 
   function toggleExpanded(): void {
     expanded = !expanded
@@ -192,8 +206,8 @@
           }}
         />
         <p class="ve-hint">{i18n.t('adminVaultTokenHint', 'Leave blank to keep the existing token.')}</p>
-        {#if addressChanged && !tokenInput}
-          <p class="ve-hint ve-hint--warn">{i18n.t('adminTokenRequiredOnAddressChange', 'Enter the token again when you change the address')}</p>
+        {#if connectionChanged && !tokenInput}
+          <p class="ve-hint ve-hint--warn">{i18n.t('adminTokenRequiredOnAddressChange', 'Enter the token again when you change the address or TLS settings')}</p>
         {/if}
       </div>
 
