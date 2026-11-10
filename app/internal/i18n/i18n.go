@@ -166,6 +166,7 @@ type Messages struct {
 	AdminVaultsEmpty            string `json:"adminVaultsEmpty"`
 	AdminCORSOriginsHint        string `json:"adminCORSOriginsHint"`
 	AdminVaultTokenHint         string `json:"adminVaultTokenHint"`
+	AdminVaultTokenAddrChange   string `json:"adminTokenRequiredOnAddressChange"`
 	AdminThresholdsHint         string `json:"adminThresholdsHint"`
 	AdminMetrics                string `json:"adminMetrics"`
 	AdminMetricsHint            string `json:"adminMetricsHint"`
@@ -407,6 +408,7 @@ var englishMessages = Messages{
 	AdminVaultsEmpty:               "No Vault instances configured yet. Click \"Add vault\" to get started.",
 	AdminCORSOriginsHint:           "e.g. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:            "Vault access token. This value is stored in the settings file.",
+	AdminVaultTokenAddrChange:      "Enter the token again when you change the address.",
 	AdminThresholdsHint:            "Certificates expiring within these thresholds are flagged in the dashboard.",
 	AdminMetrics:                   "Metrics",
 	AdminMetricsHint:               "Configure Prometheus metrics collection behavior.",
@@ -620,6 +622,7 @@ var frenchMessages = Messages{
 	AdminVaultsEmpty:               "Aucune instance Vault configurée. Cliquez sur « Ajouter un vault » pour commencer.",
 	AdminCORSOriginsHint:           "ex. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:            "Jeton d'accès Vault. Cette valeur est stockée dans le fichier de paramètres.",
+	AdminVaultTokenAddrChange:      "Saisissez à nouveau le jeton si vous modifiez l'adresse.",
 	AdminThresholdsHint:            "Les certificats expirant dans ces seuils sont signalés dans le tableau de bord.",
 	AdminMetrics:                   "Métriques",
 	AdminMetricsHint:               "Configurer le comportement de collecte des métriques Prometheus.",
@@ -833,6 +836,7 @@ var spanishMessages = Messages{
 	AdminVaultsEmpty:               "No hay instancias de Vault configuradas. Haga clic en \"Agregar vault\" para comenzar.",
 	AdminCORSOriginsHint:           "ej. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:            "Token de acceso de Vault. Este valor se almacena en el archivo de configuración.",
+	AdminVaultTokenAddrChange:      "Introduzca el token de nuevo si cambia la dirección.",
 	AdminThresholdsHint:            "Los certificados que expiran dentro de estos umbrales se señalan en el panel.",
 	AdminMetrics:                   "Métricas",
 	AdminMetricsHint:               "Configurar el comportamiento de recolección de métricas de Prometheus.",
@@ -1046,6 +1050,7 @@ var germanMessages = Messages{
 	AdminVaultsEmpty:               "Noch keine Vault-Instanzen konfiguriert. Klicken Sie auf \"Vault hinzufügen\", um zu beginnen.",
 	AdminCORSOriginsHint:           "z.B. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:            "Vault-Zugriffstoken. Dieser Wert wird in der Einstellungsdatei gespeichert.",
+	AdminVaultTokenAddrChange:      "Geben Sie das Token erneut ein, wenn Sie die Adresse ändern.",
 	AdminThresholdsHint:            "Zertifikate, die innerhalb dieser Schwellenwerte ablaufen, werden im Dashboard markiert.",
 	AdminMetrics:                   "Metriken",
 	AdminMetricsHint:               "Prometheus-Metrikensammelverhalten konfigurieren.",
@@ -1259,6 +1264,7 @@ var italianMessages = Messages{
 	AdminVaultsEmpty:               "Nessuna istanza Vault configurata. Fai clic su \"Aggiungi vault\" per iniziare.",
 	AdminCORSOriginsHint:           "es. https://example.com, https://other.example.com",
 	AdminVaultTokenHint:            "Token di accesso Vault. Questo valore viene memorizzato nel file delle impostazioni.",
+	AdminVaultTokenAddrChange:      "Inserisci di nuovo il token se modifichi l'indirizzo.",
 	AdminThresholdsHint:            "I certificati in scadenza entro queste soglie vengono segnalati nella dashboard.",
 	AdminMetrics:                   "Metriche",
 	AdminMetricsHint:               "Configura il comportamento di raccolta delle metriche di Prometheus.",

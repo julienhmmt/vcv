@@ -1,6 +1,7 @@
 <script lang="ts">
   import Server from '@lucide/svelte/icons/server'
   import ChevronDown from '@lucide/svelte/icons/chevron-down'
+  import { untrack } from 'svelte'
   import { getI18n } from '$lib/stores/i18n.svelte'
   import ToggleSwitch from './ToggleSwitch.svelte'
   import type { AdminVaultStatus, VaultInstance } from '$lib/types'
@@ -26,6 +27,10 @@
   $effect(() => {
     if (!vault.token) tokenInput = ''
   })
+
+  // The address as loaded; a changed address needs the token entered again.
+  const loadedAddress = untrack(() => vault.address)
+  const addressChanged = $derived(vault.address.trim() !== loadedAddress.trim())
 
   function toggleExpanded(): void {
     expanded = !expanded
@@ -187,6 +192,9 @@
           }}
         />
         <p class="ve-hint">{i18n.t('adminVaultTokenHint', 'Leave blank to keep the existing token.')}</p>
+        {#if addressChanged && !tokenInput}
+          <p class="ve-hint ve-hint--warn">{i18n.t('adminTokenRequiredOnAddressChange', 'Enter the token again when you change the address')}</p>
+        {/if}
       </div>
 
       <!-- PKI Mounts -->
