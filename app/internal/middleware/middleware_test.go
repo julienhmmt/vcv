@@ -493,3 +493,43 @@ func TestLogger_LogsRequest(t *testing.T) {
 		t.Errorf("expected response body %q, got %q", "response", rec.Body.String())
 	}
 }
+
+func TestCSRFProtection_RefererFallbackWithoutOrigin(t *testing.T) {
+	tests := []struct {
+		name       string
+		trustProxy bool
+		referer    string
+		forwarded  bool
+		wantCode   int
+	}{
+		{name: "same-origin referer passes", referer: "http://example.com/admin/settings", wantCode: http.StatusNoContent},
+		{name: "other-origin referer is blocked", referer: "http://evil.example/page", wantCode: http.StatusForbidden},
+		{name: "unparsable referer is blocked", referer: "://", wantCode: http.StatusForbidden},
+		{
+			name:       "trusted proxy same-origin referer passes",
+			trustProxy: true,
+			referer:    "https://app.example.com/admin/settings",
+			forwarded:  true,
+			wantCode:   http.StatusNoContent,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			h := middleware.CSRFProtectionWithTrust(tt.trustProxy)(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.WriteHeader(http.StatusNoContent)
+			}))
+			req := httptest.NewRequest(http.MethodPost, "http://example.com/admin/settings", strings.NewReader(""))
+			req.Header.Set("Referer", tt.referer)
+			if tt.forwarded {
+				req.Host = "backend.internal"
+				req.Header.Set("X-Forwarded-Host", "app.example.com")
+				req.Header.Set("X-Forwarded-Proto", "https")
+			}
+			rec := httptest.NewRecorder()
+			h.ServeHTTP(rec, req)
+			if rec.Code != tt.wantCode {
+				t.Errorf("expected status %d, got %d", tt.wantCode, rec.Code)
+			}
+		})
+	}
+}
