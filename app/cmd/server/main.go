@@ -171,7 +171,7 @@ func buildRouter(deps routerDeps) (*chi.Mux, error) {
 func initVaultClients(cfg *config.Config, log *logger.Logger) (map[string]vault.Client, vault.Client) {
 	allClients := make(map[string]vault.Client, len(cfg.AllVaults))
 	var primaryVaultClient vault.Client
-	for i, instance := range cfg.AllVaults {
+	for _, instance := range cfg.AllVaults {
 		if instance.ID == "" {
 			continue
 		}
@@ -184,7 +184,7 @@ func initVaultClients(cfg *config.Config, log *logger.Logger) (map[string]vault.
 			continue
 		}
 		allClients[instance.ID] = client
-		if i == 0 {
+		if primaryVaultClient == nil && config.IsVaultEnabled(instance) {
 			primaryVaultClient = client
 			cfg.Vault = config.VaultConfig{Addr: instance.Address, PKIMounts: instance.PKIMounts, ReadToken: instance.Token, TLSCACertBase64: instance.TLSCACertBase64, TLSCACert: instance.TLSCACert, TLSCAPath: instance.TLSCAPath, TLSServerName: instance.TLSServerName, TLSInsecure: instance.TLSInsecure}
 		}

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -196,11 +197,12 @@ func certDetailsHandler(vaultClient vault.Client) http.HandlerFunc {
 
 		details, err := vaultClient.GetCertificateDetails(req.Context(), certificateID)
 		if err != nil {
-			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
+			status := certErrorStatus(err)
+			logger.HTTPError(req.Method, req.URL.Path, status, err).
 				Str("request_id", requestID).
 				Str("serial_number", certificateID).
 				Msg("failed to get certificate details")
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			http.Error(w, http.StatusText(status), status)
 			return
 		}
 
@@ -273,11 +275,12 @@ func certPEMHandler(vaultClient vault.Client) http.HandlerFunc {
 		pemResponse, err := vaultClient.GetCertificatePEM(req.Context(), certificateID)
 		if err != nil {
 			requestID := middleware.GetRequestID(req.Context())
-			logger.HTTPError(req.Method, req.URL.Path, http.StatusInternalServerError, err).
+			status := certErrorStatus(err)
+			logger.HTTPError(req.Method, req.URL.Path, status, err).
 				Str("request_id", requestID).
 				Str("serial_number", certificateID).
 				Msg("failed to get certificate PEM")
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			http.Error(w, http.StatusText(status), status)
 			return
 		}
 
@@ -296,6 +299,15 @@ func certPEMHandler(vaultClient vault.Client) http.HandlerFunc {
 			Str("serial_number", certificateID).
 			Msg("served certificate PEM")
 	}
+}
+
+// certErrorStatus maps a certificate lookup error to its HTTP status. Only a
+// malformed serial is a client error; everything else stays 500.
+func certErrorStatus(err error) int {
+	if errors.Is(err, vault.ErrInvalidSerial) {
+		return http.StatusBadRequest
+	}
+	return http.StatusInternalServerError
 }
 
 func decodeCertificateIDParam(req *http.Request) (string, int, error) {
