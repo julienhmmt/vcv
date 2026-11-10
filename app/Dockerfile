@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.9
-FROM node:24-alpine@sha256:a34ab6d7f6f4813f4d0c5469d74685604b962fbdbf5793a7bc7b4998ecb867c8 AS web-builder
+FROM node:26-alpine@sha256:8996bb5821d62a8fd9bb27c1cb07462f3fdce6e47d640c6a881ead0b064ce216 AS web-builder
 
 WORKDIR /web/frontend
 ENV CI=true
