@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -38,8 +40,9 @@ type adminVaultStatus struct {
 }
 
 type adminSettingsResponse struct {
-	Settings      config.SettingsFile `json:"settings"`
-	VaultStatuses []adminVaultStatus  `json:"vault_statuses"`
+	Settings        config.SettingsFile `json:"settings"`
+	VaultStatuses   []adminVaultStatus  `json:"vault_statuses"`
+	RestartRequired bool                `json:"restart_required"`
 }
 
 type adminVaultAddedResponse struct {
@@ -193,8 +196,14 @@ func adminSettingsPut(store *adminSettingsStore, vaultStatusClients map[string]v
 			writeJSONError(w, http.StatusBadRequest, "invalid settings payload")
 			return
 		}
+		var before config.SettingsFile
 		updated, err := store.update(func(current *config.SettingsFile) error {
-			*current = mergeAdminSettings(*current, incoming)
+			before = *current
+			merged, mergeErr := mergeAdminSettings(*current, incoming)
+			if mergeErr != nil {
+				return mergeErr
+			}
+			*current = merged
 			return nil
 		})
 		if err != nil {
@@ -214,8 +223,56 @@ func adminSettingsPut(store *adminSettingsStore, vaultStatusClients map[string]v
 		refreshRegistry()
 		auditor.log(req, "admin.settings_put", true, nil)
 		statuses := computeVaultStatuses(req.Context(), updated.Vaults, vaultStatusClients)
-		writeJSON(w, http.StatusOK, adminSettingsResponse{Settings: maskSecrets(updated), VaultStatuses: statuses})
+		writeJSON(w, http.StatusOK, adminSettingsResponse{
+			Settings:        maskSecrets(updated),
+			VaultStatuses:   statuses,
+			RestartRequired: restartRequired(before, updated),
+		})
 	}
+}
+
+// restartRequired reports whether a saved change only takes effect after a
+// restart. Vault clients, their TLS/PKI setup and the expiration thresholds
+// are captured at startup. Enabled toggles are applied live by the registry,
+// so they never require a restart.
+func restartRequired(before, after config.SettingsFile) bool {
+	if before.Certificates.ExpirationThresholds != after.Certificates.ExpirationThresholds {
+		return true
+	}
+	beforeVaults := vaultsByID(before.Vaults)
+	afterVaults := vaultsByID(after.Vaults)
+	if len(beforeVaults) != len(afterVaults) {
+		return true
+	}
+	for id, prior := range beforeVaults {
+		current, ok := afterVaults[id]
+		if !ok || vaultClientConfigChanged(prior, current) {
+			return true
+		}
+	}
+	return false
+}
+
+// vaultsByID indexes vaults by their trimmed ID, matching vault removal.
+func vaultsByID(vaults []config.VaultInstance) map[string]config.VaultInstance {
+	byID := make(map[string]config.VaultInstance, len(vaults))
+	for _, v := range vaults {
+		byID[strings.TrimSpace(v.ID)] = v
+	}
+	return byID
+}
+
+// vaultClientConfigChanged reports whether a vault's client-building fields
+// differ. Tokens compare raw stored values, not the masked API form.
+func vaultClientConfigChanged(a, b config.VaultInstance) bool {
+	return a.Address != b.Address ||
+		a.Token != b.Token ||
+		!slices.Equal(config.VaultPKIMounts(a), config.VaultPKIMounts(b)) ||
+		a.TLSInsecure != b.TLSInsecure ||
+		a.TLSCACertBase64 != b.TLSCACertBase64 ||
+		a.TLSCACert != b.TLSCACert ||
+		a.TLSCAPath != b.TLSCAPath ||
+		a.TLSServerName != b.TLSServerName
 }
 
 // validationErrorStatus maps settings validation errors to 400 and everything
@@ -283,7 +340,7 @@ var errVaultNotFound = errors.New("vault not found")
 // a nil slice, a nil *bool, or zero thresholds in incoming mean "absent" and
 // keep current; an explicit empty slice clears the list. Every new settings
 // field must decide these semantics here.
-func mergeAdminSettings(current, incoming config.SettingsFile) config.SettingsFile {
+func mergeAdminSettings(current, incoming config.SettingsFile) (config.SettingsFile, error) {
 	merged := current
 	if incoming.Certificates.ExpirationThresholds.Critical != 0 || incoming.Certificates.ExpirationThresholds.Warning != 0 {
 		merged.Certificates.ExpirationThresholds = incoming.Certificates.ExpirationThresholds
@@ -303,9 +360,13 @@ func mergeAdminSettings(current, incoming config.SettingsFile) config.SettingsFi
 	merged.Notifications.WebhookURL = mergeSecret(incoming.Notifications.WebhookURL, current.Notifications.WebhookURL)
 	merged.Notifications.Webhooks = mergeWebhookTargets(current.Notifications.Webhooks, incoming.Notifications.Webhooks)
 	if incoming.Vaults != nil {
-		merged.Vaults = mergeVaultTokens(incoming.Vaults, current.Vaults)
+		vaults, err := mergeVaultTokens(incoming.Vaults, current.Vaults)
+		if err != nil {
+			return merged, err
+		}
+		merged.Vaults = vaults
 	}
-	return merged
+	return merged, nil
 }
 
 // mergeSecret returns incoming unless it's blank or a UI mask sentinel, in
@@ -387,18 +448,44 @@ func isBlankOrMaskedSecret(token string) bool {
 }
 
 // restoreVaultToken preserves the stored token when the incoming one is
-// blank or masked (vaults are keyed by OriginalID, falling back to ID).
-func restoreVaultToken(v *config.VaultInstance, tokens map[string]string) {
+// blank or masked (vaults are keyed by OriginalID, falling back to ID). A
+// stored token is only reused while the connection (address and TLS settings)
+// is unchanged: otherwise the masked value would be sent to a new host or a
+// man-in-the-middle.
+func restoreVaultToken(v *config.VaultInstance, stored map[string]config.VaultInstance) error {
 	if !isBlankOrMaskedSecret(v.Token) {
-		return
+		return nil
 	}
 	lookupKey := v.OriginalID
 	if lookupKey == "" {
 		lookupKey = v.ID
 	}
-	if prior, ok := tokens[lookupKey]; ok {
-		v.Token = prior
+	prior, ok := stored[lookupKey]
+	if !ok {
+		return nil
 	}
+	if prior.Token != "" && vaultConnectionChanged(*v, prior) {
+		return fmt.Errorf("vault %q: %w: enter the token again when the address or TLS settings change", v.ID, vcverrors.ErrInvalidToken)
+	}
+	v.Token = prior.Token
+	return nil
+}
+
+// vaultConnectionChanged reports whether the address or any TLS setting that
+// decides where and how the token is sent differs between incoming and stored.
+func vaultConnectionChanged(incoming, stored config.VaultInstance) bool {
+	return normalizeAddr(incoming.Address) != normalizeAddr(stored.Address) ||
+		incoming.TLSInsecure != stored.TLSInsecure ||
+		strings.TrimSpace(incoming.TLSServerName) != strings.TrimSpace(stored.TLSServerName) ||
+		strings.TrimSpace(incoming.TLSCACert) != strings.TrimSpace(stored.TLSCACert) ||
+		strings.TrimSpace(incoming.TLSCACertBase64) != strings.TrimSpace(stored.TLSCACertBase64) ||
+		strings.TrimSpace(incoming.TLSCAPath) != strings.TrimSpace(stored.TLSCAPath)
+}
+
+// normalizeAddr makes vault addresses comparable regardless of case,
+// surrounding whitespace and a trailing slash.
+func normalizeAddr(addr string) string {
+	return strings.TrimRight(strings.ToLower(strings.TrimSpace(addr)), "/")
 }
 
 // normalizePKIMounts keeps the PKIMount and PKIMounts fields consistent.
@@ -411,19 +498,21 @@ func normalizePKIMounts(v *config.VaultInstance) {
 	}
 }
 
-func mergeVaultTokens(incoming, existing []config.VaultInstance) []config.VaultInstance {
-	tokens := make(map[string]string, len(existing))
+func mergeVaultTokens(incoming, existing []config.VaultInstance) ([]config.VaultInstance, error) {
+	stored := make(map[string]config.VaultInstance, len(existing))
 	for _, v := range existing {
-		tokens[v.ID] = v.Token
+		stored[v.ID] = v
 	}
 	merged := make([]config.VaultInstance, 0, len(incoming))
 	for _, v := range incoming {
-		restoreVaultToken(&v, tokens)
+		if err := restoreVaultToken(&v, stored); err != nil {
+			return nil, err
+		}
 		v.OriginalID = ""
 		normalizePKIMounts(&v)
 		merged = append(merged, v)
 	}
-	return merged
+	return merged, nil
 }
 
 func computeVaultStatuses(ctx context.Context, vaults []config.VaultInstance, clients map[string]vault.Client) []adminVaultStatus {

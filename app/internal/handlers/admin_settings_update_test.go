@@ -79,7 +79,8 @@ func fullyPopulatedSettings() config.SettingsFile {
 func TestMergeAdminSettings_EmptyIncomingKeepsCurrent(t *testing.T) {
 	current := fullyPopulatedSettings()
 
-	merged := mergeAdminSettings(current, config.SettingsFile{})
+	merged, err := mergeAdminSettings(current, config.SettingsFile{})
+	require.NoError(t, err)
 
 	assert.Equal(t, current, merged)
 }
@@ -87,11 +88,12 @@ func TestMergeAdminSettings_EmptyIncomingKeepsCurrent(t *testing.T) {
 func TestMergeAdminSettings_ExplicitEmptyClears(t *testing.T) {
 	current := fullyPopulatedSettings()
 
-	merged := mergeAdminSettings(current, config.SettingsFile{
+	merged, err := mergeAdminSettings(current, config.SettingsFile{
 		Vaults:  []config.VaultInstance{},
 		Metrics: config.MetricsSettings{PinnedCertificates: []string{}},
 		CORS:    config.CORSSettings{AllowedOrigins: []string{}},
 	})
+	require.NoError(t, err)
 
 	assert.Empty(t, merged.Vaults, "explicit empty vaults list must clear")
 	assert.Empty(t, merged.Metrics.PinnedCertificates, "explicit empty pinned list must clear")
