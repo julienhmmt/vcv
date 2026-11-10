@@ -144,6 +144,7 @@ type Messages struct {
 	AdminAddVault               string `json:"adminAddVault"`
 	AdminSaveSettings           string `json:"adminSaveSettings"`
 	AdminRestartNote            string `json:"adminRestartNote"`
+	AdminRestartRequired        string `json:"adminRestartRequired"`
 	AdminVaultID                string `json:"adminVaultID"`
 	AdminVaultDisplayName       string `json:"adminVaultDisplayName"`
 	AdminVaultAddress           string `json:"adminVaultAddress"`
@@ -385,6 +386,7 @@ var englishMessages = Messages{
 	AdminAddVault:                  "Add vault",
 	AdminSaveSettings:              "Save settings.json",
 	AdminRestartNote:               "Changes are persisted to the settings file. A server restart may be required for all changes to take effect.",
+	AdminRestartRequired:           "Restart vcv to apply these changes",
 	AdminVaultID:                   "ID",
 	AdminVaultDisplayName:          "Display name",
 	AdminVaultAddress:              "Address",
@@ -598,6 +600,7 @@ var frenchMessages = Messages{
 	AdminAddVault:                  "Ajouter un vault",
 	AdminSaveSettings:              "Enregistrer settings.json",
 	AdminRestartNote:               "Les modifications sont enregistrées dans le fichier de paramètres. Un redémarrage du serveur peut être nécessaire pour que tous les changements prennent effet.",
+	AdminRestartRequired:           "Redémarrez vcv pour appliquer ces modifications",
 	AdminVaultID:                   "ID",
 	AdminVaultDisplayName:          "Nom d'affichage",
 	AdminVaultAddress:              "Adresse",
@@ -811,6 +814,7 @@ var spanishMessages = Messages{
 	AdminAddVault:                  "Agregar vault",
 	AdminSaveSettings:              "Guardar settings.json",
 	AdminRestartNote:               "Los cambios se guardan en el archivo de configuración. Es posible que se requiera reiniciar el servidor para que todos los cambios surtan efecto.",
+	AdminRestartRequired:           "Reinicia vcv para aplicar estos cambios",
 	AdminVaultConnected:            "Conectado",
 	AdminVaultDisconnected:         "Desconectado",
 	AdminVaultDisabled:             "Deshabilitado",
@@ -1024,6 +1028,7 @@ var germanMessages = Messages{
 	AdminAddVault:                  "Vault hinzufügen",
 	AdminSaveSettings:              "settings.json speichern",
 	AdminRestartNote:               "Änderungen werden in der Einstellungsdatei gespeichert. Ein Neustart des Servers kann erforderlich sein, damit alle Änderungen wirksam werden.",
+	AdminRestartRequired:           "vcv neu starten, um diese Änderungen anzuwenden",
 	AdminVaultConnected:            "Verbindung hergestellt",
 	AdminVaultDisconnected:         "Verbindung unterbrochen",
 	AdminVaultDisabled:             "Deaktiviert",
@@ -1237,6 +1242,7 @@ var italianMessages = Messages{
 	AdminAddVault:                  "Aggiungi vault",
 	AdminSaveSettings:              "Salva settings.json",
 	AdminRestartNote:               "Le modifiche vengono salvate nel file delle impostazioni. Potrebbe essere necessario riavviare il server affinché tutte le modifiche abbiano effetto.",
+	AdminRestartRequired:           "Riavvia vcv per applicare queste modifiche",
 	AdminVaultConnected:            "Connesso",
 	AdminVaultDisconnected:         "Disconnesso",
 	AdminVaultDisabled:             "Disabilitato",

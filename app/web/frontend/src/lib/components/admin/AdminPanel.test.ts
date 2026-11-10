@@ -36,6 +36,17 @@ function baseProps(settingsOverrides: Partial<SettingsFile> = {}) {
   }
 }
 
+describe('AdminPanel restart banner', () => {
+  it('shows the restart warning only when a restart is required', () => {
+    const { unmount } = render(AdminPanel, { props: baseProps() })
+    expect(screen.queryByText('Restart vcv to apply these changes')).toBeNull()
+    unmount()
+
+    render(AdminPanel, { props: { ...baseProps(), restartRequired: true } })
+    expect(screen.getByText('Restart vcv to apply these changes')).toBeTruthy()
+  })
+})
+
 describe('AdminPanel webhook URL field', () => {
   it('starts empty when the server has no webhook configured', () => {
     render(AdminPanel, { props: baseProps() })
