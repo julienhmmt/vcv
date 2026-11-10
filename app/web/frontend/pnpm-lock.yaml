@@ -21,8 +21,8 @@ importers:
         specifier: ^2.1.1
         version: 2.1.1
       svelte-sonner:
-        specifier: ^1.2.1
-        version: 1.2.1(svelte@5.57.1(@typescript-eslint/types@8.70.0))
+        specifier: ^1.2.3
+        version: 1.2.3(svelte@5.57.1(@typescript-eslint/types@8.70.0))
       tailwind-merge:
         specifier: ^3.7.0
         version: 3.7.0
@@ -1359,11 +1359,6 @@ packages:
     engines: {node: ^20.19.0 || >=22.12.0}
     hasBin: true
 
-  runed@0.28.0:
-    resolution: {integrity: sha512-k2xx7RuO9hWcdd9f+8JoBeqWtYrm5CALfgpkg2YDB80ds/QE4w0qqu34A7fqiAwiBBSBQOid7TLxwxVC27ymWQ==}
-    peerDependencies:
-      svelte: ^5.7.0
-
   runed@0.35.1:
     resolution: {integrity: sha512-2F4Q/FZzbeJTFdIS/PuOoPRSm92sA2LhzTnv6FXhCoENb3huf5+fDuNOg1LNvGOouy3u/225qxmuJvcV3IZK5Q==}
     peerDependencies:
@@ -1431,8 +1426,8 @@ packages:
       svelte:
         optional: true
 
-  svelte-sonner@1.2.1:
-    resolution: {integrity: sha512-N00LOWb60fjKXULbpngku+7E9Krb16KpNq4/Eax5Vu7o1Dpbca55QpaLPsB+yp82JIEdFhfJuv5cVXLoe0ZtVA==}
+  svelte-sonner@1.2.3:
+    resolution: {integrity: sha512-SjQaDI/k6L/ordD2w84XOkGv3kaZwyGRsJzR+lHW097/aJCaydvp63VblMTFsrakm58BxRjUSySK/BWH9jdY1Q==}
     peerDependencies:
       svelte: ^5.0.0
 
@@ -2806,11 +2801,6 @@ snapshots:
       '@rolldown/binding-win32-arm64-msvc': 1.2.16
       '@rolldown/binding-win32-x64-msvc': 1.2.16
 
-  runed@0.28.0(svelte@5.57.1(@typescript-eslint/types@8.70.0)):
-    dependencies:
-      esm-env: 1.2.2
-      svelte: 5.57.1(@typescript-eslint/types@8.70.0)
-
   runed@0.35.1(svelte@5.57.1(@typescript-eslint/types@8.70.0)):
     dependencies:
       dequal: 2.0.3
@@ -2875,9 +2865,8 @@ snapshots:
     optionalDependencies:
       svelte: 5.57.1(@typescript-eslint/types@8.70.0)
 
-  svelte-sonner@1.2.1(svelte@5.57.1(@typescript-eslint/types@8.70.0)):
+  svelte-sonner@1.2.3(svelte@5.57.1(@typescript-eslint/types@8.70.0)):
     dependencies:
-      runed: 0.28.0(svelte@5.57.1(@typescript-eslint/types@8.70.0))
       svelte: 5.57.1(@typescript-eslint/types@8.70.0)
 
   svelte-toolbelt@0.10.6(svelte@5.57.1(@typescript-eslint/types@8.70.0)):
