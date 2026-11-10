@@ -1,5 +1,7 @@
 # Changelog
 
+<!-- markdownlint-configure-file {"MD024": {"siblings_only": true}} -->
+
 All notable changes to VaultCertsViewer (vcv) are documented here.
 This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 

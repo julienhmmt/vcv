@@ -229,7 +229,10 @@ Ces valeurs contrôlent :
 
 ## 🔔 Notifications par webhook
 
-Lorsque `notifications.webhook_url` est configuré, VaultCertsViewer envoie une alerte JSON à cette URL dès qu'un certificat franchit le seuil d'avertissement ou critique, même si personne n'a le tableau de bord ouvert. Vous pouvez aussi définir des cibles routées dans `notifications.webhooks[]`, avec des niveaux de sévérité. Comme un token Vault, l'URL de webhook est masquée dans l'API d'administration, car les URL fournies par les services contiennent souvent un jeton dans le chemin. Voir [ALERTING.md](ALERTING.md) pour le détail.
+Lorsque `notifications.webhook_url` est configuré, VaultCertsViewer envoie une alerte JSON à cette URL dès qu'un certificat franchit le seuil d'avertissement ou critique, même si personne n'a le tableau de bord ouvert.
+Vous pouvez aussi définir des cibles routées dans `notifications.webhooks[]`, avec des niveaux de sévérité.
+Comme un token Vault, l'URL de webhook est masquée dans l'API d'administration, car les URL fournies par les services contiennent souvent un jeton dans le chemin.
+Voir [ALERTING.md](ALERTING.md) pour le détail.
 
 ## 🌍 Multilingue
 
