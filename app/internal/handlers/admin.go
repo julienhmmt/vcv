@@ -70,12 +70,18 @@ func newAdminLoginLimiter(maxAttempts int, window time.Duration) *adminLoginLimi
 	return &adminLoginLimiter{maxAttempts: maxAttempts, window: window, entries: make(map[string]adminLoginLimiterEntry)}
 }
 
+// adminLoginLimiterMaxEntries caps the limiter map so spoofed or rotating keys cannot grow it forever.
+const adminLoginLimiterMaxEntries = 10000
+
 func (l *adminLoginLimiter) allow(now time.Time, key string) bool {
 	if key == "" {
 		key = "unknown"
 	}
 	l.mu.Lock()
 	defer l.mu.Unlock()
+	if _, known := l.entries[key]; !known {
+		l.makeRoom(now)
+	}
 	entry := l.entries[key]
 	if entry.resetAt.IsZero() || now.After(entry.resetAt) {
 		entry = adminLoginLimiterEntry{count: 0, resetAt: now.Add(l.window)}
@@ -83,6 +89,28 @@ func (l *adminLoginLimiter) allow(now time.Time, key string) bool {
 	entry.count++
 	l.entries[key] = entry
 	return entry.count <= l.maxAttempts
+}
+
+// makeRoom drops expired entries and, if still at the cap, evicts the least-recent one.
+// Caller must hold l.mu.
+// shortcut: linear scan for the oldest entry on each insert while full, fine at the 10k cap; upgrade to an LRU list if the cap grows.
+func (l *adminLoginLimiter) makeRoom(now time.Time) {
+	for key, entry := range l.entries {
+		if now.After(entry.resetAt) {
+			delete(l.entries, key)
+		}
+	}
+	if len(l.entries) < adminLoginLimiterMaxEntries {
+		return
+	}
+	var oldestKey string
+	var oldest time.Time
+	for key, entry := range l.entries {
+		if oldestKey == "" || entry.resetAt.Before(oldest) {
+			oldestKey, oldest = key, entry.resetAt
+		}
+	}
+	delete(l.entries, oldestKey)
 }
 
 func (s *adminSessionStore) allowLoginAttempt(r *http.Request) bool {

@@ -180,6 +180,8 @@ Rate limiting keys and CSRF target-origin construction honor `X-Forwarded-For`, 
 
 Set `app.trust_proxy: true` **only** when a reverse proxy (nginx, Traefik, etc.) sits in front of vcv and **overwrites** client-supplied `X-Forwarded-*` headers with trusted values. If clients can reach vcv directly while this flag is true, they can spoof per-IP rate-limit buckets and skew CSRF origin checks.
 
+Enable `trust_proxy` only behind exactly one reverse proxy that appends to `X-Forwarded-For`. vcv uses the right-most `X-Forwarded-For` entry, the one that proxy appended; the left-most entries are client-controlled. Multi-hop chains (CDN → load balancer → ingress) are not supported by this setting.
+
 `app.trusted_auth_header` (default `""`, e.g. `"X-Forwarded-User"`) names the
 request header carrying the reverse-proxy authenticated identity
 (OAuth2-Proxy style) for the admin audit log. It is honored **only** when

@@ -259,6 +259,36 @@ func TestAdminLoginLimiter_Allow_WindowReset(t *testing.T) {
 	assert.True(t, limiter.allow(later, key))
 }
 
+func TestAdminLoginLimiter_PrunesExpiredOnInsert(t *testing.T) {
+	window := 3 * time.Minute
+	limiter := newAdminLoginLimiter(5, window)
+	t0 := time.Now()
+	for _, key := range []string{"a", "b", "c"} {
+		assert.True(t, limiter.allow(t0, key))
+	}
+
+	assert.True(t, limiter.allow(t0.Add(window+time.Second), "new"))
+	assert.Len(t, limiter.entries, 1)
+	assert.Contains(t, limiter.entries, "new")
+}
+
+func TestAdminLoginLimiter_EvictsLeastRecentWhenFull(t *testing.T) {
+	window := time.Hour
+	limiter := newAdminLoginLimiter(5, window)
+	t0 := time.Now()
+	for i := range adminLoginLimiterMaxEntries {
+		assert.True(t, limiter.allow(t0.Add(time.Duration(i)*time.Millisecond), fmt.Sprintf("k%d", i)))
+	}
+	assert.Len(t, limiter.entries, adminLoginLimiterMaxEntries)
+
+	// Map is full and nothing expired: the oldest key (k0) is evicted, the new client is still allowed.
+	assert.True(t, limiter.allow(t0.Add(time.Duration(adminLoginLimiterMaxEntries)*time.Millisecond), "new"))
+	assert.Len(t, limiter.entries, adminLoginLimiterMaxEntries)
+	assert.NotContains(t, limiter.entries, "k0")
+	assert.Contains(t, limiter.entries, "k1")
+	assert.Contains(t, limiter.entries, "new")
+}
+
 func TestAdminSettingsStore_Load(t *testing.T) {
 	// Test loading non-existent file
 	store := newAdminSettingsStore("/tmp/nonexistent.json", config.EnvDev)
