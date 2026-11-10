@@ -1,23 +1,22 @@
 <script lang="ts">
   import { getI18n } from '$lib/stores/i18n.svelte'
-  import { certStatus, parseCertID, statusBadgeClass, rowClassForStatus, DEFAULT_THRESHOLDS } from '$lib/utils/cert-status'
+  import { parseCertID, statusBadgeClass, rowClassForStatus } from '$lib/utils/cert-status'
   import { formatDate, formatTime } from '$lib/utils/cert-filter'
   import { certDisplayName, certExpiryLabel } from '$lib/utils/cert-label'
-  import type { Certificate, ExpirationThresholds } from '$lib/types'
+  import type { Certificate, CertStatus } from '$lib/types'
 
   interface Props {
     cert: Certificate
     showVaultMount: boolean
+    status: CertStatus
     statusLabel: string
-    thresholds?: ExpirationThresholds
     onSelect: (cert: Certificate) => void
   }
 
-  const { cert, showVaultMount, statusLabel, thresholds = DEFAULT_THRESHOLDS, onSelect }: Props = $props()
+  const { cert, showVaultMount, status: s, statusLabel, onSelect }: Props = $props()
 
   const i18n = getI18n()
 
-  const s = $derived(certStatus(cert, thresholds))
   const parts = $derived(parseCertID(cert.id))
   const expiry = $derived(certExpiryLabel(cert, i18n.t))
 </script>

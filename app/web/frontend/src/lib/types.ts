@@ -144,6 +144,7 @@ export interface AdminVaultStatus {
 export interface AdminSettingsResponse {
   settings: SettingsFile
   vault_statuses: AdminVaultStatus[]
+  restart_required?: boolean
 }
 
 export interface I18nResponse {

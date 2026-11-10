@@ -35,7 +35,7 @@
     {
       "id": "vault-main",
       "address": "https://vault.production.local:8200",
-      "token": "${VAULT_TOKEN}",
+      "token": "s.REPLACE_WITH_READ_ONLY_TOKEN",
       "pki_mounts": [
         "pki",
         "pki_dev",

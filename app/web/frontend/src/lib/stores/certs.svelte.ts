@@ -35,7 +35,9 @@ export function createCertsStore(i18n: I18nStore): CertsStore {
   let vaultErrors = $state<VaultListError[]>([])
   let tableLoading = $state(false)
   let inventoryLoading = $state(false)
-  let error = $state<string | null>(null)
+  /** Separate per-pipeline errors so a table success never hides an inventory failure. */
+  let tableError = $state<string | null>(null)
+  let inventoryError = $state<string | null>(null)
   /** Ignores out-of-order responses within each pipeline independently. */
   let tableGen = 0
   let inventoryGen = 0
@@ -43,10 +45,10 @@ export function createCertsStore(i18n: I18nStore): CertsStore {
   async function refreshTable(query: CertsQuery): Promise<void> {
     const gen = ++tableGen
     tableLoading = true
-    error = null
     try {
       const envelope = await api.listCertificates(query)
       if (gen !== tableGen) return
+      tableError = null
       certificates = envelope.certificates ?? []
       total = envelope.total ?? certificates.length
       totalPages = Math.max(1, envelope.total_pages ?? 1)
@@ -54,7 +56,7 @@ export function createCertsStore(i18n: I18nStore): CertsStore {
       vaultErrors = envelope.errors ?? []
     } catch (err: unknown) {
       if (gen !== tableGen) return
-      error = loadError(err, i18n)
+      tableError = loadError(err, i18n)
       certificates = []
       total = 0
       totalPages = 1
@@ -75,10 +77,11 @@ export function createCertsStore(i18n: I18nStore): CertsStore {
         pageSize: 'all',
       })
       if (gen !== inventoryGen) return
+      inventoryError = null
       inventory = envelope.certificates ?? []
     } catch (err: unknown) {
       if (gen !== inventoryGen) return
-      error = loadError(err, i18n)
+      inventoryError = loadError(err, i18n)
       inventory = []
     } finally {
       if (gen === inventoryGen) inventoryLoading = false
@@ -108,7 +111,7 @@ export function createCertsStore(i18n: I18nStore): CertsStore {
       return tableLoading || inventoryLoading
     },
     get error() {
-      return error
+      return tableError ?? inventoryError
     },
     refreshTable,
     refreshInventory,

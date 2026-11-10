@@ -136,11 +136,13 @@ VCV_TAG=1.9 make docker-build
 | `internal/config/` | Settings-file loading, multi-vault, thresholds |
 | `internal/certs/` | Certificate model + `InferCertType` |
 | `internal/errors/` | Shared error types |
-| `internal/handlers/` | HTTP handlers (certs, admin, i18n, health, ready, config, static) |
+| `internal/handlers/` | HTTP handlers (certs, admin, admin_audit, i18n, health, ready, config, static, openapi) |
 | `internal/httputil/` | Client IP helpers (rate limit) |
 | `internal/i18n/` | Message bundles (en/fr/de/it/es) — source of truth for UI strings |
 | `internal/logger/` | zerolog; `LOG_OUTPUT` / `LOG_FORMAT` / `LOG_FILE_PATH` |
 | `internal/metrics/` | Prometheus collectors (private registry; enhanced optional) |
+| `internal/notify/` | Expiry webhook notifier (started in `cmd/server/main.go`); routed targets, escalate-only dedupe |
+| `internal/docs/` | Embedded admin docs (`ADMIN.md`), rendered to HTML |
 | `internal/middleware/` | RequestID, Logger, Recoverer, SecurityHeaders, CORS, RateLimit, BodyLimit, CSRF |
 | `internal/vault/` | Client interface, real/multi/registry/disabled, status checks |
 | `internal/version/` | Version via `-ldflags` |
@@ -374,8 +376,10 @@ When architecture or agent workflow drifts, update **AGENTS.md**. When handler/A
 
 `.github/workflows/`:
 
-- **`go.yml`** — golangci-lint (pinned) + build/test with race + coverage gate
+- **`go.yml`** — golangci-lint (pinned) + build/test with race + coverage gate; plus a web job (`pnpm check` + `pnpm test`)
 - **`lint.yml`** — repo-wide linting
+- **`e2e.yml`** — Playwright smoke suite against the seeded e2e stack
+- **`security.yml`** — Trivy filesystem and config scans (HIGH/CRITICAL fail the build)
 - **`release.yml`** — on tag: GoReleaser `~> v2` builds frontend (pnpm), embeds dist, cross-compiles `vcv` (`./cmd/server`), publishes archives + Docker (`.goreleaser.yaml`)
 
 Release: push a semver tag (e.g. `1.9`); GoReleaser does the rest. Only `version.Version` is injected via `-ldflags` (`-X vcv/internal/version.Version=...`); commit/build-time metadata is intentionally omitted.

@@ -73,6 +73,8 @@
   }
 
   function commit(next: Set<string>): void {
+    // An empty selection would send mounts= and blank the whole dashboard; keep the previous filter.
+    if (next.size === 0) return
     onChange(next.size === allMounts.length ? null : Array.from(next))
   }
 
@@ -100,7 +102,8 @@
   }
 
   function deselectAll(): void {
-    onChange([])
+    // Never emit [] (see commit); the dialog shows the selection as-is.
+    commit(new Set())
   }
 </script>
 
