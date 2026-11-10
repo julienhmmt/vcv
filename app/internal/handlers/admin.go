@@ -224,6 +224,33 @@ func newAdminSettingsStore(path string, env config.Environment) *adminSettingsSt
 func (s *adminSettingsStore) load() (config.SettingsFile, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.loadLocked()
+}
+
+// update runs fn against the stored settings under a single lock, so
+// concurrent read-modify-write callers cannot drop each other's changes.
+// On success it returns the settings as saved; if fn or validation fails,
+// nothing is written.
+func (s *adminSettingsStore) update(fn func(*config.SettingsFile) error) (config.SettingsFile, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	settings, err := s.loadLocked()
+	if err != nil {
+		return config.SettingsFile{}, err
+	}
+	if fnErr := fn(&settings); fnErr != nil {
+		return config.SettingsFile{}, fnErr
+	}
+	if validateErr := validateSettings(settings); validateErr != nil {
+		return config.SettingsFile{}, validateErr
+	}
+	if saveErr := s.saveLocked(settings); saveErr != nil {
+		return config.SettingsFile{}, saveErr
+	}
+	return settings, nil
+}
+
+func (s *adminSettingsStore) loadLocked() (config.SettingsFile, error) {
 	data, err := os.ReadFile(s.path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -250,6 +277,10 @@ func (s *adminSettingsStore) save(settings config.SettingsFile) error {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	return s.saveLocked(settings)
+}
+
+func (s *adminSettingsStore) saveLocked(settings config.SettingsFile) error {
 	payload, err := json.MarshalIndent(settings, "", "  ")
 	if err != nil {
 		return err
@@ -263,12 +294,8 @@ func (s *adminSettingsStore) save(settings config.SettingsFile) error {
 		return fallbackWriteSettings(s.path, payload, err)
 	}
 	tmpPath := tmp.Name()
-	closeErr := tmp.Close()
-	if closeErr != nil {
-		_ = os.Remove(tmpPath)
-		return fallbackWriteSettings(s.path, payload, closeErr)
-	}
-	if writeErr := os.WriteFile(tmpPath, payload, 0o600); writeErr != nil {
+	// fsync before rename: without it a crash can leave an empty settings file.
+	if writeErr := writeSyncClose(tmp, payload); writeErr != nil {
 		_ = os.Remove(tmpPath)
 		return fallbackWriteSettings(s.path, payload, writeErr)
 	}
@@ -279,6 +306,19 @@ func (s *adminSettingsStore) save(settings config.SettingsFile) error {
 	return nil
 }
 
+// writeSyncClose writes payload to f, flushes it to disk and closes f.
+func writeSyncClose(f *os.File, payload []byte) error {
+	if _, err := f.Write(payload); err != nil {
+		_ = f.Close()
+		return err
+	}
+	if err := f.Sync(); err != nil {
+		_ = f.Close()
+		return err
+	}
+	return f.Close()
+}
+
 func fallbackWriteSettings(path string, payload []byte, originalErr error) error {
 	if !shouldFallbackToDirectWrite(originalErr) {
 		return originalErr
@@ -286,6 +326,7 @@ func fallbackWriteSettings(path string, payload []byte, originalErr error) error
 	if writeErr := os.WriteFile(path, payload, 0o600); writeErr != nil {
 		return originalErr
 	}
+	logger.Get().Warn().Msg("settings written in place (non-atomic)")
 	return nil
 }
 
