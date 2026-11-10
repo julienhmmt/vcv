@@ -197,4 +197,23 @@ describe('createAdminStore', () => {
     expect(store.successMessage).toBe('Cache invalidated')
     expect(store.error).toBeNull()
   })
+
+  it('addVault returns the new vault and leaves settings untouched', async () => {
+    const store = createAdminStore(i18n)
+    adminGetSettings.mockResolvedValueOnce({ settings: sampleSettings([sampleVault()]), vault_statuses: [] })
+    await store.loadSettings()
+    const before = store.settings
+    const added = sampleVault({ id: '', address: '' })
+    adminAddVault.mockResolvedValueOnce({ key: 'k1', vault: added })
+    expect(await store.addVault()).toEqual(added)
+    expect(store.settings).toBe(before)
+    expect(store.settings?.vaults).toHaveLength(1)
+  })
+
+  it('addVault returns null and sets the fallback error when the request fails', async () => {
+    const store = createAdminStore(i18n)
+    adminAddVault.mockRejectedValueOnce(new Error('boom'))
+    expect(await store.addVault()).toBeNull()
+    expect(store.error).toBe('Failed to add vault')
+  })
 })
