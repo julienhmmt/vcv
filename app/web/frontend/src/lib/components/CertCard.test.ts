@@ -23,7 +23,7 @@ const cert: Certificate = {
 describe('CertCard', () => {
   it('explains the row action with text instead of an unlabeled chevron', () => {
     const { container } = render(CertCard, {
-      props: { cert, showVaultMount: false, statusLabel: 'Valid', onSelect: vi.fn() },
+      props: { cert, showVaultMount: false, status: 'valid', statusLabel: 'Valid', onSelect: vi.fn() },
     })
 
     expect(screen.getByRole('button', { name: 'web.example.com: Details' })).toBeInTheDocument()
@@ -33,7 +33,7 @@ describe('CertCard', () => {
 
   it('places the status below the certificate name as a quiet inline badge', () => {
     const { container } = render(CertCard, {
-      props: { cert, showVaultMount: false, statusLabel: 'Critical', onSelect: vi.fn() },
+      props: { cert, showVaultMount: false, status: 'critical', statusLabel: 'Critical', onSelect: vi.fn() },
     })
     const title = container.querySelector('.vcv-cert-card-title')
 

@@ -171,7 +171,7 @@ func buildRouter(deps routerDeps) (*chi.Mux, error) {
 func initVaultClients(cfg *config.Config, log *logger.Logger) (map[string]vault.Client, vault.Client) {
 	allClients := make(map[string]vault.Client, len(cfg.AllVaults))
 	var primaryVaultClient vault.Client
-	for i, instance := range cfg.AllVaults {
+	for _, instance := range cfg.AllVaults {
 		if instance.ID == "" {
 			continue
 		}
@@ -184,7 +184,7 @@ func initVaultClients(cfg *config.Config, log *logger.Logger) (map[string]vault.
 			continue
 		}
 		allClients[instance.ID] = client
-		if i == 0 {
+		if primaryVaultClient == nil && config.IsVaultEnabled(instance) {
 			primaryVaultClient = client
 			cfg.Vault = config.VaultConfig{Addr: instance.Address, PKIMounts: instance.PKIMounts, ReadToken: instance.Token, TLSCACertBase64: instance.TLSCACertBase64, TLSCACert: instance.TLSCACert, TLSCAPath: instance.TLSCAPath, TLSServerName: instance.TLSServerName, TLSInsecure: instance.TLSInsecure}
 		}
@@ -210,10 +210,20 @@ func shutdownVaultClients(allClients map[string]vault.Client) {
 }
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	runErr := run(ctx)
+	stop()
+	if runErr != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", runErr)
+		os.Exit(1)
+	}
+}
+
+// run starts the server and blocks until ctx is cancelled, then shuts down.
+func run(ctx context.Context) error {
 	cfg, cfgErr := config.Load()
 	if cfgErr != nil {
-		fmt.Fprintf(os.Stderr, "Failed to load configuration: %v\n", cfgErr)
-		os.Exit(1)
+		return fmt.Errorf("failed to load configuration: %w", cfgErr)
 	}
 
 	// Initialize structured logger from config
@@ -307,9 +317,7 @@ func main() {
 		}
 	}()
 
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	<-ctx.Done()
 
 	log.Info().Msg("Shutting down server...")
 	notifyCancel()
@@ -323,4 +331,5 @@ func main() {
 	shutdownVaultClients(allClients)
 
 	log.Info().Msg("Server stopped")
+	return nil
 }
