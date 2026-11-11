@@ -4,7 +4,7 @@ FROM node:26-alpine@sha256:8996bb5821d62a8fd9bb27c1cb07462f3fdce6e47d640c6a881ea
 WORKDIR /web/frontend
 ENV CI=true
 
-RUN corepack enable
+RUN npm install -g pnpm@10
 
 # Cache pnpm install
 COPY web/frontend/package.json web/frontend/pnpm-lock.yaml web/frontend/.npmrc web/frontend/pnpm-workspace.yaml ./
