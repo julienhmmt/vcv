@@ -59,7 +59,7 @@
   {:else}
     {#each certs as cert (cert.id)}
       {@const s = certStatus(cert, thresholds)}
-      <CertCard {cert} {showVaultMount} statusLabel={statusMeta[s].label} {thresholds} onSelect={onSelect} />
+      <CertCard {cert} {showVaultMount} status={s} statusLabel={statusMeta[s].label} onSelect={onSelect} />
     {/each}
   {/if}
 </div>

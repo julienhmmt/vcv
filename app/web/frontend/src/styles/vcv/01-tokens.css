@@ -228,7 +228,3 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizelegibility;
 }
-
-.vcv-certs-mobile-cards {
-  display: none;
-}

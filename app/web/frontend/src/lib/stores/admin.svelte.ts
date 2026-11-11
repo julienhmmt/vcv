@@ -20,13 +20,13 @@ export interface AdminStore {
   readonly loading: boolean
   readonly error: string | null
   readonly successMessage: string | null
+  readonly restartRequired: boolean
   checkSession(): Promise<void>
   login(username: string, password: string): Promise<boolean>
   logout(): Promise<void>
   loadSettings(): Promise<void>
   saveSettings(settings: SettingsFile): Promise<boolean>
-  addVault(): Promise<void>
-  removeVault(id: string): Promise<void>
+  addVault(): Promise<VaultInstance | null>
   invalidateCache(): Promise<void>
   clearMessages(): void
 }
@@ -38,6 +38,8 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
   let loading = $state(false)
   let error = $state<string | null>(null)
   let successMessage = $state<string | null>(null)
+  // Set by a settings save that changed startup-only config; cleared on the next load.
+  let restartRequired = $state(false)
 
   function applyError(err: unknown, fallback: string): void {
     error = err instanceof ApiError ? err.message : fallback
@@ -61,7 +63,7 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
       return authenticated
     } catch (err: unknown) {
       authenticated = false
-      applyError(err, 'Login failed')
+      applyError(err, i18n.t('adminErrLogin', 'Login failed'))
       return false
     } finally {
       loading = false
@@ -74,6 +76,7 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
       authenticated = false
       settings = null
       vaultStatuses = []
+      restartRequired = false
       error = null
     } catch (err: unknown) {
       // Keep local session until server logout succeeds so a failed CSRF/network
@@ -92,8 +95,9 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
         vaults: response.settings.vaults.map((v) => ({ ...v, original_id: v.id })),
       }
       vaultStatuses = response.vault_statuses
+      restartRequired = false
     } catch (err: unknown) {
-      applyError(err, 'Failed to load settings')
+      applyError(err, i18n.t('adminErrLoadSettings', 'Failed to load settings'))
     } finally {
       loading = false
     }
@@ -117,35 +121,27 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
         vaults: response.settings.vaults.map((v) => ({ ...v, original_id: v.id })),
       }
       vaultStatuses = response.vault_statuses
+      restartRequired = response.restart_required === true
       successMessage = i18n.t('adminSettingsSaved', 'Settings saved')
       return true
     } catch (err: unknown) {
-      applyError(err, 'Failed to save settings')
+      applyError(err, i18n.t('adminErrSaveSettings', 'Failed to save settings'))
       return false
     } finally {
       loading = false
     }
   }
 
-  async function addVault(): Promise<void> {
-    if (!settings) return
+  // Returns a blank vault for the caller to add to its unsaved working copy.
+  // Never touches `settings`, so pending admin edits survive. Nothing is
+  // persisted until the admin saves.
+  async function addVault(): Promise<VaultInstance | null> {
     try {
       const response = await api.adminAddVault()
-      settings = {
-        ...settings,
-        vaults: [...settings.vaults, response.vault],
-      }
+      return response.vault
     } catch (err: unknown) {
-      applyError(err, 'Failed to add vault')
-    }
-  }
-
-  async function removeVault(id: string): Promise<void> {
-    try {
-      await api.adminDeleteVault(id)
-      await loadSettings()
-    } catch (err: unknown) {
-      applyError(err, 'Failed to remove vault')
+      applyError(err, i18n.t('adminErrAddVault', 'Failed to add vault'))
+      return null
     }
   }
 
@@ -182,13 +178,15 @@ export function createAdminStore(i18n: I18nStore): AdminStore {
     get successMessage() {
       return successMessage
     },
+    get restartRequired() {
+      return restartRequired
+    },
     checkSession,
     login,
     logout,
     loadSettings,
     saveSettings,
     addVault,
-    removeVault,
     invalidateCache,
     clearMessages,
   }

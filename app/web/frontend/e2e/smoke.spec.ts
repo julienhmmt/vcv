@@ -58,10 +58,11 @@ test('mount selector lists mounts and toggles scope', async ({ page }) => {
   await expect(dialog).toContainText('Certificate sources')
   await expect(dialog).toContainText('pki')
 
-  // Deselect everything: the table drains to zero. (exact: "Select all" is a
-  // substring of "Deselect all" under Playwright's default name matching.)
+  // Deselect all never applies an empty scope, so the table keeps its rows.
+  // (exact: "Select all" is a substring of "Deselect all" under Playwright's
+  // default name matching.)
   await dialog.getByRole('button', { name: 'Deselect all', exact: true }).click()
-  await expect(page.getByText('0 certificates', { exact: true })).toBeVisible()
+  await expect(page.getByText(/certificates$/).first()).toHaveText(countText ?? '')
 
   // Restore full scope.
   await dialog.getByRole('button', { name: 'Select all', exact: true }).click()
