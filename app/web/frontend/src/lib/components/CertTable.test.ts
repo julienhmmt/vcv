@@ -47,6 +47,8 @@ const baseProps = {
   hasInventory: true,
   hasActiveFilters: false,
   showVaultMount: false,
+  noVaultsConfigured: false,
+  noMountsConfigured: false,
   compact: false,
   statusMeta,
   thresholds,
@@ -151,6 +153,12 @@ describe('CertTable', () => {
     const { container } = render(CertTable, { props: baseProps })
 
     expect(container.querySelector('tbody tr')?.getAttribute('role')).toBeNull()
+  })
+
+  it('shows the first-run admin call to action when nothing is configured', () => {
+    render(CertTable, { props: { ...baseProps, certs: [], noVaultsConfigured: true } })
+
+    expect(screen.getByRole('link', { name: 'Open admin panel' })).toHaveAttribute('href', '/admin')
   })
 
 })

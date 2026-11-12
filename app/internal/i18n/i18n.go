@@ -221,6 +221,11 @@ type Messages struct {
 	VaultsUnreachableHint            string `json:"vaultsUnreachableHint"`
 	TableNoMatch                     string `json:"tableNoMatch"`
 	TableCaption                     string `json:"tableCaption"`
+	EmptyNoVaultsTitle               string `json:"emptyNoVaultsTitle"`
+	EmptyNoVaultsHint                string `json:"emptyNoVaultsHint"`
+	EmptyNoMountsTitle               string `json:"emptyNoMountsTitle"`
+	EmptyNoMountsHint                string `json:"emptyNoMountsHint"`
+	EmptyOpenAdmin                   string `json:"emptyOpenAdmin"`
 	TableEmpty                       string `json:"tableEmpty"`
 	TableEmptyHint                   string `json:"tableEmptyHint"`
 	FooterMoreInfo                   string `json:"footerMoreInfo"`
@@ -474,6 +479,11 @@ var englishMessages = Messages{
 	TableEmpty:                       "No certificates found.",
 	TableEmptyHint:                   "No PKI mount returned any certificates yet.",
 	TableCaption:                     "Certificates",
+	EmptyNoVaultsTitle:               "No vaults configured yet",
+	EmptyNoVaultsHint:                "Add a HashiCorp Vault or OpenBao instance in the admin panel, then enable its PKI mount.",
+	EmptyNoMountsTitle:               "No PKI mounts configured yet",
+	EmptyNoMountsHint:                "Enable at least one PKI mount for a configured vault in the admin panel.",
+	EmptyOpenAdmin:                   "Open admin panel",
 	FooterMoreInfo:                   "More info",
 	FooterLicense:                    "License",
 	FooterLabel:                      "Site information",
@@ -701,6 +711,11 @@ var frenchMessages = Messages{
 	TableEmpty:                       "Aucun certificat trouvé.",
 	TableEmptyHint:                   "Aucun montage PKI n'a encore renvoyé de certificat.",
 	TableCaption:                     "Certificats",
+	EmptyNoVaultsTitle:               "Aucun coffre configuré",
+	EmptyNoVaultsHint:                "Ajoutez une instance Vault ou OpenBao dans le panneau d'administration, puis activez son montage PKI.",
+	EmptyNoMountsTitle:               "Aucun montage PKI configuré",
+	EmptyNoMountsHint:                "Activez au moins un montage PKI pour un coffre configuré dans le panneau d'administration.",
+	EmptyOpenAdmin:                   "Ouvrir l'administration",
 	FooterMoreInfo:                   "En savoir plus",
 	FooterLicense:                    "Licence",
 	FooterLabel:                      "Informations sur le site",
@@ -928,6 +943,11 @@ var spanishMessages = Messages{
 	TableEmpty:                       "No se encontraron certificados.",
 	TableEmptyHint:                   "Ningún montaje PKI ha devuelto certificados todavía.",
 	TableCaption:                     "Certificados",
+	EmptyNoVaultsTitle:               "Ningún vault configurado",
+	EmptyNoVaultsHint:                "Añade una instancia de Vault u OpenBao en el panel de administración y activa su montaje PKI.",
+	EmptyNoMountsTitle:               "Ningún montaje PKI configurado",
+	EmptyNoMountsHint:                "Activa al menos un montaje PKI para un vault configurado en el panel de administración.",
+	EmptyOpenAdmin:                   "Abrir el panel de administración",
 	FooterMoreInfo:                   "Más información",
 	FooterLicense:                    "Licencia",
 	FooterLabel:                      "Información del sitio",
@@ -1154,6 +1174,11 @@ var germanMessages = Messages{
 	TableEmpty:                       "Keine Zertifikate gefunden.",
 	TableEmptyHint:                   "Noch hat kein PKI-Mount Zertifikate zurückgegeben.",
 	TableCaption:                     "Zertifikate",
+	EmptyNoVaultsTitle:               "Noch kein Vault konfiguriert",
+	EmptyNoVaultsHint:                "Füge eine Vault- oder OpenBao-Instanz im Admin-Panel hinzu und aktiviere den PKI-Mount.",
+	EmptyNoMountsTitle:               "Noch kein PKI-Mount konfiguriert",
+	EmptyNoMountsHint:                "Aktiviere mindestens einen PKI-Mount für einen konfigurierten Vault im Admin-Panel.",
+	EmptyOpenAdmin:                   "Admin-Panel öffnen",
 	TableNoMatch:                     "Keine Zertifikate entsprechen den aktuellen Filtern.",
 	FooterMoreInfo:                   "Mehr Infos",
 	FooterLicense:                    "Lizenz",
@@ -1382,6 +1407,11 @@ var italianMessages = Messages{
 	TableEmpty:                       "Nessun certificato trovato.",
 	TableEmptyHint:                   "Nessun mount PKI ha ancora restituito certificati.",
 	TableCaption:                     "Certificati",
+	EmptyNoVaultsTitle:               "Nessun vault configurato",
+	EmptyNoVaultsHint:                "Aggiungi un'istanza Vault o OpenBao nel pannello di amministrazione e abilita il relativo mount PKI.",
+	EmptyNoMountsTitle:               "Nessun mount PKI configurato",
+	EmptyNoMountsHint:                "Abilita almeno un mount PKI per un vault configurato nel pannello di amministrazione.",
+	EmptyOpenAdmin:                   "Apri pannello di amministrazione",
 	FooterMoreInfo:                   "Maggiori informazioni",
 	FooterLicense:                    "Licenza",
 	FooterLabel:                      "Informazioni sul sito",

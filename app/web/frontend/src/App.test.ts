@@ -81,7 +81,7 @@ function mockOk(certificates: Certificate[]): void {
   status.mockResolvedValue({
     version: '1.9',
     vault_connected: true,
-    vaults: [],
+    vaults: [{ id: 'vault1', display_name: 'vault1', connected: true }],
   } satisfies StatusResponse)
   i18n.mockResolvedValue({ language: 'en', messages: {} } satisfies I18nResponse)
 }
@@ -263,6 +263,39 @@ describe('App', () => {
 
     expect(document.querySelector('.vcv-table')?.classList.contains('vcv-table-compact')).toBe(true)
     expect(window.localStorage.getItem('vcv-density')).toBe('compact')
+  })
+
+  it('points first-run users at the admin panel when no vault is configured', async () => {
+    mockOk([])
+    status.mockResolvedValue({ version: '1.9', vault_connected: false, vaults: [] } satisfies StatusResponse)
+
+    render(App)
+
+    const link = await screen.findByRole('link', { name: 'Open admin panel' })
+    expect(link).toHaveAttribute('href', '/admin')
+    expect(screen.getByText('No vaults configured yet')).toBeInTheDocument()
+  })
+
+  it('shows the no-mounts guidance when a vault has no PKI mount', async () => {
+    mockOk([])
+    status.mockResolvedValue({
+      version: '1.9',
+      vault_connected: true,
+      vaults: [{ id: 'vault1', display_name: 'vault1', connected: true }],
+    } satisfies StatusResponse)
+
+    render(App)
+
+    expect(await screen.findByText('No PKI mounts configured yet')).toBeInTheDocument()
+  })
+
+  it('does not show first-run guidance when certificates are listed', async () => {
+    mockOk([cert()])
+
+    render(App)
+
+    await screen.findByText('web.example.com')
+    expect(screen.queryByRole('link', { name: 'Open admin panel' })).toBeNull()
   })
 
 })
