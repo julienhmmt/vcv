@@ -140,6 +140,14 @@ col.vcv-col-status {
   min-width: 0;
 }
 
+.vcv-table-compact td {
+  padding: 0.4375rem 1.25rem;
+}
+
+.vcv-table-compact .vcv-san-row {
+  display: none;
+}
+
 .vcv-cert-meta-row .vcv-cert-meta-item {
   align-items: center;
   background: var(--vcv-color-surface-muted);

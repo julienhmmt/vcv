@@ -43,6 +43,7 @@ const baseProps = {
   hasInventory: true,
   hasActiveFilters: false,
   showVaultMount: false,
+  compact: false,
   statusMeta,
   thresholds,
   sortKey: 'expiresAt' as const,
@@ -108,4 +109,16 @@ describe('CertTable', () => {
     // The table still advertises the full row count to assistive tech.
     expect(screen.getByRole('table')).toHaveAttribute('aria-rowcount', String(many.length + 1))
   })
+  it('shows the certificate type in the meta row', () => {
+    render(CertTable, { props: baseProps })
+
+    expect(screen.getByText('Machine')).toBeInTheDocument()
+  })
+
+  it('marks the table as compact when the density toggle is on', () => {
+    const { container } = render(CertTable, { props: { ...baseProps, compact: true } })
+
+    expect(container.querySelector('.vcv-table')?.classList.contains('vcv-table-compact')).toBe(true)
+  })
+
 })
