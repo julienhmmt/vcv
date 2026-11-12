@@ -196,6 +196,59 @@ Notes:
 - The base64 value must encode the PEM bytes (one or multiple `-----BEGIN CERTIFICATE-----` blocks). Both standard and raw base64 encodings are accepted.
 - To encode a certificate with base64: `cat path-to-cert.pem | base64 | tr -d '\n'`
 
+## 🔀 Behind a reverse proxy
+
+vcv speaks plain HTTP and expects a proxy in front to terminate TLS (nginx,
+Caddy, Traefik, HAProxy, a Kubernetes ingress, an API gateway).
+
+**Set `app.trust_proxy: true` in `settings.json`** when a proxy sits in front:
+
+```json
+{ "app": { "trust_proxy": true } }
+```
+
+With it, the CSRF target origin and the rate-limit keys are built from
+`X-Forwarded-Host`, `X-Forwarded-Proto` and `X-Forwarded-For`. Without it,
+every admin `POST`/`PUT`/`DELETE` through a proxy is rejected with **403**: the
+browser says `https://vcv.example.com`, the app sees `http://` and the two
+origins never match.
+
+What each proxy must send:
+
+| Proxy | Required |
+| --- | --- |
+| nginx | `proxy_set_header Host $http_host;` + `X-Forwarded-Host $http_host;` + `X-Forwarded-Proto $scheme;` |
+| Caddy | nothing, `reverse_proxy` sets all three |
+| Traefik | nothing, same |
+| HAProxy | `http-request set-header X-Forwarded-Host %[req.hdr(Host)]` before any `Host` rewrite |
+| Nginx Proxy Manager | terminate on **443**: it forwards `Host` without the port and no `X-Forwarded-Host` |
+
+```nginx
+location / {
+  proxy_pass http://vcv:52000;
+  proxy_set_header Host              $http_host;
+  proxy_set_header X-Forwarded-Host  $http_host;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+}
+```
+
+Things that bite:
+
+- Enable `trust_proxy` only when the proxy **overwrites** those headers. If
+  clients can reach vcv directly while it is `true`, they can spoof their
+  address (rate-limit buckets) and skew the CSRF origin check.
+- One hop only: the right-most `X-Forwarded-For` entry is used, so a chain
+  (CDN -> load balancer -> ingress) needs the last proxy to overwrite, not
+  append.
+- Serve vcv at the **root**: the SPA calls `/api/...` with absolute paths, so a
+  sub-path deployment (`/vcv/`) breaks. Strip the prefix at the proxy.
+- Probes go through the proxy too: `/api/health` (liveness) and `/api/ready`
+  (readiness). Both are exempt from rate limiting.
+
+Working configs for every proxy above live in `dev/proxies/`, and
+`make proxy-e2e` runs a Playwright suite through all of them.
+
 ## 🛠️ Administration panel
 
 An administration panel lets you configure some settings of the application. It is accessible via the `/admin` route and is protected by a password. To enable the administration panel, you must include an `admin` section in your `settings.json` file with a bcrypt password hash.

@@ -107,9 +107,10 @@ make e2e-run             # playwright test (specs: app/web/frontend/e2e/)
 make e2e-down            # stop the e2e stack
 make e2e                 # install + up + wait-for-seeds + run + down
 
-# Playwright e2e through real reverse proxies (nginx :53001, Caddy :53002, Traefik :53003)
+# Playwright e2e through real reverse proxies: nginx :53001, Caddy :53002,
+# Traefik :53003 + host-rewrite :53004, HAProxy :53005, NPM :443 (vcv.localhost).
 # They are part of docker-compose.dev.yml; configs in dev/proxies/.
-make proxy-up            # start the dev stack behind the three proxies
+make proxy-up            # start the dev stack behind all six proxies
 make proxy-run           # playwright test -c playwright.proxies.config.ts (specs: e2e-proxies/)
 make proxy-e2e           # proxy-up + wait-for-seeds (via nginx) + proxy-run
 
