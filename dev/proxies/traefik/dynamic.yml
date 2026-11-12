@@ -1,0 +1,20 @@
+# File provider: one router on the websecure entrypoint to vcv. Traefik sets
+# X-Forwarded-For/-Host/-Proto by default, which is what app.trust_proxy reads.
+http:
+  routers:
+    vcv:
+      rule: PathPrefix(`/`)
+      entryPoints: [websecure]
+      service: vcv
+      tls: {}
+  services:
+    vcv:
+      loadBalancer:
+        servers:
+          - url: http://app:52000
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/tls.crt
+        keyFile: /certs/tls.key

@@ -143,6 +143,83 @@ services:
           cpus: "0.50"
           memory: 64M
 
+  # --- Reverse proxies in front of the app (one HTTPS port each) -----------
+  # The app is still published on :52000 for the Vite dev server, but these
+  # are the production-shaped paths: TLS terminated at the edge, plain HTTP to
+  # the app. settings.dev.json sets app.trust_proxy: true, so each proxy must
+  # send X-Forwarded-Host/-Proto or admin POSTs fail CSRF (403).
+  # Configs: dev/proxies/. Test: `make proxy-e2e`.
+  # Import dev/proxies/certs/ca.crt in the browser once to skip TLS warnings.
+  proxy-certs:
+    image: alpine:3.24
+    container_name: vcv-proxy-certs
+    restart: "no"
+    command: /gen-cert.sh
+    networks:
+      - vcv-network
+    volumes:
+      - ./dev/proxies/gen-cert.sh:/gen-cert.sh:ro
+      - ./dev/proxies/certs:/certs
+
+  # 53001: nginx, the classic WebSocket/proxy_set_header recipe.
+  proxy-nginx:
+    image: nginx:stable-alpine
+    container_name: vcv-proxy-nginx
+    restart: unless-stopped
+    ports:
+      - "53001:53001/tcp"
+    networks:
+      - vcv-network
+    depends_on:
+      proxy-certs:
+        condition: service_completed_successfully
+      app:
+        condition: service_started
+    volumes:
+      - ./dev/proxies/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./dev/proxies/certs:/certs:ro
+
+  # 53002: Caddy, HTTP/2 out of the box.
+  proxy-caddy:
+    image: caddy:2.11-alpine
+    container_name: vcv-proxy-caddy
+    restart: unless-stopped
+    ports:
+      - "53002:53002/tcp"
+    networks:
+      - vcv-network
+    depends_on:
+      proxy-certs:
+        condition: service_completed_successfully
+      app:
+        condition: service_started
+    volumes:
+      - ./dev/proxies/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./dev/proxies/certs:/certs:ro
+
+  # 53003: Traefik (file provider).
+  proxy-traefik:
+    image: traefik:v3.6
+    container_name: vcv-proxy-traefik
+    restart: unless-stopped
+    command:
+      - --entrypoints.websecure.address=:53003
+      - --providers.file.filename=/etc/traefik/dynamic.yml
+      - --log.level=INFO
+      - --accesslog=true
+    ports:
+      - "53003:53003/tcp"
+    networks:
+      - vcv-network
+    depends_on:
+      proxy-certs:
+        condition: service_completed_successfully
+      app:
+        condition: service_started
+    volumes:
+      - ./dev/proxies/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
+      - ./dev/proxies/certs:/certs:ro
+
 networks:
   vcv-network:
     driver: bridge

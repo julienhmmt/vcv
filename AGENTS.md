@@ -22,7 +22,7 @@ Guidance for agents working in this repository. Keep this file accurate as the a
 - Commit message: conventional commits when possible (`fix:`, `feat:`, `docs:`, …); focus on why.
 - Scopes already used in history: `fix(web):`, `fix(backend):`, `fix(ui):`, `refactor(web):`, `chore(app):`, `docs:`.
 - Do not mix unrelated frontend and backend hardening in one PR unless the user asks.
-- Do not commit: `coverage.out`, `/vcv` binary, `vcv.log`, real `settings.json` / tokens, `node_modules`, hand-edited `app/web/dist/*` (except `.gitkeep`).
+- Do not commit: `coverage.out`, `/vcv` binary, `vcv.log`, real `settings.json` / tokens, `node_modules`, hand-edited `app/web/dist/*` (except `.gitkeep`), `dev/proxies/certs/` (generated dev PKI).
 
 ## Invariants (do / don’t)
 
@@ -106,6 +106,12 @@ make e2e-up              # docker compose -f docker-compose.e2e.yml -p vcv-e2e u
 make e2e-run             # playwright test (specs: app/web/frontend/e2e/)
 make e2e-down            # stop the e2e stack
 make e2e                 # install + up + wait-for-seeds + run + down
+
+# Playwright e2e through real reverse proxies (nginx :53001, Caddy :53002, Traefik :53003)
+# They are part of docker-compose.dev.yml; configs in dev/proxies/.
+make proxy-up            # start the dev stack behind the three proxies
+make proxy-run           # playwright test -c playwright.proxies.config.ts (specs: e2e-proxies/)
+make proxy-e2e           # proxy-up + wait-for-seeds (via nginx) + proxy-run
 
 # SonarQube (shared server in ~/git/gh/sonarqube, 2 projects: vcv-server, vcv-web)
 make sonar              # Coverage + lint + scan both (starts the server if needed)
