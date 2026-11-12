@@ -193,7 +193,12 @@ request header carrying the reverse-proxy authenticated identity
 since the header would be spoofable. This is a file-only operator setting
 (not editable from the admin panel), like `trust_proxy` itself.
 
-Lab `docker-compose` without a stripping proxy should leave `trust_proxy` false.
+The dev stack (`docker-compose.dev.yml`) sets `trust_proxy: true` in
+`settings.dev.json`: it runs nginx (:53001), Caddy (:53002), Traefik (:53003),
+a Traefik that rewrites `Host` (:53004), HAProxy (:53005) and Nginx Proxy
+Manager (:443) in front of the app, and `make proxy-e2e` checks all of them
+with Playwright. A lab compose stack with no proxy in front should leave it
+`false`.
 
 ## Logging
 

@@ -22,7 +22,7 @@ Guidance for agents working in this repository. Keep this file accurate as the a
 - Commit message: conventional commits when possible (`fix:`, `feat:`, `docs:`, …); focus on why.
 - Scopes already used in history: `fix(web):`, `fix(backend):`, `fix(ui):`, `refactor(web):`, `chore(app):`, `docs:`.
 - Do not mix unrelated frontend and backend hardening in one PR unless the user asks.
-- Do not commit: `coverage.out`, `/vcv` binary, `vcv.log`, real `settings.json` / tokens, `node_modules`, hand-edited `app/web/dist/*` (except `.gitkeep`).
+- Do not commit: `coverage.out`, `/vcv` binary, `vcv.log`, real `settings.json` / tokens, `node_modules`, hand-edited `app/web/dist/*` (except `.gitkeep`), `dev/proxies/certs/` (generated dev PKI).
 
 ## Invariants (do / don’t)
 
@@ -107,6 +107,13 @@ make e2e-run             # playwright test (specs: app/web/frontend/e2e/)
 make e2e-down            # stop the e2e stack
 make e2e                 # install + up + wait-for-seeds + run + down
 
+# Playwright e2e through real reverse proxies: nginx :53001, Caddy :53002,
+# Traefik :53003 + host-rewrite :53004, HAProxy :53005, NPM :443 (vcv.localhost).
+# They are part of docker-compose.dev.yml; configs in dev/proxies/.
+make proxy-up            # start the dev stack behind all six proxies
+make proxy-run           # playwright test -c playwright.proxies.config.ts (specs: e2e-proxies/)
+make proxy-e2e           # proxy-up + wait-for-seeds (via nginx) + proxy-run
+
 # SonarQube (shared server in ~/git/gh/sonarqube, 2 projects: vcv-server, vcv-web)
 make sonar              # Coverage + lint + scan both (starts the server if needed)
 make sonar-up           # Start the shared server on http://localhost:9000
@@ -123,7 +130,7 @@ VCV_TAG=1.9 make docker-build
 
 - Frontend source: `app/web/frontend/` (Vite + pnpm).
 - `make web-build` writes `app/web/dist`, embedded via `go:embed` in `app/web/web.go`. Always rebuild before `go build` or the binary serves a stale/empty UI.
-- Dev stack: 4 Vault instances (8200–8203: 1.21.4, 2.0.4, 2.1.2, 2.2.2) and 3 OpenBao (1337–1339: 2.5.5, 2.6.5, 2.7.2); containers are named after the version (`vault-2.1`, `openbao-2.6`). App at `http://localhost:52000`.
+- Dev stack: 4 Vault instances (8200–8203: 1.21.4, 2.0.4, 2.1.2, 2.2.2) and 3 OpenBao (1337–1339: 2.5.5, 2.6.5, 2.7.2); containers are named after the version (`vault-2.1`, `openbao-2.6`). App at `http://localhost:52000` (direct, for `make web-dev`), plus six reverse proxies on 53001–53005 and 443 (Nginx Proxy Manager, `https://vcv.localhost`) — `settings.dev.json` sets `trust_proxy: true` for them.
 - `make web-dev` alone needs a running Go backend for real API data; `make dev` is heavier (image rebuild).
 
 ## Architecture
@@ -247,6 +254,7 @@ Deep threat-model write-up: `app/README.md` → *Security & deployment assumptio
 | Frontend logic / components | `make web-test` and `make web-check` |
 | Go package (handlers, vault, middleware, config, metrics) | `cd app && go test ./internal/<pkg>/...` then `make test-offline` or `make go-lint` |
 | Admin session / CSRF / rate limit | Tests under `internal/handlers` + `internal/middleware` |
+| Reverse proxy / `trust_proxy` / forwarded headers | `make proxy-e2e` (six proxies, Playwright; needs host port 443 free) |
 | Config schema / settings examples | Ensure examples have no real secrets; related config tests |
 | Full local stack | `make dev` (optional; slow — image rebuild) |
 

@@ -3,7 +3,7 @@
 VCV_VERSION ?= dev-$(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
 VCV_TAG ?= latest
 
-.PHONY: help web-install web-dev web-build web-check web-lint web-test web-test-coverage e2e-install e2e-up e2e-run e2e-down e2e dev docker-build test-offline test-dev go-update go-lint go-lint-full go-coverage check
+.PHONY: help web-install web-dev web-build web-check web-lint web-test web-test-coverage e2e-install e2e-up e2e-run e2e-down e2e proxy-up proxy-run proxy-e2e dev docker-build test-offline test-dev go-update go-lint go-lint-full go-coverage check
 
 help:
 	@printf '%s\n' \
@@ -21,6 +21,9 @@ help:
 		'  e2e-run            Run Playwright smoke tests against the e2e stack' \
 		'  e2e-down           Stop the e2e stack' \
 		'  e2e                Full e2e cycle: up, run, down' \
+		'  proxy-up           Start the dev stack behind nginx, Caddy, Traefik, HAProxy, NPM (:53001-53006)' \
+		'  proxy-run          Run Playwright against the running proxy stack' \
+		'  proxy-e2e          proxy-up + wait for seeds + proxy-run (stack stays up)' \
 		'  dev                Build the Go binary and start the development Docker stack' \
 		'  docker-build       Build and push multi-architecture Docker images' \
 		'  test-offline       Run Go unit tests offline with coverage' \
@@ -72,6 +75,28 @@ e2e: e2e-install e2e-up
 	@trap '$(MAKE) e2e-down' EXIT INT TERM; \
 	chmod +x tools/e2e-wait.sh && tools/e2e-wait.sh; \
 	$(MAKE) e2e-run
+
+# Reverse proxies live in docker-compose.dev.yml; configs in dev/proxies/.
+# nginx :53001, Caddy :53002, Traefik :53003, Traefik host-rewrite :53004,
+# HAProxy :53005, Nginx Proxy Manager :53006 (configured through its API).
+PROXY_APP_URL := https://localhost:53001
+# Matches admin.password in settings.dev.json (dev stack only).
+PROXY_ADMIN_PASSWORD ?= admin
+# Dev seeds: the web.* CN of each vault's last configured mount (settings.dev.json).
+PROXY_SEED_MARKERS := web.vault-1.21-pki-production.local web.vault-2.0-pki-partners.local web.vault-2.1-pki-blockchain.local web.vault-2.2-pki-blockchain.local web.openbao-2.5-pki-openbao-prod.local web.openbao-2.6-pki-openbao-prod.local web.openbao-2.7-pki-openbao-prod.local
+
+proxy-up:
+	VCV_VERSION=$(VCV_VERSION) docker compose -f docker-compose.dev.yml up -d --build
+
+proxy-run:
+	cd app/web/frontend && pnpm exec playwright test -c playwright.proxies.config.ts
+
+proxy-e2e: e2e-install proxy-up
+	@chmod +x dev/proxies/npm-setup.sh && dev/proxies/npm-setup.sh
+	@chmod +x tools/e2e-wait.sh; \
+	VCV_E2E_ADMIN_PASSWORD=$(PROXY_ADMIN_PASSWORD) VCV_E2E_CURL_OPTS=-k \
+	VCV_E2E_MARKERS="$(PROXY_SEED_MARKERS)" tools/e2e-wait.sh $(PROXY_APP_URL) || exit 1; \
+	$(MAKE) proxy-run
 
 dev: web-build
 	go clean -cache && go build -C app -ldflags="-X vcv/internal/version.Version=$(VCV_VERSION)" -o ../vcv ./cmd/server

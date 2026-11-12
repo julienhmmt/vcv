@@ -13,6 +13,7 @@ Threat model: read-only cert inventory on a **private network**, fronted by netw
 - **Secrets** — never log, return, or commit cleartext Vault tokens, admin passwords, or webhook URLs. Admin GET masks (`maskSecrets`); PUT preserves the stored value on blank or `***` (`mergeSecret` / `mergeVaultTokens`).
 - **Error sanitization** — public status/error strings are stable and leak no raw Vault internals, mount paths, or upstream URLs.
 - **CSRF** — every new state-changing route that reads cookies sits behind `CSRFProtection` (same-origin Origin/Referer).
+- **Reverse proxy** — admin writes need `app.trust_proxy` plus `X-Forwarded-Host`/`-Proto` from the proxy; otherwise they 403. `make proxy-e2e` covers six proxies (needs host port 443 free).
 - **Rate limit + body limit** — always on. Exemptions only for `/api/health`, `/api/ready`, `/metrics`, `/assets/`. Login keeps its tighter limit.
 - **Private keys** — PEM endpoints return public X.509 only. Nothing fetches private keys from Vault.
 - **TLS to Vault** — prefer CA material in examples and prod guidance; `tls_insecure: true` is lab-only and must stay labeled as such.

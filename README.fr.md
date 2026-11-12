@@ -194,6 +194,62 @@ Notes :
 - La valeur base64 doit encoder les bytes PEM (un ou plusieurs blocs `-----BEGIN CERTIFICATE-----`). Les encodages base64 standard et « raw » sont acceptés.
 - Pour encoder un certificat en base64 : `cat path-to-cert.pem | base64 | tr -d '\n'`.
 
+## 🔀 Derrière un reverse proxy
+
+vcv parle HTTP simple et attend qu'un proxy devant lui termine le TLS (nginx,
+Caddy, Traefik, HAProxy, un ingress Kubernetes, une passerelle API).
+
+**Activez `app.trust_proxy: true` dans `settings.json`** quand un proxy est
+devant :
+
+```json
+{ "app": { "trust_proxy": true } }
+```
+
+L'origine CSRF et les clés de limitation de débit sont alors construites à
+partir de `X-Forwarded-Host`, `X-Forwarded-Proto` et `X-Forwarded-For`. Sans
+cette option, chaque `POST`/`PUT`/`DELETE` d'administration à travers un proxy
+est rejeté en **403** : le navigateur annonce `https://vcv.example.com`,
+l'application voit `http://` et les deux origines ne correspondent jamais.
+
+Ce que chaque proxy doit envoyer :
+
+| Proxy | Obligatoire |
+| --- | --- |
+| nginx | `proxy_set_header Host $http_host;` + `X-Forwarded-Host $http_host;` + `X-Forwarded-Proto $scheme;` |
+| Caddy | rien, `reverse_proxy` positionne les trois |
+| Traefik | rien, idem |
+| HAProxy | `http-request set-header X-Forwarded-Host %[req.hdr(Host)]` avant toute réécriture de `Host` |
+| Nginx Proxy Manager | terminer sur **443** : il transmet `Host` sans le port et sans `X-Forwarded-Host` |
+
+```nginx
+location / {
+  proxy_pass http://vcv:52000;
+  proxy_set_header Host              $http_host;
+  proxy_set_header X-Forwarded-Host  $http_host;
+  proxy_set_header X-Forwarded-Proto $scheme;
+  proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+}
+```
+
+Les pièges :
+
+- N'activez `trust_proxy` que si le proxy **écrase** ces en-têtes. Si des
+  clients atteignent vcv directement alors qu'il est à `true`, ils peuvent
+  usurper leur adresse (clés de limitation de débit) et fausser le contrôle
+  d'origine CSRF.
+- Un seul saut : l'entrée la plus à droite de `X-Forwarded-For` est utilisée,
+  donc une chaîne (CDN -> load balancer -> ingress) impose que le dernier proxy
+  écrase l'en-tête au lieu de l'ajouter.
+- Servez vcv à la **racine** : la SPA appelle `/api/...` en chemins absolus,
+  un déploiement en sous-chemin (`/vcv/`) ne fonctionne pas. Retirez le préfixe
+  au niveau du proxy.
+- Les sondes passent aussi par le proxy : `/api/health` (liveness) et
+  `/api/ready` (readiness), toutes deux exemptées de limitation de débit.
+
+Des configurations prêtes à l'emploi pour chaque proxy sont dans `dev/proxies/`,
+et `make proxy-e2e` lance une suite Playwright à travers toutes.
+
 ## 🛠️ Panneau d'administration
 
 Un panneau d'administration permet de configurer plusieurs paramètres de l'application. Il est accessible via la route `/admin` et est protégé par un mot de passe. Pour activer le panneau d'administration, vous devez inclure une section `admin` dans votre fichier `settings.json` avec un hash de mot de passe bcrypt.

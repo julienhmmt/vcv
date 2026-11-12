@@ -1,0 +1,11 @@
+# HTTPS terminator in front of vcv. Caddy sets X-Forwarded-For/-Host/-Proto on
+# reverse_proxy by default, which is what app.trust_proxy reads.
+{
+  auto_https disable_redirects
+  admin off
+}
+
+https://localhost:53002 {
+  tls /certs/tls.crt /certs/tls.key
+  reverse_proxy http://app:52000
+}

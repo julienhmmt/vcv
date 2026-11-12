@@ -1,6 +1,7 @@
 {
   "app": {
     "env": "dev",
+    "trust_proxy": true,
     "logging": {
       "level": "debug",
       "format": "json",
