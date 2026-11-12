@@ -746,6 +746,9 @@
       }}
       onPrev={() => (pageIndex = Math.max(0, safePage - 1))}
       onNext={() => (pageIndex = Math.min(totalPages - 1, safePage + 1))}
+      onFirst={() => (pageIndex = 0)}
+      onLast={() => (pageIndex = Math.max(0, totalPages - 1))}
+      onJump={(index) => (pageIndex = Math.max(0, Math.min(totalPages - 1, index)))}
     />
   </main>
 

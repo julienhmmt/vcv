@@ -97,7 +97,11 @@ type Messages struct {
 	NotificationCritical        string `json:"notificationCritical"`
 	NotificationWarning         string `json:"notificationWarning"`
 	PaginationInfo              string `json:"paginationInfo"`
+	PaginationFirst             string `json:"paginationFirst"`
+	PaginationJumpLabel         string `json:"paginationJumpLabel"`
+	PaginationLast              string `json:"paginationLast"`
 	PaginationNext              string `json:"paginationNext"`
+	PaginationPageOf            string `json:"paginationPageOf"`
 	PaginationPageSizeLabel     string `json:"paginationPageSizeLabel"`
 	AutoRefreshLabel            string `json:"autoRefreshLabel"`
 	AutoRefreshOff              string `json:"autoRefreshOff"`
@@ -358,7 +362,11 @@ var englishMessages = Messages{
 	NotificationCritical:           "{{count}} certificate(s) expiring within {{threshold}} days or less!",
 	NotificationWarning:            "{{count}} certificate(s) expiring within {{threshold}} days or less",
 	PaginationInfo:                 "Page {{current}} of {{total}}",
+	PaginationFirst:                "First page",
+	PaginationJumpLabel:            "Page",
+	PaginationLast:                 "Last page",
 	PaginationNext:                 "Next",
+	PaginationPageOf:               "of {total}",
 	PaginationPageSizeLabel:        "Results per page",
 	AutoRefreshLabel:               "Auto-refresh",
 	AutoRefreshOff:                 "Off",
@@ -590,7 +598,11 @@ var frenchMessages = Messages{
 	NotificationCritical:           "{{count}} certificat(s) expirant dans {{threshold}} jours ou moins !",
 	NotificationWarning:            "{{count}} certificat(s) expirant dans {{threshold}} jours ou moins",
 	PaginationInfo:                 "Page {{current}} sur {{total}}",
+	PaginationFirst:                "Première page",
+	PaginationJumpLabel:            "Page",
+	PaginationLast:                 "Dernière page",
 	PaginationNext:                 "Suivant",
+	PaginationPageOf:               "sur {total}",
 	PaginationPageSizeLabel:        "Résultats par page",
 	AutoRefreshLabel:               "Actualisation auto",
 	AutoRefreshOff:                 "Désactivé",
@@ -822,7 +834,11 @@ var spanishMessages = Messages{
 	NotificationCritical:           "{{count}} certificado(s) caducando en {{threshold}} días o menos!",
 	NotificationWarning:            "{{count}} certificado(s) caducando en {{threshold}} días o menos",
 	PaginationInfo:                 "Página {{current}} de {{total}}",
+	PaginationFirst:                "Primera página",
+	PaginationJumpLabel:            "Página",
+	PaginationLast:                 "Última página",
 	PaginationNext:                 "Siguiente",
+	PaginationPageOf:               "de {total}",
 	PaginationPageSizeLabel:        "Resultados por página",
 	AutoRefreshLabel:               "Actualización automática",
 	AutoRefreshOff:                 "Desactivado",
@@ -1054,7 +1070,11 @@ var germanMessages = Messages{
 	NotificationCritical:           "{{count}} Zertifikat(e) laufen in {{threshold}} Tagen oder weniger ab!",
 	NotificationWarning:            "{{count}} Zertifikat(e) laufen in {{threshold}} Tagen oder weniger ab",
 	PaginationInfo:                 "Seite {{current}} von {{total}}",
+	PaginationFirst:                "Erste Seite",
+	PaginationJumpLabel:            "Seite",
+	PaginationLast:                 "Letzte Seite",
 	PaginationNext:                 "Weiter",
+	PaginationPageOf:               "von {total}",
 	PaginationPageSizeLabel:        "Ergebnisse pro Seite",
 	AutoRefreshLabel:               "Auto-Aktualisierung",
 	AutoRefreshOff:                 "Aus",
@@ -1286,7 +1306,11 @@ var italianMessages = Messages{
 	NotificationCritical:           "{{count}} certificato/i in scadenza entro {{threshold}} giorni o meno!",
 	NotificationWarning:            "{{count}} certificato/i in scadenza entro {{threshold}} giorni o meno",
 	PaginationInfo:                 "Pagina {{current}} di {{total}}",
+	PaginationFirst:                "Prima pagina",
+	PaginationJumpLabel:            "Pagina",
+	PaginationLast:                 "Ultima pagina",
 	PaginationNext:                 "Successivo",
+	PaginationPageOf:               "di {total}",
 	PaginationPageSizeLabel:        "Risultati per pagina",
 	AutoRefreshLabel:               "Aggiornamento automatico",
 	AutoRefreshOff:                 "Disattivato",
