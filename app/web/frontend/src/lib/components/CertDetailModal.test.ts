@@ -3,15 +3,18 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/svelte'
 import type { Certificate, DetailedCertificate } from '$lib/types'
 
-const { getCertificateDetails, getCertificateCA } = vi.hoisted(() => ({
+const { getCertificateDetails, getCertificateCA, copyToClipboard } = vi.hoisted(() => ({
   getCertificateDetails: vi.fn(),
   getCertificateCA: vi.fn(),
+  copyToClipboard: vi.fn(),
 }))
 
 vi.mock('$lib/api', () => ({
   api: { getCertificateDetails, getCertificateCA },
   ApiError: class ApiError extends Error {},
 }))
+
+vi.mock('$lib/utils/clipboard', () => ({ copyToClipboard }))
 
 vi.mock('$lib/stores/i18n.svelte', () => ({
   getI18n: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key, lang: 'en' }),
@@ -49,6 +52,7 @@ function detailed(overrides: Partial<DetailedCertificate> = {}): DetailedCertifi
 beforeEach(() => {
   getCertificateDetails.mockReset()
   getCertificateCA.mockReset()
+  copyToClipboard.mockReset()
 })
 
 describe('CertDetailModal', () => {
@@ -188,4 +192,16 @@ describe('CertDetailModal', () => {
     expect(screen.queryByText('Retry')).not.toBeInTheDocument()
     expect(screen.getByText('Issuer Fresh')).toBeInTheDocument()
   })
+  it('copies a deep link that contains the certificate id', async () => {
+    getCertificateDetails.mockResolvedValue(detailed())
+    copyToClipboard.mockResolvedValue(true)
+    render(CertDetailModal, { props: { cert, open: true, onOpenChange: vi.fn() } })
+
+    await screen.findByText('Example Intermediate CA')
+    await fireEvent.click(screen.getByText('Copy link'))
+
+    expect(copyToClipboard).toHaveBeenCalledTimes(1)
+    expect(String(copyToClipboard.mock.calls[0][0])).toContain('cert=vault1%7Cpki-int%3Aaa%3Abb')
+  })
+
 })

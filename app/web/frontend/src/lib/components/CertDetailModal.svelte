@@ -3,6 +3,7 @@
   import Check from '@lucide/svelte/icons/check'
   import Copy from '@lucide/svelte/icons/copy'
   import Download from '@lucide/svelte/icons/download'
+  import Link from '@lucide/svelte/icons/link'
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import Landmark from '@lucide/svelte/icons/landmark'
   import { toast } from 'svelte-sonner'
@@ -149,6 +150,18 @@
       if (copiedField === field) copiedField = null
       copyTimer = null
     }, 1500)
+  }
+
+  async function copyLink(): Promise<void> {
+    if (!cert) return
+    const url = new URL(globalThis.location.href)
+    url.searchParams.set('cert', cert.id)
+    const ok = await copyToClipboard(url.toString())
+    if (!ok) {
+      toast.error(i18n.t('copyFailed', 'Copy failed — clipboard unavailable'))
+      return
+    }
+    toast.success(i18n.t('labelCopied', 'Copied!'))
   }
 
   function downloadPem(pem: string, name: string): void {
@@ -356,6 +369,10 @@
               <button type="button" class="vcv-button vcv-button-secondary" onclick={showIssuer}>
                 <Landmark class="h-4 w-4" />
                 {i18n.t('buttonViewCA', 'View issuer CA')}
+              </button>
+              <button type="button" class="vcv-button vcv-button-secondary" onclick={copyLink}>
+                <Link class="h-4 w-4" />
+                {i18n.t('buttonCopyLink', 'Copy link')}
               </button>
               {#if details.pem}
                 <button

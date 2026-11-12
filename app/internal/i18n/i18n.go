@@ -24,6 +24,7 @@ type Messages struct {
 	AppSubtitle                 string `json:"appSubtitle"`
 	ButtonToggleTheme           string `json:"buttonToggleTheme"`
 	ButtonClose                 string `json:"buttonClose"`
+	ButtonCopyLink              string `json:"buttonCopyLink"`
 	ButtonDetails               string `json:"buttonDetails"`
 	ButtonDownloadPEM           string `json:"buttonDownloadPEM"`
 	ButtonExport                string `json:"buttonExport"`
@@ -275,6 +276,7 @@ var englishMessages = Messages{
 	SearchShortcutHint:             msgSearchShortcutHint,
 	ButtonToggleTheme:              "Toggle theme",
 	ButtonClose:                    "Close",
+	ButtonCopyLink:                 "Copy link",
 	ButtonDetails:                  "Details",
 	ButtonDownloadPEM:              "Download PEM",
 	ButtonExport:                   "Export",
@@ -497,6 +499,7 @@ var frenchMessages = Messages{
 	SearchShortcutHint:             "Appuyez sur / pour cibler la recherche",
 	ButtonToggleTheme:              "Changer de thème",
 	ButtonClose:                    "Fermer",
+	ButtonCopyLink:                 "Copier le lien",
 	ButtonDetails:                  "Détails",
 	ButtonDownloadPEM:              "Télécharger PEM",
 	ButtonExport:                   "Exporter",
@@ -719,6 +722,7 @@ var spanishMessages = Messages{
 	SearchShortcutHint:             msgSearchShortcutHint,
 	ButtonToggleTheme:              "Cambiar tema",
 	ButtonClose:                    "Cerrar",
+	ButtonCopyLink:                 "Copiar enlace",
 	ButtonDetails:                  "Detalles",
 	ButtonDownloadPEM:              "Descargar PEM",
 	ButtonExport:                   "Exportar",
@@ -941,6 +945,7 @@ var germanMessages = Messages{
 	SearchShortcutHint:             msgSearchShortcutHint,
 	ButtonToggleTheme:              "Design umschalten",
 	ButtonClose:                    "Schließen",
+	ButtonCopyLink:                 "Link kopieren",
 	ButtonDetails:                  "Details",
 	ButtonDownloadPEM:              "PEM herunterladen",
 	ButtonExport:                   "Exportieren",
@@ -1163,6 +1168,7 @@ var italianMessages = Messages{
 	SearchShortcutHint:             msgSearchShortcutHint,
 	ButtonToggleTheme:              "Cambia tema",
 	ButtonClose:                    "Chiudi",
+	ButtonCopyLink:                 "Copia link",
 	ButtonDetails:                  "Dettagli",
 	ButtonDownloadPEM:              "Scarica PEM",
 	ButtonExport:                   "Esporta",

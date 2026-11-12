@@ -11,6 +11,8 @@ export interface UrlState {
   sortDir: SortDirection
   pageSize: number | 'all'
   pageIndex: number
+  /** Open certificate in the detail dialog; null = dialog closed. */
+  certId: string | null
 }
 
 const VALID_STATUS: ReadonlySet<CertStatus> = new Set(['valid', 'warning', 'critical', 'expired', 'revoked'])
@@ -55,6 +57,8 @@ export function parseUrlState(defaults: UrlState, searchString = globalThis.loca
   const pageRaw = Number(params.get('page'))
   const pageIndex = Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw - 1 : defaults.pageIndex
 
+  const certRaw = params.get('cert')
+
   return {
     search: params.get('q') ?? defaults.search,
     statusFilters: statusFilters.length > 0 ? statusFilters : defaults.statusFilters,
@@ -64,6 +68,7 @@ export function parseUrlState(defaults: UrlState, searchString = globalThis.loca
     sortDir: VALID_SORT_DIR.has(sortDir as SortDirection) ? (sortDir as SortDirection) : defaults.sortDir,
     pageSize,
     pageIndex,
+    certId: certRaw ? safeDecode(certRaw) : null,
   }
 }
 
@@ -79,6 +84,7 @@ export function serializeUrlState(state: UrlState, defaults: UrlState): string {
   if (state.sortDir !== defaults.sortDir) params.set('dir', state.sortDir)
   if (state.pageSize !== defaults.pageSize) params.set('size', String(state.pageSize))
   if (state.pageIndex > 0) params.set('page', String(state.pageIndex + 1))
+  if (state.certId) params.set('cert', state.certId)
 
   return params.toString()
 }
