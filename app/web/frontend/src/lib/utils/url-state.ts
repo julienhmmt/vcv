@@ -13,6 +13,9 @@ export interface UrlState {
   pageIndex: number
   /** Open certificate in the detail dialog; null = dialog closed. */
   certId: string | null
+  /** Inclusive days-to-expiry range; null = unbounded. */
+  minDays: number | null
+  maxDays: number | null
 }
 
 const VALID_STATUS: ReadonlySet<CertStatus> = new Set(['valid', 'warning', 'critical', 'expired', 'revoked'])
@@ -59,6 +62,12 @@ export function parseUrlState(defaults: UrlState, searchString = globalThis.loca
 
   const certRaw = params.get('cert')
 
+  const parseDays = (raw: string | null): number | null => {
+    if (raw === null) return null
+    const days = Number(raw)
+    return Number.isInteger(days) && days >= 0 ? days : null
+  }
+
   return {
     search: params.get('q') ?? defaults.search,
     statusFilters: statusFilters.length > 0 ? statusFilters : defaults.statusFilters,
@@ -69,6 +78,8 @@ export function parseUrlState(defaults: UrlState, searchString = globalThis.loca
     pageSize,
     pageIndex,
     certId: certRaw ? safeDecode(certRaw) : null,
+    minDays: parseDays(params.get('min_days')),
+    maxDays: parseDays(params.get('max_days')),
   }
 }
 
@@ -85,6 +96,8 @@ export function serializeUrlState(state: UrlState, defaults: UrlState): string {
   if (state.pageSize !== defaults.pageSize) params.set('size', String(state.pageSize))
   if (state.pageIndex > 0) params.set('page', String(state.pageIndex + 1))
   if (state.certId) params.set('cert', state.certId)
+  if (state.minDays !== null) params.set('min_days', String(state.minDays))
+  if (state.maxDays !== null) params.set('max_days', String(state.maxDays))
 
   return params.toString()
 }

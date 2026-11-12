@@ -216,6 +216,45 @@ func TestListCertsQuery_PageSizeAll(t *testing.T) {
 	assert.Equal(t, 1, got.TotalPages)
 }
 
+func TestListCertsQuery_DaysRange(t *testing.T) {
+	tests := []struct {
+		name     string
+		query    string
+		expected []string
+	}{
+		{
+			name:     "inclusive window",
+			query:    "?min_days=8&max_days=30",
+			expected: []string{"vault-b|pki2:4"},
+		},
+		{
+			name:     "lower bound excludes expired",
+			query:    "?min_days=0",
+			expected: []string{"vault-a|pki:1", "vault-a|pki:2", "vault-b|pki2:4", "vault-a|pki:5"},
+		},
+		{
+			name:     "upper bound without a lower bound keeps expired",
+			query:    "?max_days=0",
+			expected: []string{"vault-b|pki2:3"},
+		},
+		{
+			name:     "empty window",
+			query:    "?min_days=31&max_days=50",
+			expected: []string{},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			code, got, _ := serveCertsQuery(t, "/api/certs"+tt.query)
+			assert.Equal(t, http.StatusOK, code)
+			assert.Equal(t, tt.expected, certIDs(got.Certificates))
+			assert.Equal(t, len(tt.expected), got.Total)
+			// Counts describe the scoped set, not the day-range slice.
+			assert.Equal(t, 5, got.Counts["total"])
+		})
+	}
+}
+
 func TestListCertsQuery_Invalid(t *testing.T) {
 	for _, target := range []string{
 		"/api/certs?status=bogus",
@@ -226,6 +265,9 @@ func TestListCertsQuery_Invalid(t *testing.T) {
 		"/api/certs?page=abc",
 		"/api/certs?page_size=0",
 		"/api/certs?page_size=abc",
+		"/api/certs?min_days=-1",
+		"/api/certs?max_days=abc",
+		"/api/certs?min_days=31&max_days=30",
 	} {
 		t.Run(target, func(t *testing.T) {
 			mockVault := new(vault.MockClient)

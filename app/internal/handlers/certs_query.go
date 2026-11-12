@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"math"
 	"net/url"
 	"sort"
 	"strconv"
@@ -34,12 +35,14 @@ type certsQuery struct {
 	page      int  // 1-based
 	pageSize  int  // <= 0 = all
 	paged     bool // pagination explicitly requested
+	minDays   int  // -1 = unset, inclusive lower bound on days-to-expiry
+	maxDays   int  // -1 = unset, inclusive upper bound on days-to-expiry
 }
 
 // parseCertsQuery parses and validates the list query, failing fast with a
 // client-facing message on invalid values.
 func parseCertsQuery(query url.Values) (certsQuery, error) {
-	parsed := certsQuery{certType: "all", ascending: true, page: 1, pageSize: -1}
+	parsed := certsQuery{certType: "all", ascending: true, page: 1, pageSize: -1, minDays: -1, maxDays: -1}
 	if raw := strings.TrimSpace(query.Get("search")); raw != "" {
 		parsed.search = strings.ToLower(raw)
 	}
@@ -85,6 +88,23 @@ func parseCertsQuery(query url.Values) (certsQuery, error) {
 		default:
 			return certsQuery{}, fmt.Errorf("invalid order %q: want asc,desc", raw)
 		}
+	}
+	if raw := strings.TrimSpace(query.Get("min_days")); raw != "" {
+		days, err := strconv.Atoi(raw)
+		if err != nil || days < 0 {
+			return certsQuery{}, fmt.Errorf("invalid min_days %q: want an integer >= 0", raw)
+		}
+		parsed.minDays = days
+	}
+	if raw := strings.TrimSpace(query.Get("max_days")); raw != "" {
+		days, err := strconv.Atoi(raw)
+		if err != nil || days < 0 {
+			return certsQuery{}, fmt.Errorf("invalid max_days %q: want an integer >= 0", raw)
+		}
+		parsed.maxDays = days
+	}
+	if parsed.minDays >= 0 && parsed.maxDays >= 0 && parsed.minDays > parsed.maxDays {
+		return certsQuery{}, fmt.Errorf("invalid min_days: must be <= max_days")
 	}
 	if raw := strings.TrimSpace(query.Get("page")); raw != "" {
 		page, err := strconv.Atoi(raw)
@@ -194,6 +214,13 @@ func applyCertsQuery(all []certs.Certificate, query certsQuery, criticalDays, wa
 			if _, ok := query.statuses[statuses[i]]; !ok {
 				continue
 			}
+		}
+		days := int(math.Floor(certificate.ExpiresAt.Sub(now).Hours() / 24))
+		if query.minDays >= 0 && days < query.minDays {
+			continue
+		}
+		if query.maxDays >= 0 && days > query.maxDays {
+			continue
 		}
 		filtered = append(filtered, certificate)
 	}

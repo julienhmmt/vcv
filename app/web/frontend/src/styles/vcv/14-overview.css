@@ -245,8 +245,25 @@
   align-items: baseline;
   gap: 0.5rem;
   padding: 0.375rem 0.75rem;
+  border: 1px solid transparent;
   border-radius: var(--vcv-radius-sm);
   background: var(--vcv-color-surface-muted);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.vcv-expiry-bucket:hover {
+  border-color: var(--vcv-color-border-strong);
+}
+
+.vcv-expiry-bucket:focus-visible {
+  outline: 2px solid var(--vcv-color-primary);
+  outline-offset: 2px;
+}
+
+.vcv-expiry-bucket[aria-pressed="true"] {
+  border-color: var(--vcv-color-primary);
 }
 
 .vcv-expiry-bucket-count {

@@ -6,9 +6,12 @@
   interface Props {
     certs: Certificate[]
     thresholds: ExpirationThresholds
+    minDays: number | null
+    maxDays: number | null
+    onSelect: (range: { minDays: number; maxDays: number | null } | null) => void
   }
 
-  const { certs, thresholds }: Props = $props()
+  const { certs, thresholds, minDays, maxDays, onSelect }: Props = $props()
   const i18n = getI18n()
 
   const buckets = $derived(buildExpiryTimeline(certs, thresholds))
@@ -30,10 +33,16 @@
     <span class="vcv-expiry-timeline-title">{i18n.t('expiryTimelineLabel', 'Upcoming expirations')}</span>
     <div class="vcv-expiry-timeline-buckets">
       {#each buckets as bucket (bucket.key)}
-        <div class="vcv-expiry-bucket vcv-expiry-bucket-{bucket.tone}">
+        {@const active = minDays === bucket.from && maxDays === bucket.to}
+        <button
+          type="button"
+          class="vcv-expiry-bucket vcv-expiry-bucket-{bucket.tone}"
+          aria-pressed={active}
+          onclick={() => onSelect(active ? null : { minDays: bucket.from, maxDays: bucket.to })}
+        >
           <span class="vcv-expiry-bucket-count">{bucket.count}</span>
           <span class="vcv-expiry-bucket-label">{bucketLabel(bucket)}</span>
-        </div>
+        </button>
       {/each}
     </div>
   </section>

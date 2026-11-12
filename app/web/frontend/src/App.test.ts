@@ -283,6 +283,19 @@ describe('App', () => {
     expect(screen.queryByRole('link', { name: 'Open admin panel' })).toBeNull()
   })
 
+  it('filters the table from an expiry timeline bucket', async () => {
+    mockOk([cert({ id: 'a', commonName: 'web.example.com' })])
+    render(App)
+    await screen.findAllByText('web.example.com')
+    listCertificates.mockClear()
+
+    await fireEvent.click(screen.getByRole('button', { name: /8–30 days/ }))
+
+    await vi.waitFor(() =>
+      expect(listCertificates).toHaveBeenCalledWith(expect.objectContaining({ minDays: 8, maxDays: 30 })),
+    )
+  })
+
 })
 
 function mockDown(): void {

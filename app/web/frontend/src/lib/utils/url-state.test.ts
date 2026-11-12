@@ -11,6 +11,8 @@ const defaults: UrlState = {
   pageSize: 25,
   pageIndex: 0,
   certId: null,
+  minDays: null,
+  maxDays: null,
 }
 
 describe('parseUrlState', () => {
@@ -21,7 +23,7 @@ describe('parseUrlState', () => {
   it('parses each supported param', () => {
     const result = parseUrlState(
       defaults,
-      '?q=acme&status=critical,expired&type=machine&mounts=pki%2Fa,pki%2Fb&sort=commonName&dir=desc&size=50&page=3&cert=vault1%7Cpki%3Aaa',
+      '?q=acme&status=critical,expired&type=machine&mounts=pki%2Fa,pki%2Fb&sort=commonName&dir=desc&size=50&page=3&cert=vault1%7Cpki%3Aaa&min_days=8&max_days=30',
     )
     expect(result).toEqual({
       search: 'acme',
@@ -33,6 +35,8 @@ describe('parseUrlState', () => {
       pageSize: 50,
       pageIndex: 2, // page is 1-based in the URL
       certId: 'vault1|pki:aa',
+      minDays: 8,
+      maxDays: 30,
     })
   })
 
@@ -97,6 +101,8 @@ describe('serializeUrlState', () => {
       pageSize: 'all',
       pageIndex: 4,
       certId: 'vault1|pki:aa',
+      minDays: 8,
+      maxDays: 30,
     }
     const query = serializeUrlState(state, defaults)
     expect(parseUrlState(defaults, `?${query}`)).toEqual(state)

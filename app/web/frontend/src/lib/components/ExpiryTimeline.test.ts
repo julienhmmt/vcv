@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/svelte'
+import { render, screen, fireEvent } from '@testing-library/svelte'
 import type { Certificate } from '$lib/types'
 
 vi.mock('$lib/stores/i18n.svelte', () => ({
@@ -33,7 +33,9 @@ function cert(overrides: Partial<Certificate> = {}): Certificate {
 
 describe('ExpiryTimeline', () => {
   it('renders bucket counts and threshold-aware labels', () => {
-    render(ExpiryTimeline, { props: { certs: [cert()], thresholds } })
+    render(ExpiryTimeline, {
+      props: { certs: [cert()], thresholds, minDays: null, maxDays: null, onSelect: vi.fn() },
+    })
 
     const region = screen.getByRole('region', { name: 'Upcoming expirations' })
     expect(region).toBeInTheDocument()
@@ -48,9 +50,28 @@ describe('ExpiryTimeline', () => {
 
   it('renders nothing when no certificate expires in the future', () => {
     const { container } = render(ExpiryTimeline, {
-      props: { certs: [cert({ revoked: true })], thresholds },
+      props: { certs: [cert({ revoked: true })], thresholds, minDays: null, maxDays: null, onSelect: vi.fn() },
     })
 
     expect(container.querySelector('.vcv-expiry-timeline')).toBeNull()
   })
+  it('selects a bucket range and clears it when the same bucket is clicked again', async () => {
+    const onSelect = vi.fn()
+    render(ExpiryTimeline, {
+      props: { certs: [cert()], thresholds, minDays: null, maxDays: null, onSelect },
+    })
+
+    await fireEvent.click(screen.getByRole('button', { name: /8–30 days/ }))
+    expect(onSelect).toHaveBeenLastCalledWith({ minDays: 8, maxDays: 30 })
+  })
+
+  it('reflects the active range with aria-pressed', () => {
+    render(ExpiryTimeline, {
+      props: { certs: [cert()], thresholds, minDays: 8, maxDays: 30, onSelect: vi.fn() },
+    })
+
+    expect(screen.getByRole('button', { name: /8–30 days/ })).toHaveAttribute('aria-pressed', 'true')
+    expect(screen.getByRole('button', { name: /≤ 7 days/ })).toHaveAttribute('aria-pressed', 'false')
+  })
+
 })

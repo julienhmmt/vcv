@@ -49,6 +49,15 @@ describe('matchesFilters', () => {
     expect(matchesFilters(cert(), { ...noFilters, search: 'nope' }, undefined, NOW)).toBe(false)
   })
 
+  it('filters by an inclusive days-to-expiry range', () => {
+    const inTenDays = cert({ expiresAt: new Date(NOW.getTime() + 10 * 86_400_000).toISOString() })
+    const inFortyDays = cert({ expiresAt: new Date(NOW.getTime() + 40 * 86_400_000).toISOString() })
+
+    expect(matchesFilters(inTenDays, { ...noFilters, minDays: 8, maxDays: 30 }, undefined, NOW)).toBe(true)
+    expect(matchesFilters(inFortyDays, { ...noFilters, minDays: 8, maxDays: 30 }, undefined, NOW)).toBe(false)
+    expect(matchesFilters(inFortyDays, { ...noFilters, minDays: 31, maxDays: null }, undefined, NOW)).toBe(true)
+  })
+
   it('filters by mount key or mount name; empty selection matches nothing', () => {
     expect(matchesFilters(cert(), { ...noFilters, mounts: ['vault1|pki-int'] }, undefined, NOW)).toBe(true)
     expect(matchesFilters(cert(), { ...noFilters, mounts: ['pki-int'] }, undefined, NOW)).toBe(true)

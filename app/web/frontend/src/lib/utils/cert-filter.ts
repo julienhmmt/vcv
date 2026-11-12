@@ -1,5 +1,5 @@
 import type { Certificate, CertStatus, ExpirationThresholds } from '$lib/types'
-import { certStatus, parseCertID, DEFAULT_THRESHOLDS } from './cert-status'
+import { certStatus, daysUntilExpiry, parseCertID, DEFAULT_THRESHOLDS } from './cert-status'
 
 export type SortKey = 'commonName' | 'expiresAt' | 'vault' | 'pki'
 export type SortDirection = 'asc' | 'desc'
@@ -10,6 +10,8 @@ export interface FilterState {
   statuses: CertStatus[] // empty = all
   certType: CertTypeFilter
   mounts: string[] | null // null = all
+  minDays?: number | null
+  maxDays?: number | null
 }
 
 export function matchesFilters(
@@ -28,6 +30,13 @@ export function matchesFilters(
     const inSerial = cert.serialNumber.toLowerCase().includes(q)
     const inSans = cert.sans.some((s) => s.toLowerCase().includes(q))
     if (!inCN && !inSerial && !inSans) return false
+  }
+
+  if (state.minDays != null || state.maxDays != null) {
+    const days = daysUntilExpiry(cert, now)
+    if (!Number.isFinite(days)) return false
+    if (state.minDays != null && days < state.minDays) return false
+    if (state.maxDays != null && days > state.maxDays) return false
   }
 
   if (state.mounts !== null) {

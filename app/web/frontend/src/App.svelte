@@ -80,6 +80,8 @@
   let sortDir = $state<SortDirection>('asc')
   let pageIndex = $state(0)
   let pageSize = $state<number | 'all'>(25)
+  let minDays = $state<number | null>(null)
+  let maxDays = $state<number | null>(null)
 
   const urlDefaults: UrlState = {
     search: '',
@@ -91,6 +93,8 @@
     pageSize: 25,
     pageIndex: 0,
     certId: null,
+    minDays: null,
+    maxDays: null,
   }
 
   let selected = $state<Certificate | null>(null)
@@ -123,6 +127,8 @@
       order: sortDir,
       page: page + 1,
       pageSize,
+      ...(minDays !== null ? { minDays } : {}),
+      ...(maxDays !== null ? { maxDays } : {}),
     }
   }
   /** Serialized table/inventory queries already fetched; effects skip re-fetching them. */
@@ -169,6 +175,8 @@
     sortDir = restored.sortDir
     pageSize = restored.pageSize
     pageIndex = restored.pageIndex
+    minDays = restored.minDays
+    maxDays = restored.maxDays
     urlHydrated = true
 
     void (async () => {
@@ -251,6 +259,8 @@
       pageSize,
       pageIndex: safePage,
       certId: selected?.id ?? null,
+      minDays,
+      maxDays,
     }
     if (!urlHydrated) return
     // Read the reactive deps above; defer the history write so a burst of
@@ -339,6 +349,8 @@
             statuses: statusFilters,
             certType: certTypeFilter,
             mounts: mountFilter,
+            minDays,
+            maxDays,
           },
           thresholds,
         ),
@@ -428,6 +440,8 @@
     statusFilters = []
     certTypeFilter = 'all'
     mountFilter = null
+    minDays = null
+    maxDays = null
     pageIndex = 0
   }
 
@@ -590,6 +604,8 @@
       {statusFilters}
       {certTypeFilter}
       {mountFilter}
+      {minDays}
+      {maxDays}
       allMountsCount={allMounts.length}
       onClearSearch={() => {
         search = ''
@@ -599,6 +615,11 @@
       onRemoveStatus={removeStatus}
       onClearCertType={() => (certTypeFilter = 'all')}
       onClearMounts={() => (mountFilter = null)}
+      onClearExpiry={() => {
+        minDays = null
+        maxDays = null
+        pageIndex = 0
+      }}
       onClearAll={clearAllFilters}
     />
   </header>
@@ -631,7 +652,17 @@
       onSelect={toggleStatus}
     />
 
-    <ExpiryTimeline certs={certs.inventory} {thresholds} />
+    <ExpiryTimeline
+      certs={certs.inventory}
+      {thresholds}
+      {minDays}
+      {maxDays}
+      onSelect={(range) => {
+        minDays = range?.minDays ?? null
+        maxDays = range?.maxDays ?? null
+        pageIndex = 0
+      }}
+    />
 
     <div class="vcv-results-bar">
       <span class="vcv-results-count" aria-live="polite">{resultCountText}</span>
