@@ -55,13 +55,16 @@ issue_and_revoke() {
 for mount in ${MOUNTS}; do
   printf "[%s] configuring mount %s\n" "${INSTANCE_ID}" "${mount}"
 
+  # Keep CNs/SANs DNS-safe so the same seeds work on Vault 2.x (which rejects '_').
+  base=$(printf '%s-%s' "${INSTANCE_ID}" "${mount}" | tr '_' '-')
+
   bao secrets enable -path="${mount}" pki 2>/dev/null || true
   # Mount/CA lifetime is 10y so 8760h leaf issues never race the CA expiry
   # (a leaf issued minutes after CA creation would otherwise exceed it).
   bao secrets tune -max-lease-ttl=87600h "${mount}" 2>/dev/null || true
 
   bao write -force "${mount}/root/generate/internal" \
-    common_name="${INSTANCE_ID}-${mount}.local" \
+    common_name="${base}.local" \
     ttl="87600h" >/dev/null 2>&1 || true
 
   bao write "${mount}/config/urls" \
@@ -129,7 +132,6 @@ for mount in ${MOUNTS}; do
     ttl="8760h" \
     not_before_duration="30s" >/dev/null 2>&1 || true
 
-  base="${INSTANCE_ID}-${mount}"
   issue_cert_with_role "${mount}" "vcv-machine" "machine-web.${base}.local" "8760h" "www.machine-web.${base}.local,api.machine-web.${base}.local"
   issue_cert_with_role "${mount}" "vcv-machine" "machine-api.${base}.local" "720h" "admin.machine-api.${base}.local"
   issue_cert_with_role "${mount}" "vcv-user" "user-alice.${base}.local" "8760h" ""

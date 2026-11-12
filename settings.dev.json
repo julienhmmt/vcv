@@ -28,114 +28,114 @@
   },
   "vaults": [
     {
-      "id": "vault-main",
-      "address": "http://vault:8200",
+      "id": "vault-1.21",
+      "address": "http://vault-1.21:8200",
       "token": "root",
       "pki_mount": "pki",
       "pki_mounts": ["pki", "pki_dev", "pki_stage", "pki_production"],
-      "display_name": "Vault",
+      "display_name": "Vault 1.21.4",
       "tls_insecure": true,
       "enabled": true
     },
     {
-      "id": "vault-dev-2",
-      "address": "http://vault-dev-2:8200",
+      "id": "vault-2.0",
+      "address": "http://vault-2.0:8200",
       "token": "root",
-      "pki_mount": "pki_vault2",
+      "pki_mount": "pki_vault_2_0",
       "pki_mounts": [
-        "pki_vault2",
+        "pki_vault_2_0",
         "pki_corporate",
         "pki_external",
         "pki_partners"
       ],
-      "display_name": "Vault dev-2",
+      "display_name": "Vault 2.0.4",
       "tls_insecure": true,
       "enabled": true
     },
     {
-      "id": "vault-dev-3",
-      "address": "http://vault-dev-3:8200",
+      "id": "vault-2.1",
+      "address": "http://vault-2.1:8200",
       "token": "root",
-      "pki_mount": "pki_vault3",
+      "pki_mount": "pki_vault_2_1",
       "pki_mounts": [
-        "pki_vault3",
+        "pki_vault_2_1",
         "pki_cloud",
         "pki_edge",
         "pki_iot",
         "pki_blockchain"
       ],
-      "display_name": "Vault dev-3",
+      "display_name": "Vault 2.1.2",
       "tls_insecure": true,
       "enabled": true
     },
     {
-      "id": "vault-dev-4",
+      "id": "vault-disabled",
       "address": "http://127.0.0.1:1",
       "token": "root",
       "pki_mount": "pki_fake",
       "pki_mounts": ["pki_fake"],
-      "display_name": "Vault dev-4 (fake)",
+      "display_name": "Vault (disabled)",
       "tls_insecure": true,
       "enabled": false
     },
     {
-      "id": "vault-dev-5",
-      "address": "http://vault-dev-5:8200",
+      "id": "vault-2.2",
+      "address": "http://vault-2.2:8200",
       "token": "root",
-      "pki_mount": "pki_vault5",
+      "pki_mount": "pki_vault_2_2",
       "pki_mounts": [
-        "pki_vault5",
+        "pki_vault_2_2",
         "pki_cloud",
         "pki_edge",
         "pki_iot",
         "pki_blockchain"
       ],
-      "display_name": "Vault dev-5",
+      "display_name": "Vault 2.2.2",
       "tls_insecure": true,
       "enabled": true
     },
     {
-      "id": "openbao-dev-1",
-      "address": "http://openbao-dev-1:1337",
+      "id": "openbao-2.5",
+      "address": "http://openbao-2.5:1337",
       "token": "root",
-      "pki_mount": "pki_openbao",
+      "pki_mount": "pki_openbao_2_5",
       "pki_mounts": [
-        "pki_openbao",
+        "pki_openbao_2_5",
         "pki_openbao_dev",
         "pki_openbao_stage",
         "pki_openbao_prod"
       ],
-      "display_name": "OpenBao dev-1",
+      "display_name": "OpenBao 2.5.5",
       "tls_insecure": true,
       "enabled": true
     },
     {
-      "id": "openbao-dev-2",
-      "address": "http://openbao-dev-2:1337",
+      "id": "openbao-2.6",
+      "address": "http://openbao-2.6:1337",
       "token": "root",
-      "pki_mount": "pki_openbao2",
+      "pki_mount": "pki_openbao_2_6",
       "pki_mounts": [
-        "pki_openbao2",
+        "pki_openbao_2_6",
         "pki_openbao_dev",
         "pki_openbao_stage",
         "pki_openbao_prod"
       ],
-      "display_name": "OpenBao dev-2",
+      "display_name": "OpenBao 2.6.5",
       "tls_insecure": true,
       "enabled": true
     },
     {
-      "id": "openbao-dev-3",
-      "address": "http://openbao-dev-3:1337",
+      "id": "openbao-2.7",
+      "address": "http://openbao-2.7:1337",
       "token": "root",
-      "pki_mount": "pki_openbao3",
+      "pki_mount": "pki_openbao_2_7",
       "pki_mounts": [
-        "pki_openbao3",
+        "pki_openbao_2_7",
         "pki_openbao_dev",
         "pki_openbao_stage",
         "pki_openbao_prod"
       ],
-      "display_name": "OpenBao dev-3",
+      "display_name": "OpenBao 2.7.2",
       "tls_insecure": true,
       "enabled": true
     }

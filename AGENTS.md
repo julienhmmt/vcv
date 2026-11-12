@@ -35,6 +35,7 @@ Guidance for agents working in this repository. Keep this file accurate as the a
 - Expiration thresholds from `/api/config` / the `config` store — never hardcode 7/30 in UI logic.
 - Encode cert IDs in paths (`encodeURIComponent`); composite IDs are parsed carefully (see `parseCertID` / backend handlers).
 - Treat partial vault failure as normal: `GET /api/certs` envelope has `certificates` + `errors[]`.
+- Keep seeded CNs/SANs DNS-safe (`vault-dev-init.sh` / `openbao-dev-init.sh` map `_` → `-`): Vault 2.x rejects SAN labels containing `_`, and failed seeds are silent (`|| true`).
 - **Use graphify memory** (`graphify-frontend/`, `graphify-backend/`, `graphify-full/`) before broad code archaeology — see [Knowledge graphs (graphify)](#knowledge-graphs-graphify).
 
 ### Don’t
@@ -122,7 +123,7 @@ VCV_TAG=1.9 make docker-build
 
 - Frontend source: `app/web/frontend/` (Vite + pnpm).
 - `make web-build` writes `app/web/dist`, embedded via `go:embed` in `app/web/web.go`. Always rebuild before `go build` or the binary serves a stale/empty UI.
-- Dev stack: 5 Vault instances (ports 8200–8204), 1 OpenBao (port 1337), app at `http://localhost:52000`.
+- Dev stack: 4 Vault instances (8200–8203: 1.21.4, 2.0.4, 2.1.2, 2.2.2) and 3 OpenBao (1337–1339: 2.5.5, 2.6.5, 2.7.2); containers are named after the version (`vault-2.1`, `openbao-2.6`). App at `http://localhost:52000`.
 - `make web-dev` alone needs a running Go backend for real API data; `make dev` is heavier (image rebuild).
 
 ## Architecture

@@ -12,7 +12,7 @@ TIMEOUT_SECS="${VCV_E2E_WAIT_SECS:-600}"
 # Deterministic 8760h seeds that used to flake (plus one OpenBao marker).
 # The web.* CN of each vault's LAST configured mount is included so "seeded"
 # only passes once trailing mounts finished too — init seeds mounts in order.
-MARKERS="web.vault-main-pki.local machine-web.vault-main-pki.local user-alice.vault-main-pki.local expiring-24h.vault-main-pki.local expired-1.vault-main-pki.local revoked-1.vault-main-pki.local web.vault-main-pki_production.local web.openbao-dev-1-pki_openbao.local web.openbao-dev-1-pki_openbao_dev.local"
+MARKERS="web.vault-2.2-pki.local machine-web.vault-2.2-pki.local user-alice.vault-2.2-pki.local expiring-24h.vault-2.2-pki.local expired-1.vault-2.2-pki.local revoked-1.vault-2.2-pki.local web.vault-2.2-pki-production.local web.openbao-2.7-pki-openbao.local web.openbao-2.7-pki-openbao-dev.local"
 
 COOKIE_JAR="$(mktemp)"
 trap 'rm -f "$COOKIE_JAR"' EXIT INT TERM
