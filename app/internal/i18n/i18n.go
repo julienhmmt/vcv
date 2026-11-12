@@ -26,14 +26,14 @@ type Messages struct {
 	ButtonClose                 string `json:"buttonClose"`
 	ButtonCopyLink              string `json:"buttonCopyLink"`
 	ButtonDensity               string `json:"buttonDensity"`
-	SavedViewsApply              string `json:"savedViewsApply"`
-	SavedViewsButton             string `json:"savedViewsButton"`
-	SavedViewsDelete             string `json:"savedViewsDelete"`
-	SavedViewsEmpty              string `json:"savedViewsEmpty"`
-	SavedViewsNamePlaceholder    string `json:"savedViewsNamePlaceholder"`
-	SavedViewsSave               string `json:"savedViewsSave"`
-	SavedViewsSaved              string `json:"savedViewsSaved"`
-	SavedViewsTitle              string `json:"savedViewsTitle"`
+	SavedViewsApply             string `json:"savedViewsApply"`
+	SavedViewsButton            string `json:"savedViewsButton"`
+	SavedViewsDelete            string `json:"savedViewsDelete"`
+	SavedViewsEmpty             string `json:"savedViewsEmpty"`
+	SavedViewsNamePlaceholder   string `json:"savedViewsNamePlaceholder"`
+	SavedViewsSave              string `json:"savedViewsSave"`
+	SavedViewsSaved             string `json:"savedViewsSaved"`
+	SavedViewsTitle             string `json:"savedViewsTitle"`
 	ButtonDetails               string `json:"buttonDetails"`
 	ButtonDownloadPEM           string `json:"buttonDownloadPEM"`
 	ButtonExport                string `json:"buttonExport"`
