@@ -120,6 +120,9 @@
 
   .vcv-certs-mobile-cards {
     display: grid;
+    /* minmax(0,1fr): the implicit auto column sizes to max-content and pushes
+       long CNs past the viewport on narrow phones. */
+    grid-template-columns: minmax(0, 1fr);
     gap: 0.75rem;
   }
 
@@ -161,6 +164,16 @@
     flex-wrap: wrap;
   }
 
+  /* Toolbar controls total ~470px; keep them on their own row and wrap inside it
+     instead of overflowing the viewport horizontally. */
+  .vcv-header-actions {
+    flex-wrap: wrap;
+    flex-shrink: 1;
+    width: 100%;
+    padding-left: 0;
+    border-left: none;
+  }
+
   .vcv-title {
     font-size: 1rem;
   }
@@ -198,6 +211,8 @@
   }
 
   .vcv-search-wrapper {
+    /* 18rem basis is a width on desktop; in the column layout it becomes a height. */
+    flex: 1 1 auto;
     min-width: 0;
   }
 
