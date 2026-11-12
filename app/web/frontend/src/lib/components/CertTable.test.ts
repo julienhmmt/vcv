@@ -49,6 +49,7 @@ const baseProps = {
   showVaultMount: false,
   noVaultsConfigured: false,
   noMountsConfigured: false,
+  refreshing: false,
   compact: false,
   statusMeta,
   thresholds,
@@ -159,6 +160,14 @@ describe('CertTable', () => {
     render(CertTable, { props: { ...baseProps, certs: [], noVaultsConfigured: true } })
 
     expect(screen.getByRole('link', { name: 'Open admin panel' })).toHaveAttribute('href', '/admin')
+  })
+
+  it('marks the table busy while a refetch is in flight', () => {
+    const { container } = render(CertTable, { props: { ...baseProps, refreshing: true } })
+
+    const wrapper = container.querySelector('.vcv-table-wrapper')
+    expect(wrapper?.classList.contains('vcv-table-stale')).toBe(true)
+    expect(wrapper).toHaveAttribute('aria-busy', 'true')
   })
 
 })

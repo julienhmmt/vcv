@@ -6,6 +6,13 @@
   border: 1px solid var(--vcv-color-border);
 }
 
+.vcv-table-stale,
+.vcv-cards-stale {
+  opacity: 0.55;
+  pointer-events: none;
+  transition: opacity 0.15s ease-out;
+}
+
 .vcv-table-wrapper {
   background: var(--vcv-color-surface);
   border-radius: var(--vcv-radius-lg);

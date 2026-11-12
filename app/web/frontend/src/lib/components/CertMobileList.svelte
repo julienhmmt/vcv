@@ -14,6 +14,7 @@
     showVaultMount: boolean
     noVaultsConfigured: boolean
     noMountsConfigured: boolean
+    refreshing: boolean
     statusMeta: Record<CertStatus, { label: string; desc: string }>
     thresholds: ExpirationThresholds
     onSelect: (cert: Certificate) => void
@@ -29,6 +30,7 @@
     showVaultMount,
     noVaultsConfigured,
     noMountsConfigured,
+    refreshing,
     statusMeta,
     thresholds,
     onSelect,
@@ -38,7 +40,7 @@
   const i18n = getI18n()
 </script>
 
-<div class="vcv-certs-mobile-cards">
+<div class="vcv-certs-mobile-cards" class:vcv-cards-stale={refreshing} aria-busy={refreshing}>
   {#if initialLoad && !hasInventory}
     {#each Array(6) as _, i (i)}
       <div class="vcv-cert-card">
