@@ -40,4 +40,12 @@ describe('CertCard', () => {
     expect(title?.querySelector('.vcv-cert-status-inline')).toHaveTextContent('Critical')
     expect(container.querySelector('.vcv-cert-card-header > .vcv-status-badges')).toBeNull()
   })
+  it('shows the certificate type next to the name', () => {
+    render(CertCard, {
+      props: { cert, showVaultMount: false, status: 'valid', statusLabel: 'Valid', onSelect: vi.fn() },
+    })
+
+    expect(screen.getByText('Machine')).toBeInTheDocument()
+  })
+
 })

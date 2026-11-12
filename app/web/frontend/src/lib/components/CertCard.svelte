@@ -17,6 +17,14 @@
 
   const i18n = getI18n()
 
+  const certTypeLabels = $derived<Record<string, string>>({
+    machine: i18n.t('certTypeFilterMachine', 'Machine'),
+    user: i18n.t('certTypeFilterUser', 'User'),
+    both: i18n.t('certTypeFilterBoth', 'Both'),
+    unknown: i18n.t('certTypeFilterUnknown', 'Unknown'),
+  })
+  const typeLabel = $derived(certTypeLabels[cert.certType] ?? cert.certType)
+
   const parts = $derived(parseCertID(cert.id))
   const expiry = $derived(certExpiryLabel(cert, i18n.t))
 </script>
@@ -37,6 +45,7 @@
   <div class="vcv-cert-card-header">
     <div class="vcv-cert-card-title">
       <span class="vcv-cn-name">{cert.commonName || '—'}</span>
+      <span class="vcv-cert-meta-item vcv-cert-type">{typeLabel}</span>
       <span class="vcv-cert-status-inline {statusBadgeClass(s)}">{statusLabel}</span>
       {#if cert.sans.length > 0}
         <div class="vcv-san-row">
