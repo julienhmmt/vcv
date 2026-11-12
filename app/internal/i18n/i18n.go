@@ -201,6 +201,8 @@ type Messages struct {
 	LabelValidity                    string `json:"labelValidity"`
 	LabelCopy                        string `json:"labelCopy"`
 	LabelCopied                      string `json:"labelCopied"`
+	LabelCopyCommonName              string `json:"labelCopyCommonName"`
+	LabelCopySerial                  string `json:"labelCopySerial"`
 	LabelCopyPEM                     string `json:"labelCopyPem"`
 	ButtonDone                       string `json:"buttonDone"`
 	MountNoMatch                     string `json:"mountNoMatch"`
@@ -218,6 +220,7 @@ type Messages struct {
 	VaultsUnreachable                string `json:"vaultsUnreachable"`
 	VaultsUnreachableHint            string `json:"vaultsUnreachableHint"`
 	TableNoMatch                     string `json:"tableNoMatch"`
+	TableCaption                     string `json:"tableCaption"`
 	TableEmpty                       string `json:"tableEmpty"`
 	TableEmptyHint                   string `json:"tableEmptyHint"`
 	FooterMoreInfo                   string `json:"footerMoreInfo"`
@@ -449,6 +452,8 @@ var englishMessages = Messages{
 	LabelValidity:                    "Validity",
 	LabelCopy:                        "Copy",
 	LabelCopied:                      "Copied!",
+	LabelCopyCommonName:            "Copy common name",
+	LabelCopySerial:                "Copy serial number",
 	LabelCopyPEM:                     "Copy PEM",
 	ButtonDone:                       "Done",
 	MountNoMatch:                     "No mount matches.",
@@ -468,6 +473,7 @@ var englishMessages = Messages{
 	TableNoMatch:                     "No certificates match the current filters.",
 	TableEmpty:                       "No certificates found.",
 	TableEmptyHint:                   "No PKI mount returned any certificates yet.",
+	TableCaption:                    "Certificates",
 	FooterMoreInfo:                   "More info",
 	FooterLicense:                    "License",
 	FooterLabel:                      "Site information",
@@ -673,6 +679,8 @@ var frenchMessages = Messages{
 	LabelValidity:                    "Validité",
 	LabelCopy:                        "Copier",
 	LabelCopied:                      "Copié !",
+	LabelCopyCommonName:            "Copier le nom commun",
+	LabelCopySerial:                "Copier le numéro de série",
 	LabelCopyPEM:                     "Copier le PEM",
 	ButtonDone:                       "Terminé",
 	MountNoMatch:                     "Aucun montage correspondant.",
@@ -692,6 +700,7 @@ var frenchMessages = Messages{
 	TableNoMatch:                     "Aucun certificat ne correspond aux filtres actuels.",
 	TableEmpty:                       "Aucun certificat trouvé.",
 	TableEmptyHint:                   "Aucun montage PKI n'a encore renvoyé de certificat.",
+	TableCaption:                    "Certificats",
 	FooterMoreInfo:                   "En savoir plus",
 	FooterLicense:                    "Licence",
 	FooterLabel:                      "Informations sur le site",
@@ -897,6 +906,8 @@ var spanishMessages = Messages{
 	LabelValidity:                    "Validez",
 	LabelCopy:                        "Copiar",
 	LabelCopied:                      "¡Copiado!",
+	LabelCopyCommonName:            "Copiar nombre común",
+	LabelCopySerial:                "Copiar número de serie",
 	LabelCopyPEM:                     "Copiar PEM",
 	ButtonDone:                       "Hecho",
 	MountNoMatch:                     "Ningún montaje coincide.",
@@ -916,6 +927,7 @@ var spanishMessages = Messages{
 	TableNoMatch:                     "Ningún certificado coincide con los filtros actuales.",
 	TableEmpty:                       "No se encontraron certificados.",
 	TableEmptyHint:                   "Ningún montaje PKI ha devuelto certificados todavía.",
+	TableCaption:                    "Certificados",
 	FooterMoreInfo:                   "Más información",
 	FooterLicense:                    "Licencia",
 	FooterLabel:                      "Información del sitio",
@@ -1121,6 +1133,8 @@ var germanMessages = Messages{
 	LabelValidity:                    "Gültigkeit",
 	LabelCopy:                        "Kopieren",
 	LabelCopied:                      "Kopiert!",
+	LabelCopyCommonName:            "Allgemeinen Namen kopieren",
+	LabelCopySerial:                "Seriennummer kopieren",
 	LabelCopyPEM:                     "PEM kopieren",
 	ButtonDone:                       "Fertig",
 	MountNoMatch:                     "Kein Mount gefunden.",
@@ -1139,6 +1153,7 @@ var germanMessages = Messages{
 	VaultsUnreachableHint:            "Teilergebnisse werden angezeigt.",
 	TableEmpty:                       "Keine Zertifikate gefunden.",
 	TableEmptyHint:                   "Noch hat kein PKI-Mount Zertifikate zurückgegeben.",
+	TableCaption:                    "Zertifikate",
 	TableNoMatch:                     "Keine Zertifikate entsprechen den aktuellen Filtern.",
 	FooterMoreInfo:                   "Mehr Infos",
 	FooterLicense:                    "Lizenz",
@@ -1345,6 +1360,8 @@ var italianMessages = Messages{
 	LabelValidity:                    "Validità",
 	LabelCopy:                        "Copia",
 	LabelCopied:                      "Copiato!",
+	LabelCopyCommonName:            "Copia nome comune",
+	LabelCopySerial:                "Copia numero di serie",
 	LabelCopyPEM:                     "Copia PEM",
 	ButtonDone:                       "Fatto",
 	MountNoMatch:                     "Nessun mount corrispondente.",
@@ -1364,6 +1381,7 @@ var italianMessages = Messages{
 	TableNoMatch:                     "Nessun certificato corrisponde ai filtri attuali.",
 	TableEmpty:                       "Nessun certificato trovato.",
 	TableEmptyHint:                   "Nessun mount PKI ha ancora restituito certificati.",
+	TableCaption:                    "Certificati",
 	FooterMoreInfo:                   "Maggiori informazioni",
 	FooterLicense:                    "Licenza",
 	FooterLabel:                      "Informazioni sul sito",

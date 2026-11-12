@@ -1,5 +1,8 @@
 <script lang="ts">
   import { get } from 'svelte/store'
+  import { toast } from 'svelte-sonner'
+  import Copy from '@lucide/svelte/icons/copy'
+  import { copyToClipboard } from '$lib/utils/clipboard'
   import { createVirtualizer } from '@tanstack/svelte-virtual'
   import { Skeleton } from '$lib/components/ui/skeleton'
   import { getI18n } from '$lib/stores/i18n.svelte'
@@ -133,32 +136,81 @@
   function sortLabel(column: string): string {
     return i18n.t('sortByColumn', 'Sort by {column}', { column })
   }
+
+  async function copyValue(value: string): Promise<void> {
+    if (!value) return
+    if (!(await copyToClipboard(value))) {
+      toast.error(i18n.t('copyFailed', 'Copy failed — clipboard unavailable'))
+      return
+    }
+    toast.success(i18n.t('labelCopied', 'Copied!'))
+  }
+
+  /** Arrow keys move between row name buttons; spacer rows have none, so focus stops there. */
+  function onNameKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+    const row = (event.currentTarget as HTMLElement).closest('tr')
+    const sibling = event.key === 'ArrowDown' ? row?.nextElementSibling : row?.previousElementSibling
+    const next = sibling?.querySelector<HTMLButtonElement>('.vcv-cn-button')
+    if (!next) return
+    event.preventDefault()
+    next.focus()
+  }
 </script>
 
 {#snippet certRow(cert: Certificate, dataIndex: number | undefined)}
   {@const s = certStatus(cert, thresholds)}
   {@const parts = parseCertID(cert.id)}
-  <!-- Whole-row button: role="button" + aria-label gives SR users a single
-       focusable target named by the common name; Enter activates the detail
-       modal. Kept over a nested cell button to preserve one tab stop per row. -->
+  <!-- The name is the real focusable control; the row keeps a mouse-only
+       click handler so the whole line stays a large hit target. -->
   <tr
     class="{rowClassForStatus(s)} vcv-row-clickable"
     data-index={dataIndex}
     use:measureRow
     onclick={() => onSelect(cert)}
-    onkeydown={(event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault()
-        onSelect(cert)
-      }
-    }}
-    tabindex="0"
-    role="button"
-    aria-label={`${certDisplayName(cert, i18n.t('certUnnamed', 'Unnamed certificate'))}: ${i18n.t('buttonDetails', 'Details')}`}
   >
     <td class="vcv-col-cert">
       <div class="vcv-cert-header">
-        <span class="vcv-cn-name">{cert.commonName || '—'}</span>
+        <div class="vcv-cert-name-row">
+          <button
+            type="button"
+            class="vcv-cn-name vcv-cn-button"
+            aria-label={`${certDisplayName(cert, i18n.t('certUnnamed', 'Unnamed certificate'))}: ${i18n.t('buttonDetails', 'Details')}`}
+            onclick={(event) => {
+              event.stopPropagation()
+              onSelect(cert)
+            }}
+            onkeydown={onNameKeydown}
+          >
+            {cert.commonName || '—'}
+          </button>
+          <span class="vcv-row-quick-actions">
+            <button
+              type="button"
+              class="vcv-icon-action"
+              aria-label={i18n.t('labelCopyCommonName', 'Copy common name')}
+              title={i18n.t('labelCopyCommonName', 'Copy common name')}
+              onclick={(event) => {
+                event.stopPropagation()
+                void copyValue(cert.commonName)
+              }}
+            >
+              <Copy class="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              class="vcv-icon-action"
+              aria-label={i18n.t('labelCopySerial', 'Copy serial number')}
+              title={i18n.t('labelCopySerial', 'Copy serial number')}
+              onclick={(event) => {
+                event.stopPropagation()
+                void copyValue(cert.serialNumber)
+              }}
+            >
+              <Copy class="h-3.5 w-3.5" />
+            </button>
+          </span>
+        </div>
         <div class="vcv-cert-meta-row">
           <span class="vcv-cert-meta-item vcv-cert-type">{typeLabel(cert.certType)}</span>
           {#if showVaultMount}
@@ -202,6 +254,7 @@
     </div>
   {:else}
     <table class="vcv-table" class:vcv-table-compact={compact} aria-rowcount={virtualized ? certs.length + 1 : undefined}>
+      <caption class="sr-only">{i18n.t('tableCaption', 'Certificates')}</caption>
       <colgroup>
         <col class="vcv-col-cert" />
         <col class="vcv-col-expiry" />
