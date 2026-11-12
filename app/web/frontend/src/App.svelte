@@ -781,6 +781,9 @@
   onToggleStatus={toggleStatus}
   onToggleTheme={theme.toggle}
   onSetLang={(code) => void i18n.setLang(code)}
+  onRefresh={() => void manualRefresh()}
+  onExport={(format) => exportCerts(format)}
+  onOpenSources={() => (mountModalOpen = true)}
 />
 
 <MountSelectorDialog
