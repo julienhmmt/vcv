@@ -2,27 +2,27 @@
 # test-only credentials from settings.e2e.json. Run via `make e2e`.
 # Host ports avoid clashing with a parallel `make dev` stack (app on 52001).
 services:
-  vault:
-    image: hashicorp/vault:1.21.2
+  vault-2.2:
+    image: hashicorp/vault:2.2.2
     environment:
       - VAULT_DEV_ROOT_TOKEN_ID=root
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
     cap_add:
       - IPC_LOCK
-    command: "sh /vault-dev-init.sh vault-main pki pki_dev pki_stage pki_production"
+    command: "sh /vault-dev-init.sh vault-2.2 pki pki_dev pki_stage pki_production"
     networks:
       - vcv-e2e
     volumes:
       - ./vault-dev-init.sh:/vault-dev-init.sh:ro
 
-  openbao-dev-1:
-    image: docker.io/openbao/openbao:2.5.1
+  openbao-2.7:
+    image: docker.io/openbao/openbao:2.7.2
     environment:
       - OPENBAO_DEV_ROOT_TOKEN_ID=root
       - OPENBAO_DEV_LISTEN_ADDRESS=0.0.0.0:1337
     cap_add:
       - IPC_LOCK
-    command: "sh /openbao-dev-init.sh openbao-dev-1 pki_openbao pki_openbao_dev pki_openbao_stage pki_openbao_prod"
+    command: "sh /openbao-dev-init.sh openbao-2.7 pki_openbao pki_openbao_dev pki_openbao_stage pki_openbao_prod"
     networks:
       - vcv-e2e
     volumes:
@@ -39,8 +39,8 @@ services:
     networks:
       - vcv-e2e
     depends_on:
-      - vault
-      - openbao-dev-1
+      - vault-2.2
+      - openbao-2.7
     read_only: true
     security_opt:
       - no-new-privileges:true

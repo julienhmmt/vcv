@@ -28,22 +28,22 @@
   },
   "vaults": [
     {
-      "id": "vault-main",
-      "address": "http://vault:8200",
+      "id": "vault-2.2",
+      "address": "http://vault-2.2:8200",
       "token": "root",
       "pki_mount": "pki",
       "pki_mounts": ["pki", "pki_dev", "pki_stage", "pki_production"],
-      "display_name": "Vault",
+      "display_name": "Vault 2.2.2",
       "tls_insecure": true,
       "enabled": true
     },
     {
-      "id": "openbao-dev-1",
-      "address": "http://openbao-dev-1:1337",
+      "id": "openbao-2.7",
+      "address": "http://openbao-2.7:1337",
       "token": "root",
       "pki_mount": "pki_openbao",
       "pki_mounts": ["pki_openbao", "pki_openbao_dev"],
-      "display_name": "OpenBao dev-1",
+      "display_name": "OpenBao 2.7.2",
       "tls_insecure": true,
       "enabled": true
     }

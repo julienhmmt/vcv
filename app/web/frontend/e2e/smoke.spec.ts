@@ -1,10 +1,10 @@
 import { test, expect } from '@playwright/test'
 
 // Smoke coverage against the seeded e2e stack (see docker-compose.e2e.yml):
-// vault-main/pki is seeded with deterministic CNs like
-// web.vault-main-pki.local, machine-web.*, expiring-*, expired-*, revoked-*.
+// vault-2.2/pki is seeded with deterministic CNs like
+// web.vault-2.2-pki.local, machine-web.*, expiring-*, expired-*, revoked-*.
 // The default sort is expires-ascending, so expired certs land on page 1.
-const PAGE_ONE_CN = 'expired-1.vault-main-pki.local'
+const PAGE_ONE_CN = 'expired-1.vault-2.2-pki.local'
 
 test.beforeEach(async ({ page }) => {
   await page.goto('/')
@@ -20,10 +20,10 @@ test('lists seeded certificates and filters by search', async ({ page }) => {
   await expect(page.getByText(PAGE_ONE_CN).first()).toBeVisible()
 
   // Full CN is unique; bare "user-alice" is seeded once per mount (6 hits).
-  await page.getByLabel('Search certificates').fill('user-alice.vault-main-pki.local')
+  await page.getByLabel('Search certificates').fill('user-alice.vault-2.2-pki.local')
   await expect(page.getByText('1 certificates', { exact: true })).toBeVisible()
-  await expect(page.getByText('user-alice.vault-main-pki.local').first()).toBeVisible()
-  await expect(page.getByText('user-bob.vault-main-pki.local')).toHaveCount(0)
+  await expect(page.getByText('user-alice.vault-2.2-pki.local').first()).toBeVisible()
+  await expect(page.getByText('user-bob.vault-2.2-pki.local')).toHaveCount(0)
 })
 
 test('sorts by expiration date from the column header', async ({ page }) => {
