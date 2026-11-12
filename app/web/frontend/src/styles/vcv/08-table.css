@@ -372,6 +372,7 @@ col.vcv-col-status {
   flex-direction: column;
   gap: 0.75rem;
   padding: 1rem;
+  position: relative;
 }
 
 .vcv-cert-card-header {
@@ -434,10 +435,6 @@ col.vcv-col-status {
   color: var(--vcv-color-text-strong);
 }
 
-.vcv-cert-card {
-  position: relative;
-}
-
 /* Stretched hit area: the name button covers the card without nesting
    interactive elements inside a role=button container. */
 .vcv-cert-card .vcv-cn-button::after {
@@ -447,6 +444,13 @@ col.vcv-col-status {
   z-index: 1;
 }
 
+
+.vcv-row-quick-actions {
+  display: inline-flex;
+  gap: 0.25rem;
+  opacity: 0.55;
+  transition: opacity 0.12s ease;
+}
 .vcv-cert-card .vcv-row-quick-actions {
   position: relative;
   z-index: 2;
@@ -476,12 +480,6 @@ col.vcv-col-status {
   outline-offset: 2px;
 }
 
-.vcv-row-quick-actions {
-  display: inline-flex;
-  gap: 0.25rem;
-  opacity: 0.55;
-  transition: opacity 0.12s ease;
-}
 
 .vcv-row-clickable:hover .vcv-row-quick-actions,
 .vcv-row-clickable:focus-within .vcv-row-quick-actions {
