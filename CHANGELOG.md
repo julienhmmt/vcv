@@ -15,6 +15,8 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Curated OpenAPI spec served at `/api/openapi.json` (#146).
 - Warning when admin sessions may flap across replicas (#145).
 - Playwright e2e smoke suite on a seeded Vault stack in CI (#164).
+- Playwright suite that runs vcv behind nginx, Caddy, Traefik, HAProxy and Nginx Proxy Manager (`make proxy-e2e`), covering `X-Forwarded-Host`/`-Proto` handling and CSRF on admin writes (#239).
+- README section on running behind a reverse proxy: `app.trust_proxy`, the headers each proxy must send, and the 403 symptom when they are missing (#239).
 
 ### Changed
 
@@ -24,6 +26,7 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Documentation aligned with the code (#144, #165).
 - Dev compose stack now runs Vault 1.21.4, 2.0.4, 2.1.2, 2.2.2 and OpenBao 2.5.5, 2.6.5, 2.7.2; containers are named after their version (`vault-2.1`, `openbao-2.6`). The e2e stack runs Vault 2.2.2 + OpenBao 2.7.2.
 - Dev/e2e seed scripts emit DNS-safe CNs and SANs (mount `pki_dev` → `pki-dev`), since Vault 2.x rejects SAN labels containing `_`.
+- Dev compose stack starts six reverse proxies (53001–53005, 443) in front of the app; `settings.dev.json` sets `app.trust_proxy: true` (#239).
 
 ### Fixed
 

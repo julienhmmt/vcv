@@ -165,6 +165,28 @@ VCV supports custom CA bundles and TLS settings per Vault instance through `sett
 
 Precedence: `tls_ca_cert_base64` overrides `tls_ca_cert`/`tls_ca_path`.
 
+## 🔀 Behind a reverse proxy
+
+VCV speaks plain HTTP and expects a proxy in front to terminate TLS. Set
+`"trust_proxy": true` in the `app` section of `settings.json` when a proxy sits
+in front, and make sure it forwards the original host and scheme:
+
+```nginx
+location / {
+  proxy_pass http://vcv:52000;
+  proxy_set_header Host              $http_host;
+  proxy_set_header X-Forwarded-Host  $http_host;
+  proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+Without `trust_proxy` (or without those headers) every admin `POST`/`PUT`/`DELETE`
+through the proxy is rejected with **403**. Caddy and Traefik send the headers by
+default; HAProxy and Nginx Proxy Manager need them set explicitly. Serve VCV at
+the root: the SPA calls `/api/...` with absolute paths, so a `/vcv/` sub-path
+does not work. Full details, including a per-proxy table: see the
+[main README](https://github.com/julienhmmt/vcv#-behind-a-reverse-proxy).
+
 ## 📊 Prometheus metrics
 
 VCV exposes metrics at `/metrics` endpoint with comprehensive certificate monitoring:

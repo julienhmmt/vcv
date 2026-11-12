@@ -130,7 +130,7 @@ VCV_TAG=1.9 make docker-build
 
 - Frontend source: `app/web/frontend/` (Vite + pnpm).
 - `make web-build` writes `app/web/dist`, embedded via `go:embed` in `app/web/web.go`. Always rebuild before `go build` or the binary serves a stale/empty UI.
-- Dev stack: 4 Vault instances (8200–8203: 1.21.4, 2.0.4, 2.1.2, 2.2.2) and 3 OpenBao (1337–1339: 2.5.5, 2.6.5, 2.7.2); containers are named after the version (`vault-2.1`, `openbao-2.6`). App at `http://localhost:52000`.
+- Dev stack: 4 Vault instances (8200–8203: 1.21.4, 2.0.4, 2.1.2, 2.2.2) and 3 OpenBao (1337–1339: 2.5.5, 2.6.5, 2.7.2); containers are named after the version (`vault-2.1`, `openbao-2.6`). App at `http://localhost:52000` (direct, for `make web-dev`), plus six reverse proxies on 53001–53005 and 443 (Nginx Proxy Manager, `https://vcv.localhost`) — `settings.dev.json` sets `trust_proxy: true` for them.
 - `make web-dev` alone needs a running Go backend for real API data; `make dev` is heavier (image rebuild).
 
 ## Architecture
@@ -254,6 +254,7 @@ Deep threat-model write-up: `app/README.md` → *Security & deployment assumptio
 | Frontend logic / components | `make web-test` and `make web-check` |
 | Go package (handlers, vault, middleware, config, metrics) | `cd app && go test ./internal/<pkg>/...` then `make test-offline` or `make go-lint` |
 | Admin session / CSRF / rate limit | Tests under `internal/handlers` + `internal/middleware` |
+| Reverse proxy / `trust_proxy` / forwarded headers | `make proxy-e2e` (six proxies, Playwright; needs host port 443 free) |
 | Config schema / settings examples | Ensure examples have no real secrets; related config tests |
 | Full local stack | `make dev` (optional; slow — image rebuild) |
 
