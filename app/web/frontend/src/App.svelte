@@ -22,11 +22,13 @@
   import CertMobileList from '$lib/components/CertMobileList.svelte'
   import PaginationBar from '$lib/components/PaginationBar.svelte'
   import CommandPalette from '$lib/components/CommandPalette.svelte'
+  import SavedViewsDialog from '$lib/components/SavedViewsDialog.svelte'
   import { createCertsStore } from '$lib/stores/certs.svelte'
   import { createConfigStore } from '$lib/stores/config.svelte'
   import { createStatusStore } from '$lib/stores/status.svelte'
   import { createThemeStore } from '$lib/stores/theme.svelte'
   import { createDensityStore } from '$lib/stores/density.svelte'
+  import { createSavedViewsStore, type ViewSnapshot } from '$lib/stores/saved-views.svelte'
   import { createI18nStore, setI18nContext, LANGUAGES } from '$lib/stores/i18n.svelte'
   import { parseCertID } from '$lib/utils/cert-status'
   import { api, type CertsQuery } from '$lib/api'
@@ -52,6 +54,7 @@
   const status = createStatusStore()
   const theme = createThemeStore()
   const density = createDensityStore()
+  const savedViews = createSavedViewsStore()
   const thresholds = $derived(config.thresholds)
 
   type StatusKey = 'valid' | 'warning' | 'critical' | 'expired' | 'revoked'
@@ -101,6 +104,7 @@
   let certModalOpen = $state(false)
   let mountModalOpen = $state(false)
   let commandOpen = $state(false)
+  let viewsOpen = $state(false)
   let initialLoad = $state(true)
   let dismissedFetchError = $state<string | null>(null)
   let lastUpdated = $state<Date | null>(null)
@@ -434,6 +438,24 @@
     pageIndex = 0
   }
 
+  function currentSnapshot(): ViewSnapshot {
+    return { search, statusFilters, certTypeFilter, mountFilter, sortKey, sortDir, pageSize, minDays, maxDays }
+  }
+
+  function applyView(snapshot: ViewSnapshot): void {
+    search = snapshot.search
+    searchForFilter = snapshot.search
+    statusFilters = [...snapshot.statusFilters]
+    certTypeFilter = snapshot.certTypeFilter
+    mountFilter = snapshot.mountFilter ? [...snapshot.mountFilter] : null
+    sortKey = snapshot.sortKey
+    sortDir = snapshot.sortDir
+    pageSize = snapshot.pageSize
+    minDays = snapshot.minDays
+    maxDays = snapshot.maxDays
+    pageIndex = 0
+  }
+
   function clearAllFilters(): void {
     search = ''
     searchForFilter = ''
@@ -669,6 +691,13 @@
       <div class="vcv-results-actions">
         <button
           type="button"
+          class="vcv-button vcv-button-secondary h-9"
+          onclick={() => (viewsOpen = true)}
+        >
+          {i18n.t('savedViewsButton', 'Views')}
+        </button>
+        <button
+          type="button"
           class="vcv-button vcv-button-icon"
           title={i18n.t('buttonDensity', 'Row density')}
           aria-label={i18n.t('buttonDensity', 'Row density')}
@@ -815,6 +844,16 @@
   onRefresh={() => void manualRefresh()}
   onExport={(format) => exportCerts(format)}
   onOpenSources={() => (mountModalOpen = true)}
+/>
+
+<SavedViewsDialog
+  open={viewsOpen}
+  onOpenChange={(value) => (viewsOpen = value)}
+  views={savedViews.views}
+  current={currentSnapshot()}
+  onSave={(name, snapshot) => savedViews.save(name, snapshot)}
+  onRemove={(id) => savedViews.remove(id)}
+  onApply={applyView}
 />
 
 <MountSelectorDialog

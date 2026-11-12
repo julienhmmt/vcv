@@ -26,6 +26,14 @@ type Messages struct {
 	ButtonClose                 string `json:"buttonClose"`
 	ButtonCopyLink              string `json:"buttonCopyLink"`
 	ButtonDensity               string `json:"buttonDensity"`
+	SavedViewsApply             string `json:"savedViewsApply"`
+	SavedViewsButton            string `json:"savedViewsButton"`
+	SavedViewsDelete            string `json:"savedViewsDelete"`
+	SavedViewsEmpty             string `json:"savedViewsEmpty"`
+	SavedViewsNamePlaceholder   string `json:"savedViewsNamePlaceholder"`
+	SavedViewsSave              string `json:"savedViewsSave"`
+	SavedViewsSaved             string `json:"savedViewsSaved"`
+	SavedViewsTitle             string `json:"savedViewsTitle"`
 	ButtonDetails               string `json:"buttonDetails"`
 	ButtonDownloadPEM           string `json:"buttonDownloadPEM"`
 	ButtonExport                string `json:"buttonExport"`
@@ -295,6 +303,14 @@ var englishMessages = Messages{
 	ButtonClose:                    "Close",
 	ButtonCopyLink:                 "Copy link",
 	ButtonDensity:                  "Row density",
+	SavedViewsApply:                "Apply",
+	SavedViewsButton:               "Views",
+	SavedViewsDelete:               "Delete view",
+	SavedViewsEmpty:                "No saved views yet. Save the current filters to reuse them later.",
+	SavedViewsNamePlaceholder:      "View name",
+	SavedViewsSave:                 "Save current view",
+	SavedViewsSaved:                "View saved",
+	SavedViewsTitle:                "Saved views",
 	ButtonDetails:                  "Details",
 	ButtonDownloadPEM:              "Download PEM",
 	ButtonExport:                   "Export",
@@ -535,6 +551,14 @@ var frenchMessages = Messages{
 	ButtonClose:                    "Fermer",
 	ButtonCopyLink:                 "Copier le lien",
 	ButtonDensity:                  "Densité des lignes",
+	SavedViewsApply:                "Appliquer",
+	SavedViewsButton:               "Vues",
+	SavedViewsDelete:               "Supprimer la vue",
+	SavedViewsEmpty:                "Aucune vue enregistrée. Enregistrez les filtres actuels pour les réutiliser.",
+	SavedViewsNamePlaceholder:      "Nom de la vue",
+	SavedViewsSave:                 "Enregistrer la vue actuelle",
+	SavedViewsSaved:                "Vue enregistrée",
+	SavedViewsTitle:                "Vues enregistrées",
 	ButtonDetails:                  "Détails",
 	ButtonDownloadPEM:              "Télécharger PEM",
 	ButtonExport:                   "Exporter",
@@ -775,6 +799,14 @@ var spanishMessages = Messages{
 	ButtonClose:                    "Cerrar",
 	ButtonCopyLink:                 "Copiar enlace",
 	ButtonDensity:                  "Densidad de filas",
+	SavedViewsApply:                "Aplicar",
+	SavedViewsButton:               "Vistas",
+	SavedViewsDelete:               "Eliminar vista",
+	SavedViewsEmpty:                "Aún no hay vistas guardadas. Guarda los filtros actuales para reutilizarlos.",
+	SavedViewsNamePlaceholder:      "Nombre de la vista",
+	SavedViewsSave:                 "Guardar vista actual",
+	SavedViewsSaved:                "Vista guardada",
+	SavedViewsTitle:                "Vistas guardadas",
 	ButtonDetails:                  "Detalles",
 	ButtonDownloadPEM:              "Descargar PEM",
 	ButtonExport:                   "Exportar",
@@ -1015,6 +1047,14 @@ var germanMessages = Messages{
 	ButtonClose:                    "Schließen",
 	ButtonCopyLink:                 "Link kopieren",
 	ButtonDensity:                  "Zeilendichte",
+	SavedViewsApply:                "Anwenden",
+	SavedViewsButton:               "Ansichten",
+	SavedViewsDelete:               "Ansicht löschen",
+	SavedViewsEmpty:                "Noch keine Ansichten gespeichert. Speichere die aktuellen Filter zur Wiederverwendung.",
+	SavedViewsNamePlaceholder:      "Name der Ansicht",
+	SavedViewsSave:                 "Aktuelle Ansicht speichern",
+	SavedViewsSaved:                "Ansicht gespeichert",
+	SavedViewsTitle:                "Gespeicherte Ansichten",
 	ButtonDetails:                  "Details",
 	ButtonDownloadPEM:              "PEM herunterladen",
 	ButtonExport:                   "Exportieren",
@@ -1255,6 +1295,14 @@ var italianMessages = Messages{
 	ButtonClose:                    "Chiudi",
 	ButtonCopyLink:                 "Copia link",
 	ButtonDensity:                  "Densità righe",
+	SavedViewsApply:                "Applica",
+	SavedViewsButton:               "Viste",
+	SavedViewsDelete:               "Elimina vista",
+	SavedViewsEmpty:                "Nessuna vista salvata. Salva i filtri attuali per riutilizzarli.",
+	SavedViewsNamePlaceholder:      "Nome della vista",
+	SavedViewsSave:                 "Salva vista attuale",
+	SavedViewsSaved:                "Vista salvata",
+	SavedViewsTitle:                "Viste salvate",
 	ButtonDetails:                  "Dettagli",
 	ButtonDownloadPEM:              "Scarica PEM",
 	ButtonExport:                   "Esporta",

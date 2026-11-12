@@ -645,3 +645,44 @@
 .vcv-ca-single {
   width: 100%;
 }
+
+/* Saved views dialog */
+.vcv-saved-views {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.vcv-saved-views-save {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.vcv-saved-views-empty {
+  color: var(--vcv-color-muted);
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+.vcv-saved-views-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.vcv-saved-views-row {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.vcv-saved-views-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
