@@ -296,6 +296,40 @@ describe('App', () => {
     )
   })
 
+  it('applies a saved view from the Views dialog', async () => {
+    mockOk([cert({ id: 'a', commonName: 'web.example.com' })])
+    window.localStorage.setItem(
+      'vcv-saved-views',
+      JSON.stringify([
+        {
+          id: 'v1',
+          name: 'Critical',
+          snapshot: {
+            search: '',
+            statusFilters: ['critical'],
+            certTypeFilter: 'all',
+            mountFilter: null,
+            sortKey: 'expiresAt',
+            sortDir: 'asc',
+            pageSize: 25,
+            minDays: null,
+            maxDays: null,
+          },
+        },
+      ]),
+    )
+    render(App)
+    await screen.findAllByText('web.example.com')
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Views' }))
+    listCertificates.mockClear()
+    await fireEvent.click(screen.getByRole('button', { name: 'Apply' }))
+
+    await vi.waitFor(() =>
+      expect(listCertificates).toHaveBeenCalledWith(expect.objectContaining({ statuses: ['critical'] })),
+    )
+  })
+
 })
 
 function mockDown(): void {
