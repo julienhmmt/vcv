@@ -1,5 +1,7 @@
 /* Responsive table */
 @media (1024px >= width) {
+  /* Creates a scroll container on both axes (CSS overflow rule); the sticky
+     header then sticks to this box, not the viewport. Intentional below 1024px. */
   .vcv-table-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;

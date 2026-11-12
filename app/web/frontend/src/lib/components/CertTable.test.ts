@@ -170,4 +170,19 @@ describe('CertTable', () => {
     expect(wrapper).toHaveAttribute('aria-busy', 'true')
   })
 
+  it('only gives the table its own scroll container when virtualized', () => {
+    const { container, unmount } = render(CertTable, { props: baseProps })
+    expect(container.querySelector('.vcv-table-wrapper')?.classList.contains('vcv-table-scroll')).toBe(false)
+    unmount()
+
+    const many = Array.from({ length: 150 }, (_, i) => ({
+      ...cert,
+      id: `vault1|pki:cert-${i}`,
+      serialNumber: `cert-${i}`,
+      commonName: `host-${i}.example.com`,
+    }))
+    const big = render(CertTable, { props: { ...baseProps, certs: many } })
+    expect(big.container.querySelector('.vcv-table-wrapper')?.classList.contains('vcv-table-scroll')).toBe(true)
+  })
+
 })
