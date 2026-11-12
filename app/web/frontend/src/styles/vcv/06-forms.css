@@ -132,10 +132,15 @@
     align-items: center;
   }
 
-  .vcv-page-buttons {
+  /* Needs the parent in the selector to beat `.vcv-pagination-bar .vcv-page-buttons`
+     (display: flex) in 14-overview.css. */
+  .vcv-pagination-bar .vcv-page-buttons {
     display: grid;
     gap: 0.5rem;
-    grid-template-columns: 1fr 1fr;
+    /* minmax(0,1fr) + full width: as a flex item the grid otherwise keeps its
+       max-content width and overflows the viewport on narrow phones. */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
     margin-left: 0;
   }
 

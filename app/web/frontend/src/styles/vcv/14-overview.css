@@ -152,19 +152,17 @@
     padding: 0.75rem 1rem;
   }
 
+  /* Grid, not a shrinking flex row: stat labels are single words (e.g. FR
+     "Avertissement" ~130px) and overflow their button when it shrinks below them. */
   .vcv-overview-stats {
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+    gap: 0.25rem 0.5rem;
   }
 
   .vcv-stat {
-    padding: 0.375rem 0.75rem;
-    min-width: 6rem;
-  }
-}
-
-@media (560px >= width) {
-  .vcv-stat {
-    min-width: 4.5rem;
+    padding: 0.375rem 0.5rem;
+    min-width: 0;
   }
 }
 
@@ -463,12 +461,6 @@
   padding: 0 0.375rem;
   text-align: center;
   width: 4.25rem;
-}
-
-.vcv-pagination-bar .vcv-page-buttons {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 /* Header auto-refresh cluster */
