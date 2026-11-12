@@ -120,6 +120,7 @@
 
   .vcv-certs-mobile-cards {
     display: grid;
+
     /* minmax(0,1fr): the implicit auto column sizes to max-content and pushes
        long CNs past the viewport on narrow phones. */
     grid-template-columns: minmax(0, 1fr);
