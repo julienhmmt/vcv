@@ -21,7 +21,7 @@ help:
 		'  e2e-run            Run Playwright smoke tests against the e2e stack' \
 		'  e2e-down           Stop the e2e stack' \
 		'  e2e                Full e2e cycle: up, run, down' \
-		'  proxy-up           Start the dev stack behind nginx (:53001), Caddy (:53002), Traefik (:53003)' \
+		'  proxy-up           Start the dev stack behind nginx, Caddy, Traefik, HAProxy, NPM (:53001-53006)' \
 		'  proxy-run          Run Playwright against the running proxy stack' \
 		'  proxy-e2e          proxy-up + wait for seeds + proxy-run (stack stays up)' \
 		'  dev                Build the Go binary and start the development Docker stack' \
@@ -76,8 +76,9 @@ e2e: e2e-install e2e-up
 	chmod +x tools/e2e-wait.sh && tools/e2e-wait.sh; \
 	$(MAKE) e2e-run
 
-# Reverse proxies (nginx :53001, Caddy :53002, Traefik :53003) live in
-# docker-compose.dev.yml; configs in dev/proxies/.
+# Reverse proxies live in docker-compose.dev.yml; configs in dev/proxies/.
+# nginx :53001, Caddy :53002, Traefik :53003, Traefik host-rewrite :53004,
+# HAProxy :53005, Nginx Proxy Manager :53006 (configured through its API).
 PROXY_APP_URL := https://localhost:53001
 # Matches admin.password in settings.dev.json (dev stack only).
 PROXY_ADMIN_PASSWORD ?= admin
@@ -91,6 +92,7 @@ proxy-run:
 	cd app/web/frontend && pnpm exec playwright test -c playwright.proxies.config.ts
 
 proxy-e2e: e2e-install proxy-up
+	@chmod +x dev/proxies/npm-setup.sh && dev/proxies/npm-setup.sh
 	@chmod +x tools/e2e-wait.sh; \
 	VCV_E2E_ADMIN_PASSWORD=$(PROXY_ADMIN_PASSWORD) VCV_E2E_CURL_OPTS=-k \
 	VCV_E2E_MARKERS="$(PROXY_SEED_MARKERS)" tools/e2e-wait.sh $(PROXY_APP_URL) || exit 1; \

@@ -8,6 +8,12 @@ const proxies = [
   { name: 'nginx', url: 'https://localhost:53001' },
   { name: 'caddy', url: 'https://localhost:53002' },
   { name: 'traefik', url: 'https://localhost:53003' },
+  // Host rewritten to app:52000, so only X-Forwarded-Host keeps the CSRF
+  // origin right (ingress / Gateway API setups).
+  { name: 'traefik-host-rewrite', url: 'https://localhost:53004' },
+  { name: 'haproxy', url: 'https://localhost:53005' },
+  // Its proxy host is created through its API by dev/proxies/npm-setup.sh.
+  { name: 'nginx-proxy-manager', url: 'https://vcv.localhost' },
 ]
 
 export default defineConfig({

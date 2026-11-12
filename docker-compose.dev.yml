@@ -197,18 +197,20 @@ services:
       - ./dev/proxies/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
       - ./dev/proxies/certs:/certs:ro
 
-  # 53003: Traefik (file provider).
+  # 53003: Traefik (file provider). 53004: same, Host rewritten to app:52000.
   proxy-traefik:
     image: traefik:v3.6
     container_name: vcv-proxy-traefik
     restart: unless-stopped
     command:
       - --entrypoints.websecure.address=:53003
+      - --entrypoints.hostrewrite.address=:53004
       - --providers.file.filename=/etc/traefik/dynamic.yml
       - --log.level=INFO
       - --accesslog=true
     ports:
       - "53003:53003/tcp"
+      - "53004:53004/tcp"
     networks:
       - vcv-network
     depends_on:
@@ -220,6 +222,53 @@ services:
       - ./dev/proxies/traefik/dynamic.yml:/etc/traefik/dynamic.yml:ro
       - ./dev/proxies/certs:/certs:ro
 
+  # 53005: HAProxy with the Host rewritten to an internal name (X-Forwarded-Host
+  # carries the browser's).
+  proxy-haproxy:
+    image: haproxy:lts-alpine
+    container_name: vcv-proxy-haproxy
+    restart: unless-stopped
+    ports:
+      - "53005:53005/tcp"
+    networks:
+      - vcv-network
+    depends_on:
+      proxy-certs:
+        condition: service_completed_successfully
+      app:
+        condition: service_started
+    volumes:
+      - ./dev/proxies/haproxy/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+      - ./dev/proxies/certs:/certs:ro
+
+  # Nginx Proxy Manager (admin UI on http://localhost:53081, loopback only).
+  # dev/proxies/npm-setup.sh creates the vcv.localhost proxy host through its
+  # API; `make proxy-e2e` runs it. Open https://vcv.localhost.
+  # It must be 443: NPM's generated config forwards "Host $host" (port stripped,
+  # no X-Forwarded-Host) from a location-level include that no admin-UI
+  # advanced_config can override, so a non-standard port never matches the
+  # browser's CSRF origin.
+  proxy-npm:
+    image: jc21/nginx-proxy-manager:2.16.0
+    container_name: vcv-proxy-npm
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:443:443"
+      - "127.0.0.1:53081:81"
+    networks:
+      - vcv-network
+    depends_on:
+      app:
+        condition: service_started
+    volumes:
+      - proxy_npm_data:/data
+      - proxy_npm_letsencrypt:/etc/letsencrypt
+      - ./dev/proxies/certs:/certs:ro
+
 networks:
   vcv-network:
     driver: bridge
+
+volumes:
+  proxy_npm_data: {}
+  proxy_npm_letsencrypt: {}

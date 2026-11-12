@@ -1,5 +1,9 @@
-# File provider: one router on the websecure entrypoint to vcv. Traefik sets
-# X-Forwarded-For/-Host/-Proto by default, which is what app.trust_proxy reads.
+# File provider: two routers to the same app, differing only in what they do
+# with the Host header. Traefik sets X-Forwarded-For/-Host/-Proto by default,
+# which is what app.trust_proxy reads.
+#   53003: Host passed through, the usual case.
+#   53004: Host rewritten to app:52000 (like an ingress/Gateway API setup), so
+#          the CSRF target origin can only come from X-Forwarded-Host.
 http:
   routers:
     vcv:
@@ -7,9 +11,19 @@ http:
       entryPoints: [websecure]
       service: vcv
       tls: {}
+    vcv-host-rewrite:
+      rule: PathPrefix(`/`)
+      entryPoints: [hostrewrite]
+      service: vcv-host-rewrite
+      tls: {}
   services:
     vcv:
       loadBalancer:
+        servers:
+          - url: http://app:52000
+    vcv-host-rewrite:
+      loadBalancer:
+        passHostHeader: false
         servers:
           - url: http://app:52000
 tls:
