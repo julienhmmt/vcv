@@ -5,6 +5,9 @@
   import Languages from '@lucide/svelte/icons/languages'
   import FileBadge from '@lucide/svelte/icons/file-badge'
   import Settings from '@lucide/svelte/icons/settings'
+  import RefreshCw from '@lucide/svelte/icons/refresh-cw'
+  import Download from '@lucide/svelte/icons/download'
+  import Database from '@lucide/svelte/icons/database'
   import * as Command from '$lib/components/ui/command'
   import { getI18n, LANGUAGES } from '$lib/stores/i18n.svelte'
   import type { Certificate, CertStatus } from '$lib/types'
@@ -18,10 +21,24 @@
     onToggleStatus: (status: CertStatus) => void
     onToggleTheme: () => void
     onSetLang: (code: string) => void
+    onRefresh: () => void
+    onExport: (format: 'csv' | 'json') => void
+    onOpenSources: () => void
   }
 
-  const { open, onOpenChange, certs, theme, onSelectCert, onToggleStatus, onToggleTheme, onSetLang }: Props =
-    $props()
+  const {
+    open,
+    onOpenChange,
+    certs,
+    theme,
+    onSelectCert,
+    onToggleStatus,
+    onToggleTheme,
+    onSetLang,
+    onRefresh,
+    onExport,
+    onOpenSources,
+  }: Props = $props()
 
   const i18n = getI18n()
 
@@ -98,6 +115,22 @@
     </Command.Group>
 
     <Command.Group heading={i18n.t('commandPaletteActionsGroup', 'Actions')}>
+      <Command.Item value="refresh" onSelect={() => run(onRefresh)}>
+        <RefreshCw class="h-4 w-4" />
+        <span>{i18n.t('buttonRefresh', 'Refresh')}</span>
+      </Command.Item>
+      <Command.Item value="export-csv" onSelect={() => run(() => onExport('csv'))}>
+        <Download class="h-4 w-4" />
+        <span>{i18n.t('exportCSV', 'Export CSV')}</span>
+      </Command.Item>
+      <Command.Item value="export-json" onSelect={() => run(() => onExport('json'))}>
+        <Download class="h-4 w-4" />
+        <span>{i18n.t('exportJSON', 'Export JSON')}</span>
+      </Command.Item>
+      <Command.Item value="sources" onSelect={() => run(onOpenSources)}>
+        <Database class="h-4 w-4" />
+        <span>{i18n.t('commandPaletteSources', 'Certificate sources')}</span>
+      </Command.Item>
       <Command.Item value="toggle-theme" onSelect={() => run(onToggleTheme)}>
         {#if theme === 'dark'}<Sun class="h-4 w-4" />{:else}<Moon class="h-4 w-4" />{/if}
         <span>{i18n.t('buttonToggleTheme', 'Toggle dark mode')}</span>

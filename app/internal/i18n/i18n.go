@@ -41,6 +41,7 @@ type Messages struct {
 	CommandPaletteFiltersGroup  string `json:"commandPaletteFiltersGroup"`
 	CommandPaletteActionsGroup  string `json:"commandPaletteActionsGroup"`
 	CommandPaletteOpenAdmin     string `json:"commandPaletteOpenAdmin"`
+	CommandPaletteSources       string `json:"commandPaletteSources"`
 	ButtonRefresh               string `json:"buttonRefresh"`
 	ButtonViewCA                string `json:"buttonViewCA"`
 	CacheInvalidateFailed       string `json:"cacheInvalidateFailed"`
@@ -306,6 +307,7 @@ var englishMessages = Messages{
 	CommandPaletteFiltersGroup:     "Filter by status",
 	CommandPaletteActionsGroup:     "Actions",
 	CommandPaletteOpenAdmin:        "Open admin panel",
+	CommandPaletteSources:          "Certificate sources",
 	ButtonRefresh:                  "Refresh",
 	ButtonViewCA:                   "View intermediate CA",
 	CacheInvalidateFailed:          "Failed to clear cache",
@@ -542,6 +544,7 @@ var frenchMessages = Messages{
 	CommandPaletteFiltersGroup:     "Filtrer par statut",
 	CommandPaletteActionsGroup:     "Actions",
 	CommandPaletteOpenAdmin:        "Ouvrir le panneau d'administration",
+	CommandPaletteSources:          "Sources de certificats",
 	ButtonRefresh:                  "Rafraîchir",
 	ButtonViewCA:                   "Voir l'autorité intermédiaire",
 	CacheInvalidateFailed:          "Échec du vidage du cache",
@@ -778,6 +781,7 @@ var spanishMessages = Messages{
 	CommandPaletteFiltersGroup:     "Filtrar por estado",
 	CommandPaletteActionsGroup:     "Acciones",
 	CommandPaletteOpenAdmin:        "Abrir el panel de administración",
+	CommandPaletteSources:          "Orígenes de certificados",
 	ButtonRefresh:                  "Actualizar",
 	ButtonViewCA:                   "Ver CA intermedia",
 	CacheInvalidateFailed:          "Error al borrar el caché",
@@ -1014,6 +1018,7 @@ var germanMessages = Messages{
 	CommandPaletteFiltersGroup:     "Nach Status filtern",
 	CommandPaletteActionsGroup:     "Aktionen",
 	CommandPaletteOpenAdmin:        "Admin-Bereich öffnen",
+	CommandPaletteSources:          "Zertifikatsquellen",
 	ButtonRefresh:                  "Aktualisieren",
 	ButtonViewCA:                   "Zwischen-CA anzeigen",
 	CacheInvalidateFailed:          "Cache konnte nicht geleert werden",
@@ -1250,6 +1255,7 @@ var italianMessages = Messages{
 	CommandPaletteFiltersGroup:     "Filtra per stato",
 	CommandPaletteActionsGroup:     "Azioni",
 	CommandPaletteOpenAdmin:        "Apri il pannello di amministrazione",
+	CommandPaletteSources:          "Origini dei certificati",
 	ButtonRefresh:                  "Aggiorna",
 	ButtonViewCA:                   "Visualizza CA intermedia",
 	CacheInvalidateFailed:          "Impossibile cancellare la cache",

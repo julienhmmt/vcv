@@ -34,6 +34,9 @@ function baseProps(certs: Certificate[]) {
     onToggleStatus: vi.fn(),
     onToggleTheme: vi.fn(),
     onSetLang: vi.fn(),
+    onRefresh: vi.fn(),
+    onExport: vi.fn(),
+    onOpenSources: vi.fn(),
   }
 }
 
@@ -65,4 +68,25 @@ describe('CommandPalette', () => {
 
     expect(screen.getByText('second.example.com')).toBeInTheDocument()
   })
+  it('runs refresh, export and source actions from the palette', async () => {
+    const onRefresh = vi.fn()
+    const onExport = vi.fn()
+    const onOpenSources = vi.fn()
+    const onOpenChange = vi.fn()
+    render(CommandPalette, {
+      props: { ...baseProps([]), onRefresh, onExport, onOpenSources, onOpenChange },
+    })
+
+    await fireEvent.click(screen.getByText('Refresh'))
+    await fireEvent.click(screen.getByText('Export CSV'))
+    await fireEvent.click(screen.getByText('Export JSON'))
+    await fireEvent.click(screen.getByText('Certificate sources'))
+
+    expect(onRefresh).toHaveBeenCalledTimes(1)
+    expect(onExport).toHaveBeenNthCalledWith(1, 'csv')
+    expect(onExport).toHaveBeenNthCalledWith(2, 'json')
+    expect(onOpenSources).toHaveBeenCalledTimes(1)
+    expect(onOpenChange).toHaveBeenCalledWith(false)
+  })
+
 })
