@@ -22,6 +22,7 @@ This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Certificates within a mount are fetched concurrently (#148).
 - Go requirement raised to 1.27.3 (#187).
 - Documentation aligned with the code (#144, #165).
+- Dev compose stack now runs Vault 1.21.4, 2.0.4, 2.1.2, 2.2.2 and OpenBao 2.5.5, 2.6.5, 2.7.2; containers are named after their version (`vault-2.1`, `openbao-2.6`).
 
 ### Fixed
 
