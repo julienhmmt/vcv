@@ -128,6 +128,7 @@ type Messages struct {
 	FilterChipStatus            string `json:"filterChipStatus"`
 	FilterChipCertType          string `json:"filterChipCertType"`
 	FilterChipSources           string `json:"filterChipSources"`
+	FilterChipExpiry            string `json:"filterChipExpiry"`
 	FilterChipReset             string `json:"filterChipReset"`
 	SourcesButtonAll            string `json:"sourcesButtonAll"`
 	SourcesButtonPartial        string `json:"sourcesButtonPartial"`
@@ -393,6 +394,7 @@ var englishMessages = Messages{
 	FilterChipStatus:               "Status",
 	FilterChipCertType:             "Type",
 	FilterChipSources:              "Sources",
+	FilterChipExpiry:               "Expiry",
 	FilterChipReset:                msgResetFilters,
 	SourcesButtonAll:               msgSourcesAll,
 	SourcesButtonPartial:           msgSourcesPartial,
@@ -630,6 +632,7 @@ var frenchMessages = Messages{
 	FilterChipStatus:               "Statut",
 	FilterChipCertType:             "Type",
 	FilterChipSources:              "Sources",
+	FilterChipExpiry:               "Expiration",
 	FilterChipReset:                "Réinitialiser les filtres",
 	SourcesButtonAll:               "Sources : {total}/{total}",
 	SourcesButtonPartial:           "Sources : {selected}/{total}",
@@ -867,6 +870,7 @@ var spanishMessages = Messages{
 	FilterChipStatus:               "Status",
 	FilterChipCertType:             "Type",
 	FilterChipSources:              "Sources",
+	FilterChipExpiry:               "Caducidad",
 	FilterChipReset:                msgResetFilters,
 	SourcesButtonAll:               msgSourcesAll,
 	SourcesButtonPartial:           msgSourcesPartial,
@@ -1104,6 +1108,7 @@ var germanMessages = Messages{
 	FilterChipStatus:               "Status",
 	FilterChipCertType:             "Type",
 	FilterChipSources:              "Sources",
+	FilterChipExpiry:               "Ablauf",
 	FilterChipReset:                msgResetFilters,
 	SourcesButtonAll:               msgSourcesAll,
 	SourcesButtonPartial:           msgSourcesPartial,
@@ -1341,6 +1346,7 @@ var italianMessages = Messages{
 	FilterChipStatus:               "Status",
 	FilterChipCertType:             "Type",
 	FilterChipSources:              "Sources",
+	FilterChipExpiry:               "Scadenza",
 	FilterChipReset:                msgResetFilters,
 	SourcesButtonAll:               msgSourcesAll,
 	SourcesButtonPartial:           msgSourcesPartial,

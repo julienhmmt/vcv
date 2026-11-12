@@ -9,11 +9,14 @@
     statusFilters: CertStatus[]
     certTypeFilter: CertTypeFilter
     mountFilter: string[] | null
+    minDays: number | null
+    maxDays: number | null
     allMountsCount: number
     onClearSearch: () => void
     onRemoveStatus: (key: CertStatus) => void
     onClearCertType: () => void
     onClearMounts: () => void
+    onClearExpiry: () => void
     onClearAll: () => void
   }
 
@@ -22,11 +25,14 @@
     statusFilters,
     certTypeFilter,
     mountFilter,
+    minDays,
+    maxDays,
     allMountsCount,
     onClearSearch,
     onRemoveStatus,
     onClearCertType,
     onClearMounts,
+    onClearExpiry,
     onClearAll,
   }: Props = $props()
 
@@ -47,12 +53,24 @@
   })
 
   const hasMountFilter = $derived(mountFilter !== null && mountFilter.length !== allMountsCount)
+  const hasExpiryRange = $derived(minDays !== null || maxDays !== null)
   const hasAny = $derived(
     !!search ||
       statusFilters.length > 0 ||
       certTypeFilter !== 'all' ||
-      hasMountFilter,
+      hasMountFilter ||
+      hasExpiryRange,
   )
+
+  const expiryLabel = $derived.by(() => {
+    if (minDays === 0 && maxDays !== null) {
+      return i18n.t('timelineWithinDays', '≤ {days} days', { days: maxDays })
+    }
+    if (maxDays === null && minDays !== null) {
+      return i18n.t('timelineBeyondDays', '> {days} days', { days: minDays - 1 })
+    }
+    return i18n.t('timelineRangeDays', '{from}–{to} days', { from: minDays ?? 0, to: maxDays ?? 0 })
+  })
 </script>
 
 {#if hasAny}
@@ -72,6 +90,12 @@
     {#if certTypeFilter !== 'all'}
       <button type="button" class="vcv-filter-tag" onclick={onClearCertType}>
         {i18n.t('filterChipCertType', 'Type')}: <strong>{certTypeLabels[certTypeFilter] ?? certTypeFilter}</strong>
+        <X class="h-2.5 w-2.5" />
+      </button>
+    {/if}
+    {#if hasExpiryRange}
+      <button type="button" class="vcv-filter-tag" onclick={onClearExpiry}>
+        {i18n.t('filterChipExpiry', 'Expiry')}: <strong>{expiryLabel}</strong>
         <X class="h-2.5 w-2.5" />
       </button>
     {/if}

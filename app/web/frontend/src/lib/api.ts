@@ -77,6 +77,8 @@ export interface CertsQuery {
   order?: 'asc' | 'desc'
   page?: number
   pageSize?: number | 'all'
+  minDays?: number
+  maxDays?: number
 }
 
 export const api = {
@@ -90,6 +92,8 @@ export const api = {
     if (query.order) params.set('order', query.order)
     if (query.page !== undefined) params.set('page', String(query.page))
     if (query.pageSize !== undefined) params.set('page_size', String(query.pageSize))
+    if (query.minDays !== undefined) params.set('min_days', String(query.minDays))
+    if (query.maxDays !== undefined) params.set('max_days', String(query.maxDays))
     const qs = params.toString()
     return request<CertificatesEnvelope>(`/api/certs${qs ? `?${qs}` : ''}`)
   },
