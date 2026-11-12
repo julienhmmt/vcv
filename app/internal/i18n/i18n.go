@@ -25,6 +25,7 @@ type Messages struct {
 	ButtonToggleTheme           string `json:"buttonToggleTheme"`
 	ButtonClose                 string `json:"buttonClose"`
 	ButtonCopyLink              string `json:"buttonCopyLink"`
+	ButtonDensity               string `json:"buttonDensity"`
 	ButtonDetails               string `json:"buttonDetails"`
 	ButtonDownloadPEM           string `json:"buttonDownloadPEM"`
 	ButtonExport                string `json:"buttonExport"`
@@ -277,6 +278,7 @@ var englishMessages = Messages{
 	ButtonToggleTheme:              "Toggle theme",
 	ButtonClose:                    "Close",
 	ButtonCopyLink:                 "Copy link",
+	ButtonDensity:                  "Row density",
 	ButtonDetails:                  "Details",
 	ButtonDownloadPEM:              "Download PEM",
 	ButtonExport:                   "Export",
@@ -500,6 +502,7 @@ var frenchMessages = Messages{
 	ButtonToggleTheme:              "Changer de thème",
 	ButtonClose:                    "Fermer",
 	ButtonCopyLink:                 "Copier le lien",
+	ButtonDensity:                  "Densité des lignes",
 	ButtonDetails:                  "Détails",
 	ButtonDownloadPEM:              "Télécharger PEM",
 	ButtonExport:                   "Exporter",
@@ -723,6 +726,7 @@ var spanishMessages = Messages{
 	ButtonToggleTheme:              "Cambiar tema",
 	ButtonClose:                    "Cerrar",
 	ButtonCopyLink:                 "Copiar enlace",
+	ButtonDensity:                  "Densidad de filas",
 	ButtonDetails:                  "Detalles",
 	ButtonDownloadPEM:              "Descargar PEM",
 	ButtonExport:                   "Exportar",
@@ -946,6 +950,7 @@ var germanMessages = Messages{
 	ButtonToggleTheme:              "Design umschalten",
 	ButtonClose:                    "Schließen",
 	ButtonCopyLink:                 "Link kopieren",
+	ButtonDensity:                  "Zeilendichte",
 	ButtonDetails:                  "Details",
 	ButtonDownloadPEM:              "PEM herunterladen",
 	ButtonExport:                   "Exportieren",
@@ -1169,6 +1174,7 @@ var italianMessages = Messages{
 	ButtonToggleTheme:              "Cambia tema",
 	ButtonClose:                    "Chiudi",
 	ButtonCopyLink:                 "Copia link",
+	ButtonDensity:                  "Densità righe",
 	ButtonDetails:                  "Dettagli",
 	ButtonDownloadPEM:              "Scarica PEM",
 	ButtonExport:                   "Esporta",

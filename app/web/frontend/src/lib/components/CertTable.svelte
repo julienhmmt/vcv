@@ -15,6 +15,7 @@
     hasInventory: boolean
     hasActiveFilters: boolean
     showVaultMount: boolean
+    compact: boolean
     statusMeta: Record<CertStatus, { label: string; desc: string }>
     thresholds: ExpirationThresholds
     sortKey: SortKey
@@ -31,6 +32,7 @@
     hasInventory,
     hasActiveFilters,
     showVaultMount,
+    compact,
     statusMeta,
     thresholds,
     sortKey,
@@ -41,6 +43,17 @@
   }: Props = $props()
 
   const i18n = getI18n()
+
+  const certTypeLabels = $derived<Record<string, string>>({
+    machine: i18n.t('certTypeFilterMachine', 'Machine'),
+    user: i18n.t('certTypeFilterUser', 'User'),
+    both: i18n.t('certTypeFilterBoth', 'Both'),
+    unknown: i18n.t('certTypeFilterUnknown', 'Unknown'),
+  })
+
+  function typeLabel(type: string): string {
+    return certTypeLabels[type] ?? type
+  }
 
   /**
    * Above this many rows the tbody renders a virtualized window (spacer rows
@@ -147,6 +160,7 @@
       <div class="vcv-cert-header">
         <span class="vcv-cn-name">{cert.commonName || '—'}</span>
         <div class="vcv-cert-meta-row">
+          <span class="vcv-cert-meta-item vcv-cert-type">{typeLabel(cert.certType)}</span>
           {#if showVaultMount}
             <span class="vcv-cert-meta-item">{parts.vault || '—'}</span>
             <span class="vcv-cert-meta-item">{parts.mount || '—'}</span>
@@ -187,7 +201,7 @@
       {/each}
     </div>
   {:else}
-    <table class="vcv-table" aria-rowcount={virtualized ? certs.length + 1 : undefined}>
+    <table class="vcv-table" class:vcv-table-compact={compact} aria-rowcount={virtualized ? certs.length + 1 : undefined}>
       <colgroup>
         <col class="vcv-col-cert" />
         <col class="vcv-col-expiry" />

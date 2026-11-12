@@ -5,6 +5,8 @@
   import ShieldCheck from '@lucide/svelte/icons/shield-check'
   import Moon from '@lucide/svelte/icons/moon'
   import RefreshCw from '@lucide/svelte/icons/refresh-cw'
+  import Rows2 from '@lucide/svelte/icons/rows-2'
+  import Rows3 from '@lucide/svelte/icons/rows-3'
   import Sun from '@lucide/svelte/icons/sun'
   import { Toaster } from '$lib/components/ui/sonner'
   import * as Select from '$lib/components/ui/select'
@@ -24,6 +26,7 @@
   import { createConfigStore } from '$lib/stores/config.svelte'
   import { createStatusStore } from '$lib/stores/status.svelte'
   import { createThemeStore } from '$lib/stores/theme.svelte'
+  import { createDensityStore } from '$lib/stores/density.svelte'
   import { createI18nStore, setI18nContext, LANGUAGES } from '$lib/stores/i18n.svelte'
   import { parseCertID } from '$lib/utils/cert-status'
   import { api, type CertsQuery } from '$lib/api'
@@ -48,6 +51,7 @@
   const config = createConfigStore()
   const status = createStatusStore()
   const theme = createThemeStore()
+  const density = createDensityStore()
   const thresholds = $derived(config.thresholds)
 
   type StatusKey = 'valid' | 'warning' | 'critical' | 'expired' | 'revoked'
@@ -142,7 +146,7 @@
     }
     return Array.from(set).sort()
   })
-  const showVaultMount = $derived(allMounts.length > 1)
+  const showVaultMount = $derived(allMounts.length > 1 || sortKey === 'vault' || sortKey === 'pki')
 
   let urlHydrated = $state(false)
 
@@ -637,6 +641,16 @@
     <div class="vcv-results-bar">
       <span class="vcv-results-count" aria-live="polite">{resultCountText}</span>
       <div class="vcv-results-actions">
+        <button
+          type="button"
+          class="vcv-button vcv-button-icon"
+          title={i18n.t('buttonDensity', 'Row density')}
+          aria-label={i18n.t('buttonDensity', 'Row density')}
+          aria-pressed={density.compact}
+          onclick={density.toggle}
+        >
+          {#if density.compact}<Rows2 class="h-4 w-4" />{:else}<Rows3 class="h-4 w-4" />{/if}
+        </button>
         <div class="vcv-sort-control">
           <span id="vcv-sort-label" class="vcv-sort-control-label">{i18n.t('sortLabel', 'Sort')}</span>
           <Select.Root
@@ -703,6 +717,7 @@
         hasInventory={certs.inventory.length > 0}
         {hasActiveFilters}
         {showVaultMount}
+        compact={density.compact}
         {statusMeta}
         {thresholds}
         {sortKey}

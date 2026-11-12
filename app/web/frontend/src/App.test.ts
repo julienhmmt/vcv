@@ -110,6 +110,7 @@ beforeEach(() => {
   i18n.mockReset()
   getCertificateDetails.mockReset()
   window.history.replaceState(null, '', '/')
+  window.localStorage.clear()
 })
 
 afterEach(() => {
@@ -251,6 +252,17 @@ describe('App', () => {
 
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
     expect(getCertificateDetails).toHaveBeenCalledWith(c.id)
+  })
+
+  it('toggles compact rows from the results bar', async () => {
+    mockOk([cert()])
+    render(App)
+    await screen.findByText('web.example.com')
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Row density' }))
+
+    expect(document.querySelector('.vcv-table')?.classList.contains('vcv-table-compact')).toBe(true)
+    expect(window.localStorage.getItem('vcv-density')).toBe('compact')
   })
 
 })
