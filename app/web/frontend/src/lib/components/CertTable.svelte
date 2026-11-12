@@ -20,6 +20,7 @@
     showVaultMount: boolean
     noVaultsConfigured: boolean
     noMountsConfigured: boolean
+    refreshing: boolean
     compact: boolean
     statusMeta: Record<CertStatus, { label: string; desc: string }>
     thresholds: ExpirationThresholds
@@ -39,6 +40,7 @@
     showVaultMount,
     noVaultsConfigured,
     noMountsConfigured,
+    refreshing,
     compact,
     statusMeta,
     thresholds,
@@ -245,7 +247,7 @@
   </tr>
 {/snippet}
 
-<div class="vcv-table-wrapper" bind:this={scrollEl}>
+<div class="vcv-table-wrapper" class:vcv-table-stale={refreshing} aria-busy={refreshing} bind:this={scrollEl}>
   {#if initialLoad && !hasInventory}
     <div class="vcv-table-skeleton">
       {#each Array(8) as _, i (i)}

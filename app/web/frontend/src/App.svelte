@@ -317,11 +317,14 @@
   }
 
   async function manualRefresh(): Promise<void> {
-    // No error option: a failure dismisses the loading toast and the error effect toasts once.
-    toast.promise(load(), {
-      loading: i18n.t('toastRefreshing', 'Refreshing…'),
-      success: () => i18n.t('loadSuccess', 'Certificates loaded'),
-    })
+    const id = toast.loading(i18n.t('toastRefreshing', 'Refreshing…'))
+    try {
+      await load()
+      toast.success(i18n.t('loadSuccess', 'Certificates loaded'), { id })
+    } catch {
+      // The persistent ErrorBanner owns the failure message.
+      toast.dismiss(id)
+    }
   }
 
   function exportCerts(format: ExportFormat): void {
@@ -442,6 +445,8 @@
     return `${seconds / 60}m`
   }
 
+  const refreshing = $derived(certs.loading && !initialLoad && certs.certificates.length > 0)
+
   const lastUpdatedText = $derived(
     lastUpdated
       ? i18n.t('lastUpdatedLabel', 'Updated {time}', { time: lastUpdated.toLocaleTimeString() })
@@ -460,19 +465,6 @@
       el?.focus()
     }
   }
-
-  /** Message last toasted; plain (not $state) so writing it does not re-run the effect. */
-  let lastToastedError: string | null = null
-  $effect(() => {
-    const message = certs.error
-    if (!message) {
-      lastToastedError = null
-      return
-    }
-    if (message === dismissedFetchError || message === lastToastedError) return
-    lastToastedError = message
-    toast.error(message)
-  })
 
   // Toast vault connectivity transitions detected by the status poll.
   // eslint-disable-next-line svelte/prefer-svelte-reactivity -- scratch state; SvelteMap would make the effect depend on its own writes
@@ -530,6 +522,9 @@
         >
           <RefreshCw class="h-4 w-4 {certs.loading ? 'animate-spin' : ''}" />
         </button>
+        {#if lastUpdatedText}
+          <span class="vcv-last-updated" aria-live="polite">{lastUpdatedText}</span>
+        {/if}
         <div class="vcv-auto-refresh">
           <span id="vcv-auto-refresh-label" class="vcv-auto-refresh-label">{i18n.t('autoRefreshLabel', 'Auto-refresh')}</span>
           <Select.Root
@@ -546,9 +541,6 @@
               {/each}
             </Select.Content>
           </Select.Root>
-          {#if lastUpdatedText}
-            <span class="vcv-last-updated" aria-live="polite">{lastUpdatedText}</span>
-          {/if}
         </div>
         <button
           class="vcv-button vcv-button-icon vcv-theme-toggle"
@@ -709,6 +701,7 @@
         {showVaultMount}
         {noVaultsConfigured}
         {noMountsConfigured}
+        {refreshing}
         {statusMeta}
         {thresholds}
         onSelect={selectCert}
@@ -724,6 +717,7 @@
         {showVaultMount}
         {noVaultsConfigured}
         {noMountsConfigured}
+        {refreshing}
         compact={density.compact}
         {statusMeta}
         {thresholds}

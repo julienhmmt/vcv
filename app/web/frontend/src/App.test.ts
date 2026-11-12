@@ -205,7 +205,7 @@ describe('App', () => {
     expect(window.location.search).toContain('q=web')
   })
 
-  it('shows one error toast and no leftover loading toast after a failed manual refresh', async () => {
+  it('shows the error banner and no error toast after a failed manual refresh', async () => {
     mockOk([cert({ id: 'a', commonName: 'web.example.com' })])
     render(App)
     await screen.findAllByText('web.example.com')
@@ -214,33 +214,18 @@ describe('App', () => {
     mockDown()
     await fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
 
-    await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledTimes(1))
-    await vi.waitFor(() => {
-      const toasts = document.querySelectorAll('[data-sonner-toast]')
-      expect(toasts).toHaveLength(1)
-      expect(toasts[0]).toHaveAttribute('data-type', 'error')
-    })
+    expect(
+      await screen.findByText('Network error loading certificates. Please try again.'),
+    ).toBeInTheDocument()
+    expect(errorSpy).not.toHaveBeenCalled()
   })
 
-  it('toasts a repeated identical table error only once', async () => {
+  it('shows the last updated time without enabling auto-refresh', async () => {
     mockOk([cert({ id: 'a', commonName: 'web.example.com' })])
     render(App)
     await screen.findAllByText('web.example.com')
 
-    const errorSpy = vi.spyOn(toast, 'error')
-    mockDown()
-    await fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
-    await vi.waitFor(() => expect(errorSpy).toHaveBeenCalledTimes(1))
-
-    // A second failing table fetch (search change) with the same message must not re-toast.
-    const searchInput = screen.getByLabelText('Search certificates') as HTMLInputElement
-    await fireEvent.input(searchInput, { target: { value: 'again' } })
-    await vi.waitFor(() =>
-      expect(listCertificates).toHaveBeenCalledWith(expect.objectContaining({ search: 'again' })),
-    )
-    await new Promise((resolve) => setTimeout(resolve, 20))
-
-    expect(errorSpy).toHaveBeenCalledTimes(1)
+    expect(screen.getByText(/^Updated /)).toBeInTheDocument()
   })
   it('opens the detail dialog from a ?cert= deep link', async () => {
     const c = cert()
