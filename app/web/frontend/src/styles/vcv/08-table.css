@@ -444,13 +444,13 @@ col.vcv-col-status {
   z-index: 1;
 }
 
-
 .vcv-row-quick-actions {
   display: inline-flex;
   gap: 0.25rem;
   opacity: 0.55;
   transition: opacity 0.12s ease;
 }
+
 .vcv-cert-card .vcv-row-quick-actions {
   position: relative;
   z-index: 2;
