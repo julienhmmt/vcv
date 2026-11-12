@@ -147,6 +147,9 @@
     return Array.from(set).sort()
   })
   const showVaultMount = $derived(allMounts.length > 1 || sortKey === 'vault' || sortKey === 'pki')
+  // First-run guidance only after /api/status resolves, so it never flashes on load.
+  const noVaultsConfigured = $derived(status.status !== null && status.status.vaults.length === 0)
+  const noMountsConfigured = $derived(status.status !== null && !noVaultsConfigured && allMounts.length === 0)
 
   let urlHydrated = $state(false)
 
@@ -704,6 +707,8 @@
         hasInventory={certs.inventory.length > 0}
         {hasActiveFilters}
         {showVaultMount}
+        {noVaultsConfigured}
+        {noMountsConfigured}
         {statusMeta}
         {thresholds}
         onSelect={selectCert}
@@ -717,6 +722,8 @@
         hasInventory={certs.inventory.length > 0}
         {hasActiveFilters}
         {showVaultMount}
+        {noVaultsConfigured}
+        {noMountsConfigured}
         compact={density.compact}
         {statusMeta}
         {thresholds}

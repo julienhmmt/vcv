@@ -527,6 +527,15 @@ col.vcv-col-status {
   text-align: center;
 }
 
+.vcv-empty-first-run {
+  max-width: 34rem;
+}
+
+.vcv-empty-cta {
+  margin-top: 0.5rem;
+  text-decoration: none;
+}
+
 .vcv-empty-title {
   color: var(--vcv-color-text);
   font-size: 0.9375rem;

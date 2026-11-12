@@ -18,6 +18,8 @@
     hasInventory: boolean
     hasActiveFilters: boolean
     showVaultMount: boolean
+    noVaultsConfigured: boolean
+    noMountsConfigured: boolean
     compact: boolean
     statusMeta: Record<CertStatus, { label: string; desc: string }>
     thresholds: ExpirationThresholds
@@ -35,6 +37,8 @@
     hasInventory,
     hasActiveFilters,
     showVaultMount,
+    noVaultsConfigured,
+    noMountsConfigured,
     compact,
     statusMeta,
     thresholds,
@@ -299,6 +303,22 @@
                   <button type="button" class="vcv-button vcv-button-small vcv-button-ghost vcv-button-pill" onclick={onClearFilters}>
                     {i18n.t('filterChipReset', 'Clear all')}
                   </button>
+                </div>
+              {:else if noVaultsConfigured || noMountsConfigured}
+                <div class="vcv-empty-state vcv-empty-first-run">
+                  <p class="vcv-empty-title">
+                    {noVaultsConfigured
+                      ? i18n.t('emptyNoVaultsTitle', 'No vaults configured yet')
+                      : i18n.t('emptyNoMountsTitle', 'No PKI mounts configured yet')}
+                  </p>
+                  <p class="vcv-empty-hint">
+                    {noVaultsConfigured
+                      ? i18n.t('emptyNoVaultsHint', 'Add a HashiCorp Vault or OpenBao instance in the admin panel, then enable its PKI mount.')
+                      : i18n.t('emptyNoMountsHint', 'Enable at least one PKI mount for a configured vault in the admin panel.')}
+                  </p>
+                  <a class="vcv-button vcv-button-primary vcv-empty-cta" href="/admin">
+                    {i18n.t('emptyOpenAdmin', 'Open admin panel')}
+                  </a>
                 </div>
               {:else}
                 <div class="vcv-empty-state">
