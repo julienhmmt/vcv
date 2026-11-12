@@ -418,16 +418,91 @@ col.vcv-col-status {
 }
 
 .vcv-cert-card-action {
+  align-items: center;
   border-top: 1px solid var(--vcv-color-border);
   color: var(--vcv-color-muted);
+  display: flex;
   font-size: 0.8125rem;
   font-weight: 600;
+  justify-content: space-between;
   padding-top: 0.75rem;
   width: 100%;
 }
 
 .vcv-cert-card:hover .vcv-cert-card-action,
-.vcv-cert-card:focus-visible .vcv-cert-card-action {
+.vcv-cert-card:focus-within .vcv-cert-card-action {
+  color: var(--vcv-color-text-strong);
+}
+
+.vcv-cert-card {
+  position: relative;
+}
+
+/* Stretched hit area: the name button covers the card without nesting
+   interactive elements inside a role=button container. */
+.vcv-cert-card .vcv-cn-button::after {
+  content: "";
+  inset: 0;
+  position: absolute;
+  z-index: 1;
+}
+
+.vcv-cert-card .vcv-row-quick-actions {
+  position: relative;
+  z-index: 2;
+}
+
+.vcv-cert-name-row {
+  align-items: center;
+  display: flex;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.vcv-cn-button {
+  background: none;
+  border: 0;
+  border-radius: 0.25rem;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: inherit;
+  padding: 0;
+  text-align: left;
+}
+
+.vcv-cn-button:focus-visible {
+  outline: 2px solid var(--vcv-color-primary);
+  outline-offset: 2px;
+}
+
+.vcv-row-quick-actions {
+  display: inline-flex;
+  gap: 0.25rem;
+  opacity: 0.55;
+  transition: opacity 0.12s ease;
+}
+
+.vcv-row-clickable:hover .vcv-row-quick-actions,
+.vcv-row-clickable:focus-within .vcv-row-quick-actions {
+  opacity: 1;
+}
+
+.vcv-icon-action {
+  align-items: center;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 0.25rem;
+  color: var(--vcv-color-muted);
+  cursor: pointer;
+  display: inline-flex;
+  height: 1.5rem;
+  justify-content: center;
+  width: 1.5rem;
+}
+
+.vcv-icon-action:hover {
+  border-color: var(--vcv-color-border);
   color: var(--vcv-color-text-strong);
 }
 

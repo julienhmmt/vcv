@@ -1,7 +1,11 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen } from '@testing-library/svelte'
+import { render, screen, fireEvent } from '@testing-library/svelte'
 import type { Certificate } from '$lib/types'
+
+const { copyToClipboard } = vi.hoisted(() => ({ copyToClipboard: vi.fn() }))
+
+vi.mock('$lib/utils/clipboard', () => ({ copyToClipboard }))
 
 vi.mock('$lib/stores/i18n.svelte', () => ({
   getI18n: () => ({ t: (_key: string, fallback?: string) => fallback ?? _key }),
@@ -46,6 +50,19 @@ describe('CertCard', () => {
     })
 
     expect(screen.getByText('Machine')).toBeInTheDocument()
+  })
+
+  it('copies the serial without opening the detail dialog', async () => {
+    const onSelect = vi.fn()
+    copyToClipboard.mockResolvedValue(true)
+    render(CertCard, {
+      props: { cert, showVaultMount: false, status: 'valid', statusLabel: 'Valid', onSelect },
+    })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Copy serial number' }))
+
+    expect(copyToClipboard).toHaveBeenCalledWith('aa:bb')
+    expect(onSelect).not.toHaveBeenCalled()
   })
 
 })
