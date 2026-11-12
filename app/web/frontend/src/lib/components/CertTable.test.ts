@@ -3,6 +3,10 @@ import { describe, it, expect, vi } from 'vitest'
 import { render, screen, fireEvent } from '@testing-library/svelte'
 import type { Certificate, ExpirationThresholds } from '$lib/types'
 
+const { copyToClipboard } = vi.hoisted(() => ({ copyToClipboard: vi.fn() }))
+
+vi.mock('$lib/utils/clipboard', () => ({ copyToClipboard }))
+
 vi.mock('$lib/stores/i18n.svelte', () => ({
   getI18n: () => ({
     t: (_key: string, fallback?: string, params?: Record<string, string | number>) =>
@@ -119,6 +123,34 @@ describe('CertTable', () => {
     const { container } = render(CertTable, { props: { ...baseProps, compact: true } })
 
     expect(container.querySelector('.vcv-table')?.classList.contains('vcv-table-compact')).toBe(true)
+  })
+
+  it('copies the common name without opening the detail dialog', async () => {
+    const onSelect = vi.fn()
+    copyToClipboard.mockResolvedValue(true)
+    render(CertTable, { props: { ...baseProps, onSelect } })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Copy common name' }))
+
+    expect(copyToClipboard).toHaveBeenCalledWith('web.example.com')
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  it('moves focus between rows with the arrow keys', async () => {
+    const second = { ...cert, id: 'vault1|pki-int:cc:dd', serialNumber: 'cc:dd', commonName: 'api.example.com' }
+    render(CertTable, { props: { ...baseProps, certs: [cert, second] } })
+
+    const buttons = screen.getAllByRole('button', { name: /: Details/ })
+    buttons[0].focus()
+    await fireEvent.keyDown(buttons[0], { key: 'ArrowDown' })
+
+    expect(document.activeElement).toBe(buttons[1])
+  })
+
+  it('does not put role=button on the row itself', () => {
+    const { container } = render(CertTable, { props: baseProps })
+
+    expect(container.querySelector('tbody tr')?.getAttribute('role')).toBeNull()
   })
 
 })
