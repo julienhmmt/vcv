@@ -154,3 +154,64 @@
     opacity: 1;
   }
 }
+
+/* Signing chain breadcrumb */
+.vcv-cd-chain {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.vcv-cd-chain-step {
+  background: none;
+  border: 0;
+  border-radius: 0.25rem;
+  color: var(--vcv-color-muted);
+  cursor: pointer;
+  font-size: 0.8125rem;
+  padding: 0.125rem 0.25rem;
+}
+
+.vcv-cd-chain-step:hover {
+  color: var(--vcv-color-text-strong);
+}
+
+.vcv-cd-chain-step:focus-visible {
+  outline: 2px solid var(--vcv-color-primary);
+  outline-offset: 2px;
+}
+
+.vcv-cd-chain-step-active {
+  color: var(--vcv-color-text-strong);
+  font-weight: 600;
+}
+
+.vcv-cd-chain-sep {
+  color: var(--vcv-color-muted);
+}
+
+/* Validity elapsed bar */
+.vcv-cd-validity {
+  background: var(--vcv-color-surface-muted);
+  border-radius: 999px;
+  height: 0.375rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.vcv-cd-validity-fill {
+  background: var(--vcv-color-primary);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+}
+
+.vcv-cd-validity-warning {
+  background: var(--vcv-color-warning-strong);
+}
+
+.vcv-cd-validity-critical {
+  background: var(--vcv-color-danger);
+}

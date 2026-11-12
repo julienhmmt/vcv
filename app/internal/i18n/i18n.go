@@ -64,6 +64,7 @@ type Messages struct {
 	DownloadPEMSuccess          string `json:"downloadPEMSuccess"`
 	AdminDocsTitle              string `json:"adminDocsTitle"`
 	AdminDocsError              string `json:"adminDocsError"`
+	CaChainLabel                string `json:"caChainLabel"`
 	CertUnnamed                 string `json:"certUnnamed"`
 	CertTypeFilterAll           string `json:"certTypeFilterAll"`
 	CertTypeFilterBoth          string `json:"certTypeFilterBoth"`
@@ -206,6 +207,7 @@ type Messages struct {
 	StatusDescRevoked                string `json:"statusDescRevoked"`
 	LabelValidity                    string `json:"labelValidity"`
 	LabelCopy                        string `json:"labelCopy"`
+	LabelCertificate                 string `json:"labelCertificate"`
 	LabelCopied                      string `json:"labelCopied"`
 	LabelCopyCommonName              string `json:"labelCopyCommonName"`
 	LabelCopySerial                  string `json:"labelCopySerial"`
@@ -344,6 +346,8 @@ var englishMessages = Messages{
 	LabelKeyAlgorithm:              "Key Algorithm",
 	LabelLanguage:                  "Language",
 	LabelLoading:                   "Loading...",
+	CaChainLabel:                   "Certificate chain",
+	LabelCertificate:               "Certificate",
 	LabelCertificateType:           "Certificate type",
 	LabelPEM:                       "PEM Certificate",
 	LabelRootCA:                    "Root CA",
@@ -582,6 +586,8 @@ var frenchMessages = Messages{
 	LabelKeyAlgorithm:              "Algorithme de clé",
 	LabelLanguage:                  "Langue",
 	LabelLoading:                   "Chargement...",
+	CaChainLabel:                   "Chaîne de certificats",
+	LabelCertificate:               "Certificat",
 	LabelCertificateType:           "Type de certificat",
 	LabelPEM:                       "Certificat PEM",
 	LabelRootCA:                    "Autorité racine",
@@ -820,6 +826,8 @@ var spanishMessages = Messages{
 	LabelKeyAlgorithm:              "Algoritmo de clave",
 	LabelLanguage:                  "Idioma",
 	LabelLoading:                   "Cargando...",
+	CaChainLabel:                   "Cadena de certificados",
+	LabelCertificate:               "Certificado",
 	LabelCertificateType:           "Tipo de certificado",
 	LabelPEM:                       "Certificado PEM",
 	LabelRootCA:                    "CA raíz",
@@ -1058,6 +1066,8 @@ var germanMessages = Messages{
 	LabelKeyAlgorithm:              "Schlüsselalgorithmus",
 	LabelLanguage:                  "Sprache",
 	LabelLoading:                   "Wird geladen...",
+	CaChainLabel:                   "Zertifikatskette",
+	LabelCertificate:               "Zertifikat",
 	LabelCertificateType:           "Zertifikatstyp",
 	LabelPEM:                       "PEM-Zertifikat",
 	LabelRootCA:                    "Stamm-CA",
@@ -1296,6 +1306,8 @@ var italianMessages = Messages{
 	LabelKeyAlgorithm:              "Algoritmo della chiave",
 	LabelLanguage:                  "Lingua",
 	LabelLoading:                   "Caricamento...",
+	CaChainLabel:                   "Catena di certificati",
+	LabelCertificate:               "Certificato",
 	LabelCertificateType:           "Tipo di certificato",
 	LabelPEM:                       "Certificato PEM",
 	LabelRootCA:                    "CA radice",
