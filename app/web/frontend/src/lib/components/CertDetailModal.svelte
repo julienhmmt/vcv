@@ -226,7 +226,7 @@
 </script>
 
 <Dialog.Root {open} {onOpenChange}>
-  <Dialog.Content class="max-w-4xl p-0 overflow-hidden">
+  <Dialog.Content class="max-w-4xl p-0 overflow-hidden vcv-cd-dialog">
     <Dialog.Title class="sr-only">
       {view === 'issuer'
         ? i18n.t('caIssuerCertificate', 'Issuer certificate')
@@ -248,7 +248,7 @@
         </button>
       </div>
     {:else if cert && details && view === 'certificate'}
-      <ScrollArea class="max-h-[85vh]">
+      <ScrollArea class="max-h-[85vh] vcv-cd-scroll">
         <div class="vcv-cd-passport vcv-cd-passport-{expiryTone}">
           <aside class="vcv-cd-passport-sidebar">
             <div class="vcv-cd-emblem">
@@ -449,7 +449,7 @@
         </div>
       </ScrollArea>
     {:else if cert && view === 'issuer'}
-      <ScrollArea class="max-h-[85vh]">
+      <ScrollArea class="max-h-[85vh] vcv-cd-scroll">
         <div class="vcv-cd-passport vcv-ca-passport">
           <aside class="vcv-cd-passport-sidebar">
             <div class="vcv-cd-emblem vcv-ca-emblem">

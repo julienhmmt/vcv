@@ -133,6 +133,90 @@
   border-color: rgb(129 140 248 / 22%);
 }
 
+
+/* Certificate detail as a full-screen sheet on phones */
+@media (768px >= width) {
+  [data-slot="dialog-content"].vcv-cd-dialog {
+    inset: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 100dvh;
+    transform: none;
+    border-radius: 0;
+    padding: 0;
+    gap: 0;
+  }
+
+  .vcv-cd-dialog .vcv-cd-scroll {
+    max-height: none;
+    height: 100%;
+  }
+
+  .vcv-cd-dialog .vcv-cd-passport {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .vcv-cd-dialog .vcv-cd-passport-sidebar {
+    flex-flow: row wrap;
+    align-items: center;
+    gap: 0.75rem 1rem;
+    padding: 1rem 1.25rem;
+    border-right: 0;
+    border-bottom: 1px solid var(--vcv-color-border);
+  }
+
+  .vcv-cd-dialog .vcv-cd-emblem {
+    display: none;
+  }
+
+  .vcv-cd-dialog .vcv-cd-sidebar-status {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .vcv-cd-dialog .vcv-cd-countdown {
+    font-size: 1.4rem;
+  }
+
+  .vcv-cd-dialog .vcv-cd-date-stack {
+    flex-direction: row;
+    gap: 0.5rem;
+    margin-top: 0;
+    width: 100%;
+  }
+
+  .vcv-cd-dialog .vcv-cd-date-stack div {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+  }
+
+  .vcv-cd-dialog .vcv-cd-passport-main {
+    padding: 1rem 1.25rem 1.25rem;
+  }
+
+  .vcv-cd-dialog .vcv-cd-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    flex-wrap: wrap;
+    background: var(--vcv-color-surface);
+    border-top: 1px solid var(--vcv-color-border);
+    padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom));
+  }
+
+  .vcv-cd-dialog .vcv-cd-actions .vcv-button {
+    flex: 1 1 auto;
+  }
+
+  .vcv-cd-dialog [data-slot="dialog-close"] {
+    background: var(--vcv-color-surface);
+    border: 1px solid var(--vcv-color-border);
+    border-radius: 999px;
+    z-index: 3;
+  }
+}
+
 /* Respect users who prefer reduced motion: neutralize non-essential
    animation/transition while keeping layout and visibility intact. */
 @media (prefers-reduced-motion: reduce) {
