@@ -204,4 +204,60 @@ describe('CertDetailModal', () => {
     expect(String(copyToClipboard.mock.calls[0][0])).toContain('cert=vault1%7Cpki-int%3Aaa%3Abb')
   })
 
+  it('navigates the signing chain level by level', async () => {
+    const intermediate = detailed({ id: 'vault1|pki-int:ca1', commonName: 'Intermediate CA', caType: 'intermediate' })
+    const root = detailed({ id: 'vault1|pki-int:ca2', commonName: 'Root CA', caType: 'root' })
+    getCertificateDetails.mockResolvedValue(detailed())
+    getCertificateCA.mockResolvedValueOnce(intermediate).mockResolvedValueOnce(root)
+    render(CertDetailModal, { props: { cert, open: true, onOpenChange: vi.fn() } })
+
+    await screen.findByText('Example Intermediate CA')
+    await fireEvent.click(screen.getByText('View issuer CA'))
+    await screen.findByRole('button', { name: 'Intermediate CA' })
+    await fireEvent.click(screen.getByText('View issuer CA'))
+    await screen.findByRole('button', { name: 'Root CA' })
+
+    expect(getCertificateCA).toHaveBeenNthCalledWith(1, cert.id)
+    expect(getCertificateCA).toHaveBeenNthCalledWith(2, intermediate.id)
+    const chain = screen.getByRole('navigation', { name: 'Certificate chain' })
+    expect(chain.textContent).toContain('Certificate')
+    expect(chain.textContent).toContain('Intermediate CA')
+    expect(chain.textContent).toContain('Root CA')
+  })
+
+  it('does not offer a further issuer for a root certificate', async () => {
+    getCertificateDetails.mockResolvedValue(detailed())
+    getCertificateCA.mockResolvedValue(detailed({ caType: 'root', commonName: 'Root CA' }))
+    render(CertDetailModal, { props: { cert, open: true, onOpenChange: vi.fn() } })
+
+    await screen.findByText('Example Intermediate CA')
+    await fireEvent.click(screen.getByText('View issuer CA'))
+    await screen.findAllByText('Root CA')
+
+    expect(screen.queryByText('View issuer CA')).toBeNull()
+  })
+
+  it('shows the elapsed validity as a progress bar', async () => {
+    const timed = { ...cert, createdAt: '2020-01-01T00:00:00Z', expiresAt: '2033-01-01T00:00:00Z' }
+    getCertificateDetails.mockResolvedValue(detailed())
+    render(CertDetailModal, { props: { cert: timed, open: true, onOpenChange: vi.fn() } })
+
+    const bar = await screen.findByRole('progressbar', { name: 'Validity' })
+    const value = Number(bar.getAttribute('aria-valuenow'))
+    expect(value).toBeGreaterThan(30)
+    expect(value).toBeLessThan(70)
+  })
+
+  it('copies the subject', async () => {
+    getCertificateDetails.mockResolvedValue(detailed())
+    copyToClipboard.mockResolvedValue(true)
+    render(CertDetailModal, { props: { cert, open: true, onOpenChange: vi.fn() } })
+
+    await screen.findByText('Example Intermediate CA')
+    const subjectRow = screen.getByText('Subject').parentElement as HTMLElement
+    await fireEvent.click(subjectRow.querySelector('button') as HTMLButtonElement)
+
+    expect(copyToClipboard).toHaveBeenCalledWith('CN=web.example.com')
+  })
+
 })

@@ -35,14 +35,17 @@
     revoked: i18n.t('statusLabelRevoked', 'Revoked'),
   })
 
-  type DetailView = 'certificate' | 'issuer'
-  let view = $state<DetailView>('certificate')
+  /** Loaded issuer levels, leaf-first (index 0 is the certificate's direct issuer). */
+  let issuers = $state<DetailedCertificate[]>([])
+  /** null = certificate view; otherwise the issuer level being shown. */
+  let issuerIndex = $state<number | null>(null)
+  const view = $derived(issuerIndex === null ? 'certificate' : 'issuer')
+  const currentIssuer = $derived(issuerIndex === null ? null : (issuers[issuerIndex] ?? null))
 
   let details = $state<DetailedCertificate | null>(null)
   let loading = $state(false)
   let error = $state<string | null>(null)
 
-  let issuer = $state<DetailedCertificate | null>(null)
   let issuerLoading = $state(false)
   let issuerError = $state<string | null>(null)
 
@@ -75,17 +78,18 @@
       })
   }
 
-  function loadIssuer(): void {
-    if (!cert) return
+  function loadIssuerAt(index: number): void {
+    const parentId = index === 0 ? cert?.id : issuers[index - 1]?.id
+    if (!parentId) return
     const reqId = ++issuerReqId
-    const id = cert.id
     issuerLoading = true
     issuerError = null
     api
-      .getCertificateCA(id)
+      .getCertificateCA(parentId)
       .then((data) => {
         if (reqId !== issuerReqId) return
-        issuer = data
+        issuers = [...issuers.slice(0, index), data]
+        issuerIndex = index
       })
       .catch((err: unknown) => {
         if (reqId !== issuerReqId) return
@@ -103,12 +107,12 @@
       detailsReqId++
       issuerReqId++
       details = null
-      issuer = null
+      issuers = []
+      issuerIndex = null
       error = null
       issuerError = null
       loading = false
       issuerLoading = false
-      view = 'certificate'
       if (copyTimer) {
         clearTimeout(copyTimer)
         copyTimer = null
@@ -118,8 +122,8 @@
     }
     // Depend on the selected certificate so switching certs reloads.
     void cert.id
-    view = 'certificate'
-    issuer = null
+    issuers = []
+    issuerIndex = null
     issuerError = null
     issuerReqId++
     loadDetails()
@@ -130,12 +134,23 @@
   })
 
   function showIssuer(): void {
-    view = 'issuer'
-    if (!issuer && !issuerLoading) loadIssuer()
+    if (issuerIndex === null) {
+      if (issuers.length > 0) issuerIndex = 0
+      else loadIssuerAt(0)
+      return
+    }
+    const next = issuerIndex + 1
+    if (next >= 5) return
+    if (issuers[next]) {
+      issuerIndex = next
+      return
+    }
+    if (issuers[issuerIndex]?.caType === 'root') return
+    loadIssuerAt(next)
   }
 
-  function backToCertificate(): void {
-    view = 'certificate'
+  function goToLevel(index: number | null): void {
+    issuerIndex = index
   }
 
   async function copy(field: string, value: string): Promise<void> {
@@ -194,9 +209,19 @@
   const status = $derived(cert ? certStatus(cert, thresholds) : 'valid')
   const days = $derived(cert ? daysUntilExpiry(cert) : 0)
   const expiryTone = $derived(cert ? tone(status) : 'ok')
+  function validityPercent(createdAt: string, expiresAt: string, now = Date.now()): number {
+    const start = new Date(createdAt).getTime()
+    const end = new Date(expiresAt).getTime()
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return 0
+    return Math.max(0, Math.min(100, Math.round(((now - start) / (end - start)) * 100)))
+  }
+
+  const percent = $derived(cert ? validityPercent(cert.createdAt, cert.expiresAt) : 0)
   const source = $derived(cert ? parseCertID(cert.id) : null)
   const issuerLabel = $derived(
-    issuer?.caType === 'root' ? i18n.t('labelRootCA', 'Root CA') : i18n.t('labelIntermediateCA', 'Intermediate CA'),
+    currentIssuer?.caType === 'root'
+      ? i18n.t('labelRootCA', 'Root CA')
+      : i18n.t('labelIntermediateCA', 'Intermediate CA'),
   )
 </script>
 
@@ -248,6 +273,16 @@
                   })}
                 </strong>
               {/if}
+            </div>
+            <div
+              class="vcv-cd-validity"
+              role="progressbar"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-valuenow={percent}
+              aria-label={i18n.t('labelValidity', 'Validity')}
+            >
+              <span class="vcv-cd-validity-fill vcv-cd-validity-{expiryTone}" style="width: {percent}%"></span>
             </div>
             <div class="vcv-cd-date-stack">
               <div>
@@ -310,7 +345,18 @@
                 {#if details.subject}
                   <div class="vcv-cd-detail-row">
                     <span>{i18n.t('labelSubject', 'Subject')}</span>
-                    <strong title={details.subject}>{details.subject}</strong>
+                    <div class="vcv-cd-copy-row">
+                      <strong title={details.subject}>{details.subject}</strong>
+                      <button
+                        type="button"
+                        class="vcv-cd-copy-btn"
+                        class:vcv-cd-copy-done={copiedField === 'subject'}
+                        onclick={() => copy('subject', details!.subject)}
+                        aria-label={i18n.t('labelCopy', 'Copy')}
+                      >
+                        {#if copiedField === 'subject'}<Check class="h-3.5 w-3.5" />{:else}<Copy class="h-3.5 w-3.5" />{/if}
+                      </button>
+                    </div>
                   </div>
                 {/if}
                 <div class="vcv-cd-detail-row">
@@ -409,30 +455,51 @@
             <div class="vcv-cd-emblem vcv-ca-emblem">
               <Landmark class="h-8 w-8" />
             </div>
-            {#if issuer}
+            {#if currentIssuer}
               <div class="vcv-ca-type-badge"><span class="vcv-ca-type-label">{issuerLabel}</span></div>
               <div class="vcv-cd-date-stack">
                 <div>
                   <span>{i18n.t('columnExpiresAt', 'Expires')}</span>
-                  <strong>{formatDate(issuer.expiresAt)}</strong>
-                  <small>{formatTime(issuer.expiresAt)} UTC</small>
+                  <strong>{formatDate(currentIssuer.expiresAt)}</strong>
+                  <small>{formatTime(currentIssuer.expiresAt)} UTC</small>
                 </div>
                 <div>
                   <span>{i18n.t('columnCreatedAt', 'Created')}</span>
-                  <strong>{formatDate(issuer.createdAt)}</strong>
-                  <small>{formatTime(issuer.createdAt)} UTC</small>
+                  <strong>{formatDate(currentIssuer.createdAt)}</strong>
+                  <small>{formatTime(currentIssuer.createdAt)} UTC</small>
                 </div>
               </div>
             {/if}
           </aside>
 
           <main class="vcv-cd-passport-main">
-            <button type="button" class="vcv-button vcv-button-secondary vcv-cd-back" onclick={backToCertificate}>
+            <nav class="vcv-cd-chain" aria-label={i18n.t('caChainLabel', 'Certificate chain')}>
+              <button
+                type="button"
+                class="vcv-cd-chain-step"
+                class:vcv-cd-chain-step-active={issuerIndex === null}
+                onclick={() => goToLevel(null)}
+              >
+                {i18n.t('labelCertificate', 'Certificate')}
+              </button>
+              {#each issuers as entry, index (entry.id)}
+                <span class="vcv-cd-chain-sep" aria-hidden="true">/</span>
+                <button
+                  type="button"
+                  class="vcv-cd-chain-step"
+                  class:vcv-cd-chain-step-active={issuerIndex === index}
+                  onclick={() => goToLevel(index)}
+                >
+                  {entry.commonName || entry.subject || '—'}
+                </button>
+              {/each}
+            </nav>
+            <button type="button" class="vcv-button vcv-button-secondary vcv-cd-back" onclick={() => goToLevel(null)}>
               <ArrowLeft class="h-4 w-4" />
               {i18n.t('buttonBackToCertificate', 'Back to certificate')}
             </button>
 
-            {#if issuerLoading && !issuer}
+            {#if issuerLoading && !currentIssuer}
               <div class="vcv-cd-skeleton">
                 <Skeleton class="h-8 w-2/3" />
                 <Skeleton class="h-5 w-1/3" />
@@ -441,30 +508,30 @@
             {:else if issuerError}
               <div class="vcv-cd-error">
                 <p class="vcv-cd-error-text">{issuerError}</p>
-                <button type="button" class="vcv-button vcv-button-secondary" onclick={loadIssuer}>
+                <button type="button" class="vcv-button vcv-button-secondary" onclick={() => loadIssuerAt(issuerIndex ?? 0)}>
                   {i18n.t('buttonRetry', 'Retry')}
                 </button>
               </div>
-            {:else if issuer}
+            {:else if currentIssuer}
               <header class="vcv-cd-passport-header">
-                <h3 class="vcv-cd-cn">{issuer.subject || issuer.commonName || '—'}</h3>
+                <h3 class="vcv-cd-cn">{currentIssuer.subject || currentIssuer.commonName || '—'}</h3>
               </header>
 
               <section class="vcv-cd-detail-list">
                 <div class="vcv-cd-detail-row">
                   <span>{i18n.t('labelIssuer', 'Issuer')}</span>
-                  <strong title={issuer.issuer}>{issuer.issuer || '—'}</strong>
+                  <strong title={currentIssuer.issuer}>{currentIssuer.issuer || '—'}</strong>
                 </div>
-                {#if issuer.keyAlgorithm}
+                {#if currentIssuer.keyAlgorithm}
                   <div class="vcv-cd-detail-row">
                     <span>{i18n.t('labelKeyAlgorithm', 'Key')}</span>
-                    <strong>{issuer.keyAlgorithm}{issuer.keySize ? ` (${issuer.keySize})` : ''}</strong>
+                    <strong>{currentIssuer.keyAlgorithm}{currentIssuer.keySize ? ` (${currentIssuer.keySize})` : ''}</strong>
                   </div>
                 {/if}
-                {#if issuer.usage?.length}
+                {#if currentIssuer.usage?.length}
                   <div class="vcv-cd-detail-row">
                     <span>{i18n.t('labelUsage', 'Usage')}</span>
-                    <strong>{issuer.usage.join(', ')}</strong>
+                    <strong>{currentIssuer.usage.join(', ')}</strong>
                   </div>
                 {/if}
               </section>
@@ -475,12 +542,12 @@
                   <div class="vcv-cd-detail-row">
                     <span>{i18n.t('labelSerialNumber', 'Serial')}</span>
                     <div class="vcv-cd-copy-row">
-                      <code class="vcv-cd-serial">{issuer.serialNumber}</code>
+                      <code class="vcv-cd-serial">{currentIssuer.serialNumber}</code>
                       <button
                         type="button"
                         class="vcv-cd-copy-btn"
                         class:vcv-cd-copy-done={copiedField === 'ca-serial'}
-                        onclick={() => copy('ca-serial', issuer!.serialNumber)}
+                        onclick={() => copy('ca-serial', currentIssuer!.serialNumber)}
                         aria-label={i18n.t('labelCopy', 'Copy')}
                       >
                         {#if copiedField === 'ca-serial'}<Check class="h-3.5 w-3.5" />{:else}<Copy class="h-3.5 w-3.5" />{/if}
@@ -490,12 +557,12 @@
                   <div class="vcv-cd-detail-row vcv-cd-detail-row-stack">
                     <span>{i18n.t('labelFingerprintSHA256', 'SHA-256')}</span>
                     <div class="vcv-cd-copy-row">
-                      <code class="vcv-cd-fingerprint">{issuer.fingerprintSHA256}</code>
+                      <code class="vcv-cd-fingerprint">{currentIssuer.fingerprintSHA256}</code>
                       <button
                         type="button"
                         class="vcv-cd-copy-btn"
                         class:vcv-cd-copy-done={copiedField === 'ca-sha256'}
-                        onclick={() => copy('ca-sha256', issuer!.fingerprintSHA256)}
+                        onclick={() => copy('ca-sha256', currentIssuer!.fingerprintSHA256)}
                         aria-label={i18n.t('labelCopy', 'Copy')}
                       >
                         {#if copiedField === 'ca-sha256'}<Check class="h-3.5 w-3.5" />{:else}<Copy class="h-3.5 w-3.5" />{/if}
@@ -505,12 +572,18 @@
                 </section>
               </details>
 
-              {#if issuer.pem}
-                <div class="vcv-cd-actions">
+              <div class="vcv-cd-actions">
+                {#if currentIssuer.caType === 'intermediate'}
+                  <button type="button" class="vcv-button vcv-button-secondary" onclick={showIssuer}>
+                    <Landmark class="h-4 w-4" />
+                    {i18n.t('buttonViewCA', 'View issuer CA')}
+                  </button>
+                {/if}
+              {#if currentIssuer.pem}
                   <button
                     type="button"
                     class="vcv-button vcv-button-secondary"
-                    onclick={() => downloadPem(issuer!.pem, issuer!.commonName || 'ca')}
+                    onclick={() => downloadPem(currentIssuer!.pem, currentIssuer!.commonName || 'ca')}
                   >
                     <Download class="h-4 w-4" />
                     {i18n.t('buttonDownloadPEM', 'Download PEM')}
@@ -519,7 +592,7 @@
                     type="button"
                     class="vcv-button vcv-button-primary"
                     class:vcv-cd-copy-pem-done={copiedField === 'ca-pem'}
-                    onclick={() => copy('ca-pem', issuer!.pem)}
+                    onclick={() => copy('ca-pem', currentIssuer!.pem)}
                   >
                     {#if copiedField === 'ca-pem'}
                       <Check class="h-4 w-4" />
@@ -529,8 +602,8 @@
                       {i18n.t('labelCopyPem', 'Copy PEM')}
                     {/if}
                   </button>
-                </div>
               {/if}
+              </div>
             {/if}
           </main>
         </div>
