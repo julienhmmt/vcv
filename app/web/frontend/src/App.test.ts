@@ -11,15 +11,16 @@ import type {
 } from '$lib/types'
 import type { CertsQuery } from '$lib/api'
 
-const { listCertificates, config, status, i18n } = vi.hoisted(() => ({
+const { listCertificates, config, status, i18n, getCertificateDetails } = vi.hoisted(() => ({
   listCertificates: vi.fn(),
   config: vi.fn(),
   status: vi.fn(),
   i18n: vi.fn(),
+  getCertificateDetails: vi.fn(),
 }))
 
 vi.mock('$lib/api', () => ({
-  api: { listCertificates, config, status, i18n },
+  api: { listCertificates, config, status, i18n, getCertificateDetails },
   ApiError: class ApiError extends Error {},
 }))
 
@@ -107,6 +108,7 @@ beforeEach(() => {
   config.mockReset()
   status.mockReset()
   i18n.mockReset()
+  getCertificateDetails.mockReset()
   window.history.replaceState(null, '', '/')
 })
 
@@ -239,6 +241,18 @@ describe('App', () => {
 
     expect(errorSpy).toHaveBeenCalledTimes(1)
   })
+  it('opens the detail dialog from a ?cert= deep link', async () => {
+    const c = cert()
+    mockOk([c])
+    getCertificateDetails.mockResolvedValue({ ...c, issuer: 'CA', subject: 'CN=web', keyAlgorithm: 'RSA', keySize: 2048, fingerprintSHA1: 'aa', fingerprintSHA256: 'bb', usage: [], pem: '', caType: '' })
+    window.history.replaceState(null, '', `/?cert=${encodeURIComponent(c.id)}`)
+
+    render(App)
+
+    expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(getCertificateDetails).toHaveBeenCalledWith(c.id)
+  })
+
 })
 
 function mockDown(): void {

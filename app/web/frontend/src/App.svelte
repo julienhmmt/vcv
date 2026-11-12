@@ -26,7 +26,7 @@
   import { createThemeStore } from '$lib/stores/theme.svelte'
   import { createI18nStore, setI18nContext, LANGUAGES } from '$lib/stores/i18n.svelte'
   import { parseCertID } from '$lib/utils/cert-status'
-  import type { CertsQuery } from '$lib/api'
+  import { api, type CertsQuery } from '$lib/api'
   import {
     matchesFilters,
     sortCerts,
@@ -86,6 +86,7 @@
     sortDir: 'asc',
     pageSize: 25,
     pageIndex: 0,
+    certId: null,
   }
 
   let selected = $state<Certificate | null>(null)
@@ -170,6 +171,7 @@
       } catch {
         // Hard cert failure: ErrorBanner shows certs.error; avoid unhandled rejection.
       }
+      if (restored.certId) await openDeepLinkedCert(restored.certId)
     })()
     const id = setInterval(() => {
       if (tabVisible()) void status.refresh()
@@ -241,6 +243,7 @@
       sortDir,
       pageSize,
       pageIndex: safePage,
+      certId: selected?.id ?? null,
     }
     if (!urlHydrated) return
     // Read the reactive deps above; defer the history write so a burst of
@@ -381,6 +384,20 @@
   function selectCert(cert: Certificate): void {
     selected = cert
     certModalOpen = true
+  }
+
+  /** Open a certificate from `?cert=`: use the loaded inventory when possible, else fetch it. */
+  async function openDeepLinkedCert(id: string): Promise<void> {
+    const local = certs.inventory.find((c) => c.id === id) ?? certs.certificates.find((c) => c.id === id)
+    if (local) {
+      selectCert(local)
+      return
+    }
+    try {
+      selectCert(await api.getCertificateDetails(id))
+    } catch {
+      // Stale shared link: leave the table untouched rather than toasting on load.
+    }
   }
 
   function toggleStatus(next: CertStatus): void {
@@ -729,7 +746,10 @@
 <CertDetailModal
   cert={selected}
   open={certModalOpen}
-  onOpenChange={(value) => (certModalOpen = value)}
+  onOpenChange={(value) => {
+    certModalOpen = value
+    if (!value) selected = null
+  }}
   {thresholds}
 />
 
