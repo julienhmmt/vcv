@@ -12,8 +12,8 @@ importers:
         specifier: 1.78.0
         version: 1.78.0(svelte@5.57.3(@typescript-eslint/types@8.72.1))
       '@tanstack/svelte-virtual':
-        specifier: 3.13.39
-        version: 3.13.39(svelte@5.57.3(@typescript-eslint/types@8.72.1))
+        specifier: 3.13.54
+        version: 3.13.54(svelte@5.57.3(@typescript-eslint/types@8.72.1))
       bits-ui:
         specifier: ^2.21.0
         version: 2.21.0(@internationalized/date@3.12.2)(svelte@5.57.3(@typescript-eslint/types@8.72.1))
@@ -485,13 +485,13 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
-  '@tanstack/svelte-virtual@3.13.39':
-    resolution: {integrity: sha512-MTBnp0N9YEuShNc2m8MywsiFeHSSE0J8KvMISpU26tbO+8CEUYpRyNDV2H7rce1wTOH6wuRmDzahH20Zprdt9A==}
+  '@tanstack/svelte-virtual@3.13.54':
+    resolution: {integrity: sha512-SfOW9uly5+NX9PrtWSJ14lrxVH4TuyB6RwogPK9uXHcXD6pKcwp6syolreQZ0srw8p2MLSa5PHsDbeimmJJ6lA==}
     peerDependencies:
       svelte: ^3.48.0 || ^4.0.0 || ^5.0.0
 
-  '@tanstack/virtual-core@3.17.11':
-    resolution: {integrity: sha512-+ILjvtHup6Y2hzQ6YzwMgX1Q+oQpxEGOXCEsCNaPoIP0VxMbizIBTmYTDtkerkIQS8/CbP1BRuyt8V/8BCsy1g==}
+  '@tanstack/virtual-core@3.19.13':
+    resolution: {integrity: sha512-CyCvMm7m5JuvPW6eMPZkZBZk6diySrlUQNNRpQPiEnh2vakyghx82Hw3wW2THFUsl6xJ6uM4lSUaiA2T0oYW8w==}
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -1947,12 +1947,12 @@ snapshots:
       tailwindcss: 4.3.3
       vite: 8.3.8(@types/node@26.6.6)(jiti@2.7.0)
 
-  '@tanstack/svelte-virtual@3.13.39(svelte@5.57.3(@typescript-eslint/types@8.72.1))':
+  '@tanstack/svelte-virtual@3.13.54(svelte@5.57.3(@typescript-eslint/types@8.72.1))':
     dependencies:
-      '@tanstack/virtual-core': 3.17.11
+      '@tanstack/virtual-core': 3.19.13
       svelte: 5.57.3(@typescript-eslint/types@8.72.1)
 
-  '@tanstack/virtual-core@3.17.11': {}
+  '@tanstack/virtual-core@3.19.13': {}
 
   '@testing-library/dom@10.4.1':
     dependencies:
