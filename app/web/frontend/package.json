@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "@lucide/svelte": "1.78.0",
-    "@tanstack/svelte-virtual": "3.13.39",
+    "@tanstack/svelte-virtual": "3.13.54",
     "bits-ui": "^2.21.0",
     "clsx": "^2.1.1",
     "svelte-sonner": "^1.2.3",
