@@ -22,7 +22,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/svelte": "^5.4.2",
-    "@tsconfig/svelte": "^5.0.8",
+    "@tsconfig/svelte": "^5.0.9",
     "@types/node": "^26.6.6",
     "@vitest/coverage-v8": "^5.0.0",
     "eslint": "^10.14.0",
